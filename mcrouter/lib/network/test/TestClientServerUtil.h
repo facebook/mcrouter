@@ -28,6 +28,17 @@ namespace folly {
 class AsyncSocket;
 } // namespace folly
 
+// Used to set up server options
+constexpr const char* getDefaultCaPath() {
+  return "mcrouter/lib/network/test/ca_cert.pem";
+}
+constexpr const char* getDefaultKeyPath() {
+  return "mcrouter/lib/network/test/test_key.pem";
+}
+constexpr const char* getDefaultCertPath() {
+  return "mcrouter/lib/network/test/test_cert.pem";
+}
+
 namespace facebook {
 namespace memcache {
 
@@ -90,6 +101,39 @@ class TestServer {
       size_t goAwayTimeoutMs = 1000,
       const CompressionCodecMap* compressionCodecMap = nullptr,
       bool tfoEnabled = false) {
+    return createWithCustomSslPaths(
+        outOfOrder,
+        useSsl,
+        getDefaultCaPath(),
+        getDefaultCertPath(),
+        getDefaultKeyPath(),
+        maxInflight,
+        timeoutMs,
+        maxConns,
+        useDefaultVersion,
+        numThreads,
+        useTicketKeySeeds,
+        goAwayTimeoutMs,
+        compressionCodecMap,
+        tfoEnabled);
+  }
+
+  template <class OnRequest = TestServerOnRequest>
+  static std::unique_ptr<TestServer> createWithCustomSslPaths(
+      bool outOfOrder,
+      bool useSsl,
+      const char* const caPath,
+      const char* const certPath,
+      const char* const keyPath,
+      int maxInflight = 10,
+      int timeoutMs = 250,
+      size_t maxConns = 100,
+      bool useDefaultVersion = false,
+      size_t numThreads = 1,
+      bool useTicketKeySeeds = false,
+      size_t goAwayTimeoutMs = 1000,
+      const CompressionCodecMap* compressionCodecMap = nullptr,
+      bool tfoEnabled = false) {
     std::unique_ptr<TestServer> server(new TestServer(
         outOfOrder,
         useSsl,
@@ -100,7 +144,11 @@ class TestServer {
         numThreads,
         useTicketKeySeeds,
         goAwayTimeoutMs,
-        tfoEnabled));
+        tfoEnabled,
+        caPath,
+        certPath,
+        keyPath));
+
     server->run(
         [compressionCodecMap, &s = *server](AsyncMcServerWorker& worker) {
           worker.setCompressionCodecMap(compressionCodecMap);
@@ -150,7 +198,10 @@ class TestServer {
       size_t numThreads,
       bool useTicketKeySeeds,
       size_t goAwayTimeoutMs,
-      bool tfoEnabled);
+      bool tfoEnabled,
+      const char* const caPath = getDefaultCaPath(),
+      const char* const certPath = getDefaultCertPath(),
+      const char* const keyPath = getDefaultKeyPath());
 
   void run(std::function<void(AsyncMcServerWorker&)> init);
 };

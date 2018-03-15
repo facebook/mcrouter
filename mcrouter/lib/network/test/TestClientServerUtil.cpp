@@ -37,10 +37,6 @@ namespace facebook {
 namespace memcache {
 namespace test {
 
-const char* const kPemCaPath = "mcrouter/lib/network/test/ca_cert.pem";
-const char* const kValidKeyPath = "mcrouter/lib/network/test/test_key.pem";
-const char* const kValidCertPath = "mcrouter/lib/network/test/test_cert.pem";
-
 const char* const kBrokenKeyPath = "mcrouter/lib/network/test/broken_key.pem";
 const char* const kBrokenCertPath = "mcrouter/lib/network/test/broken_cert.pem";
 
@@ -52,24 +48,30 @@ const char* const kServerVersion = "TestServer-1.0";
 SSLContextProvider validClientSsl() {
   return []() {
     return getSSLContext(
-        kValidCertPath, kValidKeyPath, kPemCaPath, folly::none, true);
+        getDefaultCertPath(),
+        getDefaultKeyPath(),
+        getDefaultCaPath(),
+        folly::none,
+        true);
   };
 }
 
 SSLContextProvider validSsl() {
-  return
-      []() { return getSSLContext(kValidCertPath, kValidKeyPath, kPemCaPath); };
+  return []() {
+    return getSSLContext(
+        getDefaultCertPath(), getDefaultKeyPath(), getDefaultCaPath());
+  };
 }
 
 SSLContextProvider invalidSsl() {
   return []() {
-    return getSSLContext(kInvalidCertPath, kInvalidKeyPath, kPemCaPath);
+    return getSSLContext(kInvalidCertPath, kInvalidKeyPath, getDefaultCaPath());
   };
 }
 
 SSLContextProvider brokenSsl() {
   return []() {
-    return getSSLContext(kBrokenCertPath, kBrokenKeyPath, kPemCaPath);
+    return getSSLContext(kBrokenCertPath, kBrokenKeyPath, getDefaultCaPath());
   };
 }
 
@@ -156,7 +158,10 @@ TestServer::TestServer(
     size_t numThreads,
     bool useTicketKeySeeds,
     size_t goAwayTimeoutMs,
-    bool tfoEnabled)
+    bool tfoEnabled,
+    const char* const caPath,
+    const char* const certPath,
+    const char* const keyPath)
     : outOfOrder_(outOfOrder), useTicketKeySeeds_(useSsl && useTicketKeySeeds) {
   opts_.existingSocketFd = sock_.getSocketFd();
   opts_.numThreads = numThreads;
@@ -166,9 +171,9 @@ TestServer::TestServer(
   opts_.worker.goAwayTimeout = std::chrono::milliseconds{goAwayTimeoutMs};
   opts_.setPerThreadMaxConns(maxConns, opts_.numThreads);
   if (useSsl) {
-    opts_.pemKeyPath = kValidKeyPath;
-    opts_.pemCertPath = kValidCertPath;
-    opts_.pemCaPath = kPemCaPath;
+    opts_.pemKeyPath = keyPath;
+    opts_.pemCertPath = certPath;
+    opts_.pemCaPath = caPath;
     if (tfoEnabled) {
       opts_.tfoEnabledForSsl = true;
       opts_.tfoQueueSize = 100000;
