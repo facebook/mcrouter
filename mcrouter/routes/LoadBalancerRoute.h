@@ -358,23 +358,13 @@ typename RouterInfo::RouteHandlePtr createLoadBalancerRoute(
       throwLogic("Unknown algorithm: {}", algorithmStr);
     }
   }
-  uint32_t randomSeed;
-  if (auto jFailoverCount = json.get_ptr("seed")) {
-    checkLogic(
-        jFailoverCount->isInt(), "LoadBalancerRoute: seed is not an integer");
-    randomSeed = jFailoverCount->getInt();
-  } else {
-    randomSeed = nowUs();
-  }
-
   return makeRouteHandleWithInfo<RouterInfo, LoadBalancerRoute>(
       std::move(rh),
       std::move(salt),
       loadTtl,
       defaultServerLoad,
       failoverCount,
-      algorithm,
-      randomSeed);
+      algorithm);
 }
 
 template <class RouterInfo>
