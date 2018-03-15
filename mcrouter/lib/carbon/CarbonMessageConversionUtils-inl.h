@@ -29,7 +29,10 @@ class ToDynamicVisitor {
   template <class T>
   bool enterMixin(uint16_t /* id */, folly::StringPiece name, const T& value) {
     if (!opts_.inlineMixins) {
-      value_.insert(getMixinName(name), convertToFollyDynamic(value));
+      auto mixin = convertToFollyDynamic(value, opts_);
+      if (mixin != nullptr && shouldSerialize(mixin)) {
+        value_.insert(getMixinName(name), std::move(mixin));
+      }
       return false;
     } else {
       return true;
@@ -43,7 +46,7 @@ class ToDynamicVisitor {
   template <class T>
   bool visitField(uint16_t /* id */, folly::StringPiece name, const T& value) {
     auto val = toDynamic(value);
-    if (val != nullptr) {
+    if (val != nullptr && shouldSerialize(val)) {
       value_.insert(name, std::move(val));
     }
     return true;
@@ -59,6 +62,24 @@ class ToDynamicVisitor {
  private:
   folly::dynamic value_;
   FollyDynamicConversionOptions opts_;
+
+  bool shouldSerialize(const folly::dynamic& val) {
+    if (opts_.serializeFieldsWithDefaultValue) {
+      return true;
+    }
+
+    if (val.isBool() && !val.getBool()) {
+      return false;
+    } else if (val.isInt() && val.getInt() == 0) {
+      return false;
+    } else if (val.isDouble() && val.getDouble() == 0.0) {
+      return false;
+    } else if (
+        (val.isString() || val.isArray() || val.isObject()) && val.empty()) {
+      return false;
+    }
+    return true;
+  }
 
   folly::dynamic toDynamic(char c) const {
     return folly::dynamic(std::string(1, c));

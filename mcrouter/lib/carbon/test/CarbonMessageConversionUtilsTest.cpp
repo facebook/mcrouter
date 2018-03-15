@@ -125,6 +125,40 @@ TEST(CarbonMessageConversionUtils, toFollyDynamic_InlineMixins) {
   EXPECT_EQ(withInline, carbon::convertToFollyDynamic(s, opts));
 }
 
+TEST(CarbonMessageConversionUtils, toFollyDynamic_NoDefaultValues) {
+  carbon::test::SimpleStruct s;
+  s.baseInt64Member() = 0;
+  s.stringMember() = "abcdef";
+
+  const folly::dynamic expected =
+      folly::dynamic::object("stringMember", "abcdef")("enumMember", 20);
+
+  carbon::FollyDynamicConversionOptions opts;
+  opts.serializeFieldsWithDefaultValue = false;
+  EXPECT_EQ(expected, carbon::convertToFollyDynamic(s, opts));
+}
+
+TEST(CarbonMessageConversionUtils, toFollyDynamic_NoDefaultValues_Complex) {
+  carbon::test::TestRequest req;
+  req.testList() = std::vector<std::string>({"", "bce", ""});
+  req.testNestedVec() = {{0}, {2, 0, 2}, {}};
+  req.testChar() = 'a';
+
+  const folly::dynamic expected = folly::dynamic::object(
+      "__Base", folly::dynamic::object("enumMember", 20))(
+      "testList", folly::dynamic::array("", "bce", ""))("testChar", "a")(
+      "testEnum", 20)("testStruct", folly::dynamic::object("enumMember", 20))(
+      "testNestedVec",
+      folly::dynamic::array(
+          folly::dynamic::array(0),
+          folly::dynamic::array(2, 0, 2),
+          folly::dynamic::array()))("testType", "(user type)");
+
+  carbon::FollyDynamicConversionOptions opts;
+  opts.serializeFieldsWithDefaultValue = false;
+  EXPECT_EQ(expected, carbon::convertToFollyDynamic(req, opts));
+}
+
 TEST(CarbonMessageConversionUtils, fromFollyDynamic_InlineMixins) {
   const std::string jsonStr = R"json(
     {

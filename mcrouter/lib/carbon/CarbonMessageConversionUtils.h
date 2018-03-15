@@ -28,6 +28,14 @@ struct FollyDynamicConversionOptions {
    * If true, such fields would be omitted from the output completely.
    */
   bool ignoreUnserializableTypes{false};
+
+  /**
+   * If true, all fields will be serialized (including empty strings and
+   * integers with value == 0).
+   *
+   * If false, such fields will be omitted from the output completely.
+   */
+  bool serializeFieldsWithDefaultValue{true};
 };
 
 /**
