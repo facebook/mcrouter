@@ -10,8 +10,6 @@
 #include <folly/Format.h>
 #include <folly/lang/Bits.h>
 
-#include "mcrouter/lib/IovecCursor.h"
-
 namespace facebook {
 namespace memcache {
 
@@ -67,6 +65,15 @@ struct iovec getDictionaryIovec(const Lz4ImmutableState& state) noexcept {
   struct iovec iov;
   state.dictionary->fillIov(&iov, 1);
   return iov;
+}
+
+void checkInputSize(size_t inputLength) {
+  if (inputLength > kMaxInputSize) {
+    throw std::invalid_argument(folly::sformat(
+        "Data too large to compress. Size: {}. Max size allowed: {}",
+        inputLength,
+        kMaxInputSize));
+  }
 }
 
 Lz4ImmutableState loadDictionary(std::unique_ptr<folly::IOBuf> dictionary) {
@@ -238,14 +245,48 @@ std::unique_ptr<folly::IOBuf> Lz4Immutable::compress(
     return folly::IOBuf::create(0);
   }
 
+  // Check the max size prior to allocating space.
   IovecCursor source(iov, iovcnt);
+  checkInputSize(source.totalLength());
 
-  if (source.totalLength() > kMaxInputSize) {
-    throw std::invalid_argument(folly::sformat(
-        "Data too large to compress. Size: {}. Max size allowed: {}",
-        source.totalLength(),
-        kMaxInputSize));
+  const size_t maxOutputSize = compressBound(source.totalLength());
+  auto destination = folly::IOBuf::create(maxOutputSize);
+  const size_t compressedSize =
+      compressCommon(source, destination->writableTail(), maxOutputSize);
+  destination->append(compressedSize);
+  return destination;
+}
+
+size_t Lz4Immutable::compressInto(
+    const struct iovec* iov,
+    size_t iovcnt,
+    void* dest,
+    size_t destSize) const {
+  if (UNLIKELY(iovcnt == 0)) {
+    return 0;
   }
+
+  IovecCursor source(iov, iovcnt);
+  checkInputSize(source.totalLength());
+
+  if (UNLIKELY(destSize < compressBound(source.totalLength()))) {
+    throw std::invalid_argument(folly::sformat(
+        "Destination too small. Size: {}. Required: {}",
+        destSize,
+        compressBound(source.totalLength())));
+  }
+
+  return compressCommon(source, static_cast<uint8_t*>(dest), destSize);
+}
+
+size_t Lz4Immutable::compressCommon(
+    IovecCursor source,
+    uint8_t* output,
+    size_t maxOutputSize) const {
+  assert(source.totalLength() <= kMaxInputSize && "check max size first");
+  assert(
+      maxOutputSize >= compressBound(source.totalLength()) &&
+      "check available space first");
 
   // Creates a match cursor - a cursor that will keep track of matches
   // found in the dictionary.
@@ -263,22 +304,16 @@ std::unique_ptr<folly::IOBuf> Lz4Immutable::compress(
   // Upper limit of where a match can go.
   const size_t matchLimit = source.totalLength() - kLastLiterals;
 
-  // Destination (compressed) buffer.
-  const size_t maxOutputSize = compressBound(source.totalLength());
-  auto destination = folly::IOBuf::create(maxOutputSize);
-
-  // Pointer to where the next compressed position should be written.
-  uint8_t* output = destination->writableTail();
   // Lower and upper limit to where the output buffer can go.
-  const uint8_t* outputStart = output;
-  const uint8_t* outputLimit = output + maxOutputSize;
+  const uint8_t* const outputStart = output;
+  const uint8_t* const outputLimit = output + maxOutputSize;
 
   // Controls the compression main loop.
   bool running = true;
 
   // Next position (0..sourceSize] in source that was not
   // yet written to destination buffer.
-  IovecCursor anchorCursor(iov, iovcnt);
+  IovecCursor anchorCursor = source;
 
   // Cursor that points to current match.
   IovecCursor match = dicCursor;
@@ -417,7 +452,7 @@ std::unique_ptr<folly::IOBuf> Lz4Immutable::compress(
     size_t lastRun = source.totalLength() - anchorCursor.tell();
 
     assert(
-        (output - destination->data()) + lastRun + 1 +
+        (output - outputStart) + lastRun + 1 +
             ((lastRun + 255 - kRunMask) / 255) <=
         maxOutputSize);
 
@@ -435,8 +470,7 @@ std::unique_ptr<folly::IOBuf> Lz4Immutable::compress(
     output += lastRun;
   }
 
-  destination->append(output - outputStart);
-  return destination;
+  return output - outputStart;
 }
 
 std::unique_ptr<folly::IOBuf> Lz4Immutable::decompress(

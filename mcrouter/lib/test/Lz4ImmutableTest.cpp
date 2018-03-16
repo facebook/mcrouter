@@ -164,6 +164,16 @@ std::unique_ptr<folly::IOBuf> lz4Decompress(
   return buffer;
 }
 
+void checkEqual(
+    const std::unique_ptr<folly::IOBuf>& source,
+    const std::unique_ptr<folly::IOBuf>& decompressed) {
+  EXPECT_EQ(
+      source->computeChainDataLength(), decompressed->computeChainDataLength());
+  auto sourceStr = source->moveToFbString();
+  auto decompressedStr = decompressed->moveToFbString();
+  EXPECT_EQ(sourceStr, decompressedStr);
+}
+
 } // anonymous namespace
 
 TEST(Lz4Immutable, lz4Compatibility_ascii) {
@@ -180,10 +190,7 @@ TEST(Lz4Immutable, lz4Compatibility_ascii) {
   auto decompressed =
       lz4Decompress(dictionary->clone(), *compressed, sourceSize);
 
-  EXPECT_EQ(sourceSize, decompressed->computeChainDataLength());
-  auto sourceStr = source->moveToFbString();
-  auto decompressedStr = decompressed->moveToFbString();
-  EXPECT_EQ(sourceStr, decompressedStr);
+  checkEqual(source, decompressed);
 }
 TEST(Lz4Immutable, lz4Compatibility_binary) {
   auto dictionary = getRandomBinaryData(64 * 1024);
@@ -199,10 +206,7 @@ TEST(Lz4Immutable, lz4Compatibility_binary) {
   auto decompressed =
       lz4Decompress(dictionary->clone(), *compressed, sourceSize);
 
-  EXPECT_EQ(sourceSize, decompressed->computeChainDataLength());
-  auto sourceStr = source->moveToFbString();
-  auto decompressedStr = decompressed->moveToFbString();
-  EXPECT_EQ(sourceStr, decompressedStr);
+  checkEqual(source, decompressed);
 }
 
 TEST(Lz4Immutable, emptyData) {
@@ -218,10 +222,21 @@ TEST(Lz4Immutable, emptyData) {
   // Uncompress
   auto decompressed = compressor.decompress(*compressed, sourceSize);
 
-  EXPECT_EQ(sourceSize, decompressed->computeChainDataLength());
-  auto sourceStr = source->moveToFbString();
-  auto decompressedStr = decompressed->moveToFbString();
-  EXPECT_EQ(sourceStr, decompressedStr);
+  checkEqual(source, decompressed);
+}
+
+TEST(Lz4Immutable, error_checks) {
+  auto dictionary = getAsciiDictionary();
+  Lz4Immutable compressor(dictionary->clone());
+
+  iovec iov = {nullptr, 0};
+
+  // No iovecs specified
+  EXPECT_EQ(0, compressor.compress(&iov, 0)->length());
+
+  // Input too large
+  iov.iov_len = std::numeric_limits<size_t>::max();
+  EXPECT_THROW(compressor.compress(&iov, 1), std::invalid_argument);
 }
 
 TEST(Lz4Immutable, largeData_ascii) {
@@ -237,10 +252,7 @@ TEST(Lz4Immutable, largeData_ascii) {
   // Uncompress
   auto decompressed = compressor.decompress(*compressed, sourceSize);
 
-  EXPECT_EQ(sourceSize, decompressed->computeChainDataLength());
-  auto sourceStr = source->moveToFbString();
-  auto decompressedStr = decompressed->moveToFbString();
-  EXPECT_EQ(sourceStr, decompressedStr);
+  checkEqual(source, decompressed);
 }
 TEST(Lz4Immutable, largeData_binary) {
   auto dictionary = getRandomBinaryData(64 * 1024);
@@ -255,10 +267,7 @@ TEST(Lz4Immutable, largeData_binary) {
   // Uncompress
   auto decompressed = compressor.decompress(*compressed, sourceSize);
 
-  EXPECT_EQ(sourceSize, decompressed->computeChainDataLength());
-  auto sourceStr = source->moveToFbString();
-  auto decompressedStr = decompressed->moveToFbString();
-  EXPECT_EQ(sourceStr, decompressedStr);
+  checkEqual(source, decompressed);
 }
 
 TEST(Lz4Immutable, hugeData_ascii) {
@@ -274,10 +283,7 @@ TEST(Lz4Immutable, hugeData_ascii) {
   // Uncompress
   auto decompressed = compressor.decompress(*compressed, sourceSize);
 
-  EXPECT_EQ(sourceSize, decompressed->computeChainDataLength());
-  auto sourceStr = source->moveToFbString();
-  auto decompressedStr = decompressed->moveToFbString();
-  EXPECT_EQ(sourceStr, decompressedStr);
+  checkEqual(source, decompressed);
 }
 TEST(Lz4Immutable, hugeData_binary) {
   auto dictionary = getRandomBinaryData(64 * 1024);
@@ -293,10 +299,7 @@ TEST(Lz4Immutable, hugeData_binary) {
   // Uncompress
   auto decompressed = compressor.decompress(*compressed, sourceSize);
 
-  EXPECT_EQ(sourceSize, decompressed->computeChainDataLength());
-  auto sourceStr = source->moveToFbString();
-  auto decompressedStr = decompressed->moveToFbString();
-  EXPECT_EQ(sourceStr, decompressedStr);
+  checkEqual(source, decompressed);
 }
 
 TEST(Lz4Immutable, chained_ascii) {
@@ -315,10 +318,7 @@ TEST(Lz4Immutable, chained_ascii) {
   // Uncompress
   auto decompressed = compressor.decompress(*compressed, sourceSize);
 
-  EXPECT_EQ(sourceSize, decompressed->computeChainDataLength());
-  auto sourceStr = source->moveToFbString();
-  auto decompressedStr = decompressed->moveToFbString();
-  EXPECT_EQ(sourceStr, decompressedStr);
+  checkEqual(source, decompressed);
 }
 TEST(Lz4Immutable, chained_binary) {
   auto dictionary = getRandomBinaryData(64 * 1024);
@@ -336,8 +336,58 @@ TEST(Lz4Immutable, chained_binary) {
   // Uncompress
   auto decompressed = compressor.decompress(*compressed, sourceSize);
 
-  EXPECT_EQ(sourceSize, decompressed->computeChainDataLength());
-  auto sourceStr = source->moveToFbString();
-  auto decompressedStr = decompressed->moveToFbString();
-  EXPECT_EQ(sourceStr, decompressedStr);
+  checkEqual(source, decompressed);
+}
+
+TEST(Lz4Immutable, compress_into) {
+  auto dictionary = getAsciiDictionary();
+  Lz4Immutable compressor(dictionary->clone());
+
+  std::vector<char> buffer(10);
+
+  iovec iov = {nullptr, 0};
+
+  // No iovecs specified
+  EXPECT_EQ(0, compressor.compressInto(&iov, 0, buffer.data(), buffer.size()));
+
+  // Input too large
+  iov.iov_len = std::numeric_limits<size_t>::max();
+  EXPECT_THROW(
+      compressor.compressInto(&iov, 1, buffer.data(), buffer.size()),
+      std::invalid_argument);
+
+  // Destination too small
+  auto source = getRandomAsciiData();
+  auto iovs = source->getIov();
+  EXPECT_THROW(
+      compressor.compressInto(
+          iovs.data(), iovs.size(), buffer.data(), buffer.size()),
+      std::invalid_argument);
+
+  // Compress with one iovec
+  buffer.resize(compressor.compressBound(source->length()));
+  const size_t compressedSize = compressor.compressInto(
+      iovs.data(), iovs.size(), buffer.data(), buffer.size());
+  EXPECT_GT(compressedSize, 0);
+
+  // Decompress and verify
+  iov.iov_base = buffer.data();
+  iov.iov_len = compressedSize;
+  auto decompressed = compressor.decompress(&iov, 1, source->length());
+  checkEqual(source, decompressed);
+
+  // Compress with multiple iovecs
+  source = getRandomAsciiData();
+  auto chainedSource = buildChain(*source, 4);
+  iovs = chainedSource->getIov();
+  buffer.resize(compressor.compressBound(source->length()));
+
+  const size_t chainedCompressedSize = compressor.compressInto(
+      iovs.data(), iovs.size(), buffer.data(), buffer.size());
+  EXPECT_GT(chainedCompressedSize, 0);
+
+  iov.iov_base = buffer.data();
+  iov.iov_len = chainedCompressedSize;
+  decompressed = compressor.decompress(&iov, 1, source->length());
+  checkEqual(source, decompressed);
 }
