@@ -513,7 +513,7 @@ void AsyncMcClientImpl::attemptConnection() {
             std::dynamic_pointer_cast<ClientSSLContext>(sslContext);
         if (clientCtx) {
           const auto& serviceId = getServiceIdentity(connectionOptions_);
-          sslSocket->setServiceIdentity(serviceId);
+          sslSocket->setSessionKey(serviceId);
           auto session = clientCtx->getCache().getSSLSession(serviceId);
           if (session) {
             sslSocket->setSSLSession(session.release(), true);
