@@ -9,7 +9,10 @@
 
 #include <mutex>
 
+#include <folly/experimental/StringKeyedUnorderedMap.h>
+
 #include "mcrouter/ExponentialSmoothData.h"
+#include "mcrouter/PoolStats.h"
 #include "mcrouter/stats.h"
 
 namespace facebook {
@@ -18,7 +21,7 @@ namespace mcrouter {
 
 class ProxyStats {
  public:
-  ProxyStats();
+  explicit ProxyStats(const std::vector<std::string>& statsEnabledPools);
 
   /**
    * Aggregate proxy stat with the given index.
@@ -129,9 +132,32 @@ class ProxyStats {
     return stats_[statId];
   }
 
+  folly::StringKeyedUnorderedMap<stat_t> getAggregatedPoolStatsMap() const {
+    folly::StringKeyedUnorderedMap<stat_t> poolStatsMap;
+    for (const auto& poolStats : poolStats_) {
+      for (const auto& stat : poolStats.getStats()) {
+        poolStatsMap.emplace(stat.name, stat);
+      }
+    }
+    return poolStatsMap;
+  }
+
+  void incrementPoolStats(
+      int32_t idx,
+      uint64_t requestCount,
+      uint64_t finalErrorResultCount) {
+    if (idx < 0 || static_cast<size_t>(idx) >= poolStats_.size()) {
+      return;
+    }
+    poolStats_[idx].incrementRequestCount(requestCount);
+    poolStats_[idx].incrementFinalResultErrorCount(finalErrorResultCount);
+  }
+
  private:
   mutable std::mutex mutex_;
   stat_t stats_[num_stats]{};
+  // vector of the PoolStats
+  std::vector<PoolStats> poolStats_;
 
   ExponentialSmoothData<64> durationUs_;
 

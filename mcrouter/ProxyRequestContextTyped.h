@@ -91,6 +91,8 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
   }
 
   ~ProxyRequestContextWithInfo() override {
+    proxy_.stats().incrementPoolStats(
+        poolStatIndex_, 1, isErrorResult(finalResult_) ? 1 : 0);
     if (reqComplete_) {
       fiber_local<RouterInfo>::runWithoutLocals(
           [this]() { reqComplete_(*this); });

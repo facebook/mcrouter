@@ -87,6 +87,12 @@ class ProxyRequestContext {
     return failoverDisabled_;
   }
 
+  void setPoolStatsIndex(int32_t index) {
+    if (poolStatIndex_ == -1) {
+      poolStatIndex_ = index;
+    }
+  }
+
   ProxyRequestPriority priority() const {
     return priority_;
   }
@@ -136,6 +142,7 @@ class ProxyRequestContext {
    */
   void (*reqComplete_)(ProxyRequestContext& preq){nullptr};
   mc_res_t finalResult_{mc_res_unknown};
+  int32_t poolStatIndex_{-1};
   bool replied_{false};
 
   ProxyRequestContext(ProxyBase& pr, ProxyRequestPriority priority__);

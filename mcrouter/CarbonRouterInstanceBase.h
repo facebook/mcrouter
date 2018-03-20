@@ -22,6 +22,7 @@
 #include "mcrouter/ConfigApi.h"
 #include "mcrouter/LeaseTokenMap.h"
 #include "mcrouter/Observable.h"
+#include "mcrouter/PoolStats.h"
 #include "mcrouter/TkoTracker.h"
 #include "mcrouter/options.h"
 
@@ -146,6 +147,23 @@ class CarbonRouterInstanceBase {
   }
 
   /**
+   * This function finds the index of poolName in the statsEnabledPools_
+   * sorted array by doing binary search. If exact match is not found,
+   * index with maximum prefix match is returned.
+   *
+   * @return index of the pool in the statsEnabledPools_ vector
+   *         -1 if not found
+   */
+  int32_t getStatsEnabledPoolIndex(folly::StringPiece poolName) const;
+
+  /**
+   * @return  reference to the statsEnabledPools_ vector
+   */
+  const std::vector<std::string>& getStatsEnabledPools() const {
+    return statsEnabledPools_;
+  }
+
+  /**
    * @return  nullptr if index is >= opts.num_proxies,
    *          pointer to the proxy otherwise.
    */
@@ -223,6 +241,8 @@ class CarbonRouterInstanceBase {
 
   // Name of the stats update function registered with the function scheduler.
   const std::string statsUpdateFunctionHandle_;
+
+  std::vector<std::string> statsEnabledPools_;
 
   // Aggregates stats for all associated proxies. Should be called periodically.
   void updateStats();

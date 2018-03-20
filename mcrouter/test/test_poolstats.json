@@ -1,0 +1,35 @@
+{
+
+  "pools": {
+     "twmemcache.CI.west.1": {
+        "servers": [
+          "127.0.0.1:15001"
+        ]
+      },
+     "twmemcache.CI.west": {
+        "servers": [
+          "127.0.0.1:15002"
+        ]
+      },
+     "twmemcache.CI.east": {
+        "servers": [
+          "127.0.0.1:15003"
+        ]
+      },
+      "wc": {
+        "servers": [
+          "127.0.0.1:15004"
+        ]
+      }
+  },
+
+  "route": {
+    "type": "PrefixSelectorRoute",
+    "policies": {
+      "twmemcache.CI.west.1": "PoolRoute|twmemcache.CI.west.1",
+      "twmemcache.CI.west":   "PoolRoute|twmemcache.CI.west",
+      "twmemcache.CI.east": "PoolRoute|twmemcache.CI.east"
+    },
+    "wildcard": "PoolRoute|wc"
+  }
+}

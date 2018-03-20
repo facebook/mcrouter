@@ -166,6 +166,19 @@ std::string getBinPath(folly::StringPiece name);
 std::string getDefaultPemCertPath();
 std::string getDefaultPemCertKey();
 
+/**
+ * Reads a static json file. Do not monitor for changes.
+ * May throw if there's an error while parsing file contents.
+ *
+ * @params file   The path of the json file.
+ *
+ * @return        folly::dynamic with the contents of the file.
+ *                nullptr if cannot open/read the file
+ *                may throw exception if invalid json
+ *
+ */
+folly::dynamic readStaticJsonFile(folly::StringPiece file);
+
 #ifndef MCROUTER_PACKAGE_STRING
 #define MCROUTER_PACKAGE_STRING "1.0.0 mcrouter"
 #endif

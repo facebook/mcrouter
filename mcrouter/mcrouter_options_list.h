@@ -425,6 +425,13 @@ MCROUTER_OPTION_STRING(
     " --config option is used.")
 
 MCROUTER_OPTION_STRING(
+    pool_stats_config_file,
+    "",
+    "pool-stats-config-file",
+    no_short,
+    "File containing stats enabled pool names.")
+
+MCROUTER_OPTION_STRING(
     config_str,
     "",
     "config-str",

@@ -208,6 +208,7 @@ void McrouterLogger::log() {
 
   std::vector<stat_t> stats(num_stats);
   prepare_stats(router_, stats.data());
+  append_pool_stats(router_, stats);
 
   folly::dynamic requestStats(folly::dynamic::object());
   for (size_t i = 0; i < router_.opts().num_proxies; ++i) {

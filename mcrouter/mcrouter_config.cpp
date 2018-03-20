@@ -7,7 +7,9 @@
  */
 #include <memory>
 
+#include <folly/FileUtil.h>
 #include <folly/Range.h>
+#include <folly/json.h>
 
 #include "mcrouter/CarbonRouterInstanceBase.h"
 #include "mcrouter/McrouterLogger.h"
@@ -123,8 +125,18 @@ std::string getBinPath(folly::StringPiece name) {
 std::string getDefaultPemCertPath() {
   return "";
 }
+
 std::string getDefaultPemCertKey() {
   return "";
+}
+
+folly::dynamic readStaticJsonFile(folly::StringPiece file) {
+  std::string contents;
+  if (!folly::readFile(file.str().c_str(), contents)) {
+    LOG(ERROR) << "Failed to open pool-stats-config-file " << file.str();
+    return nullptr;
+  }
+  return folly::parseJson(contents);
 }
 
 } // mcrouter

@@ -206,6 +206,8 @@ McRouteHandleProvider<RouterInfo>::makePool(
         jservers->size(),
         jhostnames ? jhostnames->size() : 0);
 
+    int32_t poolStatIndex = proxy_.router().getStatsEnabledPoolIndex(name);
+
     std::vector<RouteHandlePtr> destinations;
     destinations.reserve(jservers->size());
     for (size_t i = 0; i < jservers->size(); ++i) {
@@ -252,7 +254,12 @@ McRouteHandleProvider<RouterInfo>::makePool(
       pdstn->updateShortestTimeout(timeout);
 
       destinations.push_back(makeDestinationRoute<RouterInfo>(
-          std::move(pdstn), nameSp, i, timeout, keepRoutingPrefix));
+          std::move(pdstn),
+          nameSp,
+          i,
+          poolStatIndex,
+          timeout,
+          keepRoutingPrefix));
     } // servers
 
     return pools_.emplace(std::move(name), std::move(destinations))

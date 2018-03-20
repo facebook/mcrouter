@@ -65,11 +65,13 @@ class DestinationRoute {
       std::shared_ptr<ProxyDestination> destination,
       folly::StringPiece poolName,
       size_t indexInPool,
+      int32_t poolStatIdx,
       std::chrono::milliseconds timeout,
       bool keepRoutingPrefix)
       : destination_(std::move(destination)),
         poolName_(poolName),
         indexInPool_(indexInPool),
+        poolStatIndex_(poolStatIdx),
         timeout_(timeout),
         keepRoutingPrefix_(keepRoutingPrefix) {}
 
@@ -105,6 +107,7 @@ class DestinationRoute {
   const std::shared_ptr<ProxyDestination> destination_;
   const folly::StringPiece poolName_;
   const size_t indexInPool_;
+  const int poolStatIndex_{-1};
   const std::chrono::milliseconds timeout_;
   size_t pendingShadowReqs_{0};
   const bool keepRoutingPrefix_;
@@ -127,6 +130,9 @@ class DestinationRoute {
       return constructAndLog(req, *ctx, BusyReply);
     }
 
+    if (poolStatIndex_ >= 0) {
+      ctx->setPoolStatsIndex(poolStatIndex_);
+    }
     auto requestClass = fiber_local<RouterInfo>::getRequestClass();
     if (ctx->recording()) {
       bool isShadow = requestClass.is(RequestClass::kShadow);
@@ -257,12 +263,14 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeDestinationRoute(
     std::shared_ptr<ProxyDestination> destination,
     folly::StringPiece poolName,
     size_t indexInPool,
+    int32_t poolStatsIndex,
     std::chrono::milliseconds timeout,
     bool keepRoutingPrefix) {
   return makeRouteHandleWithInfo<RouterInfo, DestinationRoute>(
       std::move(destination),
       poolName,
       indexInPool,
+      poolStatsIndex,
       timeout,
       keepRoutingPrefix);
 }

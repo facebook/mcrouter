@@ -17,6 +17,7 @@
 
 #include <folly/Conv.h>
 #include <folly/Range.h>
+#include <folly/experimental/StringKeyedUnorderedMap.h>
 #include <folly/json.h>
 
 #include "mcrouter/CarbonRouterInstanceBase.h"
@@ -336,6 +337,32 @@ static int get_proc_stat(pid_t pid, proc_stat_data_t* data) {
   return 0;
 }
 
+void append_pool_stats(
+    CarbonRouterInstanceBase& router,
+    std::vector<stat_t>& stats) {
+  folly::StringKeyedUnorderedMap<stat_t> mergedPoolStatsMap;
+
+  auto mergeMaps = [&mergedPoolStatsMap](
+                       folly::StringKeyedUnorderedMap<stat_t>&& poolStatMap) {
+    for (auto& poolStatMapEntry : poolStatMap) {
+      auto it = mergedPoolStatsMap.find(poolStatMapEntry.first);
+      if (it != mergedPoolStatsMap.end()) {
+        it->second.data.uint64 += poolStatMapEntry.second.data.uint64;
+      } else {
+        mergedPoolStatsMap.insert(std::move(poolStatMapEntry));
+      }
+    }
+  };
+
+  for (size_t j = 0; j < router.opts().num_proxies; ++j) {
+    auto pr = router.getProxyBase(j);
+    mergeMaps(pr->stats().getAggregatedPoolStatsMap());
+  }
+  for (const auto& mergedPoolStatMapEntry : mergedPoolStatsMap) {
+    stats.emplace_back(mergedPoolStatMapEntry.second);
+  }
+}
+
 void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
   init_stats(stats);
 
@@ -552,9 +579,9 @@ McStatsReply stats_reply(ProxyBase* proxy, folly::StringPiece group_str) {
     return errorReply;
   }
 
-  stat_t stats[num_stats];
+  std::vector<stat_t> stats(num_stats);
 
-  prepare_stats(proxy->router(), stats);
+  prepare_stats(proxy->router(), stats.data());
 
   for (unsigned int ii = 0; ii < num_stats; ii++) {
     stat_t* stat = &stats[ii];
@@ -570,6 +597,7 @@ McStatsReply stats_reply(ProxyBase* proxy, folly::StringPiece group_str) {
       }
     }
   }
+  append_pool_stats(proxy->router(), stats);
 
   if (groups & (mcproxy_stats | all_stats | detailed_stats | ods_stats)) {
     folly::dynamic requestStats(folly::dynamic::object());

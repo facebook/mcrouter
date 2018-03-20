@@ -79,6 +79,27 @@ CarbonRouterInstanceBase::CarbonRouterInstanceBase(McrouterOptions inputOptions)
       statsLogger->makeQueueSizeUnlimited();
     }
   }
+
+  if (!opts_.pool_stats_config_file.empty()) {
+    try {
+      folly::dynamic poolStatJson =
+          readStaticJsonFile(opts_.pool_stats_config_file);
+      if (poolStatJson != nullptr) {
+        auto jStatsEnabledPools = poolStatJson.get_ptr("stats_enabled_pools");
+        if (jStatsEnabledPools && jStatsEnabledPools->isArray()) {
+          for (const auto& it : *jStatsEnabledPools) {
+            if (it.isString()) {
+              statsEnabledPools_.push_back(it.asString());
+            } else {
+              LOG(ERROR) << "Pool Name is not a string";
+            }
+          }
+        }
+      }
+    } catch (const std::exception& e) {
+      LOG(ERROR) << "Invalid pool-stats-config-file : " << e.what();
+    }
+  }
 }
 
 void CarbonRouterInstanceBase::setUpCompressionDictionaries(
@@ -168,6 +189,30 @@ CarbonRouterInstanceBase::asyncWriter() {
 std::shared_ptr<folly::FunctionScheduler>
 CarbonRouterInstanceBase::functionScheduler() {
   return globalFunctionScheduler.try_get();
+}
+
+int32_t CarbonRouterInstanceBase::getStatsEnabledPoolIndex(
+    const folly::StringPiece poolName) const {
+  if (statsEnabledPools_.size() == 0) {
+    return -1;
+  }
+
+  int longestPrefixMatchIndex = -1;
+  // Do sequential search for longest matching name. Since this is done
+  // only once during the initialization and the size of the array is
+  // expected to be small, linear search should be OK.
+  for (size_t i = 0; i < statsEnabledPools_.size(); i++) {
+    if (poolName.subpiece(0, statsEnabledPools_[i].length())
+            .compare(statsEnabledPools_[i]) == 0) {
+      if ((longestPrefixMatchIndex == -1) ||
+          (statsEnabledPools_[longestPrefixMatchIndex].length() <
+           statsEnabledPools_[i].length())) {
+        longestPrefixMatchIndex = i;
+      }
+    }
+  }
+
+  return longestPrefixMatchIndex;
 }
 
 } // mcrouter

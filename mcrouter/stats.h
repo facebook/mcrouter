@@ -131,6 +131,9 @@ uint64_t stat_get_uint64(const stat_t*, stat_name_t);
 uint64_t stat_get_config_age(const stat_t* stats, uint64_t now);
 McStatsReply stats_reply(ProxyBase*, folly::StringPiece);
 void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats);
+void append_pool_stats(
+    CarbonRouterInstanceBase& router,
+    std::vector<stat_t>& stats);
 
 void set_standalone_args(folly::StringPiece args);
 
