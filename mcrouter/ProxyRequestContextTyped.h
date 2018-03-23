@@ -91,8 +91,11 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
   }
 
   ~ProxyRequestContextWithInfo() override {
-    proxy_.stats().incrementPoolStats(
-        poolStatIndex_, 1, isErrorResult(finalResult_) ? 1 : 0);
+    if (auto poolStats = proxy_.stats().getPoolStats(poolStatIndex_)) {
+      poolStats->incrementFinalResultErrorCount(
+          isErrorResult(finalResult_) ? 1 : 0);
+      poolStats->addTotalDurationSample(nowUs() - startDurationUs_);
+    }
     if (reqComplete_) {
       fiber_local<RouterInfo>::runWithoutLocals(
           [this]() { reqComplete_(*this); });
@@ -112,11 +115,16 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
       RequestClass requestClass,
       const int64_t startTimeUs,
       const int64_t endTimeUs,
+      const int32_t poolStatIndex,
       const ReplyStatsContext replyStatsContext) {
     if (recording()) {
       return;
     }
 
+    if (auto poolStats = proxy_.stats().getPoolStats(poolStatIndex)) {
+      poolStats->incrementRequestCount(1);
+      poolStats->addDurationSample(endTimeUs - startTimeUs);
+    }
     RequestLoggerContext loggerContext(
         poolName,
         ap,
@@ -162,6 +170,7 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
 
   folly::Optional<ProxyRequestLogger<RouterInfo>> logger_;
   folly::Optional<AdditionalLogger> additionalLogger_;
+  int64_t startDurationUs_{nowUs()};
 };
 
 template <class RouterInfo, class Request>

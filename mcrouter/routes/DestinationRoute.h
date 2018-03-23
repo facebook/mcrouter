@@ -107,7 +107,7 @@ class DestinationRoute {
   const std::shared_ptr<ProxyDestination> destination_;
   const folly::StringPiece poolName_;
   const size_t indexInPool_;
-  const int poolStatIndex_{-1};
+  const int32_t poolStatIndex_{-1};
   const std::chrono::milliseconds timeout_;
   size_t pendingShadowReqs_{0};
   const bool keepRoutingPrefix_;
@@ -180,6 +180,7 @@ class DestinationRoute {
         fiber_local<RouterInfo>::getRequestClass(),
         now,
         now,
+        poolStatIndex_,
         replyContext);
     return reply;
   }
@@ -216,6 +217,7 @@ class DestinationRoute {
         fiber_local<RouterInfo>::getRequestClass(),
         dctx.startTime,
         dctx.endTime,
+        poolStatIndex_,
         replyContext);
 
     fiber_local<RouterInfo>::setServerLoad(replyContext.serverLoad);

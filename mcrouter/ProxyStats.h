@@ -142,15 +142,19 @@ class ProxyStats {
     return poolStatsMap;
   }
 
-  void incrementPoolStats(
-      int32_t idx,
-      uint64_t requestCount,
-      uint64_t finalErrorResultCount) {
+  /**
+   * Returns pointer to the entry corresponding to the idx in
+   * the poolStats vector. If the idx is invalid, nullptr is returned
+   *
+   * @param  idx
+   * @return pointer to poolStats vector entry
+   *         nullptr if idx is invalid
+   */
+  PoolStats* getPoolStats(int32_t idx) {
     if (idx < 0 || static_cast<size_t>(idx) >= poolStats_.size()) {
-      return;
+      return nullptr;
     }
-    poolStats_[idx].incrementRequestCount(requestCount);
-    poolStats_[idx].incrementFinalResultErrorCount(finalErrorResultCount);
+    return &poolStats_[idx];
   }
 
  private:

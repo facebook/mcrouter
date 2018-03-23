@@ -68,6 +68,7 @@ class ErrorRoute {
           fiber_local<RouterInfo>::getRequestClass(),
           now,
           now,
+          -1,
           replyContext);
     }
     return reply;
