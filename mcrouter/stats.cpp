@@ -233,7 +233,7 @@ static std::string max_max_stat_to_str(ProxyBase* proxy, int idx) {
 static std::string stat_to_str(const stat_t* stat, void* /* ptr */) {
   switch (stat->type) {
     case stat_string:
-      return stat->data.string;
+      return stat->data.string ? stat->data.string : "";
     case stat_uint64:
       return folly::to<std::string>(stat->data.uint64);
     case stat_int64:
