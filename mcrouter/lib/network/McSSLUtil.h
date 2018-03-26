@@ -13,11 +13,11 @@
 namespace facebook {
 namespace memcache {
 /**
- * A utility class for SSL related items in McRouter Servers.
- * Manages an app specific SSL verification routine that is used by
- * McServerSession when verifying SSL handshakes.
+ * A utility class for SSL related items in McRouter clients and servers.
+ * Manages app-specific SSL routines that are used by clients and servers during
+ * and immediately after SSL handshakes.
  */
-class McServerSSLUtil {
+class McSSLUtil {
  public:
   using SSLVerifyFunction =
       folly::Function<bool(folly::AsyncSSLSocket*, bool, X509_STORE_CTX*)

@@ -7,7 +7,7 @@
  */
 #include <gtest/gtest.h>
 
-#include "mcrouter/lib/network/McServerSSLUtil.h"
+#include "mcrouter/lib/network/McSSLUtil.h"
 #include "mcrouter/lib/network/test/TestClientServerUtil.h"
 
 using namespace facebook::memcache;
@@ -60,7 +60,7 @@ TEST(AsyncMcServer, sslCertCommonName) {
 }
 
 TEST(AsyncMcServer, sslVerify) {
-  McServerSSLUtil::setApplicationSSLVerifier(
+  McSSLUtil::setApplicationSSLVerifier(
       [](folly::AsyncSSLSocket*, bool, X509_STORE_CTX*) { return false; });
   auto server = TestServer::create(false, true /* use ssl */);
 
