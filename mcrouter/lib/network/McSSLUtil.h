@@ -22,6 +22,8 @@ class McSSLUtil {
   using SSLVerifyFunction =
       folly::Function<bool(folly::AsyncSSLSocket*, bool, X509_STORE_CTX*)
                           const noexcept>;
+  using SSLFinalizeFunction =
+      folly::Function<void(folly::AsyncTransportWrapper*) const noexcept>;
 
   static bool verifySSLWithDefaultBehavior(
       folly::AsyncSSLSocket*,
@@ -37,10 +39,24 @@ class McSSLUtil {
   static void setApplicationSSLVerifier(SSLVerifyFunction func);
 
   /**
+   * Install an app specific SSL finalizer for the server.  This function will
+   * be called from multiple threads, so it must be threadsafe.
+   * This function should be called once, typically around application init and
+   * before the server has received any requests.
+   */
+  static void setApplicationServerSSLFinalizer(SSLFinalizeFunction func);
+
+  /**
    * Verify an SSL connection.  If no application verifier is set, the default
    * verifier is used.
    */
   static bool verifySSL(folly::AsyncSSLSocket*, bool, X509_STORE_CTX*) noexcept;
+
+  /**
+   * Finalize a server SSL connection. Use this to do any processing on the
+   * transport after the connection has been accepted.
+   */
+  static void finalizeServerSSL(folly::AsyncTransportWrapper*) noexcept;
 };
 } // namespace memcache
 } // namespace facebook

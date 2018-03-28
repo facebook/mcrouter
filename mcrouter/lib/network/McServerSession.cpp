@@ -498,6 +498,7 @@ void McServerSession::handshakeSuc(folly::AsyncSSLSocket* sock) noexcept {
       clientCommonName_.assign(std::string(cn, res));
     }
   }
+  McSSLUtil::finalizeServerSSL(transport_.get());
 }
 
 void McServerSession::handshakeErr(
