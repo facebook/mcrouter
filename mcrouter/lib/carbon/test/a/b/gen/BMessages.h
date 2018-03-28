@@ -286,7 +286,6 @@ class YetAnotherReply : public carbon::ReplyCommon {
  private:
   carbon::Result result_{mc_res_unknown};
 };
-
 } // namespace util
 } // namespace test2
 } // namespace carbon

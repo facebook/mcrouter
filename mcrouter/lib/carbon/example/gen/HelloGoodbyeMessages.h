@@ -231,7 +231,6 @@ class GoodbyeReply : public carbon::ReplyCommon {
   std::string message_;
   carbon::Result result_{mc_res_unknown};
 };
-
 } // namespace hellogoodbye
 
 #include "HelloGoodbyeMessages-inl.h"

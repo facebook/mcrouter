@@ -200,6 +200,5 @@ inline constexpr size_t
 MemcacheRouterStatsConfig::getStatGroup<McTouchRequest>() {
   return 16; // stat group 'touch'
 }
-
 } // namespace memcache
 } // namespace facebook

@@ -278,6 +278,5 @@ class MemcacheRouteHandle : public MemcacheRouteHandleIf {
  private:
   Route route_;
 };
-
 } // namespace memcache
 } // namespace facebook

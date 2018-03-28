@@ -1558,6 +1558,5 @@ void McFlushAllReply::deserialize(carbon::CarbonProtocolReader& reader) {
   }
   reader.readStructEnd();
 }
-
 } // namespace memcache
 } // namespace facebook

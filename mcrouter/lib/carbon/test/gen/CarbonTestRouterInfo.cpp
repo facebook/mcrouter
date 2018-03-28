@@ -86,6 +86,5 @@ std::unique_ptr<ExtraRouteHandleProviderIf<CarbonTestRouterInfo>>
 CarbonTestRouterInfo::buildExtraProvider() {
   return std::make_unique<McExtraRouteHandleProvider<CarbonTestRouterInfo>>();
 }
-
 } // namespace test
 } // namespace carbon

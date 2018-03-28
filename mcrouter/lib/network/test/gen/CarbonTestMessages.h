@@ -346,7 +346,6 @@ class ManyFields {
   folly::IOBuf buf39_;
   folly::IOBuf buf40_;
 };
-
 } // namespace test
 } // namespace memcache
 } // namespace facebook

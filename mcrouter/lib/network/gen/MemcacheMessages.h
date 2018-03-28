@@ -2043,7 +2043,6 @@ class McFlushAllReply : public carbon::ReplyCommon {
   carbon::Result result_{mc_res_unknown};
   int16_t appSpecificErrorCode_{0};
 };
-
 } // namespace memcache
 } // namespace facebook
 

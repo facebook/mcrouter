@@ -107,5 +107,4 @@ struct UpdateLike<facebook::memcache::McSetRequest> {
   static const bool value = true;
   typedef void* Type;
 };
-
 } // namespace carbon

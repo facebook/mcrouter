@@ -115,6 +115,5 @@ class CarbonTestRouteHandle : public CarbonTestRouteHandleIf {
  private:
   Route route_;
 };
-
 } // namespace test
 } // namespace carbon

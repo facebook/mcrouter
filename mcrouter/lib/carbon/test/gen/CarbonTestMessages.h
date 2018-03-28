@@ -662,7 +662,6 @@ class TestOptionalUnion {
 
   uint32_t _which_{0};
 };
-
 } // namespace test
 } // namespace carbon
 

@@ -100,6 +100,5 @@ void SimpleStruct::deserialize(carbon::CarbonProtocolReader& reader) {
   }
   reader.readStructEnd();
 }
-
 } // namespace test
 } // namespace carbon

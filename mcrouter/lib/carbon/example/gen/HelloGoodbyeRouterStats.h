@@ -49,5 +49,4 @@ inline constexpr size_t
 HelloGoodbyeRouterStatsConfig::getStatGroup<HelloRequest>() {
   return 1; // stat group 'hello'
 }
-
 } // namespace hellogoodbye

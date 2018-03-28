@@ -64,7 +64,6 @@ class HelloGoodbyeJsonClient : public JsonClient {
     return false;
   }
 };
-
 } // anonymous namespace
 
 int main(int argc, const char** argv) {

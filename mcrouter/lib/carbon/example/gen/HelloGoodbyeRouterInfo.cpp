@@ -88,5 +88,4 @@ std::unique_ptr<ExtraRouteHandleProviderIf<HelloGoodbyeRouterInfo>>
 HelloGoodbyeRouterInfo::buildExtraProvider() {
   return std::make_unique<McExtraRouteHandleProvider<HelloGoodbyeRouterInfo>>();
 }
-
 } // namespace hellogoodbye

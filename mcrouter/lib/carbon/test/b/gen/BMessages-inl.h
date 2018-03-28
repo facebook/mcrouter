@@ -73,6 +73,5 @@ void SimpleStruct::visitFields(V&& v) const {
     return;
   }
 }
-
 } // namespace test
 } // namespace carbon

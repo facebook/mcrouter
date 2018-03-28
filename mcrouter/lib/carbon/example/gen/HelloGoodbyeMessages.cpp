@@ -162,5 +162,4 @@ void GoodbyeReply::deserialize(carbon::CarbonProtocolReader& reader) {
   }
   reader.readStructEnd();
 }
-
 } // namespace hellogoodbye

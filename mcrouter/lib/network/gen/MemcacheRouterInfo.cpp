@@ -86,6 +86,5 @@ std::unique_ptr<ExtraRouteHandleProviderIf<MemcacheRouterInfo>>
 MemcacheRouterInfo::buildExtraProvider() {
   return std::make_unique<McExtraRouteHandleProvider<MemcacheRouterInfo>>();
 }
-
 } // namespace memcache
 } // namespace facebook

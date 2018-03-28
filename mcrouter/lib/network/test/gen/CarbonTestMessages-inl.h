@@ -264,7 +264,6 @@ void ManyFields::visitFields(V&& v) const {
     return;
   }
 }
-
 } // namespace test
 } // namespace memcache
 } // namespace facebook
