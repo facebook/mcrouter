@@ -182,6 +182,7 @@ std::shared_ptr<SSLContext> createServerSSLContext(
   if (!configureSSLContext(*sslContext, pemCertPath, pemKeyPath, pemCaPath)) {
     return nullptr;
   }
+  sslContext->setServerECCurve("prime256v1");
 #ifdef SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB
   // ServerSSLContext handles null
   sslContext->setupTicketManager(ticketKeySeeds.get_pointer(), cfg, nullptr);
