@@ -34,7 +34,7 @@ RUN_DURATION=${RUN_DURATION:-30}
 
 sudo apt-get install -y wget gcc g++ libevent-dev make build-essential
 
-source common.sh
+source common_run_loadtest.sh
 # Disable verbose logging.
 set +x
 
