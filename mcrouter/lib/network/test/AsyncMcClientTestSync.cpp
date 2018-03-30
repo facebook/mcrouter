@@ -15,6 +15,7 @@
 #include <folly/fibers/FiberManager.h>
 #include <folly/io/async/EventBase.h>
 
+#include "mcrouter/lib/network/McSSLUtil.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
@@ -169,6 +170,33 @@ TEST(AsyncMcClient, invalidCerts) {
 
 TEST(AsyncMcClient, brokenCerts) {
   testCerts("test-brokenCerts", brokenSsl(), 2);
+}
+
+TEST(AsyncMcClient, testClientFinalize) {
+  folly::AsyncTransportWrapper* transportCalledInFinalizer;
+  McSSLUtil::setApplicationClientSSLFinalizer(
+      [&transportCalledInFinalizer](folly::AsyncTransportWrapper* transport) {
+        transportCalledInFinalizer = transport;
+      });
+
+  auto server = TestServer::create(false, true);
+  TestClient client(
+      "localhost",
+      server->getListenPort(),
+      200,
+      mc_caret_protocol,
+      validClientSsl());
+
+  client.sendGet("test1", mc_res_found);
+  client.waitForReplies();
+  server->shutdown();
+  server->join();
+  EXPECT_EQ(client.getClient().getTransport(), transportCalledInFinalizer);
+  EXPECT_EQ(1, server->getAcceptedConns());
+
+  // Unset so we don't pollute other tests
+  McSSLUtil::setApplicationClientSSLFinalizer(
+      [](folly::AsyncTransportWrapper*) {});
 }
 
 void inflightThrottleTest(SSLContextProvider ssl) {

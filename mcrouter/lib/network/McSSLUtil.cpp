@@ -28,6 +28,11 @@ static McSSLUtil::SSLFinalizeFunction& getServerFinalizeFuncRef() {
   static McSSLUtil::SSLFinalizeFunction FINALIZER;
   return FINALIZER;
 }
+
+static McSSLUtil::SSLFinalizeFunction& getClientFinalizeFuncRef() {
+  static McSSLUtil::SSLFinalizeFunction FINALIZER;
+  return FINALIZER;
+}
 } // namespace
 
 bool McSSLUtil::verifySSLWithDefaultBehavior(
@@ -88,12 +93,24 @@ void McSSLUtil::setApplicationServerSSLFinalizer(SSLFinalizeFunction func) {
   getServerFinalizeFuncRef() = std::move(func);
 }
 
+void McSSLUtil::setApplicationClientSSLFinalizer(SSLFinalizeFunction func) {
+  folly::SharedMutex::WriteHolder wh(getMutex());
+  getClientFinalizeFuncRef() = std::move(func);
+}
+
 void McSSLUtil::finalizeServerSSL(
     folly::AsyncTransportWrapper* transport) noexcept {
-  // It should be fine to hold onto the read holder since writes to this
-  // will typically happen at app startup.
   folly::SharedMutex::ReadHolder rh(getMutex());
   auto& func = getServerFinalizeFuncRef();
+  if (func) {
+    func(transport);
+  }
+}
+
+void McSSLUtil::finalizeClientSSL(
+    folly::AsyncTransportWrapper* transport) noexcept {
+  folly::SharedMutex::ReadHolder rh(getMutex());
+  auto& func = getClientFinalizeFuncRef();
   if (func) {
     func(transport);
   }

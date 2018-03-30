@@ -18,6 +18,7 @@
 
 #include "mcrouter/lib/debug/FifoManager.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
+#include "mcrouter/lib/network/McSSLUtil.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 
 namespace facebook {
@@ -582,6 +583,7 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
       connectionOptions_.sessionCachingEnabled) {
     auto* sslSocket = socket_->getUnderlyingTransport<folly::AsyncSSLSocket>();
     assert(sslSocket != nullptr);
+    McSSLUtil::finalizeClientSSL(sslSocket);
   }
 
   assert(getInflightRequestCount() == 0);

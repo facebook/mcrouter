@@ -47,6 +47,14 @@ class McSSLUtil {
   static void setApplicationServerSSLFinalizer(SSLFinalizeFunction func);
 
   /**
+   * Install an app specific SSL finalizer for the client.  This function will
+   * be called from multiple threads, so it must be threadsafe.
+   * This function should be called once, before the client has sent any
+   * requests.
+   */
+  static void setApplicationClientSSLFinalizer(SSLFinalizeFunction func);
+
+  /**
    * Verify an SSL connection.  If no application verifier is set, the default
    * verifier is used.
    */
@@ -57,6 +65,12 @@ class McSSLUtil {
    * transport after the connection has been accepted.
    */
   static void finalizeServerSSL(folly::AsyncTransportWrapper*) noexcept;
+
+  /**
+   * Finalize a client SSL connection. Use this to do any processing on the
+   * transport after the connection has been accepted.
+   */
+  static void finalizeClientSSL(folly::AsyncTransportWrapper*) noexcept;
 };
 } // namespace memcache
 } // namespace facebook
