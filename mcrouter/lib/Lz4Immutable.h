@@ -102,6 +102,11 @@ class Lz4Immutable {
       size_t iovcnt,
       size_t uncompressedSize) const noexcept;
 
+  // Read-only access to the immutable dictionary.
+  const folly::IOBuf& dictionary() const {
+    return *state_.dictionary;
+  }
+
  private:
   // Compress 'source' into 'output' which has space for 'maxOutputSize' bytes.
   // NOTE: the caller must guarantee 'source' is not too large and
