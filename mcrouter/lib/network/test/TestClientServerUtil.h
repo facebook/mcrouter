@@ -111,13 +111,20 @@ class TestServer {
   }
 
   template <class OnRequest = TestServerOnRequest>
-  static std::unique_ptr<TestServer> create(Config config) {
+  static std::unique_ptr<TestServer> create(
+      Config config,
+      folly::Function<MemcacheRequestHandler<OnRequest>(
+          folly::fibers::Baton& shutdownLock,
+          bool outOfOrder)> onRequestCreator =
+          [](folly::fibers::Baton& shutdownLockArg, bool outOfOrderArg) {
+            return MemcacheRequestHandler<OnRequest>(
+                shutdownLockArg, outOfOrderArg);
+          }) {
     std::unique_ptr<TestServer> server(new TestServer(config));
-
-    server->run([&config, &s = *server](AsyncMcServerWorker& worker) {
+    server->run([&config, &onRequestCreator, &s = *server](
+                    AsyncMcServerWorker& worker) mutable {
       worker.setCompressionCodecMap(config.compressionCodecMap);
-      worker.setOnRequest(
-          MemcacheRequestHandler<OnRequest>(s.shutdownLock_, s.outOfOrder_));
+      worker.setOnRequest(onRequestCreator(s.shutdownLock_, s.outOfOrder_));
     });
     return server;
   }
