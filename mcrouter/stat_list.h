@@ -162,6 +162,8 @@ STUI(result_tko_count, 0, 1)
 STUI(result_tko_all_count, 0, 1)
 STUI(result_local_error_count, 0, 1)
 STUI(result_local_error_all_count, 0, 1)
+STUI(failover_custom_master_region, 0, 1)
+STUI(failover_custom_master_region_skipped, 0, 1)
 #undef GROUP
 #define GROUP ods_stats | detailed_stats | rate_stats
 STUIR(final_result_error, 0, 1)
