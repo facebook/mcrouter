@@ -88,73 +88,37 @@ class TestServer {
  public:
   ~TestServer();
 
+  struct Config {
+    bool outOfOrder = true;
+    bool useSsl = true;
+    int maxInflight = 10;
+    int timeoutMs = 250;
+    size_t maxConns = 100;
+    bool useDefaultVersion = false;
+    size_t numThreads = 1;
+    bool useTicketKeySeeds = false;
+    size_t goAwayTimeoutMs = 1000;
+    const CompressionCodecMap* compressionCodecMap = nullptr;
+    bool tfoEnabled = false;
+    const char* const caPath = getDefaultCaPath();
+    const char* const certPath = getDefaultCertPath();
+    const char* const keyPath = getDefaultKeyPath();
+  };
+
   template <class OnRequest = TestServerOnRequest>
-  static std::unique_ptr<TestServer> create(
-      bool outOfOrder,
-      bool useSsl,
-      int maxInflight = 10,
-      int timeoutMs = 250,
-      size_t maxConns = 100,
-      bool useDefaultVersion = false,
-      size_t numThreads = 1,
-      bool useTicketKeySeeds = false,
-      size_t goAwayTimeoutMs = 1000,
-      const CompressionCodecMap* compressionCodecMap = nullptr,
-      bool tfoEnabled = false) {
-    return createWithCustomSslPaths(
-        outOfOrder,
-        useSsl,
-        getDefaultCaPath(),
-        getDefaultCertPath(),
-        getDefaultKeyPath(),
-        maxInflight,
-        timeoutMs,
-        maxConns,
-        useDefaultVersion,
-        numThreads,
-        useTicketKeySeeds,
-        goAwayTimeoutMs,
-        compressionCodecMap,
-        tfoEnabled);
+  static std::unique_ptr<TestServer> create() {
+    return create(Config());
   }
 
   template <class OnRequest = TestServerOnRequest>
-  static std::unique_ptr<TestServer> createWithCustomSslPaths(
-      bool outOfOrder,
-      bool useSsl,
-      const char* const caPath,
-      const char* const certPath,
-      const char* const keyPath,
-      int maxInflight = 10,
-      int timeoutMs = 250,
-      size_t maxConns = 100,
-      bool useDefaultVersion = false,
-      size_t numThreads = 1,
-      bool useTicketKeySeeds = false,
-      size_t goAwayTimeoutMs = 1000,
-      const CompressionCodecMap* compressionCodecMap = nullptr,
-      bool tfoEnabled = false) {
-    std::unique_ptr<TestServer> server(new TestServer(
-        outOfOrder,
-        useSsl,
-        maxInflight,
-        timeoutMs,
-        maxConns,
-        useDefaultVersion,
-        numThreads,
-        useTicketKeySeeds,
-        goAwayTimeoutMs,
-        tfoEnabled,
-        caPath,
-        certPath,
-        keyPath));
+  static std::unique_ptr<TestServer> create(Config config) {
+    std::unique_ptr<TestServer> server(new TestServer(config));
 
-    server->run(
-        [compressionCodecMap, &s = *server](AsyncMcServerWorker& worker) {
-          worker.setCompressionCodecMap(compressionCodecMap);
-          worker.setOnRequest(MemcacheRequestHandler<OnRequest>(
-              s.shutdownLock_, s.outOfOrder_));
-        });
+    server->run([&config, &s = *server](AsyncMcServerWorker& worker) {
+      worker.setCompressionCodecMap(config.compressionCodecMap);
+      worker.setOnRequest(
+          MemcacheRequestHandler<OnRequest>(s.shutdownLock_, s.outOfOrder_));
+    });
     return server;
   }
 
@@ -188,20 +152,7 @@ class TestServer {
   folly::fibers::Baton shutdownLock_;
   std::atomic<size_t> acceptedConns_{0};
 
-  TestServer(
-      bool outOfOrder,
-      bool useSsl,
-      int maxInflight,
-      int timeoutMs,
-      size_t maxConns,
-      bool useDefaultVersion,
-      size_t numThreads,
-      bool useTicketKeySeeds,
-      size_t goAwayTimeoutMs,
-      bool tfoEnabled,
-      const char* const caPath = getDefaultCaPath(),
-      const char* const certPath = getDefaultCertPath(),
-      const char* const keyPath = getDefaultKeyPath());
+  explicit TestServer(Config config);
 
   void run(std::function<void(AsyncMcServerWorker&)> init);
 };

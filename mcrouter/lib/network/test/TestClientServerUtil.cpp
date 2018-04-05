@@ -148,33 +148,22 @@ void TestServerOnRequest::flushQueue() {
   waitingReplies_.clear();
 }
 
-TestServer::TestServer(
-    bool outOfOrder,
-    bool useSsl,
-    int maxInflight,
-    int timeoutMs,
-    size_t maxConns,
-    bool useDefaultVersion,
-    size_t numThreads,
-    bool useTicketKeySeeds,
-    size_t goAwayTimeoutMs,
-    bool tfoEnabled,
-    const char* const caPath,
-    const char* const certPath,
-    const char* const keyPath)
-    : outOfOrder_(outOfOrder), useTicketKeySeeds_(useSsl && useTicketKeySeeds) {
+TestServer::TestServer(Config config)
+    : outOfOrder_(config.outOfOrder),
+      useTicketKeySeeds_(config.useSsl && config.useTicketKeySeeds) {
   opts_.existingSocketFd = sock_.getSocketFd();
-  opts_.numThreads = numThreads;
-  opts_.worker.defaultVersionHandler = useDefaultVersion;
-  opts_.worker.maxInFlight = maxInflight;
-  opts_.worker.sendTimeout = std::chrono::milliseconds{timeoutMs};
-  opts_.worker.goAwayTimeout = std::chrono::milliseconds{goAwayTimeoutMs};
-  opts_.setPerThreadMaxConns(maxConns, opts_.numThreads);
-  if (useSsl) {
-    opts_.pemKeyPath = keyPath;
-    opts_.pemCertPath = certPath;
-    opts_.pemCaPath = caPath;
-    if (tfoEnabled) {
+  opts_.numThreads = config.numThreads;
+  opts_.worker.defaultVersionHandler = config.useDefaultVersion;
+  opts_.worker.maxInFlight = config.maxInflight;
+  opts_.worker.sendTimeout = std::chrono::milliseconds{config.timeoutMs};
+  opts_.worker.goAwayTimeout =
+      std::chrono::milliseconds{config.goAwayTimeoutMs};
+  opts_.setPerThreadMaxConns(config.maxConns, opts_.numThreads);
+  if (config.useSsl) {
+    opts_.pemKeyPath = config.keyPath;
+    opts_.pemCertPath = config.certPath;
+    opts_.pemCaPath = config.caPath;
+    if (config.tfoEnabled) {
       opts_.tfoEnabledForSsl = true;
       opts_.tfoQueueSize = 100000;
     }

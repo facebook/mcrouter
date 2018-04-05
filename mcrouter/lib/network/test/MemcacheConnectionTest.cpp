@@ -20,9 +20,13 @@
 #include "mcrouter/lib/network/gen/MemcacheConnection.h"
 #include "mcrouter/lib/network/test/TestClientServerUtil.h"
 
+using facebook::memcache::test::TestServer;
+
 TEST(MemcacheExternalConnectionTest, simpleExternalConnection) {
-  auto server = facebook::memcache::test::TestServer::create(
-      false /* outOfOrder */, false /* useSsl */);
+  TestServer::Config config;
+  config.outOfOrder = false;
+  config.useSsl = false;
+  auto server = TestServer::create(std::move(config));
   auto conn = std::make_unique<facebook::memcache::MemcacheExternalConnection>(
       facebook::memcache::ConnectionOptions(
           "localhost", server->getListenPort(), mc_caret_protocol));
@@ -56,8 +60,10 @@ TEST(MemcacheExternalConnectionTest, simpleExternalConnection) {
 }
 
 TEST(MemcachePooledConnectionTest, PooledExternalConnection) {
-  auto server = facebook::memcache::test::TestServer::create(
-      false /* outOfOrder */, false /* useSsl */);
+  TestServer::Config config;
+  config.outOfOrder = false;
+  config.useSsl = false;
+  auto server = TestServer::create(std::move(config));
   std::vector<std::unique_ptr<facebook::memcache::MemcacheConnection>> conns;
   for (int i = 0; i < 4; i++) {
     conns.push_back(
@@ -101,8 +107,10 @@ TEST(MemcacheInternalConnectionTest, simpleInternalConnection) {
   folly::SingletonVault::singleton()->destroyInstances();
   folly::SingletonVault::singleton()->reenableInstances();
 
-  auto server = facebook::memcache::test::TestServer::create(
-      false /* outOfOrder */, false /* useSsl */);
+  TestServer::Config config;
+  config.outOfOrder = false;
+  config.useSsl = false;
+  auto server = TestServer::create(std::move(config));
   facebook::memcache::McrouterOptions mcrouterOptions;
   mcrouterOptions.num_proxies = 1;
   mcrouterOptions.default_route = "/oregon/*/";
@@ -155,8 +163,10 @@ TEST(MemcachePooledConnectionTest, PooledInternalConnection) {
   folly::SingletonVault::singleton()->destroyInstances();
   folly::SingletonVault::singleton()->reenableInstances();
 
-  auto server = facebook::memcache::test::TestServer::create(
-      false /* outOfOrder */, false /* useSsl */);
+  TestServer::Config config;
+  config.outOfOrder = false;
+  config.useSsl = false;
+  auto server = TestServer::create(std::move(config));
   facebook::memcache::McrouterOptions mcrouterOptions;
   mcrouterOptions.num_proxies = 1;
   mcrouterOptions.default_route = "/oregon/*/";

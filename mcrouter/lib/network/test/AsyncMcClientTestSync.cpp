@@ -30,7 +30,10 @@ class AsyncSocket;
 } // namespace folly
 
 void serverShutdownTest(SSLContextProvider ssl) {
-  auto server = TestServer::create(false, ssl != noSsl());
+  TestServer::Config config;
+  config.outOfOrder = false;
+  config.useSsl = (ssl != noSsl());
+  auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
   client.sendGet("shutdown", mc_res_notfound);
@@ -48,7 +51,10 @@ TEST(AsyncMcClient, serverShutdownSsl) {
 }
 
 void simpleAsciiTimeoutTest(SSLContextProvider ssl) {
-  auto server = TestServer::create(false, ssl != noSsl());
+  TestServer::Config config;
+  config.outOfOrder = false;
+  config.useSsl = (ssl != noSsl());
+  auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
   client.sendGet("nohold1", mc_res_found);
@@ -70,7 +76,9 @@ TEST(AsyncMcClient, simpleAsciiTimeoutSsl) {
 }
 
 void simpleUmbrellaTimeoutTest(SSLContextProvider ssl) {
-  auto server = TestServer::create(true, ssl != noSsl());
+  TestServer::Config config;
+  config.useSsl = (ssl != noSsl());
+  auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost",
       server->getListenPort(),
@@ -140,7 +148,7 @@ void testCerts(std::string name, SSLContextProvider ssl, size_t numConns) {
   SCOPE_EXIT {
     failure::removeHandler(name);
   };
-  auto server = TestServer::create(true, true);
+  auto server = TestServer::create();
   TestClient brokenClient(
       "localhost",
       server->getListenPort(),
@@ -179,7 +187,9 @@ TEST(AsyncMcClient, testClientFinalize) {
         transportCalledInFinalizer = transport;
       });
 
-  auto server = TestServer::create(false, true);
+  TestServer::Config config;
+  config.outOfOrder = false;
+  auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost",
       server->getListenPort(),
@@ -200,7 +210,10 @@ TEST(AsyncMcClient, testClientFinalize) {
 }
 
 void inflightThrottleTest(SSLContextProvider ssl) {
-  auto server = TestServer::create(false, ssl != noSsl());
+  TestServer::Config config;
+  config.outOfOrder = false;
+  config.useSsl = (ssl != noSsl());
+  auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
   client.setThrottle(5, 6);
@@ -225,7 +238,10 @@ TEST(AsyncMcClient, inflightThrottleSsl) {
 }
 
 void inflightThrottleFlushTest(SSLContextProvider ssl) {
-  auto server = TestServer::create(false, ssl != noSsl());
+  TestServer::Config config;
+  config.outOfOrder = false;
+  config.useSsl = (ssl != noSsl());
+  auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
   client.setThrottle(6, 6);
@@ -251,7 +267,10 @@ TEST(AsyncMcClient, inflightThrottleFlushSsl) {
 }
 
 void outstandingThrottleTest(SSLContextProvider ssl) {
-  auto server = TestServer::create(false, ssl != noSsl());
+  TestServer::Config config;
+  config.outOfOrder = false;
+  config.useSsl = (ssl != noSsl());
+  auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
   client.setThrottle(5, 5);
@@ -277,7 +296,10 @@ TEST(AsyncMcClient, outstandingThrottleSsl) {
 }
 
 void connectionErrorTest(SSLContextProvider ssl) {
-  auto server = TestServer::create(false, ssl != noSsl());
+  TestServer::Config config;
+  config.outOfOrder = false;
+  config.useSsl = (ssl != noSsl());
+  auto server = TestServer::create(std::move(config));
   TestClient client1(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
   TestClient client2(
@@ -304,8 +326,10 @@ void basicTest(
     SSLContextProvider ssl,
     uint64_t qosClass = 0,
     uint64_t qosPath = 0) {
-  auto server =
-      TestServer::create(protocol != mc_ascii_protocol, ssl != noSsl());
+  TestServer::Config config;
+  config.outOfOrder = (protocol != mc_ascii_protocol);
+  config.useSsl = (ssl != noSsl());
+  auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost",
       server->getListenPort(),
@@ -381,8 +405,11 @@ TEST(AsyncMcClient, qosClass4) {
 void reconnectTest(mc_protocol_t protocol) {
   auto bigValue = genBigValue();
 
-  auto server =
-      TestServer::create(protocol == mc_umbrella_protocol_DONOTUSE, false);
+  TestServer::Config config;
+  config.outOfOrder = (protocol == mc_umbrella_protocol_DONOTUSE);
+  config.useSsl = false;
+  auto server = TestServer::create(std::move(config));
+
   TestClient client("localhost", server->getListenPort(), 100, protocol);
   client.sendGet("test1", mc_res_found);
   client.sendSet("test", "testValue", mc_res_stored);
@@ -412,8 +439,10 @@ TEST(AsyncMcClient, reconnectUmbrella) {
 void reconnectImmediatelyTest(mc_protocol_t protocol) {
   auto bigValue = genBigValue();
 
-  auto server =
-      TestServer::create(protocol == mc_umbrella_protocol_DONOTUSE, false);
+  TestServer::Config config;
+  config.outOfOrder = (protocol == mc_umbrella_protocol_DONOTUSE);
+  config.useSsl = false;
+  auto server = TestServer::create(std::move(config));
   TestClient client("localhost", server->getListenPort(), 100, protocol);
   client.sendGet("test1", mc_res_found);
   client.sendSet("test", "testValue", mc_res_stored);
@@ -445,8 +474,10 @@ TEST(AsyncMcClient, reconnectImmediatelyUmbrella) {
 }
 
 void bigKeyTest(mc_protocol_t protocol) {
-  auto server =
-      TestServer::create(protocol == mc_umbrella_protocol_DONOTUSE, false);
+  TestServer::Config config;
+  config.outOfOrder = (protocol == mc_umbrella_protocol_DONOTUSE);
+  config.useSsl = false;
+  auto server = TestServer::create(std::move(config));
   TestClient client("localhost", server->getListenPort(), 200, protocol);
   constexpr int len = MC_KEY_MAX_LEN_ASCII + 5;
   char key[len] = {0};
@@ -512,7 +543,10 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
 }
 
 TEST(AsyncMcClient, asciiSentTimeouts) {
-  auto server = TestServer::create(false /* outOfOrder */, false /* useSsl */);
+  TestServer::Config config;
+  config.outOfOrder = false;
+  config.useSsl = false;
+  auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol);
   client.sendGet("test", mc_res_found);
@@ -530,7 +564,10 @@ TEST(AsyncMcClient, asciiSentTimeouts) {
 }
 
 TEST(AsyncMcClient, asciiPendingTimeouts) {
-  auto server = TestServer::create(false /* outOfOrder */, false /* useSsl */);
+  TestServer::Config config;
+  config.outOfOrder = false;
+  config.useSsl = false;
+  auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol);
   // Allow only up to two requests in flight.
@@ -552,7 +589,10 @@ TEST(AsyncMcClient, asciiPendingTimeouts) {
 
 TEST(AsyncMcClient, asciiSendingTimeouts) {
   auto bigValue = genBigValue();
-  auto server = TestServer::create(false /* outOfOrder */, false /* useSsl */);
+  TestServer::Config config;
+  config.outOfOrder = false;
+  config.useSsl = false;
+  auto server = TestServer::create(std::move(config));
   // Use very large write timeout, so that we never timeout writes.
   TestClient client(
       "localhost", server->getListenPort(), 10000, mc_ascii_protocol);
@@ -581,7 +621,9 @@ TEST(AsyncMcClient, asciiSendingTimeouts) {
 }
 
 TEST(AsyncMcClient, oooUmbrellaTimeouts) {
-  auto server = TestServer::create(true /* outOfOrder */, false /* useSsl */);
+  TestServer::Config config;
+  config.useSsl = false;
+  auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_umbrella_protocol_DONOTUSE);
   // Allow only up to two requests in flight.
@@ -601,8 +643,11 @@ TEST(AsyncMcClient, oooUmbrellaTimeouts) {
 }
 
 TEST(AsyncMcClient, tonsOfConnections) {
-  auto server = TestServer::create(
-      false /* outOfOrder */, false /* useSsl */, 10, 250, 3 /* maxConns */);
+  TestServer::Config config;
+  config.outOfOrder = false;
+  config.useSsl = false;
+  config.maxConns = 3;
+  auto server = TestServer::create(std::move(config));
 
   bool wentDown = false;
 
@@ -687,15 +732,11 @@ TEST(AsyncMcClient, curruptedUmbrellaReply) {
 }
 
 TEST(AsyncMcClient, SslSessionCache) {
-  auto server = TestServer::create(
-      true,
-      true,
-      10,
-      250,
-      100,
-      true,
-      4 /* nThreads */,
-      true /* useTicketKeySeeds */);
+  TestServer::Config config;
+  config.useDefaultVersion = true;
+  config.numThreads = 4;
+  config.useTicketKeySeeds = true;
+  auto server = TestServer::create(std::move(config));
   auto constexpr nConnAttempts = 10;
 
   auto sendAndCheckRequest = [](TestClient& client, int i) {
@@ -750,13 +791,12 @@ TEST(AsyncMcClient, SslSessionCache) {
 }
 
 void versionTest(mc_protocol_t protocol, bool useDefaultVersion) {
-  auto server = TestServer::create(
-      protocol != mc_ascii_protocol /* OOO */,
-      false /* useSsl */,
-      10 /* maxInflight */,
-      200 /* timeoutMs */,
-      10 /* maxConns */,
-      useDefaultVersion);
+  TestServer::Config config;
+  config.outOfOrder = (protocol != mc_ascii_protocol);
+  config.useSsl = false;
+  config.maxConns = 10;
+  config.useDefaultVersion = useDefaultVersion;
+  auto server = TestServer::create(std::move(config));
   TestClient client("localhost", server->getListenPort(), 200, protocol);
 
   client.sendVersion(server->version());
@@ -790,7 +830,9 @@ TEST(AsyncMcClient, caretVersionUserSpecified) {
 }
 
 TEST(AsyncMcClient, caretAdditionalFields) {
-  auto server = TestServer::create(true /* OOO */, false /* useSsl */);
+  TestServer::Config config;
+  config.useSsl = false;
+  auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_caret_protocol);
   client.sendGet("trace_id", mc_res_found);
@@ -800,7 +842,9 @@ TEST(AsyncMcClient, caretAdditionalFields) {
 }
 
 TEST(AsyncMcClient, caretGoAway) {
-  auto server = TestServer::create(true /* OOO */, false /* useSsl */);
+  TestServer::Config config;
+  config.useSsl = false;
+  auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_caret_protocol);
   client.sendGet("test", mc_res_found);
@@ -845,18 +889,14 @@ class AsyncMcClientTFOTest : public testing::TestWithParam<BoolPair> {};
 TEST_P(AsyncMcClientTFOTest, testTfoWithSSL) {
   auto serverEnabled = std::get<0>(GetParam());
   auto clientEnabled = std::get<1>(GetParam());
-  auto server = TestServer::create(
-      true,
-      true,
-      10,
-      250,
-      100,
-      true,
-      4 /* nThreads */,
-      true /* useTicketKeySeeds */,
-      1000 /* go away timeout */,
-      nullptr,
-      serverEnabled);
+
+  TestServer::Config config;
+  config.useDefaultVersion = true;
+  config.numThreads = 4;
+  config.useTicketKeySeeds = true;
+  config.tfoEnabled = serverEnabled;
+  auto server = TestServer::create(std::move(config));
+
   auto constexpr nConnAttempts = 10;
 
   auto sendReq = [serverEnabled, clientEnabled](TestClient& client) {
