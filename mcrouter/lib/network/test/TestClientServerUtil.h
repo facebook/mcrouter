@@ -100,9 +100,9 @@ class TestServer {
     size_t goAwayTimeoutMs = 1000;
     const CompressionCodecMap* compressionCodecMap = nullptr;
     bool tfoEnabled = false;
-    const char* const caPath = getDefaultCaPath();
-    const char* const certPath = getDefaultCertPath();
-    const char* const keyPath = getDefaultKeyPath();
+    std::string caPath = getDefaultCaPath();
+    std::string certPath = getDefaultCertPath();
+    std::string keyPath = getDefaultKeyPath();
   };
 
   template <class OnRequest = TestServerOnRequest>
