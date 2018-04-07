@@ -20,8 +20,8 @@ namespace test {
 void BaseStruct::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
   writer.writeField(1 /* field id */, baseInt64Member());
+  writer.writeFieldStop();
   writer.writeStructEnd();
-  writer.writeStop();
 }
 
 void BaseStruct::deserialize(carbon::CarbonProtocolReader& reader) {
@@ -56,8 +56,8 @@ void SimpleStruct::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeField(2 /* field id */, stringMember());
   writer.writeField(3 /* field id */, enumMember());
   writer.writeField(4 /* field id */, vectorMember());
+  writer.writeFieldStop();
   writer.writeStructEnd();
-  writer.writeStop();
 }
 
 void SimpleStruct::deserialize(carbon::CarbonProtocolReader& reader) {

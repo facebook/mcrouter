@@ -21,8 +21,8 @@ namespace util {
 void SimpleStruct::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
   writer.writeField(1 /* field id */, member1());
+  writer.writeFieldStop();
   writer.writeStructEnd();
-  writer.writeStop();
 }
 
 void SimpleStruct::deserialize(carbon::CarbonProtocolReader& reader) {
@@ -68,8 +68,8 @@ void SimpleUnion::serialize(carbon::CarbonProtocolWriter& writer) const {
     default:
       break;
   }
+  writer.writeFieldStop();
   writer.writeStructEnd();
-  writer.writeStop();
 }
 
 void SimpleUnion::deserialize(carbon::CarbonProtocolReader& reader) {
@@ -110,8 +110,8 @@ constexpr const char* const YetAnotherRequest::name;
 void YetAnotherRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
   writer.writeField(1 /* field id */, key());
+  writer.writeFieldStop();
   writer.writeStructEnd();
-  writer.writeStop();
 }
 
 void YetAnotherRequest::deserialize(carbon::CarbonProtocolReader& reader) {
@@ -142,8 +142,8 @@ void YetAnotherRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 void YetAnotherReply::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
   writer.writeField(1 /* field id */, result());
+  writer.writeFieldStop();
   writer.writeStructEnd();
-  writer.writeStop();
 }
 
 void YetAnotherReply::deserialize(carbon::CarbonProtocolReader& reader) {
