@@ -25,11 +25,17 @@ namespace mcrouter {
  *
  * Sample json format:
  * {
- *   "pool": "Pool|smc:blah.test.region.00",
+ *   "pool": {
+ *     "type": "pool",
+ *     "name": "A",
+ *     "servers": [
+ *       "server1:12345",
+ *       "server2:12345"
+ *     ]
+ *   },
  *   "shards": [
  *     [1, 3, 6],
- *     [2, 4, 5],
- *     ...
+ *     [2, 4, 5]
  *   ],
  *   "out_of_range": "ErrorRoute"
  * }
@@ -37,12 +43,11 @@ namespace mcrouter {
  * Alternatively, "shards" can be an array of strings of comma-separated
  * shard ids. For example:
  * {
- *   "pool": "Pool|smc:blah.test.region.00",
+ *   "pool": "Pool|A",
  *   "shards": [
  *     "1,3,6",
- *     "2,4,5",
- *     ...
- *   ],
+ *     "2,4,5"
+ *   ]
  * }
  *
  *
@@ -76,14 +81,21 @@ typename RouterInfo::RouteHandlePtr createShardSelectionRoute(
  * {
  *   "children_type": "RouteHandle",
  *   "pools" : [
- *   {
- *     "pool": "Pool|smc:blah.test.region.00",
- *     "shards": [
- *       [1, 3, 6],
- *       [2, 4, 5],
- *       ...
- *     ],
- *   }
+ *      {
+ *        "pool": {
+ *          "type": "pool",
+ *          "name": "A",
+ *          "servers": [
+ *            "server1:12345",
+ *            "server2:12345"
+ *          ]
+ *        },
+ *        "shards": [
+ *          [1, 3, 6],
+ *          [2, 4, 5]
+ *        ]
+ *      }
+ *   ],
  *   "children_settings" : { .. },
  *   "out_of_range": "ErrorRoute"
  * }
