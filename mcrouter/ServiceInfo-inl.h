@@ -25,6 +25,7 @@
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/carbon/CarbonMessageConversionUtils.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
@@ -77,13 +78,19 @@ class RouteHandlesCommandDispatcher {
       const ProxyRoute<RouterInfo>& proxyRoute) {
     std::string tree;
     int level = 0;
+    Request request;
     RouteHandleTraverser<typename RouterInfo::RouteHandleIf> t(
         [&tree, &level](const typename RouterInfo::RouteHandleIf& rh) {
           tree.append(std::string(level, ' ') + rh.routeName() + '\n');
           ++level;
         },
         [&level]() { --level; });
-    proxyRoute.traverse(Request(key), t);
+    if (!key.empty() && key[0] == '{' && key[key.size() - 1] == '}') {
+      carbon::convertFromFollyDynamic(folly::parseJson(key), request);
+    } else {
+      request.key() = key;
+    }
+    proxyRoute.traverse(request, t);
     return tree;
   }
 };
@@ -120,9 +127,16 @@ class RouteCommandDispatcher {
                   [&destinations](const PoolContext&, const AccessPoint& dest) {
                     destinations->push_back(dest.toHostPortString());
                   });
-          Request recordingReq(keyStr);
+          Request recordingReq;
+          if (!keyStr.empty() && keyStr[0] == '{' &&
+              keyStr[keyStr.size() - 1] == '}') {
+            carbon::convertFromFollyDynamic(
+                folly::parseJson(keyStr), recordingReq);
+          } else {
+            recordingReq.key() = keyStr;
+          }
           fiber_local<RouterInfo>::runWithLocals(
-              [ ctx = std::move(rctx), &recordingReq, &proxyRoute ]() mutable {
+              [ctx = std::move(rctx), &recordingReq, &proxyRoute]() mutable {
                 fiber_local<RouterInfo>::setSharedCtx(std::move(ctx));
                 /* ignore the reply */
                 proxyRoute.route(recordingReq);
