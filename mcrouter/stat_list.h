@@ -92,6 +92,11 @@ STUI(fibers_stack_high_watermark, 0, 0)
 //  STUI(failed_client_connections, 0)
 STUI(successful_client_connections, 0, 1)
 STAT(duration_us, stat_double, 0, .dbl = 0.0)
+/**
+ * Duration microseconds, broken down by request type (get-like and update-like).
+ */
+STAT(duration_get_us, stat_double, 0, .dbl = 0.0)
+STAT(duration_update_us, stat_double, 0, .dbl = 0.0)
 #undef GROUP
 #define GROUP ods_stats | mcproxy_stats | max_stats
 STUI(destination_max_pending_reqs, 0, 1)
