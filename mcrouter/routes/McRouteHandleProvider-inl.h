@@ -419,6 +419,12 @@ McRouteHandleProvider<RouterInfo>::create(
   throwLogic("Unknown RouteHandle: {}", type);
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+template <class RouterInfo>
+const folly::dynamic& McRouteHandleProvider<RouterInfo>::parsePool(
+    const folly::dynamic& json) {
+  return poolFactory_.parsePool(json).json;
+}
+
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

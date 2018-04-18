@@ -355,10 +355,15 @@ TEST_F(ShardSelectionRouteTest, createValidShardList) {
 TEST_F(ShardSelectionRouteTest, route) {
   constexpr folly::StringPiece kSelectionRouteConfig = R"(
   {
-    "pool": [
-      "NullRoute",
-      "ErrorRoute"
-    ],
+    "pool": {
+      "type": "Pool",
+      "name": "SamplePool1",
+      "servers": [
+        {"type": "NullRoute"},
+        {"type": "ErrorRoute"}
+      ],
+      "protocol": "caret"
+    },
     "shards": [
       [1, 3, 5],
       [2, 4, 6]
@@ -400,14 +405,19 @@ TEST_F(ShardSelectionRouteTest, route) {
 TEST_F(ShardSelectionRouteTest, routeString) {
   constexpr folly::StringPiece kSelectionRouteConfig = R"(
   {
-    "pool": [
-      "NullRoute",
-      "ErrorRoute"
-    ],
-    "shards": [
-      "1, 3, 5",
-      "2, 4, 6"
-    ]
+    "pool": {
+      "type": "Pool",
+      "name": "SamplePool1",
+      "servers": [
+        {"type": "NullRoute"},
+        {"type": "ErrorRoute"}
+      ],
+      "protocol": "caret",
+      "shards": [
+        "1, 3, 5",
+        "2, 4, 6"
+      ]
+    }
   }
   )";
 
@@ -445,14 +455,19 @@ TEST_F(ShardSelectionRouteTest, routeString) {
 TEST_F(ShardSelectionRouteTest, outOfRange) {
   constexpr folly::StringPiece kSelectionRouteConfig = R"(
   {
-    "pool": [
-      "NullRoute",
-      "NullRoute"
-    ],
-    "shards": [
-      [1],
-      [2]
-    ]
+    "pool": {
+      "type": "Pool",
+      "name": "SamplePool1",
+      "servers": [
+        {"type": "NullRoute"},
+        {"type": "NullRoute"}
+      ],
+      "protocol": "caret",
+      "shards": [
+        [1],
+        [2]
+      ]
+    }
   }
   )";
 
@@ -478,10 +493,15 @@ TEST_F(ShardSelectionRouteTest, outOfRange) {
 TEST_F(ShardSelectionRouteTest, outOfRangeString) {
   constexpr folly::StringPiece kSelectionRouteConfig = R"(
   {
-    "pool": [
-      "NullRoute",
-      "NullRoute"
-    ],
+    "pool": {
+      "type": "Pool",
+      "name": "SamplePool1",
+      "servers": [
+        {"type": "NullRoute"},
+        {"type": "NullRoute"}
+      ],
+      "protocol": "caret"
+    },
     "shards": [
       "1",
       "2"
@@ -511,14 +531,19 @@ TEST_F(ShardSelectionRouteTest, outOfRangeString) {
 TEST_F(ShardSelectionRouteTest, customOutOfRangeRoute) {
   constexpr folly::StringPiece kSelectionRouteConfig = R"(
   {
-    "pool": [
-      "NullRoute",
-      "NullRoute"
-    ],
-    "shards": [
-      [1],
-      [2]
-    ],
+    "pool": {
+      "type": "Pool",
+      "name": "SamplePool1",
+      "servers": [
+        {"type": "NullRoute"},
+        {"type": "NullRoute"}
+      ],
+      "protocol": "caret",
+      "shards": [
+        [1],
+        [2]
+      ]
+    },
     "out_of_range": "ErrorRoute|Cool message!"
   }
   )";
@@ -546,10 +571,15 @@ TEST_F(ShardSelectionRouteTest, customOutOfRangeRoute) {
 TEST_F(ShardSelectionRouteTest, customOutOfRangeRouteString) {
   constexpr folly::StringPiece kSelectionRouteConfig = R"(
   {
-    "pool": [
-      "NullRoute",
-      "NullRoute"
-    ],
+    "pool": {
+      "type": "Pool",
+      "name": "SamplePool1",
+      "servers": [
+        {"type": "NullRoute"},
+        {"type": "NullRoute"}
+      ],
+      "protocol": "caret"
+    },
     "shards": [
       "1",
       "2"

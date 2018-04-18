@@ -54,6 +54,8 @@ class McRouteHandleProvider
       folly::StringPiece type,
       const folly::dynamic& json) final;
 
+  const folly::dynamic& parsePool(const folly::dynamic& json) final;
+
   folly::StringKeyedUnorderedMap<RouteHandlePtr> releaseAsyncLogRoutes() {
     return std::move(asyncLogRoutes_);
   }

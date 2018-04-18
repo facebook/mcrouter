@@ -99,24 +99,6 @@ size_t getMaxShardId(const std::vector<std::vector<size_t>>& allShards) {
   return maxShardId;
 }
 
-const folly::dynamic& getPoolJson(const folly::dynamic& json) {
-  assert(json.isObject());
-
-  auto poolJson = json.get_ptr("pool");
-  checkLogic(poolJson, "ShardSelectionRoute: 'pool' not found");
-  return *poolJson;
-}
-
-const folly::dynamic& getShardsJson(const folly::dynamic& json) {
-  assert(json.isObject());
-
-  auto shardsJson = json.get_ptr("shards");
-  checkLogic(
-      shardsJson && shardsJson->isArray(),
-      "ShardSelectionRoute: 'shards' not found or not an array");
-  return *shardsJson;
-}
-
 void parseShardsPerServerJson(
     const folly::dynamic& jShards,
     std::function<void(uint32_t)>&& handleShardFunc) {

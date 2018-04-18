@@ -62,6 +62,15 @@ class RouteHandleFactory {
    */
   std::vector<RouteHandlePtr> createList(const folly::dynamic& json);
 
+  /**
+   * Loads a pool from ConfigApi, expand `inherit`, etc.
+   *
+   * @param json  Json with the pool information.
+   *
+   * @return      The folly::dynamic object with pool name and final json blob.
+   */
+  const folly::dynamic& parsePool(const folly::dynamic& json);
+
   size_t getThreadId() const noexcept {
     return threadId_;
   }
@@ -80,7 +89,8 @@ class RouteHandleFactory {
       folly::StringPiece name,
       const folly::dynamic& json);
 };
-}
-} // facebook::memcache
+
+} // namespace memcache
+} // namespace facebook
 
 #include "RouteHandleFactory-inl.h"

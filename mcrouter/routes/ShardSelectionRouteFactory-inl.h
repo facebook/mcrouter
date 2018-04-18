@@ -21,16 +21,11 @@ namespace mcrouter {
 
 namespace detail {
 
-const folly::dynamic& getPoolJson(const folly::dynamic& json);
-
-const folly::dynamic& getShardsJson(const folly::dynamic& json);
-
+// declarations
 void parseShardsPerServerJson(
     const folly::dynamic& json,
     std::function<void(uint32_t)>&& f);
-
 size_t getMaxShardId(const std::vector<std::vector<size_t>>& allShards);
-
 std::vector<std::vector<size_t>> parseAllShardsJson(
     const folly::dynamic& allShardsJson);
 
@@ -54,6 +49,38 @@ inline bool containsShard(
     const std::unordered_map<uint32_t, uint32_t>& map,
     size_t shard) {
   return (map.find(shard) != map.end());
+}
+
+template <class RouterInfo>
+const folly::dynamic& getPoolJson(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json) {
+  assert(json.isObject());
+
+  const auto* poolJson = json.get_ptr("pool");
+  checkLogic(poolJson, "ShardSelectionRoute: 'pool' not found");
+  return factory.parsePool(*poolJson);
+}
+
+template <class RouterInfo>
+const folly::dynamic& getShardsJson(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json) {
+  assert(json.isObject());
+
+  // first, look for shards inside the pool.
+  const auto& poolJson = getPoolJson<RouterInfo>(factory, json);
+  const auto* shardsJson = poolJson.get_ptr("shards");
+
+  // if not found, look outside.
+  // TODO: kill this fallback logic when every client is at version >= 28
+  if (!shardsJson) {
+    shardsJson = json.get_ptr("shards");
+  }
+  checkLogic(
+      shardsJson && shardsJson->isArray(),
+      "ShardSelectionRoute: 'shards' not found or not an array");
+  return *shardsJson;
 }
 
 /**
@@ -100,8 +127,8 @@ using ShardDestinationsMap = std::
 
 template <class RouterInfo>
 ShardDestinationsMap<RouterInfo> getShardDestinationsMap(
-    const folly::dynamic& json,
-    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory) {
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json) {
   const auto jPools = [&json]() {
     auto poolsJson = json.get_ptr("pools");
     checkLogic(
@@ -112,9 +139,9 @@ ShardDestinationsMap<RouterInfo> getShardDestinationsMap(
   ShardDestinationsMap<RouterInfo> shardMap;
 
   for (const auto& jPool : jPools) {
-    auto poolJson = getPoolJson(jPool);
+    auto poolJson = getPoolJson<RouterInfo>(factory, jPool);
     auto destinations = factory.createList(poolJson);
-    auto shardsJson = getShardsJson(jPool);
+    auto shardsJson = getShardsJson<RouterInfo>(factory, jPool);
     checkLogic(
         shardsJson.size() == destinations.size(),
         "EagerShardSelectionRoute: 'shards' must have the same number of "
@@ -151,7 +178,7 @@ typename RouterInfo::RouteHandlePtr createShardSelectionRoute(
     const folly::dynamic& json) {
   checkLogic(json.isObject(), "ShardSelectionRoute config should be an object");
 
-  auto poolJson = detail::getPoolJson(json);
+  auto poolJson = detail::getPoolJson<RouterInfo>(factory, json);
   auto destinations = factory.createList(poolJson);
   if (destinations.empty()) {
     LOG(WARNING) << "ShardSelectionRoute: Empty list of destinations found. "
@@ -160,7 +187,7 @@ typename RouterInfo::RouteHandlePtr createShardSelectionRoute(
         "ShardSelectionRoute has an empty list of destinations");
   }
 
-  auto shardsJson = detail::getShardsJson(json);
+  const auto& shardsJson = detail::getShardsJson<RouterInfo>(factory, json);
   checkLogic(
       shardsJson.size() == destinations.size(),
       "ShardSelectionRoute: 'shards' must have the same number of "
@@ -187,7 +214,7 @@ typename RouterInfo::RouteHandlePtr createEagerShardSelectionRoute(
   checkLogic(
       json.isObject(), "EagerShardSelectionRoute config should be an object");
 
-  auto shardMap = detail::getShardDestinationsMap<RouterInfo>(json, factory);
+  auto shardMap = detail::getShardDestinationsMap<RouterInfo>(factory, json);
   if (shardMap.empty()) {
     return mcrouter::createErrorRoute<RouterInfo>(
         "EagerShardSelectionRoute has an empty list of destinations");

@@ -82,6 +82,6 @@ PoolFactory::PoolJson PoolFactory::parsePool(const folly::dynamic& json) {
   pools_.emplace(jname->stringPiece(), std::make_pair(json, PoolState::NEW));
   return parseNamedPool(jname->stringPiece());
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
