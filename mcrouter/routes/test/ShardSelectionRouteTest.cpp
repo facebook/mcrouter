@@ -183,7 +183,7 @@ TEST_F(ShardSelectionRouteTest, createMissingHost) {
     std::string errorMsg = e.what();
     EXPECT_EQ(
         "ShardSelectionRoute: 'shards' must have the same number of entries "
-        "as servers in 'pool'",
+        "as servers in 'pool'. Servers size: 1. Shards size: 2.",
         errorMsg);
   }
 }
@@ -214,7 +214,7 @@ TEST_F(ShardSelectionRouteTest, createMissingHostString) {
     std::string errorMsg = e.what();
     EXPECT_EQ(
         "ShardSelectionRoute: 'shards' must have the same number of entries "
-        "as servers in 'pool'",
+        "as servers in 'pool'. Servers size: 1. Shards size: 2.",
         errorMsg);
   }
 }
@@ -244,7 +244,7 @@ TEST_F(ShardSelectionRouteTest, createMissingShardList) {
     std::string errorMsg = e.what();
     EXPECT_EQ(
         "ShardSelectionRoute: 'shards' must have the same number of entries "
-        "as servers in 'pool'",
+        "as servers in 'pool'. Servers size: 2. Shards size: 1.",
         errorMsg);
   }
 }
@@ -274,7 +274,7 @@ TEST_F(ShardSelectionRouteTest, createMissingShardListString) {
     std::string errorMsg = e.what();
     EXPECT_EQ(
         "ShardSelectionRoute: 'shards' must have the same number of entries "
-        "as servers in 'pool'",
+        "as servers in 'pool'. Servers size: 2. Shards size: 1.",
         errorMsg);
   }
 }

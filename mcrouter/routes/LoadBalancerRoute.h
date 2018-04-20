@@ -71,7 +71,7 @@ class LoadBalancerRoute {
    *                                1 means no failover (just route once).
    *                                The value will be capped to
    *                                std::min(failoverCount, children.size())
-   * @param algorithm               AlgorithmType
+   * @param algorithm               Load balancing algorithm to use.
    * @param seed                    seed for random number generator used in
    *                                the two random choices algorithm.
    */
@@ -295,32 +295,32 @@ template <class RouterInfo>
 constexpr folly::StringPiece LoadBalancerRoute<RouterInfo>::kTwoRandomChoices;
 
 template <class RouterInfo>
-typename RouterInfo::RouteHandlePtr createLoadBalancerRoute(
-    const folly::dynamic& json,
-    std::vector<typename RouterInfo::RouteHandlePtr> rh) {
-  assert(json.isObject());
+struct LoadBalancerRouteOptions {
+  folly::StringPiece salt;
+  std::chrono::microseconds loadTtl{100 * 1000}; // 100 milliseconds
+  ServerLoad defaultServerLoad = ServerLoad::fromPercentLoad(50);
+  size_t failoverCount{1};
+  typename LoadBalancerRoute<RouterInfo>::AlgorithmType algorithm{
+      LoadBalancerRoute<RouterInfo>::AlgorithmType::WEIGHTED_HASHING};
+};
 
-  if (rh.size() == 0) {
-    return createNullRoute<typename RouterInfo::RouteHandleIf>();
-  }
+template <class RouterInfo>
+LoadBalancerRouteOptions<RouterInfo> parseLoadBalancerRouteJson(
+    const folly::dynamic& json) {
+  LoadBalancerRouteOptions<RouterInfo> options;
 
-  if (rh.size() == 1) {
-    return std::move(rh[0]);
-  }
-
-  std::string salt;
   if (auto jSalt = json.get_ptr("salt")) {
     checkLogic(jSalt->isString(), "LoadBalancerRoute: salt is not a string");
-    salt = jSalt->getString();
+    options.salt = jSalt->stringPiece();
   }
-  std::chrono::microseconds loadTtl(100 * 1000); // 100 milli seconds
+
   if (auto jLoadTtl = json.get_ptr("load_ttl_ms")) {
     checkLogic(
         jLoadTtl->isInt(), "LoadBalancerRoute: load_ttl_ms is not an integer");
-    loadTtl = std::chrono::duration_cast<std::chrono::microseconds>(
+    options.loadTtl = std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::milliseconds(jLoadTtl->getInt()));
   }
-  auto defaultServerLoad = ServerLoad::fromPercentLoad(50);
+
   if (auto jDefServerLoad = json.get_ptr("default_server_load_percent")) {
     checkLogic(
         jDefServerLoad->isInt(),
@@ -330,41 +330,70 @@ typename RouterInfo::RouteHandlePtr createLoadBalancerRoute(
         defServerLoad >= 0 && defServerLoad <= 100,
         "LoadBalancerRoute: default_server_load_percent must be"
         " an integer between 0 and 100");
-    defaultServerLoad = ServerLoad::fromPercentLoad(defServerLoad);
+    options.defaultServerLoad = ServerLoad::fromPercentLoad(defServerLoad);
   }
-  size_t failoverCount = 1;
+
   if (auto jFailoverCount = json.get_ptr("failover_count")) {
     checkLogic(
         jFailoverCount->isInt(),
         "LoadBalancerRoute: failover_count is not an integer");
-    failoverCount = jFailoverCount->getInt();
+    options.failoverCount = jFailoverCount->getInt();
   }
-  auto algorithm =
-      LoadBalancerRoute<RouterInfo>::AlgorithmType::WEIGHTED_HASHING;
-  std::string algorithmStr;
-  /* Optional and will default to weighted hashing */
+
   if (auto jAlgorithm = json.get_ptr("algorithm")) {
     checkLogic(
         jAlgorithm->isString(), "LoadBalancerRoute: algorithm is not a string");
-    algorithmStr = jAlgorithm->getString();
+    std::string algorithmStr = jAlgorithm->getString();
     if (algorithmStr == LoadBalancerRoute<RouterInfo>::kWeightedHashing) {
-      algorithm =
+      options.algorithm =
           LoadBalancerRoute<RouterInfo>::AlgorithmType::WEIGHTED_HASHING;
     } else if (
         algorithmStr == LoadBalancerRoute<RouterInfo>::kTwoRandomChoices) {
-      algorithm =
+      options.algorithm =
           LoadBalancerRoute<RouterInfo>::AlgorithmType::TWO_RANDOM_CHOICES;
     } else {
       throwLogic("Unknown algorithm: {}", algorithmStr);
     }
   }
+
+  return options;
+}
+
+template <class RouterInfo>
+typename RouterInfo::RouteHandlePtr createLoadBalancerRoute(
+    std::vector<typename RouterInfo::RouteHandlePtr> children,
+    const LoadBalancerRouteOptions<RouterInfo>& options) {
+  if (children.size() == 0) {
+    return createNullRoute<typename RouterInfo::RouteHandleIf>();
+  }
+  if (children.size() == 1) {
+    return std::move(children[0]);
+  }
+
   return makeRouteHandleWithInfo<RouterInfo, LoadBalancerRoute>(
-      std::move(rh),
-      std::move(salt),
-      loadTtl,
-      defaultServerLoad,
-      failoverCount,
-      algorithm);
+      std::move(children),
+      options.salt.str(),
+      options.loadTtl,
+      options.defaultServerLoad,
+      options.failoverCount,
+      options.algorithm);
+}
+
+template <class RouterInfo>
+typename RouterInfo::RouteHandlePtr createLoadBalancerRoute(
+    const folly::dynamic& json,
+    std::vector<typename RouterInfo::RouteHandlePtr> children) {
+  assert(json.isObject());
+
+  if (children.size() == 0) {
+    return createNullRoute<typename RouterInfo::RouteHandleIf>();
+  }
+  if (children.size() == 1) {
+    return std::move(children[0]);
+  }
+
+  return createLoadBalancerRoute<RouterInfo>(
+      std::move(children), parseLoadBalancerRouteJson<RouterInfo>(json));
 }
 
 template <class RouterInfo>

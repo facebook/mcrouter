@@ -205,6 +205,17 @@ makeFailoverRouteWithFailoverErrorSettings(
       std::forward<Args>(args)...);
 }
 
+inline FailoverErrorsSettings parseFailoverErrorsSettings(
+    const folly::dynamic& json) {
+  FailoverErrorsSettings failoverErrors;
+  if (json.isObject()) {
+    if (auto jFailoverErrors = json.get_ptr("failover_errors")) {
+      failoverErrors = FailoverErrorsSettings(*jFailoverErrors);
+    }
+  }
+  return failoverErrors;
+}
+
 template <
     class RouterInfo,
     template <class...> class RouteHandle,
@@ -213,12 +224,7 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRouteDefault(
     const folly::dynamic& json,
     std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> children,
     Args&&... args) {
-  FailoverErrorsSettings failoverErrors;
-  if (json.isObject()) {
-    if (auto jFailoverErrors = json.get_ptr("failover_errors")) {
-      failoverErrors = FailoverErrorsSettings(*jFailoverErrors);
-    }
-  }
+  FailoverErrorsSettings failoverErrors = parseFailoverErrorsSettings(json);
   return makeFailoverRouteWithFailoverErrorSettings<
       RouterInfo,
       RouteHandle,
@@ -228,6 +234,7 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRouteDefault(
       std::move(failoverErrors),
       std::forward<Args>(args)...);
 }
+
 } // mcrouter
 } // memcache
 } // facebook

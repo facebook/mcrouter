@@ -11,6 +11,7 @@
 
 #include <folly/dynamic.h>
 
+#include "mcrouter/lib/FailoverErrorsSettings.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"
@@ -53,35 +54,72 @@ std::vector<std::shared_ptr<RouteHandleIf>> getTargets(
 
 } // detail
 
-template <class RouterInfo>
-typename RouterInfo::RouteHandlePtr createLatestRoute(
-    const folly::dynamic& json,
-    std::vector<typename RouterInfo::RouteHandlePtr> targets,
-    size_t threadId) {
+struct LatestRouteOptions {
+  FailoverErrorsSettings errorsSettings;
   size_t failoverCount = 5;
   size_t failoverThreadId = 0;
   folly::StringPiece salt;
+};
+
+inline LatestRouteOptions parseLatestRouteJson(
+    const folly::dynamic& json,
+    size_t threadId) {
+  LatestRouteOptions options;
 
   if (json.isObject()) {
+    options.errorsSettings = parseFailoverErrorsSettings(json);
+
     if (auto jfailoverCount = json.get_ptr("failover_count")) {
       checkLogic(
           jfailoverCount->isInt(),
           "LatestRoute: failover_count is not an integer");
-      failoverCount = jfailoverCount->getInt();
+      options.failoverCount = jfailoverCount->getInt();
     }
+
     if (auto jsalt = json.get_ptr("salt")) {
       checkLogic(jsalt->isString(), "LatestRoute: salt is not a string");
-      salt = jsalt->stringPiece();
+      options.salt = jsalt->stringPiece();
     }
+
     if (auto jthreadLocalFailover = json.get_ptr("thread_local_failover")) {
       checkLogic(
           jthreadLocalFailover->isBool(),
           "LatestRoute: thread_local_failover is not a boolean");
       if (jthreadLocalFailover->getBool()) {
-        failoverThreadId = threadId;
+        options.failoverThreadId = threadId;
       }
     }
   }
+
+  return options;
+}
+
+template <class RouterInfo>
+typename RouterInfo::RouteHandlePtr createLatestRoute(
+    const folly::dynamic& json,
+    std::vector<typename RouterInfo::RouteHandlePtr> targets,
+    LatestRouteOptions options,
+    std::vector<double> weights) {
+  return makeFailoverRouteWithFailoverErrorSettings<
+      RouterInfo,
+      FailoverRoute,
+      FailoverErrorsSettings>(
+      json,
+      detail::getTargets(
+          std::move(targets),
+          options.failoverCount,
+          options.failoverThreadId,
+          std::move(weights),
+          options.salt),
+      std::move(options.errorsSettings));
+}
+
+template <class RouterInfo>
+typename RouterInfo::RouteHandlePtr createLatestRoute(
+    const folly::dynamic& json,
+    std::vector<typename RouterInfo::RouteHandlePtr> targets,
+    size_t threadId) {
+  LatestRouteOptions options = parseLatestRouteJson(json, threadId);
 
   std::vector<double> weights;
   if (!json.isObject() || !json.count("weights")) {
@@ -89,14 +127,9 @@ typename RouterInfo::RouteHandlePtr createLatestRoute(
   } else {
     weights = ch3wParseWeights(json, targets.size());
   }
-  return makeFailoverRouteDefault<RouterInfo, FailoverRoute>(
-      json,
-      detail::getTargets(
-          std::move(targets),
-          failoverCount,
-          failoverThreadId,
-          std::move(weights),
-          salt));
+
+  return createLatestRoute<RouterInfo>(
+      json, std::move(targets), std::move(options), std::move(weights));
 }
 
 template <class RouterInfo>

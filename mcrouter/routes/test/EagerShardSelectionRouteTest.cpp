@@ -147,8 +147,8 @@ TEST_F(EagerShardSelectionRouteTest, createMissingHost) {
   } catch (const std::exception& e) {
     std::string errorMsg = e.what();
     EXPECT_EQ(
-        "EagerShardSelectionRoute: 'shards' must have the same number of entries "
-        "as servers in 'pool'",
+        "EagerShardSelectionRoute: 'shards' must have the same number of "
+        "entries as servers in 'pool'. Servers size: 1. Shards size: 2.",
         errorMsg);
   }
 }

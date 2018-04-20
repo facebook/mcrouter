@@ -36,9 +36,8 @@ inline std::vector<uint16_t> prepareMap(size_t shardsMapSize) {
       shardsMapSize, std::numeric_limits<uint16_t>::max());
 }
 template <>
-inline std::unordered_map<uint32_t, uint32_t> prepareMap(
-    size_t /* shardsMapSize */) {
-  return std::unordered_map<uint32_t, uint32_t>();
+inline std::unordered_map<uint32_t, uint32_t> prepareMap(size_t shardsMapSize) {
+  return std::unordered_map<uint32_t, uint32_t>(shardsMapSize);
 }
 
 inline bool containsShard(const std::vector<uint16_t>& vec, size_t shard) {
@@ -143,8 +142,11 @@ ShardDestinationsMap<RouterInfo> getShardDestinationsMap(
     auto shardsJson = getShardsJson<RouterInfo>(factory, jPool);
     checkLogic(
         shardsJson.size() == destinations.size(),
-        "EagerShardSelectionRoute: 'shards' must have the same number of "
-        "entries as servers in 'pool'");
+        folly::sformat(
+            "EagerShardSelectionRoute: 'shards' must have the same number of "
+            "entries as servers in 'pool'. Servers size: {}. Shards size: {}.",
+            destinations.size(),
+            shardsJson.size()));
     if (destinations.empty()) {
       continue;
     }
@@ -166,6 +168,46 @@ ShardDestinationsMap<RouterInfo> getShardDestinationsMap(
     }
   }
   return shardMap;
+}
+
+template <class RouterInfo, class MapType>
+void buildChildrenLatestRoutes(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json,
+    const ShardDestinationsMap<RouterInfo>& shardMap,
+    std::vector<typename RouterInfo::RouteHandlePtr>& destinations,
+    MapType& shardToDestinationIndexMap) {
+  LatestRouteOptions options =
+      parseLatestRouteJson(json, factory.getThreadId());
+  std::for_each(shardMap.begin(), shardMap.end(), [&](auto& item) {
+    auto shardId = item.first;
+    auto childrenRouteHandles = std::move(item.second);
+    size_t numChildren = childrenRouteHandles.size();
+    destinations.push_back(createLatestRoute<RouterInfo>(
+        json,
+        std::move(childrenRouteHandles),
+        options,
+        std::vector<double>(numChildren, 1.0)));
+    shardToDestinationIndexMap[shardId] = destinations.size() - 1;
+  });
+}
+
+template <class RouterInfo, class MapType>
+void buildChildrenLoadBalancerRoutes(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& /* factory */,
+    const folly::dynamic& json,
+    const ShardDestinationsMap<RouterInfo>& shardMap,
+    std::vector<typename RouterInfo::RouteHandlePtr>& destinations,
+    MapType& shardToDestinationIndexMap) {
+  LoadBalancerRouteOptions<RouterInfo> options =
+      parseLoadBalancerRouteJson<RouterInfo>(json);
+  std::for_each(shardMap.begin(), shardMap.end(), [&](auto& item) {
+    auto shardId = item.first;
+    auto childrenRouteHandles = std::move(item.second);
+    destinations.push_back(createLoadBalancerRoute<RouterInfo>(
+        std::move(childrenRouteHandles), options));
+    shardToDestinationIndexMap[shardId] = destinations.size() - 1;
+  });
 }
 
 } // namespace detail
@@ -240,31 +282,28 @@ typename RouterInfo::RouteHandlePtr createEagerShardSelectionRoute(
     return *jSettings;
   }();
 
-  using CreateRouteFunc = typename RouterInfo::RouteHandlePtr (*)(
-      RouteHandleFactory<typename RouterInfo::RouteHandleIf> & factory,
-      const folly::dynamic&,
-      std::vector<typename RouterInfo::RouteHandlePtr>);
-  CreateRouteFunc createRouteFn;
+  MapType shardToDestinationIndexMap =
+      detail::prepareMap<MapType>(shardMap.size());
+  std::vector<typename RouterInfo::RouteHandlePtr> destinations;
   if (childrenType == "LoadBalancerRoute") {
-    createRouteFn = createLoadBalancerRoute<RouterInfo>;
+    detail::buildChildrenLoadBalancerRoutes<RouterInfo, MapType>(
+        factory,
+        childrenSettings,
+        shardMap,
+        destinations,
+        shardToDestinationIndexMap);
   } else if (childrenType == "LatestRoute") {
-    createRouteFn = createLatestRoute<RouterInfo>;
+    detail::buildChildrenLatestRoutes<RouterInfo, MapType>(
+        factory,
+        childrenSettings,
+        shardMap,
+        destinations,
+        shardToDestinationIndexMap);
   } else {
     throwLogic(
         "EagerShardSelectionRoute: 'children_type' {} not supported",
         childrenType);
   }
-
-  MapType shardToDestinationIndexMap =
-      detail::prepareMap<MapType>(shardMap.size());
-  std::vector<typename RouterInfo::RouteHandlePtr> destinations;
-  std::for_each(shardMap.begin(), shardMap.end(), [&](auto& item) {
-    auto shardId = item.first;
-    auto childrenRouteHandles = std::move(item.second);
-    destinations.push_back(createRouteFn(
-        factory, childrenSettings, std::move(childrenRouteHandles)));
-    shardToDestinationIndexMap[shardId] = destinations.size() - 1;
-  });
 
   ShardSelector selector(std::move(shardToDestinationIndexMap));
 
