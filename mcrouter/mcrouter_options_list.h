@@ -485,6 +485,14 @@ MCROUTER_OPTION_INTEGER(
     no_short,
     "Delay between config files change and mcrouter reconfiguration.")
 
+MCROUTER_OPTION_INTEGER(
+    int,
+    post_reconfiguration_delay_ms,
+    0,
+    "post-reconfiguration-delay-ms",
+    no_short,
+    "Delay after a reconfiguration is complete.")
+
 MCROUTER_OPTION_STRING_MAP(
     config_params,
     "config-params",

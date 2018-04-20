@@ -215,6 +215,15 @@ void ConfigApi::configThreadRun() {
 
     if (hasUpdate) {
       callbacks_.notify();
+
+      // waits before checking for config updates again.
+      if (opts_.post_reconfiguration_delay_ms > 0) {
+        std::unique_lock<std::mutex> lk(finishMutex_);
+        finishCV_.wait_for(
+            lk,
+            std::chrono::milliseconds(opts_.post_reconfiguration_delay_ms),
+            [this] { return finish_.load(); });
+      }
     }
 
     // Otherwise there was nothing to read, so check that we aren't shutting
