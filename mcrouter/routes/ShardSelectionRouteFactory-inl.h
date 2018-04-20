@@ -5,7 +5,6 @@
  *  file in the root directory of this source tree.
  *
  */
-
 #include <folly/Range.h>
 #include <folly/dynamic.h>
 
@@ -190,8 +189,11 @@ typename RouterInfo::RouteHandlePtr createShardSelectionRoute(
   const auto& shardsJson = detail::getShardsJson<RouterInfo>(factory, json);
   checkLogic(
       shardsJson.size() == destinations.size(),
-      "ShardSelectionRoute: 'shards' must have the same number of "
-      "entries as servers in 'pool'");
+      folly::sformat(
+          "ShardSelectionRoute: 'shards' must have the same number of "
+          "entries as servers in 'pool'. Servers size: {}. Shards size: {}.",
+          destinations.size(),
+          shardsJson.size()));
 
   auto selector = ShardSelector(
       detail::getShardsMap<MapType>(shardsJson, destinations.size()));

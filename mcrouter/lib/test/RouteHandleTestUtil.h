@@ -21,7 +21,9 @@
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/carbon/RoutingGroups.h"
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
+#include "mcrouter/lib/config/RouteHandleProviderIf.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/lib/routes/NullRoute.h"
 
 namespace facebook {
 namespace memcache {
@@ -48,6 +50,40 @@ typename std::enable_if<!Reply::hasValue, void>::type setReplyValue(
     Reply&,
     const std::string& /* val */) {}
 } // detail
+
+/**
+ * Very basic route handle provider to be used in unit tests only.
+ */
+template <class RouteHandleIf>
+class SimpleRouteHandleProvider : public RouteHandleProviderIf<RouteHandleIf> {
+ public:
+  std::vector<std::shared_ptr<RouteHandleIf>> create(
+      RouteHandleFactory<RouteHandleIf>& /* factory */,
+      folly::StringPiece type,
+      const folly::dynamic& json) override {
+    std::vector<std::shared_ptr<RouteHandleIf>> result;
+
+    const folly::dynamic* jsonPtr = nullptr;
+    if (type == "Pool") {
+      jsonPtr = json.get_ptr("servers");
+    } else {
+      jsonPtr = &json;
+    }
+
+    if (jsonPtr->isArray()) {
+      for (const auto& child : *jsonPtr) {
+        result.push_back(mcrouter::createNullRoute<RouteHandleIf>());
+      }
+    } else {
+      result.push_back(mcrouter::createNullRoute<RouteHandleIf>());
+    }
+    return result;
+  }
+
+  const folly::dynamic& parsePool(const folly::dynamic& json) override {
+    return json;
+  }
+};
 
 struct GetRouteTestData {
   mc_res_t result_;
