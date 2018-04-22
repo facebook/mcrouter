@@ -372,8 +372,9 @@ class McServerThread {
             std::vector<folly::IPAddress> ipAddresses;
             for (auto listenAddress : server_.opts_.listenAddresses) {
               auto maybeIp = folly::IPAddress::tryFromString(listenAddress);
-              checkLogic(maybeIp.hasValue(), "Invalid listen address: " +
-                                             "`" + listenAddress + "`");
+              checkLogic(maybeIp.hasValue(),
+                         "Invalid listen address: {}",
+                         listenAddress);
               auto ip = maybeIp.value();
               if (ip.isV4()) {
                 ipAddresses.push_back(ip.asV4());
