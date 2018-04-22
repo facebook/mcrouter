@@ -86,6 +86,7 @@ bool runServer(
   } else if (!standaloneOpts.unix_domain_sock.empty()) {
     opts.unixDomainSockPath = standaloneOpts.unix_domain_sock;
   } else {
+    opts.listenAddresses = standaloneOpts.listenAddresses;
     opts.ports = standaloneOpts.ports;
     opts.sslPorts = standaloneOpts.ssl_ports;
     opts.tlsTicketKeySeedPath = standaloneOpts.tls_ticket_key_seed_path;

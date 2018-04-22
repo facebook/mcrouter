@@ -29,6 +29,14 @@ MCROUTER_OPTION_STRING(
     "Name of the carbon router to use")
 
 MCROUTER_OPTION_OTHER(
+    std::vector<std::string>,
+    listenAddresses,
+    ,
+    "listen-addresses",
+    no_short,
+    "Address(es) to listen on (comma separated)")
+
+MCROUTER_OPTION_OTHER(
     std::vector<uint16_t>,
     ports,
     ,
