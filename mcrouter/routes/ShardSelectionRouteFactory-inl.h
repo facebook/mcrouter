@@ -258,12 +258,6 @@ typename RouterInfo::RouteHandlePtr createEagerShardSelectionRoute(
   checkLogic(
       json.isObject(), "EagerShardSelectionRoute config should be an object");
 
-  auto shardMap = detail::getShardDestinationsMap<RouterInfo>(factory, json);
-  if (shardMap.empty()) {
-    return mcrouter::createErrorRoute<RouterInfo>(
-        "EagerShardSelectionRoute has an empty list of destinations");
-  }
-
   const auto childrenType = [&json]() {
     auto jChildType = json.get_ptr("children_type");
     checkLogic(
@@ -281,6 +275,12 @@ typename RouterInfo::RouteHandlePtr createEagerShardSelectionRoute(
         "object");
     return *jSettings;
   }();
+
+  auto shardMap = detail::getShardDestinationsMap<RouterInfo>(factory, json);
+  if (shardMap.empty()) {
+    return mcrouter::createErrorRoute<RouterInfo>(
+        "EagerShardSelectionRoute has an empty list of destinations");
+  }
 
   MapType shardToDestinationIndexMap =
       detail::prepareMap<MapType>(shardMap.size());

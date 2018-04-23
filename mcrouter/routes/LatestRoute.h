@@ -59,6 +59,7 @@ struct LatestRouteOptions {
   size_t failoverCount = 5;
   size_t failoverThreadId = 0;
   folly::StringPiece salt;
+  const folly::dynamic* jFailoverPolicy{nullptr};
 };
 
 inline LatestRouteOptions parseLatestRouteJson(
@@ -89,6 +90,8 @@ inline LatestRouteOptions parseLatestRouteJson(
         options.failoverThreadId = threadId;
       }
     }
+
+    options.jFailoverPolicy = parseFailoverPolicy(json);
   }
 
   return options;
@@ -111,7 +114,8 @@ typename RouterInfo::RouteHandlePtr createLatestRoute(
           options.failoverThreadId,
           std::move(weights),
           options.salt),
-      std::move(options.errorsSettings));
+      std::move(options.errorsSettings),
+      options.jFailoverPolicy);
 }
 
 template <class RouterInfo>

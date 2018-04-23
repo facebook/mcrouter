@@ -165,30 +165,28 @@ makeFailoverRouteWithFailoverErrorSettings(
     const folly::dynamic& json,
     std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> children,
     FailoverErrorsSettingsT failoverErrors,
+    const folly::dynamic* jFailoverPolicy,
     Args&&... args) {
-  if (json.isObject()) {
-    if (auto jFailoverPolicy = json.get_ptr("failover_policy")) {
-      checkLogic(
-          jFailoverPolicy->isObject(),
-          "Failover: failover_policy is not object");
-      auto jPolicyType = jFailoverPolicy->get_ptr("type");
-      checkLogic(
-          jPolicyType != nullptr,
-          "Failover: failover_policy object is missing 'type' field");
-      if (parseString(*jPolicyType, "type") == "LeastFailuresPolicy") {
-        using FailoverPolicyT =
-            FailoverLeastFailuresPolicy<typename RouterInfo::RouteHandleIf>;
-        return makeFailoverRouteWithPolicyAndFailoverError<
-            RouterInfo,
-            RouteHandle,
-            FailoverPolicyT,
-            FailoverErrorsSettingsT>(
-            json,
-            std::move(children),
-            *jFailoverPolicy,
-            std::move(failoverErrors),
-            std::forward<Args>(args)...);
-      }
+  if (jFailoverPolicy) {
+    checkLogic(
+        jFailoverPolicy->isObject(), "Failover: failover_policy is not object");
+    auto jPolicyType = jFailoverPolicy->get_ptr("type");
+    checkLogic(
+        jPolicyType != nullptr,
+        "Failover: failover_policy object is missing 'type' field");
+    if (parseString(*jPolicyType, "type") == "LeastFailuresPolicy") {
+      using FailoverPolicyT =
+          FailoverLeastFailuresPolicy<typename RouterInfo::RouteHandleIf>;
+      return makeFailoverRouteWithPolicyAndFailoverError<
+          RouterInfo,
+          RouteHandle,
+          FailoverPolicyT,
+          FailoverErrorsSettingsT>(
+          json,
+          std::move(children),
+          *jFailoverPolicy,
+          std::move(failoverErrors),
+          std::forward<Args>(args)...);
     }
   }
   using FailoverPolicyT =
@@ -216,6 +214,13 @@ inline FailoverErrorsSettings parseFailoverErrorsSettings(
   return failoverErrors;
 }
 
+inline const folly::dynamic* parseFailoverPolicy(const folly::dynamic& json) {
+  if (json.isObject()) {
+    return json.get_ptr("failover_policy");
+  }
+  return nullptr;
+}
+
 template <
     class RouterInfo,
     template <class...> class RouteHandle,
@@ -232,6 +237,7 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRouteDefault(
       json,
       std::move(children),
       std::move(failoverErrors),
+      parseFailoverPolicy(json),
       std::forward<Args>(args)...);
 }
 

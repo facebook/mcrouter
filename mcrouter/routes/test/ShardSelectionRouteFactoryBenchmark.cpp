@@ -1020,11 +1020,11 @@ BENCHMARK(createEagerShardSelectionRoute_LoadBalancer_huge) {
  * ============================================================================
  * ShardSelectionRouteFactoryBenchmark.cpp                   time/iter  iters/s
  * ============================================================================
- * createShardSelectionRoute_small                              7.00us  142.87K
- * createShardSelectionRoute_medium                            31.31us   31.94K
- * createShardSelectionRoute_large                             30.29ms    34.14
- * createEagerShardSelectionRoute_huge                        182.74ms     5.47
- * createEagerShardSelectionRoute_LoadBalancer_hug            142.05ms     7.04
+ * createShardSelectionRoute_small                              6.84us  146.10K
+ * createShardSelectionRoute_medium                            29.71us   33.66K
+ * createShardSelectionRoute_large                             29.18ms    34.27
+ * createEagerShardSelectionRoute_huge                        173.74ms     5.76
+ * createEagerShardSelectionRoute_LoadBalancer_hug            140.77ms     7.10
  * ============================================================================
  */
 int main(int argc, char** argv) {
