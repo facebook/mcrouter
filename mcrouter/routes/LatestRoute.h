@@ -31,6 +31,10 @@ std::vector<std::shared_ptr<RouteHandleIf>> getTargets(
     size_t threadId,
     std::vector<double> weights,
     folly::StringPiece salt) {
+  if (targets.size() <= 1) {
+    return std::move(targets);
+  }
+
   std::vector<std::shared_ptr<RouteHandleIf>> failovers;
   failoverCount = std::min(failoverCount, targets.size());
   size_t hashKey = folly::hash::hash_combine(0, globals::hostid());
