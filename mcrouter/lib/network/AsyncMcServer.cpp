@@ -370,20 +370,15 @@ class McServerThread {
             socket_->bind(port);
           } else {
             std::vector<folly::IPAddress> ipAddresses;
-            for (auto listenAddress : server_.opts_.listenAddresses) {
+            for (auto& listenAddress : server_.opts_.listenAddresses) {
               auto maybeIp = folly::IPAddress::tryFromString(listenAddress);
               checkLogic(maybeIp.hasValue(),
                          "Invalid listen address: {}",
                          listenAddress);
-              auto ip = maybeIp.value();
-              if (ip.isV4()) {
-                ipAddresses.push_back(ip.asV4());
-              } else if (ip.isV6()) {
-                ipAddresses.push_back(ip.asV6());
-              }
+              auto ip = std::move(maybeIp).value();
+              ipAddresses.push_back(std::move(ip));
             }
 
-            checkLogic(!ipAddresses.empty(), "No valid listen addresses");
             socket_->bind(ipAddresses, port);
           }
         }

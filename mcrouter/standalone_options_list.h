@@ -30,7 +30,7 @@ MCROUTER_OPTION_STRING(
 
 MCROUTER_OPTION_OTHER(
     std::vector<std::string>,
-    listenAddresses,
+    listen_addresses,
     ,
     "listen-addresses",
     no_short,
