@@ -172,9 +172,9 @@ class ProxyStats {
   std::vector<PoolStats> poolStats_;
 
   ExponentialSmoothData<64> durationUs_;
-  //Duration microseconds, broken down by get-like request type
+  // Duration microseconds, broken down by get-like request type
   ExponentialSmoothData<64> durationGetUs_;
-  //Duration microseconds, broken down by update-like request type
+  // Duration microseconds, broken down by update-like request type
   ExponentialSmoothData<64> durationUpdateUs_;
 
   // we are wasting some memory here to get faster mapping from stat name to
