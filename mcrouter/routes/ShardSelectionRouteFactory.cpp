@@ -89,16 +89,6 @@ std::vector<std::vector<size_t>> parseAllShardsJson(
   return allShards;
 }
 
-size_t getMaxShardId(const std::vector<std::vector<size_t>>& allShards) {
-  size_t maxShardId = 0;
-  for (const auto& shards : allShards) {
-    for (auto shardId : shards) {
-      maxShardId = std::max(maxShardId, shardId);
-    }
-  }
-  return maxShardId;
-}
-
 void parseShardsPerServerJson(
     const folly::dynamic& jShards,
     std::function<void(uint32_t)>&& handleShardFunc) {

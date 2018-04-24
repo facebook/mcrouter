@@ -20,24 +20,46 @@ namespace mcrouter {
 
 namespace detail {
 
-// declarations
 void parseShardsPerServerJson(
     const folly::dynamic& json,
     std::function<void(uint32_t)>&& f);
-size_t getMaxShardId(const std::vector<std::vector<size_t>>& allShards);
+
 std::vector<std::vector<size_t>> parseAllShardsJson(
     const folly::dynamic& allShardsJson);
 
+inline size_t getMaxShardId(const std::vector<std::vector<size_t>>& shardsMap) {
+  size_t maxShardId = 0;
+  for (const auto& shards : shardsMap) {
+    for (auto shardId : shards) {
+      maxShardId = std::max(maxShardId, shardId);
+    }
+  }
+  return maxShardId;
+}
+template <class T>
+size_t getMaxShardId(const std::unordered_map<uint32_t, T>& shardsMap) {
+  uint32_t maxShardId = 0;
+  for (const auto& item : shardsMap) {
+    auto shardId = item.first;
+    maxShardId = std::max(maxShardId, shardId);
+  }
+  return maxShardId;
+}
+
 template <class MapType>
-MapType prepareMap(size_t shardsMapSize);
+MapType prepareMap(size_t numDistinctShards, size_t maxShardId);
 template <>
-inline std::vector<uint16_t> prepareMap(size_t shardsMapSize) {
+inline std::vector<uint16_t> prepareMap(
+    size_t /* numDistinctShards */,
+    size_t maxShardId) {
   return std::vector<uint16_t>(
-      shardsMapSize, std::numeric_limits<uint16_t>::max());
+      maxShardId + 1, std::numeric_limits<uint16_t>::max());
 }
 template <>
-inline std::unordered_map<uint32_t, uint32_t> prepareMap(size_t shardsMapSize) {
-  return std::unordered_map<uint32_t, uint32_t>(shardsMapSize);
+inline std::unordered_map<uint32_t, uint32_t> prepareMap(
+    size_t numDistinctShards,
+    size_t /* maxShardId */) {
+  return std::unordered_map<uint32_t, uint32_t>(numDistinctShards);
 }
 
 inline bool containsShard(const std::vector<uint16_t>& vec, size_t shard) {
@@ -98,8 +120,8 @@ MapType getShardsMap(const folly::dynamic& json, size_t numDestinations) {
   // Validate and get a list of shards.
   auto allShards = parseAllShardsJson(json);
 
-  size_t shardsMapSize = getMaxShardId(allShards) + 1;
-  auto shardsMap = prepareMap<MapType>(shardsMapSize);
+  auto shardsMap =
+      prepareMap<MapType>(allShards.size(), getMaxShardId(allShards));
 
   // We don't need to validate here, as it was validated before.
   for (size_t i = 0; i < allShards.size(); ++i) {
@@ -282,8 +304,8 @@ typename RouterInfo::RouteHandlePtr createEagerShardSelectionRoute(
         "EagerShardSelectionRoute has an empty list of destinations");
   }
 
-  MapType shardToDestinationIndexMap =
-      detail::prepareMap<MapType>(shardMap.size());
+  MapType shardToDestinationIndexMap = detail::prepareMap<MapType>(
+      shardMap.size(), detail::getMaxShardId(shardMap));
   std::vector<typename RouterInfo::RouteHandlePtr> destinations;
   if (childrenType == "LoadBalancerRoute") {
     detail::buildChildrenLoadBalancerRoutes<RouterInfo, MapType>(
