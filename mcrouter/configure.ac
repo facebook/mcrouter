@@ -18,7 +18,7 @@ AC_CONFIG_LINKS([test/config.py:test/mcrouter_config.py])
 AC_CONFIG_LINKS([RouterRegistry.h:RouterRegistry-impl.h])
 AC_CONFIG_AUX_DIR([build-aux])
 
-AM_INIT_AUTOMAKE([1.14 foreign dist-bzip2 nostdinc subdir-objects parallel-tests])
+AM_INIT_AUTOMAKE([1.13.2 foreign dist-bzip2 nostdinc subdir-objects parallel-tests])
 
 AC_CONFIG_MACRO_DIR([m4])
 
