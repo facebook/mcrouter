@@ -24,6 +24,7 @@ struct TkoCounters {
     return softTkos + hardTkos;
   }
 };
-}
-}
-} // facebook::memcache::mcrouter
+
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

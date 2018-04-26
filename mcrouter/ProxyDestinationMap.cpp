@@ -70,9 +70,7 @@ std::shared_ptr<ProxyDestination> ProxyDestinationMap::emplace(
   // Update shared area of ProxyDestinations with same key from different
   // threads. This shared area is represented with TkoTracker class.
   proxy_->router().tkoTrackerMap().updateTracker(
-      *destination,
-      proxy_->router().opts().failures_until_tko,
-      proxy_->router().opts().maximum_soft_tkos);
+      *destination, proxy_->router().opts().failures_until_tko);
 
   return destination;
 }

@@ -139,7 +139,6 @@ class TkoTracker {
   // The string is stored in TkoTrackerMap::trackers_
   folly::StringPiece key_;
   const size_t tkoThreshold_;
-  const size_t maxSoftTkos_;
   TkoTrackerMap& trackerMap_;
 
   /* sumFailures_ is used for a few things depending on the state of the
@@ -156,11 +155,15 @@ class TkoTracker {
 
   std::atomic<size_t> consecutiveFailureCount_{0};
 
-  /* Decrement the global counter of current soft TKOs. */
+  /**
+   * Decrement the global counter of current soft TKOs
+   */
   void decrementSoftTkoCount();
-  /* Attempt to increment the global counter of current soft TKOs. Return true
-     if successful and false if limits have been reached. */
-  bool incrementSoftTkoCount();
+
+  /**
+   * Increment the global counter of current soft TKOs.
+   */
+  void incrementSoftTkoCount();
 
   /* Modifies the value of sumFailures atomically. Fails only
      in the case that another proxy takes responsibility, in which case all
@@ -171,16 +174,11 @@ class TkoTracker {
   bool isResponsible(ProxyDestination* pdstn) const;
 
   /**
-   * @param tkoThreshold require this many soft failures to mark
-   *        the destination TKO
-   * @param maxSoftTkos the maximum number of concurrent soft TKOs allowed in
-   *        the router
-   * @param globalTkoStats number of TKO destination for current router
+   * @param tkoThreshold    Require this many soft failures to mark
+   *                        the destination TKO.
+   * @param globalTkoStats  Number of TKO destination for current router.
    */
-  TkoTracker(
-      size_t tkoThreshold,
-      size_t maxSoftTkos,
-      TkoTrackerMap& trackerMap);
+  TkoTracker(size_t tkoThreshold, TkoTrackerMap& trackerMap);
 
   friend class TkoTrackerMap;
 };
@@ -197,10 +195,7 @@ class TkoTrackerMap {
   /**
    * Creates/updates TkoTracker for `pdstn` and updates `pdstn->tko` pointer.
    */
-  void updateTracker(
-      ProxyDestination& pdstn,
-      const size_t tkoThreshold,
-      const size_t maxSoftTkos);
+  void updateTracker(ProxyDestination& pdstn, const size_t tkoThreshold);
 
   /**
    * @return  number of servers that recently returned error replies.

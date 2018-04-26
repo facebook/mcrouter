@@ -21,10 +21,8 @@ namespace mcrouter {
 
 TkoTracker::TkoTracker(
     size_t tkoThreshold,
-    size_t maxSoftTkos,
     TkoTrackerMap& trackerMap)
     : tkoThreshold_(tkoThreshold),
-      maxSoftTkos_(maxSoftTkos),
       trackerMap_(trackerMap) {}
 
 bool TkoTracker::isHardTko() const {
@@ -41,23 +39,14 @@ const TkoCounters& TkoTracker::globalTkos() const {
   return trackerMap_.globalTkos_;
 }
 
-bool TkoTracker::incrementSoftTkoCount() {
-  auto& softTkos = trackerMap_.globalTkos_.softTkos;
-  size_t old_soft_tkos = softTkos;
-  do {
-    assert(old_soft_tkos <= maxSoftTkos_);
-    if (old_soft_tkos == maxSoftTkos_) {
-      /* We've hit the soft TKO limit and can't tko this box. */
-      return false;
-    }
-  } while (!softTkos.compare_exchange_weak(old_soft_tkos, old_soft_tkos + 1));
-  return true;
+void TkoTracker::incrementSoftTkoCount() {
+  trackerMap_.globalTkos_.softTkos++;
 }
 
 void TkoTracker::decrementSoftTkoCount() {
   // Decrement the counter and ensure we haven't gone below 0
-  size_t old_soft_tkos = trackerMap_.globalTkos_.softTkos.fetch_sub(1);
-  assert(old_soft_tkos != 0);
+  size_t oldSoftTkos = trackerMap_.globalTkos_.softTkos.fetch_sub(1);
+  assert(oldSoftTkos != 0);
 }
 
 bool TkoTracker::setSumFailures(uintptr_t value) {
@@ -92,11 +81,10 @@ bool TkoTracker::recordSoftFailure(ProxyDestination* pdstn) {
   do {
     /* If we're one failure below the limit, we're about to enter softTKO */
     if (curSumFailures == tkoThreshold_ - 1) {
-      /* If we're not allowed to TKO the box, leave it one hit away
-         Note, we need to check value to ensure we didn't already increment the
-         counter in a previous iteration */
-      if (value != pdstnAddr && !incrementSoftTkoCount()) {
-        return false;
+      // Note: we need to check value to ensure we didn't already increment
+      // the counter in a previous iteration
+      if (value != pdstnAddr) {
+        incrementSoftTkoCount();
       }
       value = pdstnAddr;
     } else {
@@ -188,8 +176,7 @@ TkoTracker::~TkoTracker() {
 
 void TkoTrackerMap::updateTracker(
     ProxyDestination& pdstn,
-    const size_t tkoThreshold,
-    const size_t maxSoftTkos) {
+    const size_t tkoThreshold) {
   auto key = pdstn.accessPoint()->toHostPortString();
 
   // This shared pointer has to be destroyed after releasing "mx_".
@@ -201,7 +188,7 @@ void TkoTrackerMap::updateTracker(
     std::lock_guard<std::mutex> lock(mx_);
     auto it = trackers_.find(key);
     if (it == trackers_.end() || (tracker = it->second.lock()) == nullptr) {
-      tracker.reset(new TkoTracker(tkoThreshold, maxSoftTkos, *this));
+      tracker.reset(new TkoTracker(tkoThreshold, *this));
       auto trackerIt = trackers_.emplace(key, tracker);
       if (!trackerIt.second) {
         trackerIt.first->second = tracker;

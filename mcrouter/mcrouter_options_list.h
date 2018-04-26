@@ -535,15 +535,6 @@ MCROUTER_OPTION_INTEGER(
     no_short,
     "Mark as TKO after this many failures")
 
-MCROUTER_OPTION_INTEGER(
-    size_t,
-    maximum_soft_tkos,
-    40,
-    "maximum-soft-tkos",
-    no_short,
-    "The maximum number of machines we can mark TKO if they don't have a hard"
-    " failure.")
-
 MCROUTER_OPTION_TOGGLE(
     allow_only_gets,
     false,
