@@ -2,12 +2,13 @@
 
 if [ $# -lt 2 ]; then
   echo -e \
-    "Usage: ./$(basename "$0") package_dir install_dir\n" \
+    "Usage: ./$(basename "$0") package_dir install_dir [install_aux_dir]\n" \
     "  where\n" \
     "    package_dir - location where all packages should be download.\n" \
     "    install_dir - location where all packages should be installed.\n" \
     "                  Note: it should already contain a built version of mcrouter in it.\n" \
     "                        i.e. there should be a binary install_dir/bin/mcrouter\n\n" \
+    "    install_aux_dir - aux location where all packages should be installed  \n\n" \
     "You can also alter script behavior by setting next environment variables:\n" \
     "  MEMCACHED_PORT - port that would be used by memcached (default: 15000)\n" \
     "  MCROUTER_PORT - port that would be used by mcrouter (default: 15001)\n" \
@@ -35,6 +36,7 @@ RUN_DURATION=${RUN_DURATION:-30}
 sudo apt-get install -y wget gcc g++ libevent-dev make build-essential
 
 source common.sh
+
 # Disable verbose logging.
 set +x
 
