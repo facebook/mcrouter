@@ -33,6 +33,12 @@ void ProxyRequestLogger<RouterInfo>::log(
 
   const auto durationUs = loggerContext.endTimeUs - loggerContext.startTimeUs;
   proxy_.stats().durationUs().insertSample(durationUs);
+
+  if (carbon::GetLike<Request>::value) {
+    proxy_.stats().durationGetUs().insertSample(durationUs);
+  } else if (carbon::UpdateLike<Request>::value) {
+    proxy_.stats().durationUpdateUs().insertSample(durationUs);
+  }
 }
 
 #define REQUEST_CLASS_ERROR_STATS(proxy, ERROR, reqClass)     \
