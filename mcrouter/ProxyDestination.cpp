@@ -7,6 +7,7 @@
  */
 #include "ProxyDestination.h"
 
+#include <chrono>
 #include <limits>
 #include <memory>
 #include <random>
@@ -310,6 +311,7 @@ void ProxyDestination::resetInactive() {
       client = std::move(client_);
     }
     client->closeNow();
+    stats_.inactiveConnectionClosedTimestampUs = nowUs();
   }
 }
 
@@ -403,6 +405,8 @@ void ProxyDestination::initializeAsyncMcClient() {
             proxy.stats().increment(num_ssl_resumption_successes_stat);
           }
         }
+
+        updateConnectionClosedInternalStat();
       },
       [pdstnPtr = selfPtr_](AsyncMcClient::ConnectionDownReason reason) {
         auto pdstn = pdstnPtr.lock();
@@ -432,6 +436,19 @@ void ProxyDestination::initializeAsyncMcClient() {
   if (opts.target_max_inflight_requests > 0) {
     client_->setThrottle(
         opts.target_max_inflight_requests, opts.target_max_pending_requests);
+  }
+}
+
+void ProxyDestination::updateConnectionClosedInternalStat() {
+  if (stats_.inactiveConnectionClosedTimestampUs != 0) {
+    std::chrono::microseconds timeClosed(
+        nowUs() - stats_.inactiveConnectionClosedTimestampUs);
+    proxy.stats().inactiveConnectionClosedIntervalSec().insertSample(
+        std::chrono::duration_cast<std::chrono::seconds>(timeClosed).count());
+
+    // resets inactiveConnectionClosedTimestampUs, as we just want to take
+    // into account connections that were closed due to lack of activity
+    stats_.inactiveConnectionClosedTimestampUs = 0;
   }
 }
 

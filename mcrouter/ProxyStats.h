@@ -40,6 +40,14 @@ class ProxyStats {
     return durationUs_;
   }
 
+  /**
+   * Tells the interval (in seconds) between closing a connection due to lack
+   * of activity and opening it again.
+   */
+  ExponentialSmoothData<64>& inactiveConnectionClosedIntervalSec() {
+    return inactiveConnectionClosedIntervalSec_;
+  }
+
   size_t numBinsUsed() const {
     return numBinsUsed_;
   }
@@ -165,6 +173,8 @@ class ProxyStats {
 
   ExponentialSmoothData<64> durationUs_;
 
+  ExponentialSmoothData<64> inactiveConnectionClosedIntervalSec_;
+
   // we are wasting some memory here to get faster mapping from stat name to
   // statsBin_[] and statsNumWithinWindow_[] entry. i.e., the statsBin_[]
   // and statsNumWithinWindow_[] entry for non-rate stat are not in use.
@@ -199,6 +209,7 @@ class ProxyStats {
    */
   size_t numBinsUsed_{0};
 };
-}
-}
-} // facebook::memcache::mcrouter
+
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

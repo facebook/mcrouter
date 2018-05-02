@@ -44,6 +44,8 @@ STUI(num_ssl_connections_closed, 0, 1)
 // Running total of successful SSL connection attempts/successes
 STUI(num_ssl_resumption_attempts, 0, 1)
 STUI(num_ssl_resumption_successes, 0, 1)
+// time between closing an inactive connection and opening it again.
+STAT(inactive_connection_closed_interval_sec, stat_double, 0, .dbl = 0.0)
 #undef GROUP
 
 #define GROUP mcproxy_stats | rate_stats
