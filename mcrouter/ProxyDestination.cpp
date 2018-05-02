@@ -269,6 +269,9 @@ ProxyDestination::~ProxyDestination() {
 
   onTransitionFromState(stats_.state);
   proxy.stats().decrement(num_servers_stat);
+  if (accessPoint_->useSsl()) {
+    proxy.stats().decrement(num_ssl_servers_stat);
+  }
 }
 
 ProxyDestination::ProxyDestination(
@@ -288,6 +291,10 @@ ProxyDestination::ProxyDestination(
           proxy.router().opts().min_rxmit_reconnect_threshold) {
   proxy.stats().increment(num_servers_new_stat);
   proxy.stats().increment(num_servers_stat);
+  if (accessPoint_->useSsl()) {
+    proxy.stats().increment(num_ssl_servers_new_stat);
+    proxy.stats().increment(num_ssl_servers_stat);
+  }
 }
 
 bool ProxyDestination::may_send() const {
@@ -385,9 +392,10 @@ void ProxyDestination::initializeAsyncMcClient() {
   client_->setStatusCallbacks(
       [this](const folly::AsyncSocket& socket) mutable {
         setState(State::kUp);
+        proxy.stats().increment(num_connections_opened_stat);
         if (const auto* sslSocket =
                 socket.getUnderlyingTransport<folly::AsyncSSLSocket>()) {
-          proxy.stats().increment(num_ssl_connection_successes_stat);
+          proxy.stats().increment(num_ssl_connections_opened_stat);
           if (sslSocket->sessionResumptionAttempted()) {
             proxy.stats().increment(num_ssl_resumption_attempts_stat);
           }
@@ -399,9 +407,15 @@ void ProxyDestination::initializeAsyncMcClient() {
       [pdstnPtr = selfPtr_](AsyncMcClient::ConnectionDownReason reason) {
         auto pdstn = pdstnPtr.lock();
         if (!pdstn) {
+          LOG(WARNING) << "Proxy destination is already destroyed. "
+                          "Stats will not be bumped.";
           return;
         }
 
+        pdstn->proxy.stats().increment(num_connections_closed_stat);
+        if (pdstn->accessPoint_->useSsl()) {
+          pdstn->proxy.stats().increment(num_ssl_connections_closed_stat);
+        }
         if (reason == AsyncMcClient::ConnectionDownReason::ABORTED) {
           pdstn->setState(State::kClosed);
         } else {
@@ -482,8 +496,8 @@ void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
   logTkoEvent(proxy, tkoLog);
 }
 
-void ProxyDestination::setState(State new_st) {
-  if (stats_.state == new_st) {
+void ProxyDestination::setState(State newState) {
+  if (stats_.state == newState) {
     return;
   }
 
@@ -494,8 +508,8 @@ void ProxyDestination::setState(State new_st) {
   };
 
   onTransitionFromState(stats_.state);
-  onTransitionToState(new_st);
-  stats_.state = new_st;
+  onTransitionToState(newState);
+  stats_.state = newState;
 
   switch (stats_.state) {
     case State::kUp:
@@ -538,25 +552,35 @@ void ProxyDestination::onTransitionFromState(State st) {
 
 void ProxyDestination::onTransitionImpl(State st, bool to) {
   const int64_t delta = to ? 1 : -1;
+  const bool ssl = accessPoint_->useSsl();
 
   switch (st) {
     case ProxyDestination::State::kNew: {
       proxy.stats().increment(num_servers_new_stat, delta);
+      if (ssl) {
+        proxy.stats().increment(num_ssl_servers_new_stat, delta);
+      }
       break;
     }
     case ProxyDestination::State::kUp: {
       proxy.stats().increment(num_servers_up_stat, delta);
-      if (accessPoint_->useSsl()) {
+      if (ssl) {
         proxy.stats().increment(num_ssl_servers_up_stat, delta);
       }
       break;
     }
     case ProxyDestination::State::kClosed: {
       proxy.stats().increment(num_servers_closed_stat, delta);
+      if (ssl) {
+        proxy.stats().increment(num_ssl_servers_closed_stat, delta);
+      }
       break;
     }
     case ProxyDestination::State::kDown: {
       proxy.stats().increment(num_servers_down_stat, delta);
+      if (ssl) {
+        proxy.stats().increment(num_ssl_servers_down_stat, delta);
+      }
       break;
     }
     case ProxyDestination::State::kNumStates: {
