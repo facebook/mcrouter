@@ -22,6 +22,7 @@
 #include "mcrouter/routes/HostIdRouteFactory.h"
 #include "mcrouter/routes/L1L2CacheRouteFactory.h"
 #include "mcrouter/routes/L1L2SizeSplitRoute.h"
+#include "mcrouter/routes/LatencyInjectionRoute.h"
 #include "mcrouter/routes/LatestRoute.h"
 #include "mcrouter/routes/LoadBalancerRoute.h"
 #include "mcrouter/routes/LoggingRoute.h"
@@ -69,6 +70,7 @@ McRouteHandleProvider<MemcacheRouterInfo>::buildRouteMap() {
          return makeHashRoute<McrouterRouterInfo>(factory, json);
        }},
       {"HostIdRoute", &makeHostIdRoute<MemcacheRouterInfo>},
+      {"LatencyInjectionRoute", &makeLatencyInjectionRoute<MemcacheRouterInfo>},
       {"L1L2CacheRoute", &makeL1L2CacheRoute<MemcacheRouterInfo>},
       {"L1L2SizeSplitRoute", &makeL1L2SizeSplitRoute},
       {"LatestRoute", &makeLatestRoute<MemcacheRouterInfo>},

@@ -33,6 +33,7 @@
 #include <mcrouter/routes/FailoverRoute.h>
 #include <mcrouter/routes/HashRouteFactory.h>
 #include <mcrouter/routes/HostIdRouteFactory.h>
+#include <mcrouter/routes/LatencyInjectionRoute.h>
 #include <mcrouter/routes/LatestRoute.h>
 #include <mcrouter/routes/LoadBalancerRoute.h>
 #include <mcrouter/routes/LoggingRoute.h>
@@ -68,6 +69,8 @@ HelloGoodbyeRouterInfo::buildRouteMap() {
          return makeHashRoute<HelloGoodbyeRouterInfo>(factory, json);
        }},
       {"HostIdRoute", &makeHostIdRoute<HelloGoodbyeRouterInfo>},
+      {"LatencyInjectionRoute",
+       &makeLatencyInjectionRoute<HelloGoodbyeRouterInfo>},
       {"LatestRoute", &makeLatestRoute<HelloGoodbyeRouterInfo>},
       {"LoadBalancerRoute", &makeLoadBalancerRoute<HelloGoodbyeRouterInfo>},
       {"LoggingRoute", &makeLoggingRoute<HelloGoodbyeRouterInfo>},
