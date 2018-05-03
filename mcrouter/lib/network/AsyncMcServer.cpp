@@ -215,11 +215,9 @@ class McServerThread {
       if (accepting_) {
         socket_.reset();
         sslSocket_.reset();
-        for (auto& acceptor : acceptorsKeepAlive_) {
-          acceptor.first->add(
-              [keepAlive = std::move(acceptor.second)]() mutable {
-                keepAlive.reset();
-              });
+        for (auto& keepAlive : acceptorsKeepAlive_) {
+          auto evb = keepAlive.get();
+          evb->add([keepAlive = std::move(keepAlive)]() {});
         }
         acceptorsKeepAlive_.clear();
       }
@@ -232,11 +230,8 @@ class McServerThread {
       if (accepting_) {
         socket_.reset();
         sslSocket_.reset();
-        for (auto& acceptor : acceptorsKeepAlive_) {
-          acceptor.first
-              ->add([keepAlive = std::move(acceptor.second)]() mutable {
-                keepAlive.reset();
-              });
+        for (auto& keepAlive : acceptorsKeepAlive_) {
+          keepAlive->add([keepAlive = std::move(keepAlive)]() {});
         }
         acceptorsKeepAlive_.clear();
       }
@@ -315,8 +310,7 @@ class McServerThread {
 
   folly::AsyncServerSocket::UniquePtr socket_;
   folly::AsyncServerSocket::UniquePtr sslSocket_;
-  std::vector<std::pair<folly::EventBase*, folly::Executor::KeepAlive>>
-      acceptorsKeepAlive_;
+  std::vector<folly::Executor::KeepAlive<folly::EventBase>> acceptorsKeepAlive_;
   std::unique_ptr<ShutdownPipe> shutdownPipe_;
 
   AsyncMcServer::LoopFn fn_;
@@ -407,8 +401,7 @@ class McServerThread {
         sslSocket_->addAcceptCallback(&t->sslAcceptCallback_, t->evb_.get());
       }
       if (socket_ != nullptr || sslSocket_ != nullptr || t.get() != this) {
-        acceptorsKeepAlive_.emplace_back(
-            t->evb_.get(), t->evb_->getKeepAliveToken());
+        acceptorsKeepAlive_.emplace_back(getKeepAliveToken(t->evb_.get()));
       }
     }
   }
