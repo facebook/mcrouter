@@ -118,6 +118,7 @@ AC_CHECK_HEADER([folly/Likely.h], [], [AC_MSG_ERROR(
 )], [])
 AC_CHECK_LIB([wangle], [getenv], [], [AC_MSG_ERROR(
              [Please install the wangle library])])
+AC_CHECK_LIB([dl], [dlopen], [])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
