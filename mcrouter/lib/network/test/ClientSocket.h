@@ -9,6 +9,9 @@
 
 #include <stdint.h>
 
+#include <netdb.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #include <chrono>
 #include <string>
 
@@ -25,6 +28,7 @@ class ClientSocket {
    * @throws std::runtime_error  if failed to create a socket and connect
    */
   explicit ClientSocket(uint16_t port);
+  ClientSocket(const std::string& hostName, uint16_t port);
   ~ClientSocket();
 
   /**
@@ -62,7 +66,8 @@ class ClientSocket {
   ClientSocket& operator=(const ClientSocket&) = delete;
 
  private:
+  void setupSocket(struct addrinfo*, uint16_t port);
   int socketFd_{-1};
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook
