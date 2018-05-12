@@ -27,7 +27,7 @@ namespace mcrouter {
  * @param flavorUri       URI of the flavor containing the router options.
  *                        The flavor URI has to be prefixed by it's provider
  *                        (e.g. if it's a file, it should be: "file:<PATH>").
- * @param overrides       Optional params containing any option that should
+ * @param optionOverrides Optional params containing any option that should
  *                        override the option provided by the flavor.
  *
  * @return                A pointer to CarbonRouterInstance.
@@ -41,8 +41,27 @@ CarbonRouterInstance<RouterInfo>* createRouterFromFlavor(
     std::unordered_map<std::string, std::string> optionOverrides =
         std::unordered_map<std::string, std::string>());
 
-} // mcrouter
-} // memcache
-} // facebook
+/**
+ * Creates a carbon router from a flavor file and returns a shared_ptr to it.
+ *
+ * @param flavorUri       URI of the flavor containing the router options.
+ *                        The flavor URI has to be prefixed by it's provider
+ *                        (e.g. if it's a file, it should be: "file:<PATH>").
+ * @param optionOverrides Optional params containing any option that should
+ *                        override the option provided by the flavor.
+ *
+ * @return                A shared_ptr to CarbonRouterInstance.
+ *                        May return nullptr if config is invalid or if
+ *                        CarbonRouterManager singleton is unavailable.
+ */
+template <class RouterInfo>
+std::shared_ptr<CarbonRouterInstance<RouterInfo>> createRouterFromFlavor(
+    folly::StringPiece flavorUri,
+    std::unordered_map<std::string, std::string> optionOverrides =
+        std::unordered_map<std::string, std::string>());
+
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 #include "CarbonRouterFactory-inl.h"

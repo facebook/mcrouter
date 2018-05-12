@@ -46,7 +46,7 @@ class CarbonRouterInstance
      so the users don't need to worry about destruction. */
 
   /**
-   * @return  If an instance with the given persistence_id already exists,
+   * @return  If an instance with the given persistenceId already exists,
    *   returns a pointer to it. Options are ignored in this case.
    *   Otherwise spins up a new instance and returns the pointer to it. May
    *   return nullptr if the McRouterManager singleton is unavailable, perhaps
@@ -59,17 +59,17 @@ class CarbonRouterInstance
    *   the provided options.
    */
   static CarbonRouterInstance<RouterInfo>* init(
-      folly::StringPiece persistence_id,
+      folly::StringPiece persistenceId,
       const McrouterOptions& options,
       const std::vector<folly::EventBase*>& evbs =
           std::vector<folly::EventBase*>());
 
   /**
-   * If an instance with the given persistence_id already exists,
+   * If an instance with the given persistenceId already exists,
    * returns a pointer to it. Otherwise returns nullptr.
    */
   static CarbonRouterInstance<RouterInfo>* get(
-      folly::StringPiece persistence_id);
+      folly::StringPiece persistenceId);
 
   /**
    * Intended for short-lived instances with unusual configs

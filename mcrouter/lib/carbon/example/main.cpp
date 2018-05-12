@@ -163,18 +163,79 @@ void testRouter() {
     return;
   }
 
+  SCOPE_EXIT {
+    // Release all router resources on exit
+    router->shutdown();
+    server1.shutdown();
+    server1.join();
+    server2.shutdown();
+    server2.join();
+    freeAllRouters();
+  };
+
   for (int i = 0; i < 10; ++i) {
     auto client = router->createClient(0 /* max_outstanding_requests */);
     sendHelloRequestSync(client.get(), folly::sformat("key:{}", i));
   }
+}
 
-  router->shutdown();
+void testCarbonLookasideRouter() {
+  // Run 2 simple HelloGoodbye server
+  AsyncMcServer server1(getOpts(kPort));
+  spawnServer(server1);
+  AsyncMcServer server2(getOpts(kPort2));
+  spawnServer(server2);
 
-  // Shutdown server
-  server1.shutdown();
-  server1.join();
-  server2.shutdown();
-  server2.join();
+  // Start mcrouter
+  McrouterOptions routerOpts;
+  routerOpts.num_proxies = 2;
+  routerOpts.asynclog_disable = true;
+  routerOpts.config_str = R"(
+  {
+    "pools": {
+      "A": {
+        "servers": [ "127.0.0.1:11303", "127.0.0.1:11305" ],
+        "protocol": "caret"
+      }
+    },
+    "route": {
+      "type": "CarbonLookasideRoute",
+      "prefix": "petra",
+      "ttl": 100,
+      "child": {
+        "type": "DuplicateRoute",
+        "target": "PoolRoute|A",
+        "copies": 5
+      }
+    }
+  }
+  )";
+
+  auto router = CarbonRouterInstance<HelloGoodbyeRouterInfo>::init(
+      "remoteThreadClientTest", routerOpts);
+  if (!router) {
+    LOG(ERROR) << "Failed to initialize router!";
+    return;
+  }
+
+  SCOPE_EXIT {
+    // Release all router resources on exit
+    router->shutdown();
+    server1.shutdown();
+    server1.join();
+    server2.shutdown();
+    server2.join();
+    freeAllRouters();
+  };
+
+  auto client = router->createClient(0 /* max_outstanding_requests */);
+  for (int i = 0; i < 10; ++i) {
+    sendHelloRequestSync(client.get(), folly::sformat("key:{}", i));
+  }
+
+  for (int i = 0; i < 10; ++i) {
+    sendHelloRequestSync(client.get(), folly::sformat("key:{}", i));
+  }
 }
 
 } // anonymous
@@ -184,6 +245,7 @@ int main(int argc, char* argv[]) {
 
   // testClientServer();
   testRouter();
+  testCarbonLookasideRouter();
 
   return 0;
 }

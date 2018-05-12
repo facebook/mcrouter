@@ -46,27 +46,27 @@ class McrouterManager {
 
   template <class RouterInfo>
   CarbonRouterInstance<RouterInfo>* mcrouterGetCreate(
-      folly::StringPiece persistence_id,
+      folly::StringPiece persistenceId,
       const McrouterOptions& options,
       const std::vector<folly::EventBase*>& evbs) {
     std::shared_ptr<CarbonRouterInstanceBase> mcrouterBase;
 
     {
       std::lock_guard<std::mutex> lg(mutex_);
-      mcrouterBase = folly::get_default(mcrouters_, persistence_id.str());
+      mcrouterBase = folly::get_default(mcrouters_, persistenceId.str());
     }
     if (!mcrouterBase) {
       std::lock_guard<std::mutex> ilg(initMutex_);
       {
         std::lock_guard<std::mutex> lg(mutex_);
-        mcrouterBase = folly::get_default(mcrouters_, persistence_id.str());
+        mcrouterBase = folly::get_default(mcrouters_, persistenceId.str());
       }
       if (!mcrouterBase) {
         std::shared_ptr<CarbonRouterInstance<RouterInfo>> mcrouter =
             CarbonRouterInstance<RouterInfo>::create(options.clone(), evbs);
         if (mcrouter) {
           std::lock_guard<std::mutex> lg(mutex_);
-          mcrouters_[persistence_id.str()] = mcrouter;
+          mcrouters_[persistenceId.str()] = mcrouter;
           return mcrouter.get();
         }
       }
@@ -76,10 +76,10 @@ class McrouterManager {
 
   template <class RouterInfo>
   CarbonRouterInstance<RouterInfo>* mcrouterGet(
-      folly::StringPiece persistence_id) {
+      folly::StringPiece persistenceId) {
     std::lock_guard<std::mutex> lg(mutex_);
     auto mcrouterBase =
-        folly::get_default(mcrouters_, persistence_id.str(), nullptr).get();
+        folly::get_default(mcrouters_, persistenceId.str(), nullptr).get();
     return dynamic_cast<CarbonRouterInstance<RouterInfo>*>(mcrouterBase);
   }
 
@@ -94,17 +94,16 @@ class McrouterManager {
 
 extern folly::Singleton<McrouterManager> gMcrouterManager;
 
-} // detail
+} // namespace detail
 
 template <class RouterInfo>
 /* static  */ CarbonRouterInstance<RouterInfo>*
 CarbonRouterInstance<RouterInfo>::init(
-    folly::StringPiece persistence_id,
+    folly::StringPiece persistenceId,
     const McrouterOptions& options,
     const std::vector<folly::EventBase*>& evbs) {
   if (auto manager = detail::gMcrouterManager.try_get()) {
-    return manager->mcrouterGetCreate<RouterInfo>(
-        persistence_id, options, evbs);
+    return manager->mcrouterGetCreate<RouterInfo>(persistenceId, options, evbs);
   }
 
   return nullptr;
@@ -112,9 +111,9 @@ CarbonRouterInstance<RouterInfo>::init(
 
 template <class RouterInfo>
 CarbonRouterInstance<RouterInfo>* CarbonRouterInstance<RouterInfo>::get(
-    folly::StringPiece persistence_id) {
+    folly::StringPiece persistenceId) {
   if (auto manager = detail::gMcrouterManager.try_get()) {
-    return manager->mcrouterGet<RouterInfo>(persistence_id);
+    return manager->mcrouterGet<RouterInfo>(persistenceId);
   }
 
   return nullptr;

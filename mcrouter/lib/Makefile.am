@@ -197,6 +197,7 @@ libmcrouter_a_SOURCES = \
   routes/AllInitialRoute.h \
   routes/AllMajorityRoute.h \
   routes/AllSyncRoute.h \
+  routes/CarbonLookasideRoute.h \
   routes/LoadBalancerRoute.h \
   routes/LoggingRoute.h \
   routes/MigrateRoute.h \

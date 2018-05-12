@@ -26,6 +26,8 @@ libmcroutercore_a_SOURCES = \
   CarbonRouterClient.h \
   CarbonRouterClientBase.cpp \
   CarbonRouterClientBase.h \
+  CarbonRouterFactory.h \
+  CarbonRouterFactory.cpp \
   CarbonRouterInstance-inl.h \
   CarbonRouterInstance.cpp \
   CarbonRouterInstance.h \
@@ -101,6 +103,7 @@ libmcroutercore_a_SOURCES = \
   routes/BigValueRoute.cpp \
   routes/BigValueRoute.h \
   routes/BigValueRouteIf.h \
+  routes/CarbonLookasideRoute.h \
   routes/DefaultShadowPolicy.h \
   routes/DestinationRoute.h \
   routes/DevNullRoute.h \

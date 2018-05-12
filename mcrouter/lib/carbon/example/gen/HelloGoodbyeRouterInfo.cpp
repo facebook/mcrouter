@@ -46,6 +46,7 @@
 
 #include <mcrouter/routes/McExtraRouteHandleProvider.h>
 
+#include "mcrouter/lib/carbon/example/CarbonLookasideRoute.h"
 #include "mcrouter/lib/carbon/example/DuplicateRoute.h"
 
 using namespace facebook::memcache;
@@ -82,6 +83,8 @@ HelloGoodbyeRouterInfo::buildRouteMap() {
        &makeOperationSelectorRoute<HelloGoodbyeRouterInfo>},
       {"RandomRoute", &makeRandomRoute<HelloGoodbyeRouterInfo>},
       {"DuplicateRoute", &makeDuplicateRoute<HelloGoodbyeRouterInfo>},
+      {"CarbonLookasideRoute",
+       &makeCarbonLookasideRoute<HelloGoodbyeRouterInfo>},
   };
   return map;
 }

@@ -14,6 +14,7 @@
 #include "mcrouter/routes/AllInitialRouteFactory.h"
 #include "mcrouter/routes/AllMajorityRouteFactory.h"
 #include "mcrouter/routes/AllSyncRouteFactory.h"
+#include "mcrouter/routes/CarbonLookasideRoute.h"
 #include "mcrouter/routes/DevNullRoute.h"
 #include "mcrouter/routes/ErrorRoute.h"
 #include "mcrouter/routes/FailoverRoute.h"
@@ -42,6 +43,33 @@ namespace mcrouter {
 
 using McRouteHandleFactory = RouteHandleFactory<McrouterRouteHandleIf>;
 
+/**
+ * This implementation is only for test purposes. Typically the users of
+ * CarbonLookaside will be services other than memcache.
+ */
+class MemcacheCarbonLookasideHelper {
+ public:
+  static std::string name() {
+    return "MemcacheCarbonLookasideHelper";
+  }
+
+  template <typename Request>
+  bool cacheCandidate(const Request& /* unused */) {
+    if (Request::hasKey) {
+      return true;
+    }
+    return false;
+  }
+
+  template <typename Request>
+  std::string buildKey(const Request& req) {
+    if (Request::hasKey) {
+      return req.key().fullKey().str();
+    }
+    return std::string();
+  }
+};
+
 McrouterRouteHandlePtr makeWarmUpRoute(
     McRouteHandleFactory& factory,
     const folly::dynamic& json);
@@ -61,6 +89,10 @@ McRouteHandleProvider<MemcacheRouterInfo>::buildRouteMap() {
       {"AllInitialRoute", &makeAllInitialRoute<MemcacheRouterInfo>},
       {"AllMajorityRoute", &makeAllMajorityRoute<MemcacheRouterInfo>},
       {"AllSyncRoute", &makeAllSyncRoute<MemcacheRouterInfo>},
+      {"CarbonLookasideRoute",
+       &createCarbonLookasideRoute<
+           MemcacheRouterInfo,
+           MemcacheCarbonLookasideHelper>},
       {"DevNullRoute", &makeDevNullRoute<MemcacheRouterInfo>},
       {"ErrorRoute", &makeErrorRoute<MemcacheRouterInfo>},
       {"FailoverWithExptimeRoute",
