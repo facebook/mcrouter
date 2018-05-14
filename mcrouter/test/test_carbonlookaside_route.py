@@ -93,7 +93,7 @@ class CarbonLookasideTmpConfig():
 
 class TestCarbonLookasideRouteBasic(McrouterTestCase):
     prefix = "CarbonLookaside"
-    ttl = 10
+    ttl = 120
     null_route_config = './mcrouter/test/test_nullroute.json'
     extra_args = []
 
