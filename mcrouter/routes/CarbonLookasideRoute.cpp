@@ -20,6 +20,7 @@
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
+namespace detail {
 
 namespace {
 
@@ -64,6 +65,7 @@ createCarbonLookasideRouter(
   return nullptr;
 }
 
+} // namespace detail
 } // namespace mcrouter
 } // namespace memcache
 } // namespace facebook

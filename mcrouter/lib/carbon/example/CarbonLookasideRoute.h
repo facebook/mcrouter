@@ -14,10 +14,16 @@
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/routes/CarbonLookasideRoute.h"
 
+namespace folly {
+struct dynamic;
+} // namespace folly
+
 namespace hellogoodbye {
 
 class HelloGoodbyeCarbonLookasideHelper {
  public:
+  HelloGoodbyeCarbonLookasideHelper(const folly::dynamic* /* jsonConfig */) {}
+
   static std::string name() {
     return "HelloGoodbyeCarbonLookasideHelper";
   }

@@ -37,6 +37,10 @@
 #include "mcrouter/routes/RandomRouteFactory.h"
 #include "mcrouter/routes/ShadowRoute.h"
 
+namespace folly {
+struct dynamic;
+}
+
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
@@ -49,6 +53,8 @@ using McRouteHandleFactory = RouteHandleFactory<McrouterRouteHandleIf>;
  */
 class MemcacheCarbonLookasideHelper {
  public:
+  MemcacheCarbonLookasideHelper(const folly::dynamic* /* jsonConfig */) {}
+
   static std::string name() {
     return "MemcacheCarbonLookasideHelper";
   }
