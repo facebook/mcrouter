@@ -198,6 +198,9 @@ std::shared_ptr<SSLContext> createServerSSLContext(
   // reduce send fragment size
   SSL_CTX_set_max_send_fragment(sslContext->getSSLCtx(), 8000);
 #endif
+  sslContext->setVerificationOption(
+      folly::SSLContext::SSLVerifyPeerEnum::VERIFY_REQ_CLIENT_CERT);
+
   return sslContext;
 }
 

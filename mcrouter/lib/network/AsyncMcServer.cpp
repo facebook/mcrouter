@@ -280,8 +280,6 @@ class McServerThread {
             server.getTicketKeySeeds());
 
         if (sslCtx) {
-          sslCtx->setVerificationOption(
-              folly::SSLContext::SSLVerifyPeerEnum::VERIFY_REQ_CLIENT_CERT);
           mcServerThread_->worker_.addSecureClientSocket(fd, std::move(sslCtx));
         } else {
           ::close(fd);
