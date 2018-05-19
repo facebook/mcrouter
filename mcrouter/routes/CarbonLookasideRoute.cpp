@@ -20,7 +20,6 @@
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
-namespace detail {
 
 namespace {
 
@@ -65,7 +64,49 @@ createCarbonLookasideRouter(
   return nullptr;
 }
 
-} // namespace detail
+LeaseSettings parseLeaseSettings(const folly::dynamic& json) {
+  LeaseSettings leaseSettings;
+  if (auto jLeases = json.get_ptr("lease_settings")) {
+    checkLogic(
+        jLeases->isObject(),
+        "CarbonLookasideRoute: 'lease_settings' is not an object");
+    if (auto jEnableLeases = jLeases->get_ptr("enable_leases")) {
+      checkLogic(
+          jEnableLeases->isBool(),
+          "CarbonLookasideRoute: 'enable_leases' is not bool");
+      leaseSettings.enableLeases = jEnableLeases->getBool();
+    }
+    if (auto jInitialWait = jLeases->get_ptr("initial_wait_interval_ms")) {
+      checkLogic(
+          jInitialWait->isInt(),
+          "CarbonLookasideRoute: 'initial_wait_interval_ms' is not an int");
+      leaseSettings.initialWaitMs = jInitialWait->getInt();
+      checkLogic(
+          leaseSettings.initialWaitMs >= 0,
+          "CarbonLookasideRoute: 'initial_wait_interval_ms' must be >= 0");
+    }
+    if (auto jMaxWait = jLeases->get_ptr("max_wait_interval_ms")) {
+      checkLogic(
+          jMaxWait->isInt(),
+          "CarbonLookasideRoute: 'max_wait_interval_ms' is not an int");
+      leaseSettings.maxWaitMs = jMaxWait->getInt();
+      checkLogic(
+          leaseSettings.maxWaitMs >= 0,
+          "CarbonLookasideRoute: 'max_wait_interval_ms' must be >= 0");
+    }
+    if (auto jNumRetries = jLeases->get_ptr("num_retries")) {
+      checkLogic(
+          jNumRetries->isInt(),
+          "CarbonLookasideRoute: 'num_retries' is not an int");
+      leaseSettings.numRetries = jNumRetries->getInt();
+      checkLogic(
+          leaseSettings.numRetries >= 0,
+          "CarbonLookasideRoute: 'num_retries' must be >= 0");
+    }
+  }
+  return leaseSettings;
+}
+
 } // namespace mcrouter
 } // namespace memcache
 } // namespace facebook

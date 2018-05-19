@@ -13,7 +13,8 @@ import tempfile
 import os
 import time
 from string import Template
-
+import threading
+import Queue
 
 class CarbonLookasideTmpConfig():
     routeConfigFile = """
@@ -28,9 +29,40 @@ class CarbonLookasideTmpConfig():
     "prefix": "$TEMPLATE_PREFIX",
     "ttl": $TEMPLATE_TTL,
     "flavor": "$TEMPLATE_FILENAME",
+    "lease_settings": {
+      "enable_leases": $TEMPLATE_LEASE_ENABLE,
+      "initial_wait_interval_ms": $TEMPLATE_LEASE_WAIT_INTERVAL,
+      "num_retries": $TEMPLATE_LEASE_NUM_RETRIES,
+    },
     "child": [
       "PoolRoute|A"
     ]
+  }
+}
+"""
+    routeLatencyConfigFile = """
+{
+  "pools": {
+    "A": {
+      "servers": [ "127.0.0.1:12345" ]
+    }
+  },
+  "route": {
+    "type": "CarbonLookasideRoute",
+    "prefix": "$TEMPLATE_PREFIX",
+    "ttl": $TEMPLATE_TTL,
+    "flavor": "$TEMPLATE_FILENAME",
+    "lease_settings": {
+      "enable_leases": $TEMPLATE_LEASE_ENABLE,
+      "initial_wait_interval_ms": $TEMPLATE_LEASE_WAIT_INTERVAL,
+      "num_retries": $TEMPLATE_LEASE_NUM_RETRIES,
+    },
+    "child": {
+      "type": "LatencyInjectionRoute",
+      "child": "PoolRoute|A",
+      "before_latency_ms": $TEMPLATE_BEFORE_LATENCY,
+      "after_latency_ms": $TEMPLATE_AFTER_LATENCY,
+    }
   }
 }
 """
@@ -66,7 +98,8 @@ class CarbonLookasideTmpConfig():
         if not self.tmpFlavorFile:
             os.remove(self.tmpFlavorFile)
 
-    def __init__(self, prefix, ttl, port):
+    def __init__(self, prefix, ttl, port, lease_enable='false', lease_interval=0,
+            lease_num_retries=0, latency_before=0, latency_after=0):
         # Client file configuration
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as self.tmpClientFile:
             clientDict = {'TEMPLATE_PORT': port}
@@ -81,9 +114,18 @@ class CarbonLookasideTmpConfig():
             self.tmpFlavorFile.write(result)
         # Route file configuration
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as self.tmpRouteFile:
-            routeDict = {'TEMPLATE_PREFIX': prefix, 'TEMPLATE_TTL': ttl,
-                         'TEMPLATE_FILENAME': 'file:' + self.tmpFlavorFile.name}
-            src = Template(self.routeConfigFile)
+            routeDict = {'TEMPLATE_PREFIX': prefix,
+                         'TEMPLATE_TTL': ttl,
+                         'TEMPLATE_FILENAME': 'file:' + self.tmpFlavorFile.name,
+                         'TEMPLATE_LEASE_ENABLE': lease_enable,
+                         'TEMPLATE_LEASE_WAIT_INTERVAL': lease_interval,
+                         'TEMPLATE_LEASE_NUM_RETRIES': lease_num_retries,
+                         'TEMPLATE_BEFORE_LATENCY': latency_before,
+                         'TEMPLATE_AFTER_LATENCY': latency_after}
+            if latency_before or latency_after:
+                src = Template(self.routeLatencyConfigFile)
+            else:
+                src = Template(self.routeConfigFile)
             result = src.substitute(routeDict)
             self.tmpRouteFile.write(result)
 
@@ -94,7 +136,6 @@ class CarbonLookasideTmpConfig():
 class TestCarbonLookasideRouteBasic(McrouterTestCase):
     prefix = "CarbonLookaside"
     ttl = 120
-    null_route_config = './mcrouter/test/test_nullroute.json'
     extra_args = []
 
     def setUp(self):
@@ -119,45 +160,44 @@ class TestCarbonLookasideRouteBasic(McrouterTestCase):
         # carbonlookaside
         for i in range(0, n):
             key = 'someprefix:{}:|#|id=123'.format(i)
-            self.assertTrue(self.mcrouter.get(key, 'value'))
+            self.assertTrue(self.mcrouter.get(key), 'value')
         # Query carbonlookaside directly with the configured prefix
         # that the items have indeed been stored.
         for i in range(0, n):
             key = '{}someprefix:{}:|#|id=123'.format(self.prefix, i)
-            self.assertTrue(self.mc.get(key, 'value'))
+            self.assertTrue(self.mc.get(key), 'value')
         # Query the items through mcrouter and check that they are there
         # This query will be fed from carbonlookaside.
         for i in range(0, n):
             key = 'someprefix:{}:|#|id=123'.format(i)
-            self.assertTrue(self.mcrouter.get(key, 'value'))
+            self.assertTrue(self.mcrouter.get(key), 'value')
 
     def test_carbonlookaside_larger(self):
-        n = 2000
-        # Insert 2000 items into memcache
+        n = 200
+        # Insert 200 items into memcache
         for i in range(0, n):
             key = 'someprefix:{}:|#|id=123'.format(i)
             self.assertTrue(self.mcrouter.set(key, 'value'))
-        # Get the 2000 items from memcache, they will be set in
+        # Get the 200 items from memcache, they will be set in
         # carbonlookaside
         for i in range(0, n):
             key = 'someprefix:{}:|#|id=123'.format(i)
-            self.assertTrue(self.mcrouter.get(key, 'value'))
+            self.assertTrue(self.mcrouter.get(key), 'value')
         # Query carbonlookaside directly with the configured prefix
         # that the items have indeed been stored.
         for i in range(0, n):
             key = '{}someprefix:{}:|#|id=123'.format(self.prefix, i)
-            self.assertTrue(self.mc.get(key, 'value'))
+            self.assertTrue(self.mc.get(key), 'value')
         # Query the items through mcrouter and check that they are there
         # This query will be fed from carbonlookaside.
         for i in range(0, n):
             key = 'someprefix:{}:|#|id=123'.format(i)
-            self.assertTrue(self.mcrouter.get(key, 'value'))
+            self.assertTrue(self.mcrouter.get(key), 'value')
 
 
 class TestCarbonLookasideRouteExpiry(McrouterTestCase):
     prefix = "CarbonLookaside"
     ttl = 2
-    null_route_config = './mcrouter/test/test_nullroute.json'
     extra_args = []
 
     def setUp(self):
@@ -182,23 +222,22 @@ class TestCarbonLookasideRouteExpiry(McrouterTestCase):
         # carbonlookaside
         for i in range(0, n):
             key = 'someprefix:{}:|#|id=123'.format(i)
-            self.assertTrue(self.mcrouter.get(key, 'value'))
+            self.assertTrue(self.mcrouter.get(key), 'value')
         # Query carbonlookaside directly with the configured prefix
         # that the items have indeed been stored.
         for i in range(0, n):
             key = '{}someprefix:{}:|#|id=123'.format(self.prefix, i)
-            self.assertTrue(self.mc.get(key, 'value'))
+            self.assertTrue(self.mc.get(key), 'value')
         time.sleep(2)
         # Query carbonlookaside directly and check they have expired
         for i in range(0, n):
             key = '{}someprefix:{}:|#|id=123'.format(self.prefix, i)
-            self.assertFalse(self.mc.get(key, 'value'))
+            self.assertFalse(self.mc.get(key), 'value')
 
 
 class TestCarbonLookasideRouteNoExpiry(McrouterTestCase):
     prefix = "CarbonLookaside"
     ttl = 0
-    null_route_config = './mcrouter/test/test_nullroute.json'
     extra_args = []
 
     def setUp(self):
@@ -223,13 +262,132 @@ class TestCarbonLookasideRouteNoExpiry(McrouterTestCase):
         # carbonlookaside
         for i in range(0, n):
             key = 'someprefix:{}:|#|id=123'.format(i)
-            self.assertTrue(self.mcrouter.get(key, 'value'))
+            self.assertTrue(self.mcrouter.get(key), 'value')
         time.sleep(3)
         # Items should have expired in memcache
         for i in range(0, n):
             key = 'someprefix:{}:|#|id=123'.format(i)
-            self.assertFalse(self.mc.get(key, 'value'))
+            self.assertFalse(self.mc.get(key), 'value')
         # Items still available in carbonlookaside through mcrouter
         for i in range(0, n):
             key = 'someprefix:{}:|#|id=123'.format(i)
-            self.assertTrue(self.mcrouter.get(key, 'value'))
+            self.assertTrue(self.mcrouter.get(key), 'value')
+
+
+class TestCarbonLookasideRouteLeases(McrouterTestCase):
+    prefix = "CarbonLookaside"
+    ttl = 0
+    extra_args = []
+
+    def setUp(self):
+        self.mc = self.add_server(self.make_memcached())
+        self.tmpConfig = CarbonLookasideTmpConfig(self.prefix, self.ttl,
+                                                  self.mc.getport(), 'true',
+                                                  10, 10)
+        self.config = self.tmpConfig.getFileName()
+        self.mcrouter = self.add_mcrouter(
+            self.config,
+            extra_args=self.extra_args)
+
+    def tearDown(self):
+        self.tmpConfig.cleanup()
+
+    def test_carbonlookaside_basic_leases(self):
+        n = 20
+        # Insert 20 items into memcache
+        for i in range(0, n):
+            key = 'someprefix:{}:|#|id=123'.format(i)
+            self.assertTrue(self.mcrouter.set(key, 'value'))
+        # Get the 20 items from memcache, they will be set in
+        # carbonlookaside
+        for i in range(0, n):
+            key = 'someprefix:{}:|#|id=123'.format(i)
+            self.assertTrue(self.mcrouter.get(key), 'value')
+        # Query carbonlookaside directly with the configured prefix
+        # that the items have indeed been stored.
+        for i in range(0, n):
+            key = '{}someprefix:{}:|#|id=123'.format(self.prefix, i)
+            self.assertTrue(self.mc.get(key), 'value')
+        # Query the items through mcrouter and check that they are there
+        # This query will be fed from carbonlookaside.
+        for i in range(0, n):
+            key = 'someprefix:{}:|#|id=123'.format(i)
+            self.assertTrue(self.mcrouter.get(key), 'value')
+
+    def test_carbonlookaside_larger_leases(self):
+        n = 200
+        # Insert 200 items into memcache
+        for i in range(0, n):
+            key = 'someprefix:{}:|#|id=123'.format(i)
+            self.assertTrue(self.mcrouter.set(key, 'value'))
+        # Get the 200 items from memcache, they will be set in
+        # carbonlookaside
+        for i in range(0, n):
+            key = 'someprefix:{}:|#|id=123'.format(i)
+            self.assertTrue(self.mcrouter.get(key), 'value')
+        # Query carbonlookaside directly with the configured prefix
+        # that the items have indeed been stored.
+        for i in range(0, n):
+            key = '{}someprefix:{}:|#|id=123'.format(self.prefix, i)
+            self.assertTrue(self.mc.get(key), 'value')
+        # Query the items through mcrouter and check that they are there
+        # This query will be fed from carbonlookaside.
+        for i in range(0, n):
+            key = 'someprefix:{}:|#|id=123'.format(i)
+            self.assertTrue(self.mcrouter.get(key), 'value')
+
+
+class TestCarbonLookasideRouteLeasesHotMiss(McrouterTestCase):
+    prefix = "CarbonLookaside"
+    ttl = 0
+    extra_args = []
+
+    def setUp(self):
+        self.mc = self.add_server(self.make_memcached())
+        self.tmpConfig = CarbonLookasideTmpConfig(self.prefix, self.ttl,
+                                                  self.mc.getport(), 'true',
+                                                  10, 3, 0, 5000)
+        self.config = self.tmpConfig.getFileName()
+        self.mcrouter = self.add_mcrouter(
+            self.config,
+            extra_args=self.extra_args)
+
+        self.mcrouter2 = self.add_mcrouter(
+            self.config,
+            extra_args=self.extra_args)
+
+    def tearDown(self):
+        self.tmpConfig.cleanup()
+
+    def async_get(self, key, ret):
+        ret.put(self.mcrouter.get(key))
+
+    def test_carbonlookaside_basic_leases(self):
+        # Add KV pair directly to MC to avoid backend latency and
+        # carbonlookaside intereference
+        key = 'auld_lang_syne'
+        self.assertTrue(self.mc.set(key, 'value'))
+        # Make an async request for the key. It will initially do a lease get
+        # to carbonlookaside which will return a lease token. Note using a
+        # latency route here to slow things down so there is time to provoke
+        # a hot miss before backend responds and carbon lookaside does a lease
+        # set.
+        ret = Queue.Queue()
+        t = threading.Thread(target=self.async_get, args=(key, ret))
+        t.start()
+        # Ensure lease get has arrived at MC server before proceeding
+        stats = self.mc.stats()
+        while stats["cmd_lease_get"] == '0':
+            stats = self.mc.stats()
+        # Hot miss
+        self.assertTrue(self.mcrouter2.get(key), 'value')
+        stats = self.mc.stats()
+        self.assertTrue(stats["cmd_lease_get"] == '5')
+
+        # Now wait on the back end returning and the write to carbonLookaside
+        # completing.
+        t.join()
+        self.assertTrue(ret.get(), 'value')
+        stats = self.mc.stats()
+        self.assertTrue(stats["cmd_lease_set"] == '1')
+        self.assertTrue(stats["lease_tokens_in_use"] == '0')
