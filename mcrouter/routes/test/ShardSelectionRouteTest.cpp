@@ -19,7 +19,7 @@
 #include "mcrouter/options.h"
 #include "mcrouter/routes/McRouteHandleProvider.h"
 #include "mcrouter/routes/ShardSelectionRouteFactory.h"
-#include "mcrouter/routes/test/ShardSelectionRouteTestUtil.h"
+#include "mcrouter/routes/test/RouteHandleTestBase.h"
 
 using namespace facebook::memcache::mcrouter;
 using namespace hellogoodbye;
@@ -53,7 +53,7 @@ class BasicShardSelector {
 };
 
 class ShardSelectionRouteTest
-    : public ShardSelectionRouteTestUtil<HelloGoodbyeRouterInfo> {
+    : public RouteHandleTestBase<HelloGoodbyeRouterInfo> {
  public:
   HelloGoodbyeRouterInfo::RouteHandlePtr getShardSelectionRoute(
       folly::StringPiece jsonStr) {
