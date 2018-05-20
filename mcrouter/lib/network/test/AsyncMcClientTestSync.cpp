@@ -14,6 +14,7 @@
 #include <folly/fibers/EventBaseLoopController.h>
 #include <folly/fibers/FiberManager.h>
 #include <folly/io/async/EventBase.h>
+#include <folly/portability/GFlags.h>
 
 #include "mcrouter/lib/network/McSSLUtil.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
@@ -883,8 +884,9 @@ TEST(AsyncMcClient, contextProviders) {
   EXPECT_NE(clientCtx1, serverCtx1);
 }
 
-using BoolPair = std::tuple<bool, bool>;
-class AsyncMcClientTFOTest : public testing::TestWithParam<BoolPair> {};
+using TFOTestParams = std::tuple<bool, bool, bool>;
+
+class AsyncMcClientTFOTest : public testing::TestWithParam<TFOTestParams> {};
 
 TEST_P(AsyncMcClientTFOTest, testTfoWithSSL) {
   auto serverEnabled = std::get<0>(GetParam());
@@ -897,6 +899,7 @@ TEST_P(AsyncMcClientTFOTest, testTfoWithSSL) {
   config.tfoEnabled = serverEnabled;
   auto server = TestServer::create(std::move(config));
 
+  auto offloadHandshake = std::get<2>(GetParam());
   auto constexpr nConnAttempts = 10;
 
   auto sendReq = [serverEnabled, clientEnabled](TestClient& client) {
@@ -928,7 +931,8 @@ TEST_P(AsyncMcClientTFOTest, testTfoWithSSL) {
         0,
         "",
         nullptr,
-        clientEnabled);
+        clientEnabled,
+        offloadHandshake);
     sendReq(client);
   }
 
@@ -944,4 +948,108 @@ TEST_P(AsyncMcClientTFOTest, testTfoWithSSL) {
 INSTANTIATE_TEST_CASE_P(
     AsyncMcClientTest,
     AsyncMcClientTFOTest,
-    testing::Combine(testing::Bool(), testing::Bool()));
+    testing::Combine(testing::Bool(), testing::Bool(), testing::Bool()));
+
+class AsyncMcClientSSLOffloadTest : public testing::TestWithParam<bool> {
+ public:
+  void TearDown() override {
+    McSSLUtil::setApplicationSSLVerifier(nullptr);
+  }
+
+ protected:
+  std::unique_ptr<TestServer> createServer() {
+    TestServer::Config cfg;
+    cfg.outOfOrder = false;
+    cfg.useSsl = true;
+    return TestServer::create(std::move(cfg));
+  }
+};
+
+TEST_P(AsyncMcClientSSLOffloadTest, connectErrors) {
+  bool verifyCalled = false;
+  McSSLUtil::setApplicationSSLVerifier(
+      [&](folly::AsyncSSLSocket*, bool, X509_STORE_CTX*) {
+        verifyCalled = true;
+        return false;
+      });
+  auto server = createServer();
+
+  TestClient sadClient(
+      "::1",
+      server->getListenPort(),
+      200,
+      mc_caret_protocol,
+      validClientSsl(),
+      0,
+      0,
+      "",
+      nullptr,
+      false,
+      GetParam());
+  sadClient.sendGet("empty", mc_res_connect_error);
+  sadClient.waitForReplies();
+
+  server->shutdown();
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
+  EXPECT_TRUE(verifyCalled);
+}
+
+TEST_P(AsyncMcClientSSLOffloadTest, closeNow) {
+  auto server = createServer();
+  folly::EventBase evb;
+  ConnectionOptions opts("::1", server->getListenPort(), mc_caret_protocol);
+  opts.writeTimeout = std::chrono::milliseconds(1000);
+  opts.sslContextProvider = validClientSsl();
+  opts.sslHandshakeOffload = GetParam();
+  auto lc = std::make_unique<folly::fibers::EventBaseLoopController>();
+  lc->attachEventBase(evb);
+  folly::fibers::FiberManager fm(std::move(lc));
+  bool upCalled = false;
+  folly::Optional<AsyncMcClient::ConnectionDownReason> downReason;
+  auto upFunc = [&](const folly::AsyncSocket&) { upCalled = true; };
+  auto downFunc = [&](AsyncMcClient::ConnectionDownReason reason) {
+    downReason = reason;
+  };
+
+  auto client = std::make_unique<AsyncMcClient>(evb, opts);
+  client->setStatusCallbacks(upFunc, downFunc);
+  auto clientPtr = client.get();
+  fm.addTask([clientPtr] {
+    McGetRequest req("test");
+    clientPtr->sendSync(req, std::chrono::milliseconds(200), nullptr);
+  });
+  evb.loopOnce();
+  client->closeNow();
+  evb.loop();
+  EXPECT_FALSE(upCalled);
+  EXPECT_TRUE(downReason.hasValue());
+  EXPECT_EQ(*downReason, AsyncMcClient::ConnectionDownReason::ABORTED);
+}
+
+TEST_P(AsyncMcClientSSLOffloadTest, clientReset) {
+  auto server = createServer();
+  folly::EventBase evb;
+  ConnectionOptions opts("::1", server->getListenPort(), mc_caret_protocol);
+  opts.writeTimeout = std::chrono::milliseconds(1000);
+  opts.sslContextProvider = validClientSsl();
+  opts.sslHandshakeOffload = GetParam();
+  auto lc = std::make_unique<folly::fibers::EventBaseLoopController>();
+  lc->attachEventBase(evb);
+  folly::fibers::FiberManager fm(std::move(lc));
+  folly::Optional<AsyncMcClient::ConnectionDownReason> downReason;
+  auto client = std::make_unique<AsyncMcClient>(evb, opts);
+  auto clientPtr = client.get();
+  fm.addTask([clientPtr] {
+    McGetRequest req("test");
+    clientPtr->sendSync(req, std::chrono::milliseconds(200), nullptr);
+  });
+  evb.loopOnce();
+  client.reset();
+  evb.loop();
+}
+
+INSTANTIATE_TEST_CASE_P(
+    AsyncMcClientTest,
+    AsyncMcClientSSLOffloadTest,
+    testing::Bool());

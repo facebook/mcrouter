@@ -191,7 +191,8 @@ class TestClient {
       uint64_t qosPath = 0,
       std::string serviceIdentity = "",
       const CompressionCodecMap* compressionCodecMap = nullptr,
-      bool enableTfo = false);
+      bool enableTfo = false,
+      bool offloadHandshakes = false);
 
   void setThrottle(size_t maxInflight, size_t maxOutstanding) {
     client_->setThrottle(maxInflight, maxOutstanding);

@@ -5,6 +5,8 @@ noinst_LIBRARIES = libmcrouter.a
 libmcrouter_a_SOURCES = \
   AuxiliaryCPUThreadPool.h \
   AuxiliaryCPUThreadPool.cpp \
+  AuxiliaryIOThreadPool.h \
+  AuxiliaryIOThreadPool.cpp \
   CacheClientStats.h \
   Ch3HashFunc.h \
   Clocks.cpp \
@@ -185,6 +187,8 @@ libmcrouter_a_SOURCES = \
   network/ServerLoad.h \
   network/ServerMcParser-inl.h \
   network/ServerMcParser.h \
+  network/SocketConnector.cpp \
+  network/SocketConnector.h \
   network/ThreadLocalSSLContextProvider.cpp \
   network/ThreadLocalSSLContextProvider.h \
   network/UmbrellaProtocol.cpp \

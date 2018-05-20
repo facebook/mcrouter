@@ -366,6 +366,13 @@ MCROUTER_OPTION_TOGGLE(
     "If enabled, limited number of SSL sessions will be cached")
 
 MCROUTER_OPTION_TOGGLE(
+    ssl_handshake_offload,
+    false,
+    "ssl-handshake-offload",
+    no_short,
+    "If enabled, SSL handshakes are offloaded to a separate threadpool")
+
+MCROUTER_OPTION_TOGGLE(
     enable_compression,
     false,
     "enable-compression",

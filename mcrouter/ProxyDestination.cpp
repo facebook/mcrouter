@@ -325,6 +325,7 @@ void ProxyDestination::initializeAsyncMcClient() {
   options.tcpKeepAliveInterval = opts.keepalive_interval_s;
   options.writeTimeout = shortestTimeout_;
   options.sessionCachingEnabled = opts.ssl_connection_cache;
+  options.sslHandshakeOffload = opts.ssl_handshake_offload;
   options.sslServiceIdentity = opts.ssl_service_identity;
   options.routerInfoName = routerInfoName_;
   options.tfoEnabledForSsl = opts.enable_ssl_tfo;

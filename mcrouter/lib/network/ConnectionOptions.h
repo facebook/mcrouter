@@ -107,6 +107,11 @@ struct ConnectionOptions {
   bool sessionCachingEnabled{false};
 
   /**
+   * enable ssl handshake offload to a separate thread pool
+   */
+  bool sslHandshakeOffload{false};
+
+  /**
    * Use JemallocNodumpAllocator
    */
   bool useJemallocNodumpAllocator{false};
