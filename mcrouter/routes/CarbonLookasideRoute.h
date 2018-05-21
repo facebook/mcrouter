@@ -76,7 +76,7 @@ class CarbonLookasideRoute {
  public:
   std::string routeName() const {
     return folly::sformat(
-        "CarbonLookaside|name={}|ttl={}s|leases={}",
+        "lookaside-cache|name={}|ttl={}s|leases={}",
         carbonLookasideHelper_.name(),
         ttl_,
         leaseSettings_.enableLeases ? "true" : "false");
