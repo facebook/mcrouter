@@ -104,6 +104,7 @@ JsonClient::Options getClientOpts(
   JsonClient::Options opts;
   opts.port = port;
   opts.ignoreParsingErrors = ignoreParsingErrors;
+  opts.useSsl = useSsl;
   if (useSsl) {
     opts.useSsl = useSsl;
     opts.pemCaPath = kPemCaPath;
