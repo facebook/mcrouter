@@ -104,6 +104,7 @@ libmcroutercore_a_SOURCES = \
   routes/BigValueRoute.h \
   routes/BigValueRouteIf.h \
   routes/CarbonLookasideRoute.h \
+  routes/CarbonLookasideRoute.cpp \
   routes/DefaultShadowPolicy.h \
   routes/DestinationRoute.h \
   routes/DevNullRoute.h \

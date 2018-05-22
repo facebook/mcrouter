@@ -389,5 +389,12 @@ class TestCarbonLookasideRouteLeasesHotMiss(McrouterTestCase):
         t.join()
         self.assertTrue(ret.get(), 'value')
         stats = self.mc.stats()
+
+        # the lookaside sets dont block, so allow it to retry till set arrives
+        # at the local MC server.
+        retry = 0
+        while stats["cmd_lease_set"] == '0' and retry < 3:
+            time.sleep(1)
+            retry += 1
         self.assertTrue(stats["cmd_lease_set"] == '1')
         self.assertTrue(stats["lease_tokens_in_use"] == '0')
