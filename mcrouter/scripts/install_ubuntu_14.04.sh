@@ -5,6 +5,7 @@ set -ex
 [ -n "$1" ] || ( echo "Install dir missing"; exit 1 )
 
 sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+sudo add-apt-repository -y ppa:george-edison55/cmake-3.x
 
 sudo apt-get update
 
@@ -29,7 +30,10 @@ sudo apt-get install -y \
     make \
     pkg-config \
     python-dev \
-    ragel
+    ragel \
+    software-properties-common
+
+sudo apt-get upgrade -yq cmake
 
 cd "$(dirname "$0")" || ( echo "cd fail"; exit 1 )
 
