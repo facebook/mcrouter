@@ -111,6 +111,7 @@ AC_CHECK_LIB([ssl], [SSL_library_init], [], [AC_MSG_ERROR([Unable to find ssl])]
 AC_CHECK_LIB([z], [gzread], [], [AC_MSG_ERROR([Unable to find zlib])])
 AC_CHECK_LIB([double-conversion],[ceil],[],[AC_MSG_ERROR(
              [Please install double-conversion library])])
+AC_CHECK_LIB([dl], [dlopen], [])
 AC_CHECK_LIB([folly],[getenv],[],[AC_MSG_ERROR(
              [Please install the folly library])])
 AC_CHECK_HEADER([folly/Likely.h], [], [AC_MSG_ERROR(
@@ -118,7 +119,6 @@ AC_CHECK_HEADER([folly/Likely.h], [], [AC_MSG_ERROR(
 )], [])
 AC_CHECK_LIB([wangle], [getenv], [], [AC_MSG_ERROR(
              [Please install the wangle library])])
-AC_CHECK_LIB([dl], [dlopen], [])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
