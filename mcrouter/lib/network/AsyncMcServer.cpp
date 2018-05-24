@@ -21,6 +21,7 @@
 #include <vector>
 
 #include <folly/Conv.h>
+#include <folly/IPAddress.h>
 #include <folly/SharedMutex.h>
 #include <folly/String.h>
 #include <folly/io/async/AsyncServerSocket.h>
@@ -357,7 +358,21 @@ class McServerThread {
       if (!server_.opts_.ports.empty()) {
         socket_.reset(new folly::AsyncServerSocket());
         for (auto port : server_.opts_.ports) {
-          socket_->bind(port);
+          if (server_.opts_.listenAddresses.empty()) {
+            socket_->bind(port);
+          } else {
+            std::vector<folly::IPAddress> ipAddresses;
+            for (auto& listenAddress : server_.opts_.listenAddresses) {
+              auto maybeIp = folly::IPAddress::tryFromString(listenAddress);
+              checkLogic(maybeIp.hasValue(),
+                         "Invalid listen address: {}",
+                         listenAddress);
+              auto ip = std::move(maybeIp).value();
+              ipAddresses.push_back(std::move(ip));
+            }
+
+            socket_->bind(ipAddresses, port);
+          }
         }
       }
       if (!server_.opts_.sslPorts.empty()) {

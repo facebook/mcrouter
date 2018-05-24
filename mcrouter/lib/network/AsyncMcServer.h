@@ -67,6 +67,12 @@ class AsyncMcServer {
     int tcpListenBacklog{SOMAXCONN};
 
     /**
+     * The list of addresses to listen on.
+     * If this is used, existingSocketFd must be unset (-1).
+     */
+    std::vector<std::string> listenAddresses;
+
+    /**
      * The list of ports to listen on.
      * If this is used, existingSocketFd must be unset (-1).
      */
