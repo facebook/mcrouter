@@ -218,4 +218,4 @@ check_PROGRAMS =
 
 libtestmain_la_CPPFLAGS = -Igtest/include -Igtest
 libtestmain_la_SOURCES = TestMain.cpp gtest/src/gtest-all.cc
-libtestmain_la_LIBADD = -lfolly -lfollyinit
+libtestmain_la_LIBADD = -lfolly
