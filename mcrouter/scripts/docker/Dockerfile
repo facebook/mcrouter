@@ -10,7 +10,6 @@ ENV             DEBIAN_FRONTEND         noninteractive
 ARG             UBUNTU_VERSION
 ARG             RELEASE_REV=master
 RUN             apt-get update && apt-get install -y software-properties-common git sudo && \
-                add-apt-repository ppa:george-edison55/cmake-3.x && \
                 mkdir -p $MCROUTER_DIR/repo && \
                 cd $MCROUTER_DIR/repo && git clone $MCROUTER_REPO && \
                 cd $MCROUTER_DIR/repo/mcrouter && git checkout ${RELEASE_REV} && \
