@@ -123,6 +123,7 @@ string toString(const boost::any& value) {
       tryToString<double>(value, res) || tryToString<bool>(value, res) ||
       tryToString<string>(value, res) ||
       tryToString<vector<uint16_t>>(value, res) ||
+      tryToString<vector<string>>(value, res) ||
       tryToString<mcrouter::RoutingPrefix>(value, res) ||
       tryToString<unordered_map<string, string>>(value, res);
   checkLogic(ok, "Unsupported option type: {}", value.type().name());
@@ -147,6 +148,7 @@ void fromString(const string& str, const boost::any& value) {
       tryFromString<double>(str, value) || tryFromString<bool>(str, value) ||
       tryFromString<string>(str, value) ||
       tryFromString<vector<uint16_t>>(str, value) ||
+      tryFromString<vector<string>>(str, value) ||
       tryFromString<mcrouter::RoutingPrefix>(str, value) ||
       tryFromString<unordered_map<string, string>>(str, value);
 
