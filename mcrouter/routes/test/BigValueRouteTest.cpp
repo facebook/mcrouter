@@ -76,6 +76,7 @@ TEST(BigValueRouteTest, bigvalue) {
       make_shared<TestHandle>(GetRouteTestData(
           mc_res_found, init_reply_error, MC_MSG_FLAG_BIG_VALUE)),
       make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored)),
+      make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored)),
       make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored))};
   auto route_handles = get_route_handles(test_handles);
 
@@ -194,5 +195,53 @@ TEST(BigValueRouteTest, bigvalue) {
       EXPECT_EQ("key_set", keys_set[num_chunks]);
       EXPECT_EQ("lease-set", operations_set[num_chunks]);
     }
+
+    { // Test Update Like path with mc_op_add op
+      McrouterRouteHandle<BigValueRoute> rh(route_handles[4], opts);
+
+      std::string big_value = folly::to<std::string>(
+          std::string(threshold * (num_chunks / 2), 't'),
+          std::string(threshold * (num_chunks / 2), 's'));
+      std::string chunk_type_1(threshold, 't');
+      std::string chunk_type_2(threshold, 's');
+      McAddRequest req_set("key_set");
+      req_set.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, big_value);
+
+      auto f_set = rh.route(req_set);
+      auto keys_set = test_handles[4]->saw_keys;
+      auto values_set = test_handles[4]->sawValues;
+      auto operations_set = test_handles[4]->sawOperations;
+      EXPECT_EQ(num_chunks + 1, keys_set.size());
+      std::string rand_suffix_set;
+      // first set chunk values corresponding to chunk keys
+      for (size_t i = 0; i < num_chunks; i++) {
+        auto chunk_key_prefix = folly::sformat("key_set:{}:", i);
+        auto length = chunk_key_prefix.length();
+        auto saw_prefix = keys_set[i].substr(0, length);
+        EXPECT_EQ(chunk_key_prefix, saw_prefix);
+        EXPECT_EQ("add", operations_set[i]);
+
+        if (rand_suffix_set.empty()) { // rand_suffic same for all chunk_keys
+          rand_suffix_set = keys_set[i].substr(length);
+        } else {
+          EXPECT_EQ(rand_suffix_set, keys_set[i].substr(length));
+        }
+
+        if (i < num_chunks / 2) {
+          EXPECT_EQ(chunk_type_1, values_set[i]);
+        } else {
+          EXPECT_EQ(chunk_type_2, values_set[i]);
+        }
+      }
+
+      // if set for chunk keys succeed,
+      // set original key with chunks info as modified value
+      EXPECT_EQ("key_set", keys_set[num_chunks]);
+      EXPECT_EQ("add", operations_set[num_chunks]);
+      auto chunks_info =
+          folly::sformat("{}-{}-{}", version, num_chunks, rand_suffix_set);
+      EXPECT_EQ(chunks_info, values_set[num_chunks]);
+    }
+
   }});
 }

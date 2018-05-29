@@ -10,7 +10,6 @@
 #include <folly/Format.h>
 #include <folly/fibers/WhenN.h>
 
-#include "mcrouter/lib/AuxiliaryCPUThreadPool.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook {
@@ -170,53 +169,6 @@ folly::IOBuf BigValueRoute::createChunkKey(
   return folly::IOBuf(
       folly::IOBuf::COPY_BUFFER,
       folly::sformat("{}:{}:{}", baseKey, chunkIndex, suffix));
-}
-
-namespace {
-
-// Hashes value on a separate CPU thread pool, preempts fiber until hashing is
-// complete.
-uint64_t hashBigValue(const folly::IOBuf& value) {
-  if (auto singleton = AuxiliaryCPUThreadPoolSingleton::try_get_fast()) {
-    auto& threadPool = singleton->getThreadPool();
-    return folly::fibers::await([&](folly::fibers::Promise<uint64_t> promise) {
-      threadPool.add([ promise = std::move(promise), &value ]() mutable {
-        auto hash = folly::IOBufHash()(value);
-        // Note: for compatibility with old code running in production we're
-        // using only 32-bits of hash.
-        promise.setValue(hash & ((1ull << 32) - 1));
-      });
-    });
-  }
-  throwRuntime(
-      "Mcrouter CPU Thread pool is not running, cannot calculate hash for big "
-      "value!");
-}
-
-} // anonymous
-
-std::pair<std::vector<McSetRequest>, BigValueRoute::ChunksInfo>
-BigValueRoute::chunkUpdateRequests(
-    folly::StringPiece baseKey,
-    const folly::IOBuf& value,
-    int32_t exptime) const {
-  int numChunks = (value.computeChainDataLength() + options_.threshold - 1) /
-      options_.threshold;
-  ChunksInfo info(numChunks, hashBigValue(value));
-
-  std::vector<McSetRequest> bigSetReqs;
-  bigSetReqs.reserve(numChunks);
-
-  folly::IOBuf chunkValue;
-  folly::io::Cursor cursor(&value);
-  for (int i = 0; i < numChunks; ++i) {
-    cursor.cloneAtMost(chunkValue, options_.threshold);
-    bigSetReqs.emplace_back(createChunkKey(baseKey, i, info.suffix()));
-    bigSetReqs.back().value() = std::move(chunkValue);
-    bigSetReqs.back().exptime() = exptime;
-  }
-
-  return std::make_pair(std::move(bigSetReqs), info);
 }
 
 McrouterRouteHandlePtr makeBigValueRoute(

@@ -16,6 +16,7 @@
 #include <folly/io/Cursor.h>
 #include <folly/io/IOBuf.h>
 
+#include "mcrouter/lib/AuxiliaryCPUThreadPool.h"
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/Operation.h"
@@ -42,7 +43,38 @@ InputIterator reduce(InputIterator begin, InputIterator end) {
   }
   return worstIt;
 }
-} // detail
+
+template <class Request>
+struct ReducedUpdateType {
+  using RequestType = McSetRequest;
+  using ReplyType = McSetReply;
+};
+
+template <>
+struct ReducedUpdateType<McAddRequest> {
+  using RequestType = McAddRequest;
+  using ReplyType = McAddReply;
+};
+
+// Hashes value on a separate CPU thread pool, preempts fiber until hashing is
+// complete.
+uint64_t hashBigValue(const folly::IOBuf& value) {
+  if (auto singleton = AuxiliaryCPUThreadPoolSingleton::try_get_fast()) {
+    auto& threadPool = singleton->getThreadPool();
+    return folly::fibers::await([&](folly::fibers::Promise<uint64_t> promise) {
+      threadPool.add([promise = std::move(promise), &value]() mutable {
+        auto hash = folly::IOBufHash()(value);
+        // Note: for compatibility with old code running in production we're
+        // using only 32-bits of hash.
+        promise.setValue(hash & ((1ull << 32) - 1));
+      });
+    });
+  }
+  throwRuntime(
+      "Mcrouter CPU Thread pool is not running, cannot calculate hash for big "
+      "value!");
+}
+} // namespace detail
 
 template <class FuncIt>
 std::vector<typename std::result_of<
@@ -116,13 +148,18 @@ ReplyT<Request> BigValueRoute::route(
     return ch_->route(req);
   }
 
-  auto reqsInfoPair =
-      chunkUpdateRequests(req.key().fullKey(), req.value(), req.exptime());
-  std::vector<std::function<McSetReply()>> fs;
-  fs.reserve(reqsInfoPair.first.size());
+  // Use 'McSet' for all update requests except for 'McAdd'
+  using RequestType = typename detail::ReducedUpdateType<Request>::RequestType;
+  using ReplyType = typename detail::ReducedUpdateType<Request>::ReplyType;
+
+  auto reqsInfoPair = chunkUpdateRequests<RequestType>(
+      req.key().fullKey(), req.value(), req.exptime());
+  std::vector<std::function<ReplyType()>> fs;
+  auto& chunkReqs = reqsInfoPair.first;
+  fs.reserve(chunkReqs.size());
 
   auto& target = *ch_;
-  for (const auto& chunkReq : reqsInfoPair.first) {
+  for (const auto& chunkReq : chunkReqs) {
     fs.push_back([&target, &chunkReq]() { return target.route(chunkReq); });
   }
 
@@ -187,6 +224,31 @@ Reply BigValueRoute::mergeChunkGetReplies(
 
   initialReply.value() = concatAll(dataVec.begin(), dataVec.end());
   return initialReply;
+}
+
+template <class Request>
+std::pair<std::vector<Request>, BigValueRoute::ChunksInfo>
+BigValueRoute::chunkUpdateRequests(
+    folly::StringPiece baseKey,
+    const folly::IOBuf& value,
+    int32_t exptime) const {
+  int numChunks = (value.computeChainDataLength() + options_.threshold - 1) /
+      options_.threshold;
+  ChunksInfo info(numChunks, detail::hashBigValue(value));
+
+  std::vector<Request> chunkReqs;
+  chunkReqs.reserve(numChunks);
+
+  folly::IOBuf chunkValue;
+  folly::io::Cursor cursor(&value);
+  for (int i = 0; i < numChunks; ++i) {
+    cursor.cloneAtMost(chunkValue, options_.threshold);
+    chunkReqs.emplace_back(createChunkKey(baseKey, i, info.suffix()));
+    chunkReqs.back().value() = std::move(chunkValue);
+    chunkReqs.back().exptime() = exptime;
+  }
+
+  return std::make_pair(std::move(chunkReqs), info);
 }
 
 } // mcrouter
