@@ -200,7 +200,7 @@ mcrouter_SOURCES = \
 
 libmcroutercore_a_CPPFLAGS = -I..
 
-mcrouter_LDADD = libmcroutercore.a lib/libmcrouter.a
+mcrouter_LDADD = libmcroutercore.a lib/libmcrouter.a -lfolly -lfollylogging
 mcrouter_CPPFLAGS = -I..
 
 clean-local:

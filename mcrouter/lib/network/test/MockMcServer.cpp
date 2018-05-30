@@ -14,6 +14,7 @@
 
 #include <folly/Format.h>
 #include <folly/Singleton.h>
+#include <folly/logging/Init.h>
 
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
@@ -330,6 +331,11 @@ void serverLoop(
             << argv[0] << " -p 15213\n";
   exit(1);
 }
+
+// Configure folly to enable INFO+ messages, and everything else to
+// enable WARNING+.
+// Set the default log handler to log asynchronously by default.
+FOLLY_INIT_LOGGING_CONFIG(".=WARNING,folly=INFO; default:async=true");
 
 int main(int argc, char** argv) {
   folly::SingletonVault::singleton()->registrationComplete();

@@ -8,8 +8,14 @@
 #include <gtest/gtest.h>
 
 #include <folly/init/Init.h>
+#include <folly/logging/Init.h>
 
 #include <folly/Benchmark.h>
+
+// Configure folly to enable INFO+ messages, and everything else to
+// enable WARNING+.
+// Set the default log handler to log asynchronously by default.
+FOLLY_INIT_LOGGING_CONFIG(".=WARNING,folly=INFO; default:async=true");
 
 // for backward compatibility with gflags
 namespace gflags {} // gflags
