@@ -491,6 +491,9 @@ void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
         stats[fibers_stack_high_watermark_stat].data.uint64,
         pr->fiberManager().stackHighWatermark());
     stats[duration_us_stat].data.dbl += pr->stats().durationUs().value();
+    stats[duration_get_us_stat].data.dbl += pr->stats().durationGetUs().value();
+    stats[duration_update_us_stat].data.dbl +=
+        pr->stats().durationUpdateUs().value();
     stats[inactive_connection_closed_interval_sec_stat].data.dbl +=
         pr->stats().inactiveConnectionClosedIntervalSec().value();
     stats[client_queue_notify_period_stat].data.dbl += pr->queueNotifyPeriod();
@@ -498,6 +501,8 @@ void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
 
   if (router.opts().num_proxies > 0) {
     stats[duration_us_stat].data.dbl /= router.opts().num_proxies;
+    stats[duration_get_us_stat].data.dbl /= router.opts().num_proxies;
+    stats[duration_update_us_stat].data.dbl /= router.opts().num_proxies;
     stats[inactive_connection_closed_interval_sec_stat].data.dbl /=
         router.opts().num_proxies;
     stats[client_queue_notify_period_stat].data.dbl /=

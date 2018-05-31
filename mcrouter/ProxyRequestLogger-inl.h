@@ -33,7 +33,30 @@ void ProxyRequestLogger<RouterInfo>::log(
 
   const auto durationUs = loggerContext.endTimeUs - loggerContext.startTimeUs;
   proxy_.stats().durationUs().insertSample(durationUs);
+  logDurationByRequestType<Request>(durationUs);
 }
+
+template <class RouterInfo>
+template <class Request>
+void ProxyRequestLogger<RouterInfo>::logDurationByRequestType(
+    uint64_t durationUs,
+    carbon::GetLikeT<Request>) {
+  proxy_.stats().durationGetUs().insertSample(durationUs);
+}
+
+template <class RouterInfo>
+template <class Request>
+void ProxyRequestLogger<RouterInfo>::logDurationByRequestType(
+    uint64_t durationUs,
+    carbon::UpdateLikeT<Request>) {
+  proxy_.stats().durationUpdateUs().insertSample(durationUs);
+}
+
+template <class RouterInfo>
+template <class Request>
+void ProxyRequestLogger<RouterInfo>::logDurationByRequestType(
+    uint64_t /* durationUs */,
+    carbon::OtherThanT<Request, carbon::GetLike<>, carbon::UpdateLike<>>) {}
 
 #define REQUEST_CLASS_ERROR_STATS(proxy, ERROR, reqClass)     \
   do {                                                        \

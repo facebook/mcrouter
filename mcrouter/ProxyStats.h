@@ -40,6 +40,14 @@ class ProxyStats {
     return durationUs_;
   }
 
+  ExponentialSmoothData<64>& durationGetUs() {
+    return durationGetUs_;
+  }
+
+  ExponentialSmoothData<64>& durationUpdateUs() {
+    return durationUpdateUs_;
+  }
+
   /**
    * Tells the interval (in seconds) between closing a connection due to lack
    * of activity and opening it again.
@@ -172,6 +180,10 @@ class ProxyStats {
   std::vector<PoolStats> poolStats_;
 
   ExponentialSmoothData<64> durationUs_;
+  // Duration microseconds, broken down by get-like request type
+  ExponentialSmoothData<64> durationGetUs_;
+  // Duration microseconds, broken down by update-like request type
+  ExponentialSmoothData<64> durationUpdateUs_;
 
   ExponentialSmoothData<64> inactiveConnectionClosedIntervalSec_;
 
