@@ -64,7 +64,7 @@ TEST(CarbonRouterClient, basicUsageSameThreadClient) {
     threads.emplace_back([evb = std::move(evb)]() { evb->loopForever(); });
   }
   auto router = CarbonRouterInstance<MemcacheRouterInfo>::init(
-      "sameThreadClientTest", opts, evbs);
+      "basicUsageSameThreadClient", opts, evbs);
 
   // When using createSameThreadClient(), users must ensure that client->send()
   // is only ever called on the same thread as the associated Proxy.
@@ -124,7 +124,7 @@ TEST(CarbonRouterClient, basicUsageRemoteThreadClient) {
   opts.config_str = R"({ "route": "NullRoute" })";
 
   auto router = CarbonRouterInstance<MemcacheRouterInfo>::init(
-      "remoteThreadClientTest", opts);
+      "basicUsageRemoteThreadClient", opts);
 
   // Create client that can safely send requests through a Proxy on another
   // thread
@@ -159,7 +159,7 @@ TEST(CarbonRouterClient, remoteThreadStatsRequestUsage) {
   opts.config_str = R"({ "route": "NullRoute" })";
 
   auto router = CarbonRouterInstance<MemcacheRouterInfo>::init(
-      "remoteThreadClientTest", opts);
+      "remoteThreadStatsRequestUsage", opts);
 
   // Create client that can safely send requests through a Proxy on another
   // thread

@@ -33,7 +33,7 @@ sudo apt-get install -y \
     ragel \
     software-properties-common
 
-sudo apt-get upgrade -yq cmake
+# sudo apt-get upgrade -yq cmake
 
 cd "$(dirname "$0")" || ( echo "cd fail"; exit 1 )
 
