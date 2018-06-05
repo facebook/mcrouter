@@ -103,6 +103,7 @@ class TestServer {
     std::string caPath = getDefaultCaPath();
     std::string certPath = getDefaultCertPath();
     std::string keyPath = getDefaultKeyPath();
+    bool requirePeerCerts = true;
   };
 
   template <class OnRequest = TestServerOnRequest>
@@ -170,14 +171,18 @@ using SSLContextProvider = std::function<std::shared_ptr<folly::SSLContext>()>;
 constexpr std::nullptr_t noSsl() {
   return nullptr;
 }
+
 // valid Client SSL Certs
 SSLContextProvider validClientSsl();
-// valid SSL certs
-SSLContextProvider validSsl();
 // non-existent client SSL certs
-SSLContextProvider invalidSsl();
+SSLContextProvider invalidClientSsl();
 // broken client SSL certs (handshake fails)
-SSLContextProvider brokenSsl();
+SSLContextProvider brokenClientSsl();
+// client context w/o certs
+SSLContextProvider noCertClientSsl();
+
+// valid SSL certs for server
+SSLContextProvider validSsl();
 
 class TestClient {
  public:

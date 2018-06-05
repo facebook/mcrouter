@@ -373,6 +373,13 @@ MCROUTER_OPTION_TOGGLE(
     "If enabled, SSL handshakes are offloaded to a separate threadpool")
 
 MCROUTER_OPTION_TOGGLE(
+    ssl_verify_peers,
+    false,
+    "ssl-verify-peers",
+    no_short,
+    "If enabled, clients will verify server certificates.")
+
+MCROUTER_OPTION_TOGGLE(
     enable_compression,
     false,
     "enable-compression",

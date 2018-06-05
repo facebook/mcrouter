@@ -93,6 +93,7 @@ bool runServer(
     opts.pemCertPath = mcrouterOpts.pem_cert_path;
     opts.pemKeyPath = mcrouterOpts.pem_key_path;
     opts.pemCaPath = mcrouterOpts.pem_ca_path;
+    opts.sslRequirePeerCerts = standaloneOpts.ssl_require_peer_certs;
     opts.tfoEnabledForSsl = mcrouterOpts.enable_ssl_tfo;
     opts.tfoQueueSize = standaloneOpts.tfo_queue_size;
   }

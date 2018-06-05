@@ -274,10 +274,11 @@ class McServerThread {
       if (secure_) {
         const auto& server = mcServerThread_->server_;
         auto& opts = server.opts_;
-        auto sslCtx = getSSLContext(
+        auto sslCtx = getServerContext(
             opts.pemCertPath,
             opts.pemKeyPath,
             opts.pemCaPath,
+            opts.sslRequirePeerCerts,
             server.getTicketKeySeeds());
 
         if (sslCtx) {

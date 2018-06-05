@@ -22,8 +22,8 @@ ConnectionOptions getConnectionOptions(const JsonClient::Options& opts) {
   ConnectionOptions options(opts.host, opts.port, mc_caret_protocol);
   if (opts.useSsl) {
     options.sslContextProvider = [=]() {
-      return facebook::memcache::getSSLContext(
-          opts.pemCertPath, opts.pemKeyPath, opts.pemCaPath, folly::none, true);
+      return facebook::memcache::getClientContext(
+          opts.pemCertPath, opts.pemKeyPath, opts.pemCaPath);
     };
     options.sslServiceIdentity = opts.sslServiceIdentity;
     options.sessionCachingEnabled = true;

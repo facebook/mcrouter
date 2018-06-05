@@ -93,6 +93,11 @@ class AsyncMcServer {
     std::string pemCaPath;
 
     /**
+     * Whether to require peer certs when accepting SSL connections.
+     */
+    bool sslRequirePeerCerts{false};
+
+    /**
      * Path to JSON file containing old, current, and new seeds used for TLS
      * ticket key generation.
      */

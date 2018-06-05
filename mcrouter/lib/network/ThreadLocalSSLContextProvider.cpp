@@ -34,15 +34,18 @@ namespace {
 /* Sessions are valid for upto 24 hours */
 constexpr size_t kSessionLifeTime = 86400;
 
-struct CertPaths {
+struct ContextKey {
   folly::StringPiece pemCertPath;
   folly::StringPiece pemKeyPath;
   folly::StringPiece pemCaPath;
+  bool requireClientVerification;
   bool isClient;
 
-  bool operator==(const CertPaths& other) const {
+  bool operator==(const ContextKey& other) const {
     return pemCertPath == other.pemCertPath && pemKeyPath == other.pemKeyPath &&
-        pemCaPath == other.pemCaPath && isClient == other.isClient;
+        pemCaPath == other.pemCaPath &&
+        requireClientVerification == other.requireClientVerification &&
+        isClient == other.isClient;
   }
 };
 
@@ -52,14 +55,35 @@ struct ContextInfo {
   std::string pemCaPath;
 
   std::shared_ptr<SSLContext> context;
-
   std::chrono::time_point<std::chrono::steady_clock> lastLoadTime;
+
+  bool needsContext(
+      std::chrono::time_point<std::chrono::steady_clock> now) const {
+    constexpr auto kSslReloadInterval = std::chrono::minutes(30);
+    if (!context) {
+      return true;
+    }
+    return now - lastLoadTime > kSslReloadInterval;
+  }
+
+  void setContext(
+      std::shared_ptr<SSLContext> ctx,
+      std::chrono::time_point<std::chrono::steady_clock> loadTime) {
+    if (ctx) {
+      context = std::move(ctx);
+      lastLoadTime = loadTime;
+    }
+  }
 };
 
-struct CertPathsHasher {
-  size_t operator()(const CertPaths& paths) const {
+struct ContextKeyHasher {
+  size_t operator()(const ContextKey& key) const {
     return folly::Hash()(
-        paths.pemCertPath, paths.pemKeyPath, paths.pemCaPath, paths.isClient);
+        key.pemCertPath,
+        key.pemKeyPath,
+        key.pemCaPath,
+        key.requireClientVerification,
+        key.isClient);
   }
 };
 
@@ -112,24 +136,6 @@ bool configureSSLContext(
     logCertFailure("client CA list", pemCaPath, ex);
     return false;
   }
-
-// Try to disable compression if possible to reduce CPU and memory usage.
-#ifdef SSL_OP_NO_COMPRESSION
-  try {
-    sslContext.setOptions(SSL_OP_NO_COMPRESSION);
-  } catch (const std::runtime_error& ex) {
-    LOG_FAILURE(
-        "SSLCert",
-        failure::Category::kSystemError,
-        "Failed to apply SSL_OP_NO_COMPRESSION flag onto SSLContext "
-        "with files: pemCertPath='{}', pemKeyPath='{}', pemCaPath='{}'",
-        pemCertPath,
-        pemKeyPath,
-        pemCaPath);
-    // We failed to disable compression, but the SSLContext itself is good to
-    // use.
-  }
-#endif
   return true;
 }
 
@@ -164,6 +170,7 @@ std::shared_ptr<SSLContext> createServerSSLContext(
     folly::StringPiece pemCertPath,
     folly::StringPiece pemKeyPath,
     folly::StringPiece pemCaPath,
+    bool requireClientVerification,
     folly::Optional<wangle::TLSTicketKeySeeds> ticketKeySeeds) {
   wangle::SSLContextConfig cfg;
   // don't need to set any certs on the cfg since the context is configured
@@ -198,9 +205,14 @@ std::shared_ptr<SSLContext> createServerSSLContext(
   // reduce send fragment size
   SSL_CTX_set_max_send_fragment(sslContext->getSSLCtx(), 8000);
 #endif
-  sslContext->setVerificationOption(
-      folly::SSLContext::SSLVerifyPeerEnum::VERIFY_REQ_CLIENT_CERT);
-
+  if (requireClientVerification) {
+    sslContext->setVerificationOption(
+        folly::SSLContext::SSLVerifyPeerEnum::VERIFY_REQ_CLIENT_CERT);
+  } else {
+    // request client certs and verify them if the client presents them.
+    sslContext->setVerificationOption(
+        folly::SSLContext::SSLVerifyPeerEnum::VERIFY);
+  }
   return sslContext;
 }
 
@@ -209,60 +221,100 @@ std::shared_ptr<SSLContext> createClientSSLContext(
     folly::StringPiece pemKeyPath,
     folly::StringPiece pemCaPath) {
   auto context = std::make_shared<ClientSSLContext>(ticketCache.get());
-  if (!configureSSLContext(*context, pemCertPath, pemKeyPath, pemCaPath)) {
-    return nullptr;
+  if (!pemCertPath.empty() && !pemKeyPath.empty()) {
+    try {
+      context->loadCertificate(pemCertPath.begin());
+    } catch (const std::exception& ex) {
+      logCertFailure("certificate", pemCertPath, ex);
+      return nullptr;
+    }
+    // Load private key.
+    try {
+      context->loadPrivateKey(pemKeyPath.begin());
+    } catch (const std::exception& ex) {
+      logCertFailure("private key", pemKeyPath, ex);
+      return nullptr;
+    }
+  }
+  if (!pemCaPath.empty()) {
+    // we are going to verify server certificates
+    context->loadTrustedCertificates(pemCaPath.begin());
+    // only verify that the server is trusted - no peer name verification yet
+    context->authenticate(true, false);
+    context->setVerificationOption(
+        folly::SSLContext::SSLVerifyPeerEnum::VERIFY);
   }
   return context;
 }
 
-} // anonymous
-
-std::shared_ptr<SSLContext> getSSLContext(
+ContextInfo& getContextInfo(
     folly::StringPiece pemCertPath,
     folly::StringPiece pemKeyPath,
     folly::StringPiece pemCaPath,
-    folly::Optional<wangle::TLSTicketKeySeeds> ticketKeySeeds,
-    bool clientContext) {
-  static constexpr std::chrono::minutes kSslReloadInterval{30};
-  thread_local std::unordered_map<CertPaths, ContextInfo, CertPathsHasher>
+    bool requireClientVerification,
+    bool isClient) {
+  thread_local std::unordered_map<ContextKey, ContextInfo, ContextKeyHasher>
       localContexts;
 
-  CertPaths paths;
-  paths.pemCertPath = pemCertPath;
-  paths.pemKeyPath = pemKeyPath;
-  paths.pemCaPath = pemCaPath;
-  paths.isClient = clientContext;
+  ContextKey key;
+  key.pemCertPath = pemCertPath;
+  key.pemKeyPath = pemKeyPath;
+  key.pemCaPath = pemCaPath;
+  key.requireClientVerification = requireClientVerification;
+  key.isClient = isClient;
 
-  auto iter = localContexts.find(paths);
-  if (localContexts.find(paths) == localContexts.end()) {
+  auto iter = localContexts.find(key);
+  if (iter == localContexts.end()) {
     // Copy strings.
     ContextInfo info;
     info.pemCertPath = pemCertPath.toString();
     info.pemKeyPath = pemKeyPath.toString();
     info.pemCaPath = pemCaPath.toString();
+
     // Point all StringPiece's to our own strings.
-    paths.pemCertPath = info.pemCertPath;
-    paths.pemKeyPath = info.pemKeyPath;
-    paths.pemCaPath = info.pemCaPath;
-    iter = localContexts.insert(std::make_pair(paths, std::move(info))).first;
+    key.pemCertPath = info.pemCertPath;
+    key.pemKeyPath = info.pemKeyPath;
+    key.pemCaPath = info.pemCaPath;
+    iter = localContexts.insert(std::make_pair(key, std::move(info))).first;
   }
 
-  auto& contextInfo = iter->second;
+  return iter->second;
+}
 
+} // namespace
+
+std::shared_ptr<folly::SSLContext> getClientContext(
+    folly::StringPiece pemCertPath,
+    folly::StringPiece pemKeyPath,
+    folly::StringPiece pemCaPath) {
+  auto& info = getContextInfo(pemCertPath, pemKeyPath, pemCaPath, false, true);
   auto now = std::chrono::steady_clock::now();
-  if (contextInfo.context == nullptr ||
-      now - contextInfo.lastLoadTime > kSslReloadInterval) {
-    auto updated = clientContext
-        ? createClientSSLContext(pemCertPath, pemKeyPath, pemCaPath)
-        : createServerSSLContext(
-              pemCertPath, pemKeyPath, pemCaPath, std::move(ticketKeySeeds));
-    if (updated) {
-      contextInfo.lastLoadTime = now;
-      contextInfo.context = std::move(updated);
-    }
+  if (info.needsContext(now)) {
+    auto ctx = createClientSSLContext(pemCertPath, pemKeyPath, pemCaPath);
+    info.setContext(std::move(ctx), now);
   }
+  return info.context;
+}
 
-  return contextInfo.context;
+std::shared_ptr<folly::SSLContext> getServerContext(
+    folly::StringPiece pemCertPath,
+    folly::StringPiece pemKeyPath,
+    folly::StringPiece pemCaPath,
+    bool requireClientCerts,
+    folly::Optional<wangle::TLSTicketKeySeeds> seeds) {
+  auto& info = getContextInfo(
+      pemCertPath, pemKeyPath, pemCaPath, requireClientCerts, false);
+  auto now = std::chrono::steady_clock::now();
+  if (info.needsContext(now)) {
+    auto ctx = createServerSSLContext(
+        pemCertPath,
+        pemKeyPath,
+        pemCaPath,
+        requireClientCerts,
+        std::move(seeds));
+    info.setContext(std::move(ctx), now);
+  }
+  return info.context;
 }
 
 } // memcache

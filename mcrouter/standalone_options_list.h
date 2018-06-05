@@ -58,6 +58,13 @@ MCROUTER_OPTION_STRING(
   "Path to file containing JSON object for old, current, and new seeds"
   " used to generate TLS ticket keys")
 
+MCROUTER_OPTION_TOGGLE(
+    ssl_require_peer_certs,
+    false,
+    "ssl-require-peer-certs",
+    no_short,
+    "If enabled, clients must present valid certificates when using ssl")
+
 MCROUTER_OPTION_INTEGER(
     int,
     listen_sock_fd,

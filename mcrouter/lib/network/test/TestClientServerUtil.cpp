@@ -47,31 +47,37 @@ const char* const kServerVersion = "TestServer-1.0";
 
 SSLContextProvider validClientSsl() {
   return []() {
-    return getSSLContext(
-        getDefaultCertPath(),
-        getDefaultKeyPath(),
-        getDefaultCaPath(),
-        folly::none,
-        true);
-  };
-}
-
-SSLContextProvider validSsl() {
-  return []() {
-    return getSSLContext(
+    return getClientContext(
         getDefaultCertPath(), getDefaultKeyPath(), getDefaultCaPath());
   };
 }
 
-SSLContextProvider invalidSsl() {
+SSLContextProvider invalidClientSsl() {
   return []() {
-    return getSSLContext(kInvalidCertPath, kInvalidKeyPath, getDefaultCaPath());
+    return getClientContext(
+        kInvalidCertPath, kInvalidKeyPath, getDefaultCaPath());
   };
 }
 
-SSLContextProvider brokenSsl() {
+SSLContextProvider brokenClientSsl() {
   return []() {
-    return getSSLContext(kBrokenCertPath, kBrokenKeyPath, getDefaultCaPath());
+    return getClientContext(
+        kBrokenCertPath, kBrokenKeyPath, getDefaultCaPath());
+  };
+}
+
+SSLContextProvider noCertClientSsl() {
+  return []() { return getClientContext("", "", ""); };
+}
+
+SSLContextProvider validSsl() {
+  return []() {
+    return getServerContext(
+        getDefaultCertPath(),
+        getDefaultKeyPath(),
+        getDefaultCaPath(),
+        true,
+        folly::none);
   };
 }
 
@@ -163,6 +169,7 @@ TestServer::TestServer(Config config)
     opts_.pemKeyPath = config.keyPath;
     opts_.pemCertPath = config.certPath;
     opts_.pemCaPath = config.caPath;
+    opts_.sslRequirePeerCerts = config.requirePeerCerts;
     if (config.tfoEnabled) {
       opts_.tfoEnabledForSsl = true;
       opts_.tfoQueueSize = 100000;

@@ -22,6 +22,8 @@ class SSLContext;
 namespace facebook {
 namespace memcache {
 
+class SSLContextConfig;
+
 class ClientSSLContext : public folly::SSLContext {
  public:
   explicit ClientSSLContext(wangle::SSLSessionCallbacks& cache)
@@ -44,16 +46,32 @@ class ClientSSLContext : public folly::SSLContext {
 };
 
 /**
- * Manages sets of certificates on per thread basis.
- * Each set will be loaded only once per thread and will be reloaded if it's
- * older than 5 minutes.
+ * The following methods return thread local managed SSL Contexts.  Contexts are
+ * reloaded on demand if they are 30 minutes old on a per thread basis.
  */
-std::shared_ptr<folly::SSLContext> getSSLContext(
+
+/**
+ * Get a context used for client connections.  If pemCaPath is not empty, the
+ * context will be configured to verify server ceritifcates against the CA.
+ * pemCertPath and pemKeyPath may be empty.
+ */
+std::shared_ptr<folly::SSLContext> getClientContext(
+    folly::StringPiece pemCertPath,
+    folly::StringPiece pemKeyPath,
+    folly::StringPiece pemCaPath);
+
+/**
+ * Get a context used for accepting ssl connections.  All paths must not be
+ * empty.
+ * If requireClientCerts is true, clients that do not present a client cert
+ * during the handshake will be rejected.
+ */
+std::shared_ptr<folly::SSLContext> getServerContext(
     folly::StringPiece pemCertPath,
     folly::StringPiece pemKeyPath,
     folly::StringPiece pemCaPath,
-    folly::Optional<wangle::TLSTicketKeySeeds> = folly::none,
-    bool clientContext = false);
+    bool requireClientCerts,
+    folly::Optional<wangle::TLSTicketKeySeeds> seeds);
 
 } // memcache
 } // facebook

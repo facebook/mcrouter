@@ -48,7 +48,7 @@ TEST(AsyncMcClient, serverShutdown) {
 }
 
 TEST(AsyncMcClient, serverShutdownSsl) {
-  serverShutdownTest(validSsl());
+  serverShutdownTest(validClientSsl());
 }
 
 void simpleAsciiTimeoutTest(SSLContextProvider ssl) {
@@ -174,11 +174,17 @@ void testCerts(std::string name, SSLContextProvider ssl, size_t numConns) {
 }
 
 TEST(AsyncMcClient, invalidCerts) {
-  testCerts("test-invalidCerts", invalidSsl(), 1);
+  testCerts("test-invalidCerts", invalidClientSsl(), 1);
 }
 
 TEST(AsyncMcClient, brokenCerts) {
-  testCerts("test-brokenCerts", brokenSsl(), 2);
+  testCerts("test-brokenCerts", brokenClientSsl(), 2);
+}
+
+TEST(AsyncMcClient, noCerts) {
+  // we expect the no cert case to fail by default since the test server will
+  // require peer certs by default
+  testCerts("test-nocerts", noCertClientSsl(), 2);
 }
 
 TEST(AsyncMcClient, testClientFinalize) {
@@ -324,19 +330,19 @@ TEST(AsyncMcClient, connectionErrorSsl) {
 
 void basicTest(
     mc_protocol_t protocol,
-    SSLContextProvider ssl,
+    SSLContextProvider clientSsl,
     uint64_t qosClass = 0,
-    uint64_t qosPath = 0) {
-  TestServer::Config config;
+    uint64_t qosPath = 0,
+    TestServer::Config config = TestServer::Config()) {
   config.outOfOrder = (protocol != mc_ascii_protocol);
-  config.useSsl = (ssl != noSsl());
+  config.useSsl = (clientSsl != noSsl());
   auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost",
       server->getListenPort(),
       200,
       protocol,
-      ssl,
+      clientSsl,
       qosClass,
       qosPath);
   client.sendGet("test1", mc_res_found);
@@ -377,6 +383,13 @@ TEST(AsyncMcClient, basicUmbrellaSsl) {
 
 TEST(AsyncMcClient, basicCaretSsl) {
   basicTest(mc_caret_protocol, validClientSsl());
+}
+
+TEST(AsyncMcClient, basicCaretSslNoCerts) {
+  TestServer::Config cfg;
+  cfg.requirePeerCerts = false;
+  basicTest(mc_caret_protocol, noCertClientSsl(), 0, 0, cfg);
+  basicTest(mc_caret_protocol, validClientSsl(), 0, 0, cfg);
 }
 
 void qosTest(
