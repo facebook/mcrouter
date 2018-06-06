@@ -218,7 +218,7 @@ class McServerThread {
         sslSocket_.reset();
         for (auto& keepAlive : acceptorsKeepAlive_) {
           auto evb = keepAlive.get();
-          evb->add([keepAlive = std::move(keepAlive)]() {});
+          evb->add([ka = std::move(keepAlive)]() {});
         }
         acceptorsKeepAlive_.clear();
       }
@@ -232,7 +232,8 @@ class McServerThread {
         socket_.reset();
         sslSocket_.reset();
         for (auto& keepAlive : acceptorsKeepAlive_) {
-          keepAlive->add([keepAlive = std::move(keepAlive)]() {});
+          auto evb = keepAlive.get();
+          evb->add([ka = std::move(keepAlive)]() {});
         }
         acceptorsKeepAlive_.clear();
       }
