@@ -163,8 +163,7 @@ void insertCustomStartupOpts(folly::dynamic& options);
 
 std::string getBinPath(folly::StringPiece name);
 
-std::string getDefaultPemCertPath();
-std::string getDefaultPemCertKey();
+void finalizeOptions(McrouterOptions& options);
 
 /**
  * Reads a static json file. Do not monitor for changes.
