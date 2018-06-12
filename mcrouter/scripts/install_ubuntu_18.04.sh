@@ -22,7 +22,7 @@ sudo apt-get install -y \
     libgflags-dev \
     libgoogle-glog-dev \
     libjemalloc-dev \
-    libssl-dev \
+    libssl1.0-dev \
     libtool \
     make \
     pkg-config \
