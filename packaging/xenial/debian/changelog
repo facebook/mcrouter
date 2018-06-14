@@ -1,0 +1,6 @@
+mcrouter (0.37.0-1) xenial; urgency=medium
+
+  * Initial release
+    Using folly commit: 137443e869b5c293bf43adec8dd31d9800c943a1
+
+ -- Ori Shalev <orish@fb.com>  Mon, 04 Jun 2018 11:20:59 -0700

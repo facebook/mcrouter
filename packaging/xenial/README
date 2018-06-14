@@ -1,0 +1,20 @@
+mcrouter Ubuntu packaging
+=========================
+
+Maintainer: Ori Shalev (orish@fb.com)
+
+To make the packaging clean and reproducible, it is run inside a docker container.
+
+Installing the latest version of Docker on Ubuntu:
+https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-using-the-repository
+
+To build a deb package in a container:
+
+$ cd dockerbuild/
+$ ./do-packaging.sh /path/to/mcrouter-0.37.0.tar.gz $(realpath ../debian) /path/to/destination/dir
+
+To test that mcrouter runs in a container with the deb package installed:
+$ cd dockertest/
+$ ./install-and-run.sh /path/to/destination/dir/mcrouter_0.37.0-1_amd64.deb
+
+Note that the base folly and wangle commits are hardcoded in dockerbuild/Dockerfile
