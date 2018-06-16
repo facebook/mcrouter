@@ -42,6 +42,8 @@ enum class SimpleEnum : int64_t {
   Negative = -92233
 };
 
+std::string enumSimpleEnumToString(SimpleEnum val);
+
 class SimpleStruct {
  public:
   static constexpr bool hasExptime = false;
