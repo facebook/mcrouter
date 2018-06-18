@@ -18,6 +18,20 @@ namespace carbon {
 namespace test2 {
 namespace util {
 
+std::string enumSimpleEnumToString(SimpleEnum val) {
+  switch (val) {
+    case SimpleEnum::Twenty:
+      return "Twenty";
+    case SimpleEnum::Zero:
+      return "Zero";
+    case SimpleEnum::One:
+      return "One";
+    case SimpleEnum::Negative:
+      return "Negative";
+  }
+  return "<INVALID_OPTION>";
+}
+
 void SimpleStruct::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
   writer.writeField(1 /* field id */, member1());

@@ -65,6 +65,27 @@ MCROUTER_OPTION_TOGGLE(
     no_short,
     "If enabled, clients must present valid certificates when using ssl")
 
+MCROUTER_OPTION_STRING(
+    server_pem_cert_path,
+    "",
+    "server-pem-cert-path",
+    no_short,
+    "Path of pem-style server certificate for ssl.")
+
+MCROUTER_OPTION_STRING(
+    server_pem_key_path,
+    "",
+    "server-pem-key-path",
+    no_short,
+    "Path of pem-style server key for ssl.")
+
+MCROUTER_OPTION_STRING(
+    server_pem_ca_path,
+    MCROUTER_DEFAULT_CA_PATH,
+    "server-pem-ca-path",
+    no_short,
+    "Path of pem-style CA cert for ssl to verify clients against")
+
 MCROUTER_OPTION_INTEGER(
     int,
     listen_sock_fd,

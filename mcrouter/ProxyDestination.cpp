@@ -345,10 +345,9 @@ void ProxyDestination::initializeAsyncMcClient() {
   }
 
   if (accessPoint_->useSsl()) {
-    checkLogic(
-        !opts.pem_cert_path.empty() && !opts.pem_key_path.empty() &&
-            !opts.pem_ca_path.empty(),
-        "Some of ssl key paths are not set!");
+    // empty paths are fine for these.  it just means no client certs will be
+    // presented during the handshake.  if a server requires auth, it will
+    // reject the client, and the client can be reconfigured.
     options.sslContextProvider = [&opts] {
       return getClientContext(
           opts.pem_cert_path,
