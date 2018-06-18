@@ -1,0 +1,61 @@
+Description: Fixed link ordering issue of wangle/folly
+ Needed to remove wangle from autoconf dependency and add explicitly in
+ Makefile.am due to link ordering issue. Wangle needs to be listed before
+ folly.
+ .
+ mcrouter (0.38.0-1) xenial; urgency=medium
+ .
+   * Version 0.38.0
+     Using folly commit: ed88a3a34ea0514c25621ecd06e3e1af14b078e7
+     Using wangle commit: 356e60fa9c5a7eaeb2a93e88c9a939b6530d4c7f
+Author: Ori Shalev <orish@fb.com>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: https://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: <YYYY-MM-DD>
+
+--- mcrouter-0.38.0.orig/mcrouter/Makefile.am
++++ mcrouter-0.38.0/mcrouter/Makefile.am
+@@ -200,7 +200,7 @@ mcrouter_SOURCES = \
+ 
+ libmcroutercore_a_CPPFLAGS = -I..
+ 
+-mcrouter_LDADD = libmcroutercore.a lib/libmcrouter.a -lfolly -lfollylogging
++mcrouter_LDADD = libmcroutercore.a lib/libmcrouter.a -lwangle -lfolly -lfollylogging
+ mcrouter_CPPFLAGS = -I..
+ 
+ clean-local:
+--- mcrouter-0.38.0.orig/mcrouter/configure.ac
++++ mcrouter-0.38.0/mcrouter/configure.ac
+@@ -117,8 +117,10 @@ AC_CHECK_LIB([folly],[follyinit],[follyl
+ AC_CHECK_HEADER([folly/Likely.h], [], [AC_MSG_ERROR(
+ [Couldn't find folly, please download from https://github.com/facebook/folly]
+ )], [])
+-AC_CHECK_LIB([wangle], [getenv], [], [AC_MSG_ERROR(
+-             [Please install the wangle library])])
++# Hack: removing wangle dependency here and adding as LDADD due to issues of
++# library ordeding in linking.
++#AC_CHECK_LIB([wangle], [getenv], [], [AC_MSG_ERROR(
++#             [Please install the wangle library])])
+ 
+ # Checks for typedefs, structures, and compiler characteristics.
+ AC_HEADER_STDBOOL
+--- mcrouter-0.38.0.orig/mcrouter/lib/network/Makefile.am
++++ mcrouter-0.38.0/mcrouter/lib/network/Makefile.am
+@@ -12,6 +12,7 @@ mock_mc_server_CPPFLAGS = -I$(top_srcdir
+ 
+ mock_mc_server_LDADD = \
+ 	$(top_builddir)/lib/libmcrouter.a \
++        -lwangle \
+ 	-lfolly \
+ 	-lfollyinit \
+ 	-lfollylogging

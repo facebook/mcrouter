@@ -7,16 +7,12 @@ fi
 
 srcdir=$(dirname "$1")
 srctargz=$(basename "$1")
-origtargz=$(echo "$srctargz" | tr '-' '_' | sed -e 's/tar.gz/orig.tar.gz/')
+origtargz=$(echo "$srctargz" | tr '-' '_' | sed -e 's/_release.tar.gz/.orig.tar.gz/')
 fileprefix=${origtargz/[.]orig.tar.gz/}
 debiandir=$2
 dstdir=$3
 
 mcrouterdir=${srctargz/[.]tar.gz/}
-
-if [ ! -f folly-2018.06.04.00.tar.gz ]; then
-    wget -O folly-2018.06.04.00.tar.gz https://github.com/facebook/folly/archive/v2018.06.04.00.tar.gz
-fi
 
 docker build -t mcrouter-xenial-packaging .
 cid=$(docker run -i -d -v "$srcdir":/src -v "$debiandir":/debdir -v "$dstdir":/dst mcrouter-xenial-packaging)

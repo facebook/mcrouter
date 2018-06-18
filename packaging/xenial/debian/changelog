@@ -1,3 +1,11 @@
+mcrouter (0.38.0-1) xenial; urgency=medium
+
+  * Version 0.38.0
+    Using folly commit: ed88a3a34ea0514c25621ecd06e3e1af14b078e7
+    Using wangle commit: 356e60fa9c5a7eaeb2a93e88c9a939b6530d4c7f
+
+ -- Ori Shalev <orish@fb.com>  Fri, 15 Jun 2018 17:37:00 -0700
+
 mcrouter (0.37.0-1) xenial; urgency=medium
 
   * Initial release

@@ -1,7 +1,7 @@
 Description: Added -ldl to LIBS
  That fixes a linker error
  .
- mcrouter (37.0-1) xenial; urgency=medium
+ mcrouter (0.37.0-1) xenial; urgency=medium
  .
    * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
 Author: Ori Shalev <orish@fb.com>
