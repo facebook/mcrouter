@@ -1,3 +1,11 @@
+mcrouter (0.38.0-2) xenial; urgency=medium
+
+  * Version 0.38.0
+    Removed non-required static lib dependency on libfollyinit,
+    libfollylogging
+
+ -- Ori Shalev <orish@fb.com>  Mon, 18 Jun 2018 16:33:00 -0700
+
 mcrouter (0.38.0-1) xenial; urgency=medium
 
   * Version 0.38.0

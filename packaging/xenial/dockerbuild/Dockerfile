@@ -8,9 +8,6 @@ ARG wanglecommit=356e60fa9c5a7eaeb2a93e88c9a939b6530d4c7f
 WORKDIR /root
 RUN git clone https://github.com/facebook/folly.git && cd folly && git checkout $follycommit
 WORKDIR /root/folly
-COPY folly.patch /tmp/folly.patch
-RUN git apply /tmp/folly.patch
-
 RUN cmake .
 RUN make install
 
