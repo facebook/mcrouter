@@ -79,6 +79,15 @@ class ShardSplitter {
       folly::StringPiece key,
       folly::StringPiece& shardId) const;
 
+  /**
+   * Returns information about shard split given shard id.
+   *
+   * @return  nullptr if there is no
+   *          shard split found. Otherwise returns pointer to ShardSplitInfo.
+   */
+  const ShardSplitInfo* FOLLY_NULLABLE
+  getShardSplit(folly::StringPiece shardId) const;
+
   const folly::StringKeyedUnorderedMap<ShardSplitInfo>& getShardSplits() const {
     return shardSplits_;
   }

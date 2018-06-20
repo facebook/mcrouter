@@ -137,18 +137,22 @@ ShardSplitter::ShardSplitter(const folly::dynamic& json) {
   }
 }
 
+const ShardSplitter::ShardSplitInfo* FOLLY_NULLABLE
+ShardSplitter::getShardSplit(folly::StringPiece shard) const {
+  auto splitIt = shardSplits_.find(shard);
+  if (splitIt == shardSplits_.end()) {
+    return nullptr;
+  }
+  return &splitIt->second;
+}
+
 const ShardSplitter::ShardSplitInfo* ShardSplitter::getShardSplit(
     folly::StringPiece routingKey,
     folly::StringPiece& shard) const {
   if (!getShardId(routingKey, shard)) {
     return nullptr;
   }
-
-  auto splitIt = shardSplits_.find(shard);
-  if (splitIt == shardSplits_.end()) {
-    return nullptr;
-  }
-  return &splitIt->second;
+  return getShardSplit(shard);
 }
 
 } // mcrouter
