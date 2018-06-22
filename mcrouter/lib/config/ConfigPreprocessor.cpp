@@ -1262,7 +1262,7 @@ class ConfigPreprocessor::BuiltIns {
    * explicitly.
    */
   static dynamic noop(dynamic&& json, const Context&) {
-    return json;
+    return std::move(json);
   }
 
   /**

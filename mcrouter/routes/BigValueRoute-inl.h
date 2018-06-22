@@ -209,7 +209,7 @@ Reply BigValueRoute::mergeChunkGetReplies(
   }
 
   initialReply.value() = concatAll(dataVec.begin(), dataVec.end());
-  return initialReply;
+  return std::move(initialReply);
 }
 
 template <class Request>
