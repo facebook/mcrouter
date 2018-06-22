@@ -18,6 +18,7 @@
 #include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/config.h"
+#include "mcrouter/flavor.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"
@@ -372,6 +373,13 @@ typename RouterInfo::RouteHandlePtr createCarbonLookasideRoute(
     flavor = jFlavor->getString();
   }
 
+  std::unordered_map<std::string, std::string> flavorOverrides;
+  if (json.get_ptr("flavor_overrides")) {
+    checkLogic(
+        parse_json_options(json, "flavor_overrides", flavorOverrides),
+        "CarbonLookasideRoute: error parsing 'flavor_overrides'");
+  }
+
   size_t keySplitSize = 1;
   if (auto jKeySplitSize = json.get_ptr("key_split_size")) {
     checkLogic(
@@ -397,7 +405,8 @@ typename RouterInfo::RouteHandlePtr createCarbonLookasideRoute(
   // It will be cleaned up automatically whenever the last route handle using it
   // is removed.
   auto persistenceId = folly::to<std::string>("CarbonLookasideClient:", flavor);
-  auto router = createCarbonLookasideRouter(persistenceId, flavor);
+  auto router =
+      createCarbonLookasideRouter(persistenceId, flavor, flavorOverrides);
   if (!router) {
     LOG(ERROR) << "Failed to create router from flavor '" << flavor
                << "' for CarbonLookasideRouter.";
