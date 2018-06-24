@@ -1,0 +1,7 @@
+Origin: Ori Shalev, Facebook
+Label: Ori Shalev, Facebook
+Codename: xenial
+Architectures: amd64
+Components: contrib
+Description: Personal repository
+SignWith: 44B9443A 

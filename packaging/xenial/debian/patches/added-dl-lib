@@ -1,0 +1,32 @@
+Description: Added -ldl to LIBS
+ That fixes a linker error
+ .
+ mcrouter (0.37.0-1) xenial; urgency=medium
+ .
+   * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+Author: Ori Shalev <orish@fb.com>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: https://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: <YYYY-MM-DD>
+
+--- mcrouter-37.0.orig/mcrouter/configure.ac
++++ mcrouter-37.0/mcrouter/configure.ac
+@@ -154,7 +154,7 @@ AC_CHECK_FUNCS([gettimeofday \
+ 
+ LIBS="$LIBS $BOOST_LDFLAGS $BOOST_CONTEXT_LIB $BOOST_FILESYSTEM_LIB \
+       $BOOST_PROGRAM_OPTIONS_LIB $BOOST_SYSTEM_LIB $BOOST_REGEX_LIB \
+-      $BOOST_THREAD_LIB -lpthread -pthread"
++      $BOOST_THREAD_LIB -lpthread -pthread -ldl"
+ 
+ AM_PATH_PYTHON([2.6],, [:])
+ AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
