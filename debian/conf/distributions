@@ -4,4 +4,4 @@ Codename: xenial
 Architectures: amd64
 Components: contrib
 Description: Repo hosted on the GitHub project facebook/mcrouter
-SignWith: 44B9443A
+SignWith: C79B72ED
