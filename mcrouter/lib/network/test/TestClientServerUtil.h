@@ -165,24 +165,23 @@ class TestServer {
   void run(std::function<void(AsyncMcServerWorker&)> init);
 };
 
-using SSLContextProvider = std::function<std::shared_ptr<folly::SSLContext>()>;
-
-// do not use SSL encryption at all
-constexpr std::nullptr_t noSsl() {
-  return nullptr;
-}
+struct SSLTestPaths {
+  std::string sslCertPath;
+  std::string sslKeyPath;
+  std::string sslCaPath;
+};
 
 // valid Client SSL Certs
-SSLContextProvider validClientSsl();
+SSLTestPaths validClientSsl();
 // non-existent client SSL certs
-SSLContextProvider invalidClientSsl();
+SSLTestPaths invalidClientSsl();
 // broken client SSL certs (handshake fails)
-SSLContextProvider brokenClientSsl();
-// client context w/o certs
-SSLContextProvider noCertClientSsl();
+SSLTestPaths brokenClientSsl();
+// client config w/o certs
+SSLTestPaths noCertClientSsl();
 
 // valid SSL certs for server
-SSLContextProvider validSsl();
+SSLTestPaths validSsl();
 
 class TestClient {
  public:
@@ -191,7 +190,7 @@ class TestClient {
       uint16_t port,
       int timeoutMs,
       mc_protocol_t protocol = mc_ascii_protocol,
-      SSLContextProvider ssl = noSsl(),
+      folly::Optional<SSLTestPaths> ssl = folly::none,
       uint64_t qosClass = 0,
       uint64_t qosPath = 0,
       std::string serviceIdentity = "",

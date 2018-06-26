@@ -13,6 +13,7 @@
 #include <random>
 
 #include <folly/fibers/Fiber.h>
+#include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/io/async/AsyncTimeout.h>
 
 #include "mcrouter/McrouterLogFailure.h"
@@ -25,7 +26,6 @@
 #include "mcrouter/lib/network/AccessPoint.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/ReplyStatsContext.h"
-#include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/routes/DestinationRoute.h"
 #include "mcrouter/stats.h"
@@ -324,11 +324,7 @@ void ProxyDestination::initializeAsyncMcClient() {
   options.tcpKeepAliveIdle = opts.keepalive_idle_s;
   options.tcpKeepAliveInterval = opts.keepalive_interval_s;
   options.writeTimeout = shortestTimeout_;
-  options.sessionCachingEnabled = opts.ssl_connection_cache;
-  options.sslHandshakeOffload = opts.ssl_handshake_offload;
-  options.sslServiceIdentity = opts.ssl_service_identity;
   options.routerInfoName = routerInfoName_;
-  options.tfoEnabledForSsl = opts.enable_ssl_tfo;
   if (!opts.debug_fifo_root.empty()) {
     options.debugFifoPath = getClientDebugFifoFullPath(opts);
   }
@@ -345,15 +341,16 @@ void ProxyDestination::initializeAsyncMcClient() {
   }
 
   if (accessPoint_->useSsl()) {
-    // empty paths are fine for these.  it just means no client certs will be
-    // presented during the handshake.  if a server requires auth, it will
-    // reject the client, and the client can be reconfigured.
-    options.sslContextProvider = [&opts] {
-      return getClientContext(
-          opts.pem_cert_path,
-          opts.pem_key_path,
-          opts.ssl_verify_peers ? opts.pem_ca_path : "");
-    };
+    options.securityMech = ConnectionOptions::SecurityMech::TLS;
+    options.sslPemCertPath = opts.pem_cert_path;
+    options.sslPemKeyPath = opts.pem_key_path;
+    if (opts.ssl_verify_peers) {
+      options.sslPemCaPath = opts.pem_ca_path;
+    }
+    options.sessionCachingEnabled = opts.ssl_connection_cache;
+    options.sslHandshakeOffload = opts.ssl_handshake_offload;
+    options.sslServiceIdentity = opts.ssl_service_identity;
+    options.tfoEnabledForSsl = opts.enable_ssl_tfo;
   }
 
   auto client =

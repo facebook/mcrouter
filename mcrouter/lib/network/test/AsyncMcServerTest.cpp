@@ -50,7 +50,11 @@ TEST(AsyncMcServer, sslCertCommonName) {
   clientWithSsl.waitForReplies();
 
   TestClient clientWithoutSsl(
-      "localhost", server->getListenPort(), 200, mc_ascii_protocol, noSsl());
+      "localhost",
+      server->getListenPort(),
+      200,
+      mc_ascii_protocol,
+      folly::none);
   clientWithoutSsl.sendGet("empty", mc_res_remote_error);
   clientWithoutSsl.waitForReplies();
 

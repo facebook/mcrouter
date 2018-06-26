@@ -491,7 +491,8 @@ void AsyncMcClientImpl::attemptConnection() {
     pendingGoAwayReply_ = false;
 
     folly::AsyncSSLSocket* sslSocket = nullptr;
-    if (connectionOptions_.sslContextProvider) {
+    if (connectionOptions_.securityMech ==
+        ConnectionOptions::SecurityMech::TLS) {
       // Unix Domain Sockets do not work with SSL because
       // the protocol is not implemented for Unix Domain
       // Sockets. Trying to use SSL with Unix Domain Sockets
@@ -502,7 +503,12 @@ void AsyncMcClientImpl::attemptConnection() {
             "SSL protocol is not applicable for Unix Domain Sockets"));
         return;
       }
-      auto sslContext = connectionOptions_.sslContextProvider();
+
+      auto sslContext = getClientContext(
+          connectionOptions_.sslPemCertPath,
+          connectionOptions_.sslPemKeyPath,
+          connectionOptions_.sslPemCaPath);
+
       if (!sslContext) {
         connectErr(folly::AsyncSocketException(
             folly::AsyncSocketException::SSL_ERROR,
@@ -622,7 +628,7 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
     }
   }
 
-  if (connectionOptions_.sslContextProvider &&
+  if (connectionOptions_.securityMech == ConnectionOptions::SecurityMech::TLS &&
       connectionOptions_.sessionCachingEnabled) {
     auto* sslSocket = socket_->getUnderlyingTransport<folly::AsyncSSLSocket>();
     assert(sslSocket != nullptr);

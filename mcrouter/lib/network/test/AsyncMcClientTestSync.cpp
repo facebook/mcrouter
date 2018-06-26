@@ -30,10 +30,10 @@ namespace folly {
 class AsyncSocket;
 } // namespace folly
 
-void serverShutdownTest(SSLContextProvider ssl) {
+void serverShutdownTest(folly::Optional<SSLTestPaths> ssl) {
   TestServer::Config config;
   config.outOfOrder = false;
-  config.useSsl = (ssl != noSsl());
+  config.useSsl = ssl.hasValue();
   auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
@@ -44,17 +44,17 @@ void serverShutdownTest(SSLContextProvider ssl) {
 }
 
 TEST(AsyncMcClient, serverShutdown) {
-  serverShutdownTest(noSsl());
+  serverShutdownTest(folly::none);
 }
 
 TEST(AsyncMcClient, serverShutdownSsl) {
   serverShutdownTest(validClientSsl());
 }
 
-void simpleAsciiTimeoutTest(SSLContextProvider ssl) {
+void simpleAsciiTimeoutTest(folly::Optional<SSLTestPaths> ssl) {
   TestServer::Config config;
   config.outOfOrder = false;
-  config.useSsl = (ssl != noSsl());
+  config.useSsl = ssl.hasValue();
   auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
@@ -69,16 +69,16 @@ void simpleAsciiTimeoutTest(SSLContextProvider ssl) {
 }
 
 TEST(AsyncMcClient, simpleAsciiTimeout) {
-  simpleAsciiTimeoutTest(noSsl());
+  simpleAsciiTimeoutTest(folly::none);
 }
 
 TEST(AsyncMcClient, simpleAsciiTimeoutSsl) {
   simpleAsciiTimeoutTest(validClientSsl());
 }
 
-void simpleUmbrellaTimeoutTest(SSLContextProvider ssl) {
+void simpleUmbrellaTimeoutTest(folly::Optional<SSLTestPaths> ssl) {
   TestServer::Config config;
-  config.useSsl = (ssl != noSsl());
+  config.useSsl = ssl.hasValue();
   auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost",
@@ -97,42 +97,45 @@ void simpleUmbrellaTimeoutTest(SSLContextProvider ssl) {
 }
 
 TEST(AsyncMcClient, simpleUmbrellaTimeout) {
-  simpleUmbrellaTimeoutTest(noSsl());
+  simpleUmbrellaTimeoutTest(folly::none);
 }
 
 TEST(AsyncMcClient, simpleUmbrellaTimeoutSsl) {
   simpleUmbrellaTimeoutTest(validClientSsl());
 }
 
-void noServerTimeoutTest(SSLContextProvider ssl) {
+void noServerTimeoutTest(folly::Optional<SSLTestPaths> ssl) {
   TestClient client("100::", 11302, 200, mc_ascii_protocol, ssl);
   client.sendGet("hold", mc_res_connect_timeout);
   client.waitForReplies();
 }
 
 TEST(AsyncMcClient, noServerTimeout) {
-  noServerTimeoutTest(noSsl());
+  noServerTimeoutTest(folly::none);
 }
 
 TEST(AsyncMcClient, noServerTimeoutSsl) {
   noServerTimeoutTest(validClientSsl());
 }
 
-void immediateConnectFailTest(SSLContextProvider ssl) {
+void immediateConnectFailTest(folly::Optional<SSLTestPaths> ssl) {
   TestClient client("255.255.255.255", 12345, 200, mc_ascii_protocol, ssl);
   client.sendGet("nohold", mc_res_connect_error);
   client.waitForReplies();
 }
 
 TEST(AsyncMcClient, immeadiateConnectFail) {
-  immediateConnectFailTest(noSsl());
+  immediateConnectFailTest(folly::none);
 }
 
 TEST(AsyncMcClient, immeadiateConnectFailSsl) {
   immediateConnectFailTest(validClientSsl());
 }
 
-void testCerts(std::string name, SSLContextProvider ssl, size_t numConns) {
+void testCerts(
+    std::string name,
+    folly::Optional<SSLTestPaths> ssl,
+    size_t numConns) {
   bool loggedFailure = false;
   failure::addHandler({name,
                        [&loggedFailure](
@@ -216,10 +219,10 @@ TEST(AsyncMcClient, testClientFinalize) {
       [](folly::AsyncTransportWrapper*) {});
 }
 
-void inflightThrottleTest(SSLContextProvider ssl) {
+void inflightThrottleTest(folly::Optional<SSLTestPaths> ssl) {
   TestServer::Config config;
   config.outOfOrder = false;
-  config.useSsl = (ssl != noSsl());
+  config.useSsl = ssl.hasValue();
   auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
@@ -237,17 +240,17 @@ void inflightThrottleTest(SSLContextProvider ssl) {
 }
 
 TEST(AsyncMcClient, inflightThrottle) {
-  inflightThrottleTest(noSsl());
+  inflightThrottleTest(folly::none);
 }
 
 TEST(AsyncMcClient, inflightThrottleSsl) {
   inflightThrottleTest(validClientSsl());
 }
 
-void inflightThrottleFlushTest(SSLContextProvider ssl) {
+void inflightThrottleFlushTest(folly::Optional<SSLTestPaths> ssl) {
   TestServer::Config config;
   config.outOfOrder = false;
-  config.useSsl = (ssl != noSsl());
+  config.useSsl = ssl.hasValue();
   auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
@@ -266,17 +269,17 @@ void inflightThrottleFlushTest(SSLContextProvider ssl) {
 }
 
 TEST(AsyncMcClient, inflightThrottleFlush) {
-  inflightThrottleFlushTest(noSsl());
+  inflightThrottleFlushTest(folly::none);
 }
 
 TEST(AsyncMcClient, inflightThrottleFlushSsl) {
   inflightThrottleFlushTest(validClientSsl());
 }
 
-void outstandingThrottleTest(SSLContextProvider ssl) {
+void outstandingThrottleTest(folly::Optional<SSLTestPaths> ssl) {
   TestServer::Config config;
   config.outOfOrder = false;
-  config.useSsl = (ssl != noSsl());
+  config.useSsl = ssl.hasValue();
   auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
@@ -295,17 +298,17 @@ void outstandingThrottleTest(SSLContextProvider ssl) {
 }
 
 TEST(AsyncMcClient, outstandingThrottle) {
-  outstandingThrottleTest(noSsl());
+  outstandingThrottleTest(folly::none);
 }
 
 TEST(AsyncMcClient, outstandingThrottleSsl) {
   outstandingThrottleTest(validClientSsl());
 }
 
-void connectionErrorTest(SSLContextProvider ssl) {
+void connectionErrorTest(folly::Optional<SSLTestPaths> ssl) {
   TestServer::Config config;
   config.outOfOrder = false;
-  config.useSsl = (ssl != noSsl());
+  config.useSsl = ssl.hasValue();
   auto server = TestServer::create(std::move(config));
   TestClient client1(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
@@ -321,7 +324,7 @@ void connectionErrorTest(SSLContextProvider ssl) {
 }
 
 TEST(AsyncMcClient, connectionError) {
-  connectionErrorTest(noSsl());
+  connectionErrorTest(folly::none);
 }
 
 TEST(AsyncMcClient, connectionErrorSsl) {
@@ -330,12 +333,12 @@ TEST(AsyncMcClient, connectionErrorSsl) {
 
 void basicTest(
     mc_protocol_t protocol,
-    SSLContextProvider clientSsl,
+    folly::Optional<SSLTestPaths> clientSsl,
     uint64_t qosClass = 0,
     uint64_t qosPath = 0,
     TestServer::Config config = TestServer::Config()) {
   config.outOfOrder = (protocol != mc_ascii_protocol);
-  config.useSsl = (clientSsl != noSsl());
+  config.useSsl = clientSsl.hasValue();
   auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost",
@@ -362,15 +365,15 @@ void basicTest(
 }
 
 TEST(AsyncMcClient, basicAscii) {
-  basicTest(mc_ascii_protocol, noSsl());
+  basicTest(mc_ascii_protocol, folly::none);
 }
 
 TEST(AsyncMcClient, basicUmbrella) {
-  basicTest(mc_umbrella_protocol_DONOTUSE, noSsl());
+  basicTest(mc_umbrella_protocol_DONOTUSE, folly::none);
 }
 
 TEST(AsyncMcClient, basicCaret) {
-  basicTest(mc_caret_protocol, noSsl());
+  basicTest(mc_caret_protocol, folly::none);
 }
 
 TEST(AsyncMcClient, basicAsciiSsl) {
@@ -394,18 +397,18 @@ TEST(AsyncMcClient, basicCaretSslNoCerts) {
 
 void qosTest(
     mc_protocol_t protocol,
-    SSLContextProvider ssl,
+    folly::Optional<SSLTestPaths> ssl,
     uint64_t qosClass,
     uint64_t qosPath) {
   basicTest(protocol, ssl, qosClass, qosPath);
 }
 
 TEST(AsyncMcClient, qosClass1) {
-  qosTest(mc_umbrella_protocol_DONOTUSE, noSsl(), 1, 0);
+  qosTest(mc_umbrella_protocol_DONOTUSE, folly::none, 1, 0);
 }
 
 TEST(AsyncMcClient, qosClass2) {
-  qosTest(mc_ascii_protocol, noSsl(), 2, 1);
+  qosTest(mc_ascii_protocol, folly::none, 2, 1);
 }
 
 TEST(AsyncMcClient, qosClass3) {
@@ -878,14 +881,30 @@ TEST(AsyncMcClient, caretGoAway) {
 }
 
 TEST(AsyncMcClient, contextProviders) {
-  auto clientCtxProvider = validClientSsl();
-  auto serverCtxProvider = validSsl();
+  auto clientCtxPaths = validClientSsl();
+  auto serverCtxPaths = validSsl();
 
-  auto clientCtx1 = clientCtxProvider();
-  auto clientCtx2 = clientCtxProvider();
+  auto clientCtx1 = getClientContext(
+      clientCtxPaths.sslCertPath,
+      clientCtxPaths.sslKeyPath,
+      clientCtxPaths.sslCaPath);
+  auto clientCtx2 = getClientContext(
+      clientCtxPaths.sslCertPath,
+      clientCtxPaths.sslKeyPath,
+      clientCtxPaths.sslCaPath);
 
-  auto serverCtx1 = serverCtxProvider();
-  auto serverCtx2 = serverCtxProvider();
+  auto serverCtx1 = getServerContext(
+      serverCtxPaths.sslCertPath,
+      serverCtxPaths.sslKeyPath,
+      serverCtxPaths.sslCaPath,
+      true,
+      folly::none);
+  auto serverCtx2 = getServerContext(
+      serverCtxPaths.sslCertPath,
+      serverCtxPaths.sslKeyPath,
+      serverCtxPaths.sslCaPath,
+      true,
+      folly::none);
 
   // client contexts should be the same since they are
   // thread local cached
@@ -970,6 +989,14 @@ class AsyncMcClientSSLOffloadTest : public testing::TestWithParam<bool> {
   }
 
  protected:
+  void enableSSL(ConnectionOptions& opts) {
+    auto paths = validClientSsl();
+    opts.securityMech = ConnectionOptions::SecurityMech::TLS;
+    opts.sslPemCertPath = paths.sslCertPath;
+    opts.sslPemKeyPath = paths.sslKeyPath;
+    opts.sslPemCaPath = paths.sslCaPath;
+  }
+
   std::unique_ptr<TestServer> createServer() {
     TestServer::Config cfg;
     cfg.outOfOrder = false;
@@ -1013,7 +1040,7 @@ TEST_P(AsyncMcClientSSLOffloadTest, closeNow) {
   folly::EventBase evb;
   ConnectionOptions opts("::1", server->getListenPort(), mc_caret_protocol);
   opts.writeTimeout = std::chrono::milliseconds(1000);
-  opts.sslContextProvider = validClientSsl();
+  enableSSL(opts);
   opts.sslHandshakeOffload = GetParam();
   auto lc = std::make_unique<folly::fibers::EventBaseLoopController>();
   lc->attachEventBase(evb);
@@ -1045,7 +1072,7 @@ TEST_P(AsyncMcClientSSLOffloadTest, clientReset) {
   folly::EventBase evb;
   ConnectionOptions opts("::1", server->getListenPort(), mc_caret_protocol);
   opts.writeTimeout = std::chrono::milliseconds(1000);
-  opts.sslContextProvider = validClientSsl();
+  enableSSL(opts);
   opts.sslHandshakeOffload = GetParam();
   auto lc = std::make_unique<folly::fibers::EventBaseLoopController>();
   lc->attachEventBase(evb);

@@ -45,40 +45,26 @@ const char* const kInvalidCertPath = "/do/not/exist";
 
 const char* const kServerVersion = "TestServer-1.0";
 
-SSLContextProvider validClientSsl() {
-  return []() {
-    return getClientContext(
-        getDefaultCertPath(), getDefaultKeyPath(), getDefaultCaPath());
-  };
+SSLTestPaths validClientSsl() {
+  return {getDefaultCertPath(), getDefaultKeyPath(), getDefaultCaPath()};
 }
 
-SSLContextProvider invalidClientSsl() {
-  return []() {
-    return getClientContext(
-        kInvalidCertPath, kInvalidKeyPath, getDefaultCaPath());
-  };
+SSLTestPaths invalidClientSsl() {
+  return {kInvalidCertPath, kInvalidKeyPath, getDefaultCaPath()};
 }
 
-SSLContextProvider brokenClientSsl() {
-  return []() {
-    return getClientContext(
-        kBrokenCertPath, kBrokenKeyPath, getDefaultCaPath());
-  };
+SSLTestPaths brokenClientSsl() {
+  return {kBrokenCertPath, kBrokenKeyPath, getDefaultCaPath()};
 }
 
-SSLContextProvider noCertClientSsl() {
-  return []() { return getClientContext("", "", ""); };
+SSLTestPaths noCertClientSsl() {
+  return {"", "", ""};
 }
 
-SSLContextProvider validSsl() {
-  return []() {
-    return getServerContext(
-        getDefaultCertPath(),
-        getDefaultKeyPath(),
-        getDefaultCaPath(),
-        true,
-        folly::none);
-  };
+SSLTestPaths validSsl() {
+  // valid client creds will work for the server
+  // as well
+  return validClientSsl();
 }
 
 TestServerOnRequest::TestServerOnRequest(
@@ -232,7 +218,7 @@ TestClient::TestClient(
     uint16_t port,
     int timeoutMs,
     mc_protocol_t protocol,
-    SSLContextProvider ssl,
+    folly::Optional<SSLTestPaths> ssl,
     uint64_t qosClass,
     uint64_t qosPath,
     std::string serviceIdentity,
@@ -246,7 +232,10 @@ TestClient::TestClient(
   opts.writeTimeout = std::chrono::milliseconds(timeoutMs);
   opts.compressionCodecMap = compressionCodecMap;
   if (ssl) {
-    opts.sslContextProvider = std::move(ssl);
+    opts.securityMech = ConnectionOptions::SecurityMech::TLS;
+    opts.sslPemCertPath = ssl->sslCertPath;
+    opts.sslPemKeyPath = ssl->sslKeyPath;
+    opts.sslPemCaPath = ssl->sslCaPath;
     opts.sessionCachingEnabled = true;
     opts.sslServiceIdentity = serviceIdentity;
     opts.tfoEnabledForSsl = enableTfo;
