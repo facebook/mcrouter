@@ -387,7 +387,7 @@ void ProxyDestination::initializeAsyncMcClient() {
       });
 
   client_->setStatusCallbacks(
-      [this](const folly::AsyncSocket& socket) mutable {
+      [this](const folly::AsyncTransportWrapper& socket) mutable {
         setState(State::kUp);
         proxy.stats().increment(num_connections_opened_stat);
         if (const auto* sslSocket =

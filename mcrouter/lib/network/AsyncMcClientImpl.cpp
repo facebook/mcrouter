@@ -131,7 +131,7 @@ void AsyncMcClientImpl::closeNow() {
 }
 
 void AsyncMcClientImpl::setStatusCallbacks(
-    std::function<void(const folly::AsyncSocket&)> onUp,
+    std::function<void(const folly::AsyncTransportWrapper&)> onUp,
     std::function<void(ConnectionDownReason)> onDown) {
   DestructorGuard dg(this);
 
@@ -593,8 +593,9 @@ void AsyncMcClientImpl::attemptConnection() {
             }
           });
     } else {
+      auto asyncSock = socket_->getUnderlyingTransport<folly::AsyncSocket>();
       // connect inline on the current evb
-      socket_->connect(
+      asyncSock->connect(
           this,
           address,
           connectionOptions_.writeTimeout.count(),
@@ -611,7 +612,10 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
   if (connectionOptions_.enableQoS) {
     folly::SocketAddress address;
     socket_->getPeerAddress(&address);
-    checkWhetherQoSIsApplied(address, socket_->getFd(), connectionOptions_);
+    auto asyncSock = socket_->getUnderlyingTransport<folly::AsyncSocket>();
+    if (asyncSock) {
+      checkWhetherQoSIsApplied(address, asyncSock->getFd(), connectionOptions_);
+    }
   }
 
   if (statusCallbacks_.onUp) {

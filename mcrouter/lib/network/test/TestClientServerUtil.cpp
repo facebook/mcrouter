@@ -248,7 +248,7 @@ TestClient::TestClient(
   }
   client_ = std::make_unique<AsyncMcClient>(eventBase_, opts);
   client_->setStatusCallbacks(
-      [](const folly::AsyncSocket&) { LOG(INFO) << "Client UP."; },
+      [](const folly::AsyncTransportWrapper&) { LOG(INFO) << "Client UP."; },
       [](AsyncMcClient::ConnectionDownReason reason) {
         if (reason == AsyncMcClient::ConnectionDownReason::SERVER_GONE_AWAY) {
           LOG(INFO) << "Server gone Away.";
@@ -274,10 +274,10 @@ TestClient::TestClient(
 }
 
 void TestClient::setStatusCallbacks(
-    std::function<void(const folly::AsyncSocket&)> onUp,
+    std::function<void(const folly::AsyncTransportWrapper&)> onUp,
     std::function<void(AsyncMcClient::ConnectionDownReason)> onDown) {
   client_->setStatusCallbacks(
-      [onUp](const folly::AsyncSocket& socket) {
+      [onUp](const folly::AsyncTransportWrapper& socket) {
         LOG(INFO) << "Client UP.";
         onUp(socket);
       },

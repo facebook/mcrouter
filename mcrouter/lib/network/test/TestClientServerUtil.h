@@ -203,7 +203,7 @@ class TestClient {
   }
 
   void setStatusCallbacks(
-      std::function<void(const folly::AsyncSocket&)> onUp,
+      std::function<void(const folly::AsyncTransportWrapper&)> onUp,
       std::function<void(AsyncMcClient::ConnectionDownReason)> onDown);
 
   void sendGet(

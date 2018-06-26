@@ -62,7 +62,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   void closeNow();
 
   void setStatusCallbacks(
-      std::function<void(const folly::AsyncSocket&)> onUp,
+      std::function<void(const folly::AsyncTransportWrapper&)> onUp,
       std::function<void(ConnectionDownReason)> onDown);
 
   void setRequestStatusCallbacks(
@@ -110,7 +110,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   };
 
   struct ConnectionStatusCallbacks {
-    std::function<void(const folly::AsyncSocket&)> onUp;
+    std::function<void(const folly::AsyncTransportWrapper&)> onUp;
     std::function<void(ConnectionDownReason)> onDown;
   };
   struct RequestStatusCallbacks {
@@ -126,7 +126,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
 
   // Socket related variables.
   ConnectionState connectionState_{ConnectionState::DOWN};
-  folly::AsyncSocket::UniquePtr socket_;
+  folly::AsyncTransportWrapper::UniquePtr socket_;
   ConnectionStatusCallbacks statusCallbacks_;
   RequestStatusCallbacks requestStatusCallbacks_;
 
