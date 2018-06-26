@@ -458,6 +458,7 @@ int main(int argc, char** argv) {
         "Unrecognized option: {}",
         option);
   }
+  initStandaloneSSL();
 
   srand(time(nullptr) + getpid());
 
