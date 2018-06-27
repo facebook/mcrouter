@@ -133,6 +133,8 @@ folly::dynamic readStaticJsonFile(folly::StringPiece file) {
   return folly::parseJson(contents);
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+void initStandaloneSSL() {}
+
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

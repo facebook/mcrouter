@@ -165,7 +165,7 @@ std::string getBinPath(folly::StringPiece name);
 
 void finalizeOptions(McrouterOptions& options);
 
-void initStandaloneSSL() {}
+void initStandaloneSSL();
 
 /**
  * Reads a static json file. Do not monitor for changes.

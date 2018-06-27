@@ -27,5 +27,5 @@ mcrouter_network_test_LDADD = \
   $(top_builddir)/lib/libmcrouter.a \
   $(top_builddir)/lib/libtestmain.la \
   $(top_builddir)/lib/network/libtest_util.a \
-	-lfollylogging \
-	-lfollyinit
+  -lwangle \
+  -lfolly

@@ -11,6 +11,4 @@ mcrouter_config_test_CPPFLAGS = \
 
 mcrouter_config_test_LDADD = \
   $(top_builddir)/lib/libmcrouter.a \
-  $(top_builddir)/lib/libtestmain.la \
-	-lfollylogging \
-	-lfollyinit
+  $(top_builddir)/lib/libtestmain.la

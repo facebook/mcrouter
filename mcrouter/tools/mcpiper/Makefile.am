@@ -31,8 +31,6 @@ mcpiper_SOURCES = \
 
 mcpiper_LDADD = \
 	$(top_srcdir)/lib/libmcrouter.a \
-	-lfolly \
-	-lfollylogging \
-	-lfollyinit
+	-lfolly
 
 mcpiper_CPPFLAGS = -I$(top_srcdir)/..

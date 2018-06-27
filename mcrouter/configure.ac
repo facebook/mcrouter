@@ -112,13 +112,16 @@ AC_CHECK_LIB([z], [gzread], [], [AC_MSG_ERROR([Unable to find zlib])])
 AC_CHECK_LIB([double-conversion],[ceil],[],[AC_MSG_ERROR(
              [Please install double-conversion library])])
 AC_CHECK_LIB([dl], [dlopen], [])
-AC_CHECK_LIB([folly],[follyinit],[follylogging],[getenv],[],[AC_MSG_ERROR(
+AC_CHECK_LIB([folly],[getenv],[],[AC_MSG_ERROR(
              [Please install the folly library])])
 AC_CHECK_HEADER([folly/Likely.h], [], [AC_MSG_ERROR(
 [Couldn't find folly, please download from https://github.com/facebook/folly]
 )], [])
-AC_CHECK_LIB([wangle], [getenv], [], [AC_MSG_ERROR(
-             [Please install the wangle library])])
+# Commenting out the wangle dependency from here, because there is a tricky
+# inter-library dependency that resolves with the right order of LDFLAGS, and
+# this dependency here messes the order.
+#AC_CHECK_LIB([wangle], [getenv], [], [AC_MSG_ERROR(
+#             [Please install the wangle library])])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
