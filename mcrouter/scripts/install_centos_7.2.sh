@@ -33,7 +33,7 @@ sudo yum install -y \
     ragel
 
 # Install automake-1.15 from Fedora
-sudo rpm -Uvh "http://dl.fedoraproject.org/pub/fedora/linux/releases/23/Everything/x86_64/os/Packages/a/automake-1.15-4.fc23.noarch.rpm"
+yum info automake-1.15-4.fc23 || sudo yum install -y "http://archives.fedoraproject.org/pub/archive/fedora/linux/releases/23/Everything/x86_64/os/Packages/a/automake-1.15-4.fc23.noarch.rpm"
 
 cd "$(dirname "$0")" || ( echo "cd fail"; exit 1 )
 
