@@ -202,6 +202,10 @@ class McServerAsciiParser : public McAsciiParserBase {
   void initGetLike();
   template <class Request>
   void consumeGetLike(folly::IOBuf& buffer);
+  template <class Request>
+  void initGatLike();
+  template <class Request>
+  void consumeGatLike(folly::IOBuf& buffer);
 
   // Update-like.
   template <class Request>

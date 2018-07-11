@@ -47,6 +47,8 @@ UM_OP(mc_op_exec, 25)
 UM_OP(mc_op_gets, 26)
 UM_OP(mc_op_get_service_info, 27)
 UM_OP(mc_op_touch, 28)
+UM_OP(mc_op_gat, 29)
+UM_OP(mc_op_gats, 30)
 
 UM_RES(mc_res_unknown, 0)
 UM_RES(mc_res_deleted, 1)

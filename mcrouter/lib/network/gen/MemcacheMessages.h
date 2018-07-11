@@ -2125,6 +2125,247 @@ class McFlushAllReply : public carbon::ReplyCommon {
   carbon::Result result_{mc_res_unknown};
   int16_t appSpecificErrorCode_{0};
 };
+
+class McGatReply;
+
+class McGatRequest : public carbon::RequestCommon {
+ public:
+  using reply_type = McGatReply;
+  static constexpr bool hasExptime = true;
+  static constexpr bool hasFlags = false;
+  static constexpr bool hasKey = true;
+  static constexpr bool hasValue = false;
+  static constexpr size_t typeId = 45;
+  static constexpr const char* name = "gat";
+
+  McGatRequest() = default;
+  McGatRequest(const McGatRequest&) = default;
+  McGatRequest& operator=(const McGatRequest&) = default;
+  McGatRequest(McGatRequest&&) = default;
+  McGatRequest& operator=(McGatRequest&&) = default;
+  explicit McGatRequest(folly::StringPiece sp) : key_(sp) {}
+  explicit McGatRequest(folly::IOBuf&& carbonKey)
+      : key_(std::move(carbonKey)) {}
+
+  const carbon::Keys<folly::IOBuf>& key() const {
+    return key_;
+  }
+  carbon::Keys<folly::IOBuf>& key() {
+    return key_;
+  }
+  uint64_t flags() const {
+    return 0;
+  }
+  int32_t exptime() const {
+    return exptime_;
+  }
+  int32_t& exptime() {
+    return exptime_;
+  }
+
+  void serialize(carbon::CarbonProtocolWriter& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  carbon::Keys<folly::IOBuf> key_;
+  int32_t exptime_{0};
+};
+
+class McGatReply : public carbon::ReplyCommon {
+ public:
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasFlags = true;
+  static constexpr bool hasKey = false;
+  static constexpr bool hasValue = true;
+  static constexpr size_t typeId = 46;
+
+  McGatReply() = default;
+  McGatReply(const McGatReply&) = default;
+  McGatReply& operator=(const McGatReply&) = default;
+  McGatReply(McGatReply&&) = default;
+  McGatReply& operator=(McGatReply&&) = default;
+  explicit McGatReply(carbon::Result carbonResult) : result_(carbonResult) {}
+
+  carbon::Result result() const {
+    return result_;
+  }
+  carbon::Result& result() {
+    return result_;
+  }
+  const folly::Optional<folly::IOBuf>& value() const {
+    return value_;
+  }
+  folly::Optional<folly::IOBuf>& value() {
+    return value_;
+  }
+  uint64_t flags() const {
+    return flags_;
+  }
+  uint64_t& flags() {
+    return flags_;
+  }
+  const std::string& message() const {
+    return message_;
+  }
+  std::string& message() {
+    return message_;
+  }
+  int16_t appSpecificErrorCode() const {
+    return appSpecificErrorCode_;
+  }
+  int16_t& appSpecificErrorCode() {
+    return appSpecificErrorCode_;
+  }
+  int32_t exptime() const {
+    return 0;
+  }
+
+  void serialize(carbon::CarbonProtocolWriter& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  folly::Optional<folly::IOBuf> value_;
+  uint64_t flags_{0};
+  std::string message_;
+  carbon::Result result_{mc_res_unknown};
+  int16_t appSpecificErrorCode_{0};
+};
+
+class McGatsReply;
+
+class McGatsRequest : public carbon::RequestCommon {
+ public:
+  using reply_type = McGatsReply;
+  static constexpr bool hasExptime = true;
+  static constexpr bool hasFlags = false;
+  static constexpr bool hasKey = true;
+  static constexpr bool hasValue = false;
+  static constexpr size_t typeId = 47;
+  static constexpr const char* name = "gats";
+
+  McGatsRequest() = default;
+  McGatsRequest(const McGatsRequest&) = default;
+  McGatsRequest& operator=(const McGatsRequest&) = default;
+  McGatsRequest(McGatsRequest&&) = default;
+  McGatsRequest& operator=(McGatsRequest&&) = default;
+  explicit McGatsRequest(folly::StringPiece sp) : key_(sp) {}
+  explicit McGatsRequest(folly::IOBuf&& carbonKey)
+      : key_(std::move(carbonKey)) {}
+
+  const carbon::Keys<folly::IOBuf>& key() const {
+    return key_;
+  }
+  carbon::Keys<folly::IOBuf>& key() {
+    return key_;
+  }
+  uint64_t flags() const {
+    return 0;
+  }
+  int32_t exptime() const {
+    return exptime_;
+  }
+  int32_t& exptime() {
+    return exptime_;
+  }
+
+  void serialize(carbon::CarbonProtocolWriter& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  carbon::Keys<folly::IOBuf> key_;
+  int32_t exptime_{0};
+};
+
+class McGatsReply : public carbon::ReplyCommon {
+ public:
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasFlags = true;
+  static constexpr bool hasKey = false;
+  static constexpr bool hasValue = true;
+  static constexpr size_t typeId = 48;
+
+  McGatsReply() = default;
+  McGatsReply(const McGatsReply&) = default;
+  McGatsReply& operator=(const McGatsReply&) = default;
+  McGatsReply(McGatsReply&&) = default;
+  McGatsReply& operator=(McGatsReply&&) = default;
+  explicit McGatsReply(carbon::Result carbonResult) : result_(carbonResult) {}
+
+  carbon::Result result() const {
+    return result_;
+  }
+  carbon::Result& result() {
+    return result_;
+  }
+  uint64_t casToken() const {
+    return casToken_;
+  }
+  uint64_t& casToken() {
+    return casToken_;
+  }
+  const folly::Optional<folly::IOBuf>& value() const {
+    return value_;
+  }
+  folly::Optional<folly::IOBuf>& value() {
+    return value_;
+  }
+  uint64_t flags() const {
+    return flags_;
+  }
+  uint64_t& flags() {
+    return flags_;
+  }
+  const std::string& message() const {
+    return message_;
+  }
+  std::string& message() {
+    return message_;
+  }
+  int16_t appSpecificErrorCode() const {
+    return appSpecificErrorCode_;
+  }
+  int16_t& appSpecificErrorCode() {
+    return appSpecificErrorCode_;
+  }
+  int32_t exptime() const {
+    return 0;
+  }
+
+  void serialize(carbon::CarbonProtocolWriter& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  uint64_t casToken_{0};
+  folly::Optional<folly::IOBuf> value_;
+  uint64_t flags_{0};
+  std::string message_;
+  carbon::Result result_{mc_res_unknown};
+  int16_t appSpecificErrorCode_{0};
+};
 } // namespace memcache
 } // namespace facebook
 

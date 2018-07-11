@@ -48,6 +48,12 @@ class MockMc {
   const Item* get(folly::StringPiece key);
 
   /**
+   * @return  nullptr if the item doesn't exist in the cache
+   *          (expired/evicted/was never set); pointer to the item otherwise.
+   */
+  const Item* gat(int32_t newExptime, folly::StringPiece key);
+
+  /**
    * Store item with the given key.
    */
   void set(folly::StringPiece key, Item item);
@@ -129,6 +135,8 @@ class MockMc {
   LeaseSetResult leaseSet(folly::StringPiece key, Item item, uint64_t token);
 
   std::pair<const Item*, uint64_t> gets(folly::StringPiece key);
+
+  std::pair<const Item*, uint64_t> gats(int32_t newExptime, folly::StringPiece key);
 
   enum class CasResult { NOT_FOUND, STORED, EXISTS };
 

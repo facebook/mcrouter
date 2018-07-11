@@ -46,7 +46,9 @@ using MemcacheRequestList = carbon::List<
     McShutdownRequest,
     McStatsRequest,
     McTouchRequest,
-    McVersionRequest>;
+    McVersionRequest,
+    McGatRequest,
+    McGatsRequest>;
 } // namespace detail
 
 template <class OnRequest>

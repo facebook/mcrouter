@@ -65,6 +65,18 @@ struct GetLike<facebook::memcache::McMetagetRequest> {
   typedef void* Type;
 };
 
+template <>
+struct GetLike<facebook::memcache::McGatRequest> {
+  static const bool value = true;
+  typedef void* Type;
+};
+
+template <>
+struct GetLike<facebook::memcache::McGatsRequest> {
+  static const bool value = true;
+  typedef void* Type;
+};
+
 // UpdateLike
 template <>
 struct UpdateLike<facebook::memcache::McAddRequest> {

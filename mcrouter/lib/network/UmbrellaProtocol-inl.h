@@ -94,6 +94,26 @@ struct TagSet<McOperation<mc_op_lease_get>, McLeaseGetRequest> {
   using Tags = List<KeyTag>;
 };
 
+template <>
+struct TagSet<McOperation<mc_op_gat>, McGatReply> {
+  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
+};
+
+template <>
+struct TagSet<McOperation<mc_op_gat>, McGatRequest> {
+  using Tags = List<ExptimeTag, KeyTag>;
+};
+
+template <>
+struct TagSet<McOperation<mc_op_gats>, McGatsReply> {
+  using Tags = List<CasTag, ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
+};
+
+template <>
+struct TagSet<McOperation<mc_op_gats>, McGatsRequest> {
+  using Tags = List<ExptimeTag, KeyTag>;
+};
+
 // Update-like ops
 template <>
 struct TagSet<McOperation<mc_op_set>, McSetReply> {

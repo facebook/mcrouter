@@ -286,6 +286,13 @@ class MCProcess(ProcessBase):
     def gets(self, keys):
         return self._get('gets', keys, expect_cas=True, return_all_info=True)
 
+    def gat(self, exptime, keys, return_all_info=False):
+        return self._get('gat '+str(exptime), keys, expect_cas=False,
+                         return_all_info=return_all_info)
+
+    def gats(self, exptime, keys):
+        return self._get('gats '+str(exptime), keys, expect_cas=True, return_all_info=True)
+
     def metaget(self, keys):
         ## FIXME: Not supporting multi-metaget yet
         #multi = True

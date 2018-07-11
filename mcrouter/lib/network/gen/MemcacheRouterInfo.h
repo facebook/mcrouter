@@ -71,7 +71,9 @@ using MemcacheRoutableRequests = carbon::List<
     McPrependRequest,
     McReplaceRequest,
     McSetRequest,
-    McTouchRequest>;
+    McTouchRequest,
+    McGatRequest,
+    McGatsRequest>;
 } // namespace detail
 
 struct MemcacheRouterInfo {

@@ -34,3 +34,8 @@ class TestAllowGetsOnly(McrouterTestCase):
         self.assertEqual(self.mcr.get('key'), '1')
         self.assertEqual(self.mcr.metaget('key')['exptime'], '0')
         self.assertIsNone(self.mcr.get('key2'))
+        # gat and gats should work the same as get/gets
+        self.assertEqual(self.mcr.gat(0, 'key'), '1')
+        self.assertIsNone(self.mcr.gat(0, 'key2'))
+        self.assertIsNotNone(self.mcr.gats(0, 'key'))
+        self.assertIsNone(self.mcr.gat(0, 'key2'))

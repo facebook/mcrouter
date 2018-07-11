@@ -98,7 +98,7 @@ void BigValueRoute::traverse(
 
 template <class Request>
 typename std::enable_if<
-    folly::IsOneOf<Request, McGetRequest, McGetsRequest>::value,
+    folly::IsOneOf<Request, McGetRequest, McGetsRequest, McGatRequest, McGatsRequest>::value,
     ReplyT<Request>>::type
 BigValueRoute::route(const Request& req) const {
   auto initialReply = ch_->route(req);

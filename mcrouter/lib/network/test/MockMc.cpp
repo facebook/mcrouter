@@ -40,6 +40,17 @@ const MockMc::Item* MockMc::get(folly::StringPiece key) {
   return &it->second.item;
 }
 
+const MockMc::Item* MockMc::gat(int32_t newExptime, folly::StringPiece key) {
+  auto it = findUnexpired(key);
+  if (it == citems_.end() || it->second.state != CacheItem::CACHE) {
+    return nullptr;
+  }
+  it->second.item.exptime = newExptime != 0 && newExptime <= 60 * 60 * 24 * 30
+      ? newExptime + time(nullptr)
+      : newExptime;
+  return &it->second.item;
+}
+
 void MockMc::set(folly::StringPiece key, Item item) {
   citems_.erase(key.str());
   citems_.insert(std::make_pair(key.str(), CacheItem(std::move(item))));
@@ -189,6 +200,17 @@ std::pair<const MockMc::Item*, uint64_t> MockMc::gets(folly::StringPiece key) {
   if (it == citems_.end() || it->second.state != CacheItem::CACHE) {
     return std::make_pair<Item*, uint64_t>(nullptr, 0);
   }
+  return std::make_pair(&it->second.item, it->second.casToken);
+}
+
+std::pair<const MockMc::Item*, uint64_t> MockMc::gats(int32_t newExptime, folly::StringPiece key) {
+  auto it = findUnexpired(key);
+  if (it == citems_.end() || it->second.state != CacheItem::CACHE) {
+    return std::make_pair<Item*, uint64_t>(nullptr, 0);
+  }
+  it->second.item.exptime = newExptime != 0 && newExptime <= 60 * 60 * 24 * 30
+      ? newExptime + time(nullptr)
+      : newExptime;
   return std::make_pair(&it->second.item, it->second.casToken);
 }
 

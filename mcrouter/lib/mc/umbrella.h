@@ -85,7 +85,7 @@ typedef enum msg_field_e {
   // with this scheme.
 } msg_field_t;
 
-#define UM_NOPS 29
+#define UM_NOPS 31
 
 extern uint32_t const umbrella_op_from_mc[UM_NOPS];
 extern uint32_t const umbrella_op_to_mc[UM_NOPS];

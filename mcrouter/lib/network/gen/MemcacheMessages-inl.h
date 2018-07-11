@@ -1351,5 +1351,127 @@ void McFlushAllReply::visitFields(V&& v) const {
     return;
   }
 }
+
+template <class V>
+void McGatRequest::visitFields(V&& v) {
+  if (!v.visitField(1, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(2, "key", key_)) {
+    return;
+  }
+}
+
+template <class V>
+void McGatRequest::visitFields(V&& v) const {
+  if (!v.visitField(1, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(2, "key", key_)) {
+    return;
+  }
+}
+
+template <class V>
+void McGatReply::visitFields(V&& v) {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "value", value_)) {
+    return;
+  }
+  if (!v.visitField(3, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(4, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(5, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
+template <class V>
+void McGatReply::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "value", value_)) {
+    return;
+  }
+  if (!v.visitField(3, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(4, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(5, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
+template <class V>
+void McGatsRequest::visitFields(V&& v) {
+  if (!v.visitField(1, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(2, "key", key_)) {
+    return;
+  }
+}
+
+template <class V>
+void McGatsRequest::visitFields(V&& v) const {
+  if (!v.visitField(1, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(2, "key", key_)) {
+    return;
+  }
+}
+
+template <class V>
+void McGatsReply::visitFields(V&& v) {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "casToken", casToken_)) {
+    return;
+  }
+  if (!v.visitField(3, "value", value_)) {
+    return;
+  }
+  if (!v.visitField(4, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(5, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(6, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
+template <class V>
+void McGatsReply::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "casToken", casToken_)) {
+    return;
+  }
+  if (!v.visitField(3, "value", value_)) {
+    return;
+  }
+  if (!v.visitField(4, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(5, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(6, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
 } // namespace memcache
 } // namespace facebook

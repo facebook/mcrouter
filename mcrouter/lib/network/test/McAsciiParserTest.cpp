@@ -320,6 +320,91 @@ TYPED_TEST(McAsciiParserTestGets, GetsHit) {
 }
 
 /**
+ * Test gat
+ */
+template <class Request>
+class McAsciiParserTestGat : public ::testing::Test {};
+using GatTypes = ::testing::Types<McGatRequest>;
+TYPED_TEST_CASE(McAsciiParserTestGat, GatTypes);
+
+TYPED_TEST(McAsciiParserTestGat, GatHit) {
+  McAsciiParserHarness h("VALUE t 10 2\r\nte\r\nEND\r\n");
+  h.expectNext<TypeParam>(
+    setFlags(setValue(ReplyT<TypeParam>(mc_res_found), "te"), 10));
+  h.runTest(2);
+}
+
+TYPED_TEST(McAsciiParserTestGat, GatHit_Empty) {
+  McAsciiParserHarness h("VALUE t 5 0\r\n\r\nEND\r\n");
+  h.expectNext<TypeParam>(
+      setFlags(setValue(ReplyT<TypeParam>(mc_res_found), ""), 5));
+  h.runTest(2);
+}
+
+TYPED_TEST(McAsciiParserTestGat, GatHit_WithSpaces) {
+  McAsciiParserHarness h("VALUE  test  15889  5\r\ntest \r\nEND\r\n");
+  h.expectNext<TypeParam>(
+      setFlags(setValue(ReplyT<TypeParam>(mc_res_found), "test "), 15889));
+  h.runTest(1);
+}
+
+TYPED_TEST(McAsciiParserTestGat, GatHit_Error) {
+  McAsciiParserHarness h("VALUE  test  15a889  5\r\ntest \r\nEND\r\n");
+  h.expectNext<TypeParam>(ReplyT<TypeParam>(), true);
+  h.runTest(1);
+}
+
+TYPED_TEST(McAsciiParserTestGat, GatMiss) {
+  McAsciiParserHarness h("END\r\n");
+  h.expectNext<TypeParam>(ReplyT<TypeParam>(mc_res_notfound));
+  h.runTest(0);
+}
+
+TYPED_TEST(McAsciiParserTestGat, GatMiss_Error) {
+  McAsciiParserHarness h("EnD\r\n");
+  h.expectNext<TypeParam>(ReplyT<TypeParam>(), true);
+  h.runTest(0);
+}
+
+TYPED_TEST(McAsciiParserTestGat, GatClientError) {
+  McAsciiParserHarness h("CLIENT_ERROR what\r\n");
+  h.expectNext<TypeParam>(
+      replyWithMessage<ReplyT<TypeParam>>(mc_res_client_error, "what"));
+  h.runTest(3);
+}
+
+TYPED_TEST(McAsciiParserTestGat, GatServerError) {
+  McAsciiParserHarness h("SERVER_ERROR what\r\n");
+  h.expectNext<TypeParam>(
+      replyWithMessage<ReplyT<TypeParam>>(mc_res_remote_error, "what"));
+  h.runTest(3);
+}
+
+TYPED_TEST(McAsciiParserTestGat, GatHitMiss) {
+  McAsciiParserHarness h("VALUE test 17  5\r\ntest \r\nEND\r\nEND\r\n");
+  h.expectNext<TypeParam>(
+      setFlags(setValue(ReplyT<TypeParam>(mc_res_found), "test "), 17));
+  h.expectNext<TypeParam>(ReplyT<TypeParam>(mc_res_notfound), false);
+  h.runTest(1);
+}
+
+/**
+ * Test gats
+ */
+template <class Request>
+class McAsciiParserTestGats : public ::testing::Test {};
+using GatsTypes = ::testing::Types<McGatsRequest>;
+TYPED_TEST_CASE(McAsciiParserTestGats, GatsTypes);
+
+TYPED_TEST(McAsciiParserTestGats, GatsHit) {
+  McAsciiParserHarness h("VALUE test 1120 10 573\r\ntest test \r\nEND\r\n");
+  h.expectNext<TypeParam>(setCas(
+      setFlags(setValue(ReplyT<TypeParam>(mc_res_found), "test test "), 1120),
+      573));
+  h.runTest(1);
+}
+
+/**
  * Test lease-get
  */
 template <class Request>

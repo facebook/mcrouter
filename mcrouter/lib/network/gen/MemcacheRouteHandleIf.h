@@ -56,6 +56,8 @@ class MemcacheRouteHandleIf {
   virtual McReplaceReply route(const McReplaceRequest&) = 0;
   virtual McSetReply route(const McSetRequest&) = 0;
   virtual McTouchReply route(const McTouchRequest&) = 0;
+  virtual McGatReply route(const McGatRequest&) = 0;
+  virtual McGatsReply route(const McGatsRequest&) = 0;
 
   virtual void traverse(
       const McAddRequest&,
@@ -107,6 +109,12 @@ class MemcacheRouteHandleIf {
       const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
   virtual void traverse(
       const McTouchRequest&,
+      const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
+  virtual void traverse(
+      const McGatRequest&,
+      const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
+  virtual void traverse(
+      const McGatsRequest&,
       const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
 };
 
@@ -169,6 +177,12 @@ class MemcacheRouteHandle : public MemcacheRouteHandleIf {
     return route_.route(request);
   }
   McTouchReply route(const McTouchRequest& request) override final {
+    return route_.route(request);
+  }
+  McGatReply route(const McGatRequest& request) override final {
+    return route_.route(request);
+  }
+  McGatsReply route(const McGatsRequest& request) override final {
     return route_.route(request);
   }
 
@@ -270,6 +284,18 @@ class MemcacheRouteHandle : public MemcacheRouteHandleIf {
   }
   void traverse(
       const McTouchRequest& request,
+      const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
+      const override final {
+    route_.traverse(request, traverser);
+  }
+  void traverse(
+      const McGatRequest& request,
+      const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
+      const override final {
+    route_.traverse(request, traverser);
+  }
+  void traverse(
+      const McGatsRequest& request,
       const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
       const override final {
     route_.traverse(request, traverser);

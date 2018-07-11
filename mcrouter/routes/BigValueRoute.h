@@ -68,7 +68,7 @@ class BigValueRoute {
 
   template <class Request>
   typename std::enable_if<
-      folly::IsOneOf<Request, McGetRequest, McGetsRequest>::value,
+      folly::IsOneOf<Request, McGetRequest, McGetsRequest, McGatRequest, McGatsRequest>::value,
       ReplyT<Request>>::type
   route(const Request& req) const;
 

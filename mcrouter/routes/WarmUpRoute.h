@@ -163,6 +163,46 @@ class WarmUpRoute {
     return coldReply;
   }
 
+  //////////////////////////////// gat /////////////////////////////////////
+  McGatReply route(const McGatRequest& req) {
+    auto coldReply = cold_->route(req);
+    if (isHitResult(coldReply.result())) {
+      return coldReply;
+    }
+
+    /* else */
+    auto warmReply = warm_->route(req);
+    uint32_t exptime = 0;
+    if (isHitResult(warmReply.result()) && getExptimeForCold(req, exptime)) {
+      folly::fibers::addTask([
+        cold = cold_,
+        addReq = coldUpdateFromWarm<McAddRequest>(req, warmReply, exptime)
+      ]() { cold->route(addReq); });
+    }
+    return warmReply;
+  }
+
+  ////////////////////////////////gats////////////////////////////////////
+  McGatsReply route(const McGatsRequest& req) {
+    auto coldReply = cold_->route(req);
+    if (isHitResult(coldReply.result())) {
+      return coldReply;
+    }
+
+    // miss: send simple gat to warm route
+    McGatRequest reqGet(req.key().fullKey());
+    auto warmReply = warm_->route(reqGet);
+    uint32_t exptime = 0;
+    if (isHitResult(warmReply.result()) && getExptimeForCold(req, exptime)) {
+      // update cold route if we have the value
+      auto addReq = coldUpdateFromWarm<McAddRequest>(req, warmReply, exptime);
+      cold_->route(addReq);
+      // and grab cas token again
+      return cold_->route(req);
+    }
+    return coldReply;
+  }
+
   template <class Request>
   ReplyT<Request> route(const Request& req) const {
     // client is responsible for consistency of warm route, do not replicate

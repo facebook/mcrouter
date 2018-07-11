@@ -77,4 +77,10 @@ TEST(Memcache, staticAssert) {
 
   static_assert(McFlushAllRequest::typeId == 43, "");
   static_assert(McFlushAllReply::typeId == 44, "");
+
+  static_assert(McGatRequest::typeId == 45, "");
+  static_assert(McGatReply::typeId == 46, "");
+
+  static_assert(McGatsRequest::typeId == 47, "");
+  static_assert(McGatsReply::typeId == 48, "");
 }

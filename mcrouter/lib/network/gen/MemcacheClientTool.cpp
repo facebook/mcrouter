@@ -76,6 +76,14 @@ class MemcacheJsonClient : public JsonClient {
       return sendRequest<facebook::memcache::McGetsRequest>(
           requestJson, replyJson);
     }
+    if (requestName == facebook::memcache::McGatRequest::name) {
+      return sendRequest<facebook::memcache::McGatRequest>(
+          requestJson, replyJson);
+    }
+    if (requestName == facebook::memcache::McGatsRequest::name) {
+      return sendRequest<facebook::memcache::McGatsRequest>(
+          requestJson, replyJson);
+    }
     if (requestName == facebook::memcache::McIncrRequest::name) {
       return sendRequest<facebook::memcache::McIncrRequest>(
           requestJson, replyJson);

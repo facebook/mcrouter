@@ -87,6 +87,12 @@ template <>
 void McClientAsciiParser::initializeReplyParser<McLeaseGetRequest>();
 
 template <>
+void McClientAsciiParser::initializeReplyParser<McGatRequest>();
+
+template <>
+void McClientAsciiParser::initializeReplyParser<McGatsRequest>();
+
+template <>
 void McClientAsciiParser::initializeReplyParser<McSetRequest>();
 
 template <>

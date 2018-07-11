@@ -215,6 +215,10 @@ class UmbrellaSerializedMessage {
     appendInt(U64, msg_cas, reply.casToken());
   }
 
+  inline void prepareHelper(const McGatsReply& reply) {
+    appendInt(U64, msg_cas, reply.casToken());
+  }
+
   inline void prepareHelper(const McLeaseSetRequest& request) {
     appendInt(U64, msg_lease_id, request.leaseToken());
   }
