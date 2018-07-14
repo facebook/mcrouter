@@ -304,7 +304,7 @@ TEST(CarbonMessageConversionUtils, fromFollyDynamic_Complex) {
       r.testLongString());
   const folly::IOBuf expectedIobuf(
       folly::IOBuf::CopyBufferOp(), folly::StringPiece("iobuf string here..."));
-  EXPECT_TRUE(folly::IOBufEqual()(expectedIobuf, r.testIobuf()));
+  EXPECT_TRUE(folly::IOBufEqualTo()(expectedIobuf, r.testIobuf()));
 
   EXPECT_EQ(7, r.testStruct().int32Member());
   EXPECT_EQ("I'm nested!", r.testStruct().stringMember());

@@ -37,7 +37,7 @@ class PoolFactory {
   PoolFactory(const folly::dynamic& config, ConfigApiIf& configApi);
 
   /**
-   * Load pool from ConfigApi, expand `inherit`, etc.
+   * Loads a pool from ConfigApi, expand `inherit`, etc.
    *
    * @param json pool json
    *
@@ -52,6 +52,7 @@ class PoolFactory {
 
   PoolJson parseNamedPool(folly::StringPiece name);
 };
-}
-}
-} // facebook::memcache::mcrouter
+
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

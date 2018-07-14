@@ -67,6 +67,12 @@ class AsyncMcServer {
     int tcpListenBacklog{SOMAXCONN};
 
     /**
+     * The list of addresses to listen on.
+     * If this is used, existingSocketFd must be unset (-1).
+     */
+    std::vector<std::string> listenAddresses;
+
+    /**
      * The list of ports to listen on.
      * If this is used, existingSocketFd must be unset (-1).
      */
@@ -85,6 +91,11 @@ class AsyncMcServer {
     std::string pemCertPath;
     std::string pemKeyPath;
     std::string pemCaPath;
+
+    /**
+     * Whether to require peer certs when accepting SSL connections.
+     */
+    bool sslRequirePeerCerts{false};
 
     /**
      * Path to JSON file containing old, current, and new seeds used for TLS

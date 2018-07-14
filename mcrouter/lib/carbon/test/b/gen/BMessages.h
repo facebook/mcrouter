@@ -147,7 +147,6 @@ class SimpleStruct {
   std::vector<test2::util::SimpleStruct> vectorMember_;
   int32_t int32Member_{0};
 };
-
 } // namespace test
 } // namespace carbon
 

@@ -63,10 +63,15 @@ std::string statsUpdateFunctionName(folly::StringPiece routerName) {
       "carbon-stats-update-fn-", routerName, "-", uniqueId.fetch_add(1));
 }
 
+McrouterOptions finalizeOpts(McrouterOptions&& opts) {
+  facebook::memcache::mcrouter::finalizeOptions(opts);
+  return std::move(opts);
+}
+
 } // anonymous namespace
 
 CarbonRouterInstanceBase::CarbonRouterInstanceBase(McrouterOptions inputOptions)
-    : opts_(std::move(inputOptions)),
+    : opts_(finalizeOpts(std::move(inputOptions))),
       pid_(getpid()),
       configApi_(createConfigApi(opts_)),
       rtVarsData_(std::make_shared<ObservableRuntimeVars>()),

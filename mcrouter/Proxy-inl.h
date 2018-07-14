@@ -324,7 +324,15 @@ template <class RouterInfo>
 void Proxy<RouterInfo>::routeHandlesProcessRequest(
     const McStatsRequest& req,
     std::unique_ptr<ProxyRequestContextTyped<RouterInfo, McStatsRequest>> ctx) {
-  ctx->sendReply(stats_reply(this, req.key().fullKey()));
+  McStatsReply reply;
+  try {
+    reply = stats_reply(this, req.key().fullKey());
+  } catch (const std::exception& e) {
+    reply.result() = mc_res_local_error;
+    reply.message() =
+        folly::to<std::string>("Error processing stats request: ", e.what());
+  }
+  ctx->sendReply(std::move(reply));
 }
 
 template <class RouterInfo>

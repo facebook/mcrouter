@@ -16,10 +16,6 @@
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/network/AccessPoint.h"
 
-namespace folly {
-class SSLContext;
-} // folly
-
 namespace facebook {
 namespace memcache {
 
@@ -27,6 +23,13 @@ namespace memcache {
  * A struct for storing all connection related options.
  */
 struct ConnectionOptions {
+  // an enum to determine which security protocol to use to connect to the
+  // endpoint.
+  enum class SecurityMech {
+    NONE,
+    TLS,
+  };
+
   using SocketOptions = folly::AsyncSocket::OptionMap;
 
   ConnectionOptions(
@@ -82,13 +85,6 @@ struct ConnectionOptions {
   unsigned int qosPath{0};
 
   /**
-   * SSLContext provider callback. If null, then unsecured connections will be
-   * established, else it will be called for each attempt to establish
-   * connection.
-   */
-  std::function<std::shared_ptr<folly::SSLContext>()> sslContextProvider;
-
-  /**
    * Path of the debug fifo.
    * If empty, debug fifo is disabled.
    */
@@ -102,9 +98,38 @@ struct ConnectionOptions {
   folly::StringPiece routerInfoName;
 
   /**
+   * Security mech to use
+   */
+  SecurityMech securityMech{SecurityMech::NONE};
+
+  /**
+   * Certificate paths for mutual auth or server cert verification.
+   * If cert and key paths are empty, then no client cert is presented
+   * If ca path is empty, then no server cert verification is attempted
+   */
+  std::string sslPemCertPath;
+  std::string sslPemKeyPath;
+  std::string sslPemCaPath;
+
+  /**
    * enable ssl session caching
    */
   bool sessionCachingEnabled{false};
+
+  /**
+   * enable ssl handshake offload to a separate thread pool
+   */
+  bool sslHandshakeOffload{false};
+
+  /**
+   * Service identity of the destination service when SSL is used.
+   */
+  std::string sslServiceIdentity;
+
+  /**
+   * Whether TFO is enabled for SSL connections
+   */
+  bool tfoEnabledForSsl{false};
 
   /**
    * Use JemallocNodumpAllocator
@@ -116,16 +141,6 @@ struct ConnectionOptions {
    * If nullptr, compression will be disabled.
    */
   const CompressionCodecMap* compressionCodecMap{nullptr};
-
-  /**
-   * Service identity of the destination service when SSL is used.
-   */
-  std::string sslServiceIdentity;
-
-  /**
-   * Whether TFO is enabled for SSL connections
-   */
-  bool tfoEnabledForSsl{false};
 };
 }
 } // facebook::memcache

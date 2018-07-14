@@ -9,6 +9,7 @@
 
 #include <folly/experimental/StringKeyedUnorderedMap.h>
 
+#include "mcrouter/ExponentialSmoothData.h"
 #include "mcrouter/stats.h"
 
 namespace facebook {
@@ -21,13 +22,27 @@ class PoolStats {
       : requestsCountStatName_(
             folly::to<std::string>(poolName, ".requests.sum")),
         finalResultErrorStatName_(
-            folly::to<std::string>(poolName, ".final_result_error.sum")) {
+            folly::to<std::string>(poolName, ".final_result_error.sum")),
+        durationUsStatName_(
+            folly::to<std::string>(poolName, ".duration_us.avg")),
+        totalDurationUsStatName_(
+            folly::to<std::string>(poolName, ".total_duration_us.avg")) {
     initStat(requestCountStat_, requestsCountStatName_);
     initStat(finalResultErrorStat_, finalResultErrorStatName_);
   }
 
   std::vector<stat_t> getStats() const {
-    return {requestCountStat_, finalResultErrorStat_};
+    stat_t durationStat;
+    stat_t totalDurationStat;
+    initStat(durationStat, durationUsStatName_);
+    initStat(totalDurationStat, totalDurationUsStatName_);
+    durationStat.data.uint64 = durationUsStat_.value();
+    totalDurationStat.data.uint64 = totalDurationUsStat_.value();
+
+    return {requestCountStat_,
+            finalResultErrorStat_,
+            std::move(durationStat),
+            std::move(totalDurationStat)};
   }
 
   void incrementRequestCount(uint64_t amount = 1) {
@@ -36,6 +51,14 @@ class PoolStats {
 
   void incrementFinalResultErrorCount(uint64_t amount = 1) {
     finalResultErrorStat_.data.uint64 += amount;
+  }
+
+  void addDurationSample(int64_t duration) {
+    durationUsStat_.insertSample(duration);
+  }
+
+  void addTotalDurationSample(int64_t duration) {
+    totalDurationUsStat_.insertSample(duration);
   }
 
  private:
@@ -49,8 +72,12 @@ class PoolStats {
 
   const std::string requestsCountStatName_;
   const std::string finalResultErrorStatName_;
+  const std::string durationUsStatName_;
+  const std::string totalDurationUsStatName_;
   stat_t requestCountStat_;
   stat_t finalResultErrorStat_;
+  ExponentialSmoothData<64> totalDurationUsStat_;
+  ExponentialSmoothData<64> durationUsStat_;
 };
 
 } // namespace mcrouter

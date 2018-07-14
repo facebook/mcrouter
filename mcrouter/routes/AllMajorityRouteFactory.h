@@ -50,7 +50,7 @@ typename RouterInfo::RouteHandlePtr makeAllMajorityRoute(
     children = factory.createList(json);
   }
   return detail::makeAllMajorityRoute<RouterInfo>(std::move(children));
-};
+}
 } // mcrouter
 } // memcache
 } // facebook

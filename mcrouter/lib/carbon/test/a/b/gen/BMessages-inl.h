@@ -128,7 +128,6 @@ void YetAnotherReply::visitFields(V&& v) const {
     return;
   }
 }
-
 } // namespace util
 } // namespace test2
 } // namespace carbon

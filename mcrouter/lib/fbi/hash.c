@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2016-present, Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -154,7 +154,11 @@ uint32_t furc_hash(const char* const key, const size_t len, const uint32_t m) {
     uint64_t hash[FURC_CACHE_SIZE];
     int32_t old_ord;
 
-    assert(m <= furc_maximum_pool_size());
+    // There are (ab)users of this function that pass in larger
+    // numbers, and depend on the behavior not changing (ie we can't
+    // just clamp to the max). Just let it go for now.
+
+    // assert(m <= furc_maximum_pool_size());
 
     if (m <= 1) {
         return 0;

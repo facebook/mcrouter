@@ -7,11 +7,13 @@
  */
 #include "ProxyDestination.h"
 
+#include <chrono>
 #include <limits>
 #include <memory>
 #include <random>
 
 #include <folly/fibers/Fiber.h>
+#include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/io/async/AsyncTimeout.h>
 
 #include "mcrouter/McrouterLogFailure.h"
@@ -24,7 +26,6 @@
 #include "mcrouter/lib/network/AccessPoint.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/ReplyStatsContext.h"
-#include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/routes/DestinationRoute.h"
 #include "mcrouter/stats.h"
@@ -269,6 +270,9 @@ ProxyDestination::~ProxyDestination() {
 
   onTransitionFromState(stats_.state);
   proxy.stats().decrement(num_servers_stat);
+  if (accessPoint_->useSsl()) {
+    proxy.stats().decrement(num_ssl_servers_stat);
+  }
 }
 
 ProxyDestination::ProxyDestination(
@@ -288,6 +292,10 @@ ProxyDestination::ProxyDestination(
           proxy.router().opts().min_rxmit_reconnect_threshold) {
   proxy.stats().increment(num_servers_new_stat);
   proxy.stats().increment(num_servers_stat);
+  if (accessPoint_->useSsl()) {
+    proxy.stats().increment(num_ssl_servers_new_stat);
+    proxy.stats().increment(num_ssl_servers_stat);
+  }
 }
 
 bool ProxyDestination::may_send() const {
@@ -303,6 +311,7 @@ void ProxyDestination::resetInactive() {
       client = std::move(client_);
     }
     client->closeNow();
+    stats_.inactiveConnectionClosedTimestampUs = nowUs();
   }
 }
 
@@ -315,10 +324,7 @@ void ProxyDestination::initializeAsyncMcClient() {
   options.tcpKeepAliveIdle = opts.keepalive_idle_s;
   options.tcpKeepAliveInterval = opts.keepalive_interval_s;
   options.writeTimeout = shortestTimeout_;
-  options.sessionCachingEnabled = opts.ssl_connection_cache;
-  options.sslServiceIdentity = opts.ssl_service_identity;
   options.routerInfoName = routerInfoName_;
-  options.tfoEnabledForSsl = opts.enable_ssl_tfo;
   if (!opts.debug_fifo_root.empty()) {
     options.debugFifoPath = getClientDebugFifoFullPath(opts);
   }
@@ -335,18 +341,16 @@ void ProxyDestination::initializeAsyncMcClient() {
   }
 
   if (accessPoint_->useSsl()) {
-    checkLogic(
-        !opts.pem_cert_path.empty() && !opts.pem_key_path.empty() &&
-            !opts.pem_ca_path.empty(),
-        "Some of ssl key paths are not set!");
-    options.sslContextProvider = [&opts] {
-      return getSSLContext(
-          opts.pem_cert_path,
-          opts.pem_key_path,
-          opts.pem_ca_path,
-          folly::none,
-          true);
-    };
+    options.securityMech = ConnectionOptions::SecurityMech::TLS;
+    options.sslPemCertPath = opts.pem_cert_path;
+    options.sslPemKeyPath = opts.pem_key_path;
+    if (opts.ssl_verify_peers) {
+      options.sslPemCaPath = opts.pem_ca_path;
+    }
+    options.sessionCachingEnabled = opts.ssl_connection_cache;
+    options.sslHandshakeOffload = opts.ssl_handshake_offload;
+    options.sslServiceIdentity = opts.ssl_service_identity;
+    options.tfoEnabledForSsl = opts.enable_ssl_tfo;
   }
 
   auto client =
@@ -383,11 +387,12 @@ void ProxyDestination::initializeAsyncMcClient() {
       });
 
   client_->setStatusCallbacks(
-      [this](const folly::AsyncSocket& socket) mutable {
+      [this](const folly::AsyncTransportWrapper& socket) mutable {
         setState(State::kUp);
+        proxy.stats().increment(num_connections_opened_stat);
         if (const auto* sslSocket =
                 socket.getUnderlyingTransport<folly::AsyncSSLSocket>()) {
-          proxy.stats().increment(num_ssl_connection_successes_stat);
+          proxy.stats().increment(num_ssl_connections_opened_stat);
           if (sslSocket->sessionResumptionAttempted()) {
             proxy.stats().increment(num_ssl_resumption_attempts_stat);
           }
@@ -395,13 +400,21 @@ void ProxyDestination::initializeAsyncMcClient() {
             proxy.stats().increment(num_ssl_resumption_successes_stat);
           }
         }
+
+        updateConnectionClosedInternalStat();
       },
       [pdstnPtr = selfPtr_](AsyncMcClient::ConnectionDownReason reason) {
         auto pdstn = pdstnPtr.lock();
         if (!pdstn) {
+          LOG(WARNING) << "Proxy destination is already destroyed. "
+                          "Stats will not be bumped.";
           return;
         }
 
+        pdstn->proxy.stats().increment(num_connections_closed_stat);
+        if (pdstn->accessPoint_->useSsl()) {
+          pdstn->proxy.stats().increment(num_ssl_connections_closed_stat);
+        }
         if (reason == AsyncMcClient::ConnectionDownReason::ABORTED) {
           pdstn->setState(State::kClosed);
         } else {
@@ -418,6 +431,19 @@ void ProxyDestination::initializeAsyncMcClient() {
   if (opts.target_max_inflight_requests > 0) {
     client_->setThrottle(
         opts.target_max_inflight_requests, opts.target_max_pending_requests);
+  }
+}
+
+void ProxyDestination::updateConnectionClosedInternalStat() {
+  if (stats_.inactiveConnectionClosedTimestampUs != 0) {
+    std::chrono::microseconds timeClosed(
+        nowUs() - stats_.inactiveConnectionClosedTimestampUs);
+    proxy.stats().inactiveConnectionClosedIntervalSec().insertSample(
+        std::chrono::duration_cast<std::chrono::seconds>(timeClosed).count());
+
+    // resets inactiveConnectionClosedTimestampUs, as we just want to take
+    // into account connections that were closed due to lack of activity
+    stats_.inactiveConnectionClosedTimestampUs = 0;
   }
 }
 
@@ -482,8 +508,8 @@ void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
   logTkoEvent(proxy, tkoLog);
 }
 
-void ProxyDestination::setState(State new_st) {
-  if (stats_.state == new_st) {
+void ProxyDestination::setState(State newState) {
+  if (stats_.state == newState) {
     return;
   }
 
@@ -494,8 +520,8 @@ void ProxyDestination::setState(State new_st) {
   };
 
   onTransitionFromState(stats_.state);
-  onTransitionToState(new_st);
-  stats_.state = new_st;
+  onTransitionToState(newState);
+  stats_.state = newState;
 
   switch (stats_.state) {
     case State::kUp:
@@ -538,25 +564,35 @@ void ProxyDestination::onTransitionFromState(State st) {
 
 void ProxyDestination::onTransitionImpl(State st, bool to) {
   const int64_t delta = to ? 1 : -1;
+  const bool ssl = accessPoint_->useSsl();
 
   switch (st) {
     case ProxyDestination::State::kNew: {
       proxy.stats().increment(num_servers_new_stat, delta);
+      if (ssl) {
+        proxy.stats().increment(num_ssl_servers_new_stat, delta);
+      }
       break;
     }
     case ProxyDestination::State::kUp: {
       proxy.stats().increment(num_servers_up_stat, delta);
-      if (accessPoint_->useSsl()) {
+      if (ssl) {
         proxy.stats().increment(num_ssl_servers_up_stat, delta);
       }
       break;
     }
     case ProxyDestination::State::kClosed: {
       proxy.stats().increment(num_servers_closed_stat, delta);
+      if (ssl) {
+        proxy.stats().increment(num_ssl_servers_closed_stat, delta);
+      }
       break;
     }
     case ProxyDestination::State::kDown: {
       proxy.stats().increment(num_servers_down_stat, delta);
+      if (ssl) {
+        proxy.stats().increment(num_ssl_servers_down_stat, delta);
+      }
       break;
     }
     case ProxyDestination::State::kNumStates: {

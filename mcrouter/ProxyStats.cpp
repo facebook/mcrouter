@@ -43,6 +43,7 @@ void ProxyStats::aggregate(size_t statId) {
 std::unique_lock<std::mutex> ProxyStats::lock() const {
   return std::unique_lock<std::mutex>(mutex_);
 }
-}
-}
-} // facebook::memcache::mcrouter
+
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

@@ -43,6 +43,5 @@ void AnotherReply::visitFields(V&& v) const {
     return;
   }
 }
-
 } // namespace test
 } // namespace carbon

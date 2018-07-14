@@ -45,34 +45,26 @@ const char* const kInvalidCertPath = "/do/not/exist";
 
 const char* const kServerVersion = "TestServer-1.0";
 
-SSLContextProvider validClientSsl() {
-  return []() {
-    return getSSLContext(
-        getDefaultCertPath(),
-        getDefaultKeyPath(),
-        getDefaultCaPath(),
-        folly::none,
-        true);
-  };
+SSLTestPaths validClientSsl() {
+  return {getDefaultCertPath(), getDefaultKeyPath(), getDefaultCaPath()};
 }
 
-SSLContextProvider validSsl() {
-  return []() {
-    return getSSLContext(
-        getDefaultCertPath(), getDefaultKeyPath(), getDefaultCaPath());
-  };
+SSLTestPaths invalidClientSsl() {
+  return {kInvalidCertPath, kInvalidKeyPath, getDefaultCaPath()};
 }
 
-SSLContextProvider invalidSsl() {
-  return []() {
-    return getSSLContext(kInvalidCertPath, kInvalidKeyPath, getDefaultCaPath());
-  };
+SSLTestPaths brokenClientSsl() {
+  return {kBrokenCertPath, kBrokenKeyPath, getDefaultCaPath()};
 }
 
-SSLContextProvider brokenSsl() {
-  return []() {
-    return getSSLContext(kBrokenCertPath, kBrokenKeyPath, getDefaultCaPath());
-  };
+SSLTestPaths noCertClientSsl() {
+  return {"", "", ""};
+}
+
+SSLTestPaths validSsl() {
+  // valid client creds will work for the server
+  // as well
+  return validClientSsl();
 }
 
 TestServerOnRequest::TestServerOnRequest(
@@ -148,33 +140,23 @@ void TestServerOnRequest::flushQueue() {
   waitingReplies_.clear();
 }
 
-TestServer::TestServer(
-    bool outOfOrder,
-    bool useSsl,
-    int maxInflight,
-    int timeoutMs,
-    size_t maxConns,
-    bool useDefaultVersion,
-    size_t numThreads,
-    bool useTicketKeySeeds,
-    size_t goAwayTimeoutMs,
-    bool tfoEnabled,
-    const char* const caPath,
-    const char* const certPath,
-    const char* const keyPath)
-    : outOfOrder_(outOfOrder), useTicketKeySeeds_(useSsl && useTicketKeySeeds) {
+TestServer::TestServer(Config config)
+    : outOfOrder_(config.outOfOrder),
+      useTicketKeySeeds_(config.useSsl && config.useTicketKeySeeds) {
   opts_.existingSocketFd = sock_.getSocketFd();
-  opts_.numThreads = numThreads;
-  opts_.worker.defaultVersionHandler = useDefaultVersion;
-  opts_.worker.maxInFlight = maxInflight;
-  opts_.worker.sendTimeout = std::chrono::milliseconds{timeoutMs};
-  opts_.worker.goAwayTimeout = std::chrono::milliseconds{goAwayTimeoutMs};
-  opts_.setPerThreadMaxConns(maxConns, opts_.numThreads);
-  if (useSsl) {
-    opts_.pemKeyPath = keyPath;
-    opts_.pemCertPath = certPath;
-    opts_.pemCaPath = caPath;
-    if (tfoEnabled) {
+  opts_.numThreads = config.numThreads;
+  opts_.worker.defaultVersionHandler = config.useDefaultVersion;
+  opts_.worker.maxInFlight = config.maxInflight;
+  opts_.worker.sendTimeout = std::chrono::milliseconds{config.timeoutMs};
+  opts_.worker.goAwayTimeout =
+      std::chrono::milliseconds{config.goAwayTimeoutMs};
+  opts_.setPerThreadMaxConns(config.maxConns, opts_.numThreads);
+  if (config.useSsl) {
+    opts_.pemKeyPath = config.keyPath;
+    opts_.pemCertPath = config.certPath;
+    opts_.pemCaPath = config.caPath;
+    opts_.sslRequirePeerCerts = config.requirePeerCerts;
+    if (config.tfoEnabled) {
       opts_.tfoEnabledForSsl = true;
       opts_.tfoQueueSize = 100000;
     }
@@ -236,12 +218,13 @@ TestClient::TestClient(
     uint16_t port,
     int timeoutMs,
     mc_protocol_t protocol,
-    SSLContextProvider ssl,
+    folly::Optional<SSLTestPaths> ssl,
     uint64_t qosClass,
     uint64_t qosPath,
     std::string serviceIdentity,
     const CompressionCodecMap* compressionCodecMap,
-    bool enableTfo)
+    bool enableTfo,
+    bool offloadHandshakes)
     : fm_(std::make_unique<folly::fibers::EventBaseLoopController>()) {
   dynamic_cast<folly::fibers::EventBaseLoopController&>(fm_.loopController())
       .attachEventBase(eventBase_);
@@ -249,10 +232,14 @@ TestClient::TestClient(
   opts.writeTimeout = std::chrono::milliseconds(timeoutMs);
   opts.compressionCodecMap = compressionCodecMap;
   if (ssl) {
-    opts.sslContextProvider = std::move(ssl);
+    opts.securityMech = ConnectionOptions::SecurityMech::TLS;
+    opts.sslPemCertPath = ssl->sslCertPath;
+    opts.sslPemKeyPath = ssl->sslKeyPath;
+    opts.sslPemCaPath = ssl->sslCaPath;
     opts.sessionCachingEnabled = true;
     opts.sslServiceIdentity = serviceIdentity;
     opts.tfoEnabledForSsl = enableTfo;
+    opts.sslHandshakeOffload = offloadHandshakes;
   }
   if (qosClass != 0 || qosPath != 0) {
     opts.enableQoS = true;
@@ -261,7 +248,7 @@ TestClient::TestClient(
   }
   client_ = std::make_unique<AsyncMcClient>(eventBase_, opts);
   client_->setStatusCallbacks(
-      [](const folly::AsyncSocket&) { LOG(INFO) << "Client UP."; },
+      [](const folly::AsyncTransportWrapper&) { LOG(INFO) << "Client UP."; },
       [](AsyncMcClient::ConnectionDownReason reason) {
         if (reason == AsyncMcClient::ConnectionDownReason::SERVER_GONE_AWAY) {
           LOG(INFO) << "Server gone Away.";
@@ -287,10 +274,10 @@ TestClient::TestClient(
 }
 
 void TestClient::setStatusCallbacks(
-    std::function<void(const folly::AsyncSocket&)> onUp,
+    std::function<void(const folly::AsyncTransportWrapper&)> onUp,
     std::function<void(AsyncMcClient::ConnectionDownReason)> onDown) {
   client_->setStatusCallbacks(
-      [onUp](const folly::AsyncSocket& socket) {
+      [onUp](const folly::AsyncTransportWrapper& socket) {
         LOG(INFO) << "Client UP.";
         onUp(socket);
       },

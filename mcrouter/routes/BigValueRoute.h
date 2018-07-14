@@ -115,7 +115,9 @@ class BigValueRoute {
       typename std::iterator_traits<FuncIt>::value_type()>::type>
   collectAllByBatches(FuncIt beginF, FuncIt endF) const;
 
-  std::pair<std::vector<McSetRequest>, ChunksInfo> chunkUpdateRequests(
+  template <class Request>
+  std::pair<std::vector<Request>, BigValueRoute::ChunksInfo>
+  chunkUpdateRequests(
       folly::StringPiece baseKey,
       const folly::IOBuf& value,
       int32_t exptime) const;

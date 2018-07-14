@@ -26,6 +26,8 @@ libmcroutercore_a_SOURCES = \
   CarbonRouterClient.h \
   CarbonRouterClientBase.cpp \
   CarbonRouterClientBase.h \
+  CarbonRouterFactory.h \
+  CarbonRouterFactory.cpp \
   CarbonRouterInstance-inl.h \
   CarbonRouterInstance.cpp \
   CarbonRouterInstance.h \
@@ -101,6 +103,8 @@ libmcroutercore_a_SOURCES = \
   routes/BigValueRoute.cpp \
   routes/BigValueRoute.h \
   routes/BigValueRouteIf.h \
+  routes/CarbonLookasideRoute.h \
+  routes/CarbonLookasideRoute.cpp \
   routes/DefaultShadowPolicy.h \
   routes/DestinationRoute.h \
   routes/DevNullRoute.h \
@@ -196,7 +200,7 @@ mcrouter_SOURCES = \
 
 libmcroutercore_a_CPPFLAGS = -I..
 
-mcrouter_LDADD = libmcroutercore.a lib/libmcrouter.a
+mcrouter_LDADD = libmcroutercore.a lib/libmcrouter.a -lwangle -lfolly
 mcrouter_CPPFLAGS = -I..
 
 clean-local:

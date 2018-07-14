@@ -18,6 +18,8 @@
 
 #include "mcrouter/lib/debug/FifoManager.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
+#include "mcrouter/lib/network/McSSLUtil.h"
+#include "mcrouter/lib/network/SocketConnector.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 
 namespace facebook {
@@ -117,18 +119,19 @@ std::shared_ptr<AsyncMcClientImpl> AsyncMcClientImpl::create(
 
 void AsyncMcClientImpl::closeNow() {
   DestructorGuard dg(this);
-
   if (socket_) {
     isAborting_ = true;
     // We need to destroy it immediately.
     socket_->closeNow();
     socket_.reset();
     isAborting_ = false;
+  } else if (connectionState_ == ConnectionState::CONNECTING) {
+    isAborting_ = true;
   }
 }
 
 void AsyncMcClientImpl::setStatusCallbacks(
-    std::function<void(const folly::AsyncSocket&)> onUp,
+    std::function<void(const folly::AsyncTransportWrapper&)> onUp,
     std::function<void(ConnectionDownReason)> onDown) {
   DestructorGuard dg(this);
 
@@ -487,7 +490,9 @@ void AsyncMcClientImpl::attemptConnection() {
     connectionState_ = ConnectionState::CONNECTING;
     pendingGoAwayReply_ = false;
 
-    if (connectionOptions_.sslContextProvider) {
+    folly::AsyncSSLSocket* sslSocket = nullptr;
+    if (connectionOptions_.securityMech ==
+        ConnectionOptions::SecurityMech::TLS) {
       // Unix Domain Sockets do not work with SSL because
       // the protocol is not implemented for Unix Domain
       // Sockets. Trying to use SSL with Unix Domain Sockets
@@ -498,7 +503,12 @@ void AsyncMcClientImpl::attemptConnection() {
             "SSL protocol is not applicable for Unix Domain Sockets"));
         return;
       }
-      auto sslContext = connectionOptions_.sslContextProvider();
+
+      auto sslContext = getClientContext(
+          connectionOptions_.sslPemCertPath,
+          connectionOptions_.sslPemKeyPath,
+          connectionOptions_.sslPemCaPath);
+
       if (!sslContext) {
         connectErr(folly::AsyncSocketException(
             folly::AsyncSocketException::SSL_ERROR,
@@ -507,7 +517,7 @@ void AsyncMcClientImpl::attemptConnection() {
         return;
       }
 
-      auto sslSocket = new folly::AsyncSSLSocket(sslContext, &eventBase_);
+      sslSocket = new folly::AsyncSSLSocket(sslContext, &eventBase_);
       if (connectionOptions_.sessionCachingEnabled) {
         auto clientCtx =
             std::dynamic_pointer_cast<ClientSSLContext>(sslContext);
@@ -549,12 +559,47 @@ void AsyncMcClientImpl::attemptConnection() {
     auto socketOptions = createSocketOptions(address, connectionOptions_);
 
     socket_->setSendTimeout(connectionOptions_.writeTimeout.count());
-    socket_->connect(
-        this, address, connectionOptions_.writeTimeout.count(), socketOptions);
-
-    // If AsyncSocket::connect() fails, socket_ may have been reset
-    if (socket_ && connectionOptions_.enableQoS) {
-      checkWhetherQoSIsApplied(address, socket_->getFd(), connectionOptions_);
+    if (sslSocket && connectionOptions_.sslHandshakeOffload) {
+      // we keep ourself alive during connection.
+      auto self = selfPtr_.lock();
+      socket_.release();
+      folly::AsyncSSLSocket::UniquePtr sslSockPtr(sslSocket);
+      // offload the handshake
+      connectSSLSocketWithAuxIO(
+          std::move(sslSockPtr),
+          std::move(address),
+          connectionOptions_.writeTimeout.count(),
+          std::move(socketOptions))
+          .then([self](folly::AsyncSocket::UniquePtr socket) {
+            CHECK(self->eventBase_.isInEventBaseThread());
+            if (self->isAborting_) {
+              // closeNow was called before we connected, so we need to fail
+              folly::AsyncSocketException ex(
+                  folly::AsyncSocketException::INVALID_STATE,
+                  "Client closed before connect completed");
+              self->connectErr(ex);
+              self->isAborting_ = false;
+            } else {
+              self->socket_ = std::move(socket);
+              self->connectSuccess();
+            }
+          })
+          .onError([self](const folly::AsyncSocketException& ex) {
+            CHECK(self->eventBase_.isInEventBaseThread());
+            self->connectErr(ex);
+            // handle the case where the client was aborting mid connect
+            if (self->isAborting_) {
+              self->isAborting_ = false;
+            }
+          });
+    } else {
+      auto asyncSock = socket_->getUnderlyingTransport<folly::AsyncSocket>();
+      // connect inline on the current evb
+      asyncSock->connect(
+          this,
+          address,
+          connectionOptions_.writeTimeout.count(),
+          socketOptions);
     }
   });
 }
@@ -563,6 +608,15 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
   assert(connectionState_ == ConnectionState::CONNECTING);
   DestructorGuard dg(this);
   connectionState_ = ConnectionState::UP;
+
+  if (connectionOptions_.enableQoS) {
+    folly::SocketAddress address;
+    socket_->getPeerAddress(&address);
+    auto asyncSock = socket_->getUnderlyingTransport<folly::AsyncSocket>();
+    if (asyncSock) {
+      checkWhetherQoSIsApplied(address, asyncSock->getFd(), connectionOptions_);
+    }
+  }
 
   if (statusCallbacks_.onUp) {
     statusCallbacks_.onUp(*socket_);
@@ -578,10 +632,11 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
     }
   }
 
-  if (connectionOptions_.sslContextProvider &&
+  if (connectionOptions_.securityMech == ConnectionOptions::SecurityMech::TLS &&
       connectionOptions_.sessionCachingEnabled) {
     auto* sslSocket = socket_->getUnderlyingTransport<folly::AsyncSSLSocket>();
     assert(sslSocket != nullptr);
+    McSSLUtil::finalizeClientSSL(sslSocket);
   }
 
   assert(getInflightRequestCount() == 0);

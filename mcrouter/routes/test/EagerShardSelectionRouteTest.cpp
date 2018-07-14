@@ -20,7 +20,7 @@
 #include "mcrouter/options.h"
 #include "mcrouter/routes/McRouteHandleProvider.h"
 #include "mcrouter/routes/ShardSelectionRouteFactory.h"
-#include "mcrouter/routes/test/ShardSelectionRouteTestUtil.h"
+#include "mcrouter/routes/test/RouteHandleTestBase.h"
 
 using namespace facebook::memcache::mcrouter;
 using namespace hellogoodbye;
@@ -54,7 +54,7 @@ class EagerShardSelector {
 };
 
 class EagerShardSelectionRouteTest
-    : public ShardSelectionRouteTestUtil<HelloGoodbyeRouterInfo> {
+    : public RouteHandleTestBase<HelloGoodbyeRouterInfo> {
  public:
   HelloGoodbyeRouterInfo::RouteHandlePtr getEagerShardSelectionRoute(
       folly::StringPiece jsonStr) {
@@ -147,8 +147,8 @@ TEST_F(EagerShardSelectionRouteTest, createMissingHost) {
   } catch (const std::exception& e) {
     std::string errorMsg = e.what();
     EXPECT_EQ(
-        "EagerShardSelectionRoute: 'shards' must have the same number of entries "
-        "as servers in 'pool'",
+        "EagerShardSelectionRoute: 'shards' must have the same number of "
+        "entries as servers in 'pool'. Servers size: 1. Shards size: 2.",
         errorMsg);
   }
 }

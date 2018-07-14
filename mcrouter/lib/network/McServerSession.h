@@ -169,6 +169,10 @@ class McServerSession : public folly::DelayedDestruction,
     return options_.memController;
   }
 
+  const folly::AsyncTransportWrapper* getTransport() const noexcept {
+    return transport_.get();
+  }
+
  private:
   const AsyncMcServerWorkerOptions& options_;
 

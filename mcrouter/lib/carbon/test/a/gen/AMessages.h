@@ -124,7 +124,6 @@ class AnotherReply : public carbon::ReplyCommon {
  private:
   carbon::Result result_{mc_res_unknown};
 };
-
 } // namespace test
 } // namespace carbon
 

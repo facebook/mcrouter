@@ -21,6 +21,7 @@
 #include <vector>
 
 #include <folly/Conv.h>
+#include <folly/IPAddress.h>
 #include <folly/SharedMutex.h>
 #include <folly/String.h>
 #include <folly/io/async/AsyncServerSocket.h>
@@ -215,11 +216,9 @@ class McServerThread {
       if (accepting_) {
         socket_.reset();
         sslSocket_.reset();
-        for (auto& acceptor : acceptorsKeepAlive_) {
-          acceptor.first->add(
-              [keepAlive = std::move(acceptor.second)]() mutable {
-                keepAlive.reset();
-              });
+        for (auto& keepAlive : acceptorsKeepAlive_) {
+          auto evb = keepAlive.get();
+          evb->add([ka = std::move(keepAlive)]() {});
         }
         acceptorsKeepAlive_.clear();
       }
@@ -232,11 +231,9 @@ class McServerThread {
       if (accepting_) {
         socket_.reset();
         sslSocket_.reset();
-        for (auto& acceptor : acceptorsKeepAlive_) {
-          acceptor.first
-              ->add([keepAlive = std::move(acceptor.second)]() mutable {
-                keepAlive.reset();
-              });
+        for (auto& keepAlive : acceptorsKeepAlive_) {
+          auto evb = keepAlive.get();
+          evb->add([ka = std::move(keepAlive)]() {});
         }
         acceptorsKeepAlive_.clear();
       }
@@ -278,15 +275,14 @@ class McServerThread {
       if (secure_) {
         const auto& server = mcServerThread_->server_;
         auto& opts = server.opts_;
-        auto sslCtx = getSSLContext(
+        auto sslCtx = getServerContext(
             opts.pemCertPath,
             opts.pemKeyPath,
             opts.pemCaPath,
+            opts.sslRequirePeerCerts,
             server.getTicketKeySeeds());
 
         if (sslCtx) {
-          sslCtx->setVerificationOption(
-              folly::SSLContext::SSLVerifyPeerEnum::VERIFY_REQ_CLIENT_CERT);
           mcServerThread_->worker_.addSecureClientSocket(fd, std::move(sslCtx));
         } else {
           ::close(fd);
@@ -315,8 +311,7 @@ class McServerThread {
 
   folly::AsyncServerSocket::UniquePtr socket_;
   folly::AsyncServerSocket::UniquePtr sslSocket_;
-  std::vector<std::pair<folly::EventBase*, folly::Executor::KeepAlive>>
-      acceptorsKeepAlive_;
+  std::vector<folly::Executor::KeepAlive<folly::EventBase>> acceptorsKeepAlive_;
   std::unique_ptr<ShutdownPipe> shutdownPipe_;
 
   AsyncMcServer::LoopFn fn_;
@@ -365,7 +360,22 @@ class McServerThread {
       if (!server_.opts_.ports.empty()) {
         socket_.reset(new folly::AsyncServerSocket());
         for (auto port : server_.opts_.ports) {
-          socket_->bind(port);
+          if (server_.opts_.listenAddresses.empty()) {
+            socket_->bind(port);
+          } else {
+            std::vector<folly::IPAddress> ipAddresses;
+            for (auto& listenAddress : server_.opts_.listenAddresses) {
+              auto maybeIp = folly::IPAddress::tryFromString(listenAddress);
+              checkLogic(
+                  maybeIp.hasValue(),
+                  "Invalid listen address: {}",
+                  listenAddress);
+              auto ip = std::move(maybeIp).value();
+              ipAddresses.push_back(std::move(ip));
+            }
+
+            socket_->bind(ipAddresses, port);
+          }
         }
       }
       if (!server_.opts_.sslPorts.empty()) {
@@ -407,8 +417,7 @@ class McServerThread {
         sslSocket_->addAcceptCallback(&t->sslAcceptCallback_, t->evb_.get());
       }
       if (socket_ != nullptr || sslSocket_ != nullptr || t.get() != this) {
-        acceptorsKeepAlive_.emplace_back(
-            t->evb_.get(), t->evb_->getKeepAliveToken());
+        acceptorsKeepAlive_.emplace_back(getKeepAliveToken(t->evb_.get()));
       }
     }
   }

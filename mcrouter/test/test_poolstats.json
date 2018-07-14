@@ -11,14 +11,24 @@
           "127.0.0.1:15002"
         ]
       },
-     "twmemcache.CI.east": {
+     "twmemcache.CI.north": {
         "servers": [
           "127.0.0.1:15003"
         ]
       },
-      "wc": {
+     "twmemcache.CI.south": {
         "servers": [
           "127.0.0.1:15004"
+        ]
+      },
+     "twmemcache.CI.east": {
+        "servers": [
+          "127.0.0.1:15005"
+        ]
+      },
+      "wc": {
+        "servers": [
+          "127.0.0.1:15006"
         ]
       }
   },
@@ -28,7 +38,14 @@
     "policies": {
       "twmemcache.CI.west.1": "PoolRoute|twmemcache.CI.west.1",
       "twmemcache.CI.west":   "PoolRoute|twmemcache.CI.west",
-      "twmemcache.CI.east": "PoolRoute|twmemcache.CI.east"
+      "twmemcache.CI.east": "PoolRoute|twmemcache.CI.east",
+      "twmemcache.CI.north": {
+          "type": "FailoverRoute",
+          "children": [
+              "PoolRoute|twmemcache.CI.south",
+              "PoolRoute|twmemcache.CI.north"
+          ]
+      }
     },
     "wildcard": "PoolRoute|wc"
   }

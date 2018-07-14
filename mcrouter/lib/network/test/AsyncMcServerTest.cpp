@@ -7,14 +7,14 @@
  */
 #include <gtest/gtest.h>
 
-#include "mcrouter/lib/network/McServerSSLUtil.h"
+#include "mcrouter/lib/network/McSSLUtil.h"
 #include "mcrouter/lib/network/test/TestClientServerUtil.h"
 
 using namespace facebook::memcache;
 using namespace facebook::memcache::test;
 
-struct VeryifyCommonNameOnRequest {
-  VeryifyCommonNameOnRequest(folly::fibers::Baton&, bool) {}
+struct VerifyCommonNameOnRequest {
+  VerifyCommonNameOnRequest(folly::fibers::Baton&, bool) {}
 
   template <class Request>
   void onRequest(McServerRequestContext&& ctx, Request&&) {
@@ -34,8 +34,9 @@ struct VeryifyCommonNameOnRequest {
 };
 
 TEST(AsyncMcServer, sslCertCommonName) {
-  auto server =
-      TestServer::create<VeryifyCommonNameOnRequest>(false, true /* use ssl */);
+  TestServer::Config config;
+  config.outOfOrder = false;
+  auto server = TestServer::create(std::move(config));
 
   LOG(INFO) << "creating client";
 
@@ -49,7 +50,11 @@ TEST(AsyncMcServer, sslCertCommonName) {
   clientWithSsl.waitForReplies();
 
   TestClient clientWithoutSsl(
-      "localhost", server->getListenPort(), 200, mc_ascii_protocol, noSsl());
+      "localhost",
+      server->getListenPort(),
+      200,
+      mc_ascii_protocol,
+      folly::none);
   clientWithoutSsl.sendGet("empty", mc_res_remote_error);
   clientWithoutSsl.waitForReplies();
 
@@ -60,9 +65,11 @@ TEST(AsyncMcServer, sslCertCommonName) {
 }
 
 TEST(AsyncMcServer, sslVerify) {
-  McServerSSLUtil::setApplicationSSLVerifier(
+  McSSLUtil::setApplicationSSLVerifier(
       [](folly::AsyncSSLSocket*, bool, X509_STORE_CTX*) { return false; });
-  auto server = TestServer::create(false, true /* use ssl */);
+  TestServer::Config config;
+  config.outOfOrder = false;
+  auto server = TestServer::create(std::move(config));
 
   TestClient sadClient(
       "localhost",

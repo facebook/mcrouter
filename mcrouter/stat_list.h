@@ -13,26 +13,46 @@ STSI(pid, 0, 0)
 STSI(parent_pid, 0, 0)
 STUI(time, 0, 0)
 #undef GROUP
+
 #define GROUP ods_stats | mcproxy_stats | detailed_stats
 STUI(uptime, 0, 0)
-STUI(num_servers, 0, 1)
-STUI(num_servers_new, 0, 1)
-STUI(num_servers_up, 0, 1)
-STUI(num_servers_down, 0, 1)
-STUI(num_servers_closed, 0, 1)
+
+STUI(num_servers, 0, 1) // num of ProxyDestinations possible connections.
+STUI(num_servers_new, 0, 1) // num of new connections (not open yet).
+STUI(num_servers_up, 0, 1) // num of opened connections.
+STUI(num_servers_down, 0, 1) // num of conns that weren't explicitly closed.
+STUI(num_servers_closed, 0, 1) // num of connections closed (were open before).
+
+// same as above, but for ssl.
+STUI(num_ssl_servers, 0, 1)
+STUI(num_ssl_servers_new, 0, 1)
 STUI(num_ssl_servers_up, 0, 1)
+STUI(num_ssl_servers_down, 0, 1)
+STUI(num_ssl_servers_closed, 0, 1)
+
 STUI(num_clients, 0, 1)
-// Current number of open SSL connections
 STUI(num_suspect_servers, 0, 1)
-// Running total of successful SSL connection attempts
-STUI(num_ssl_connection_successes, 0, 1)
+
+// Running total of connection opens/closes
+STUI(num_connections_opened, 0, 1)
+STUI(num_connections_closed, 0, 1)
+
+// Running total of ssl connection opens/closes.
+STUI(num_ssl_connections_opened, 0, 1)
+STUI(num_ssl_connections_closed, 0, 1)
+
+// Running total of successful SSL connection attempts/successes
 STUI(num_ssl_resumption_attempts, 0, 1)
 STUI(num_ssl_resumption_successes, 0, 1)
+// time between closing an inactive connection and opening it again.
+STAT(inactive_connection_closed_interval_sec, stat_double, 0, .dbl = 0.0)
 #undef GROUP
+
 #define GROUP mcproxy_stats | rate_stats
 STUI(destination_batches_sum, 0, 1)
 STUI(destination_requests_sum, 0, 1)
 #undef GROUP
+
 /**
  * OutstandingLimitRoute (OLR) queue-related stats, broken down by request type
  * (get-like and update-like).
@@ -42,6 +62,7 @@ STUI(destination_requests_sum, 0, 1)
 STUI(outstanding_route_get_reqs_queued, 0, 1)
 STUI(outstanding_route_update_reqs_queued, 0, 1)
 #undef GROUP
+
 #define GROUP ods_stats | mcproxy_stats
 /* Average number of requests waiting in OLR at any given time */
 STAT(outstanding_route_get_avg_queue_size, stat_double, 0, .dbl = 0.0)
@@ -52,6 +73,7 @@ STAT(outstanding_route_update_avg_wait_time_sec, stat_double, 0, .dbl = 0.0)
 /* Connections closed due to retransmits */
 STUI(retrans_closed_connections, 0, 1)
 #undef GROUP
+
 #define GROUP rate_stats
 /* OutstandingLimitRoute queue-related helper stats */
 STUI(outstanding_route_get_reqs_queued_helper, 0, 0)
@@ -62,6 +84,7 @@ STUI(outstanding_route_update_wait_time_sum_us, 0, 0)
 STUI(retrans_per_kbyte_sum, 0, 0)
 STUI(retrans_num_total, 0, 0)
 #undef GROUP
+
 #define GROUP ods_stats | mcproxy_stats
 /* Total reqs in mc client yet to be sent to memcache. */
 STUI(destination_pending_reqs, 0, 1)
@@ -92,24 +115,34 @@ STUI(fibers_stack_high_watermark, 0, 0)
 //  STUI(failed_client_connections, 0)
 STUI(successful_client_connections, 0, 1)
 STAT(duration_us, stat_double, 0, .dbl = 0.0)
+/**
+ * Duration microseconds, broken down by request type (get-like and update-like).
+ */
+STAT(duration_get_us, stat_double, 0, .dbl = 0.0)
+STAT(duration_update_us, stat_double, 0, .dbl = 0.0)
 #undef GROUP
+
 #define GROUP ods_stats | mcproxy_stats | max_stats
 STUI(destination_max_pending_reqs, 0, 1)
 STUI(destination_max_inflight_reqs, 0, 1)
 #undef GROUP
+
 #define GROUP ods_stats | detailed_stats | count_stats
 STUI(rate_limited_log_count, 0, 1)
 STUI(load_balancer_load_reset_count, 0, 1)
 #undef GROUP
+
 #define GROUP ods_stats | count_stats
 STUI(redirected_lease_set_count, 0, 1)
 #undef GROUP
+
 #define GROUP ods_stats | detailed_stats | rate_stats
   STUIR(replies_compressed, 0, 1)
   STUIR(replies_not_compressed, 0, 1)
   STUIR(reply_traffic_before_compression, 0, 1)
   STUIR(reply_traffic_after_compression, 0, 1)
 #undef GROUP
+
 #define GROUP ods_stats | detailed_stats
 STUI(config_age, 0, 0)
 STUI(config_last_attempt, 0, 0)
@@ -121,15 +154,18 @@ STUI(dev_null_requests, 0, 1)
 STUI(proxy_request_num_outstanding, 0, 1)
 STAT(retrans_per_kbyte_avg, stat_double, 0, .dbl = 0.0)
 #undef GROUP
+
 #define GROUP ods_stats | mcproxy_stats | max_max_stats
 STUI(retrans_per_kbyte_max, 0, 1)
 #undef GROUP
+
 #define GROUP count_stats
 STUI(request_sent_count, 0, 1)
 STUI(request_error_count, 0, 1)
 STUI(request_success_count, 0, 1)
 STUI(request_replied_count, 0, 1)
 #undef GROUP
+
 #define GROUP ods_stats | detailed_stats | rate_stats
 STUIR(request_sent, 0, 1)
 STUIR(request_error, 0, 1)
@@ -147,6 +183,7 @@ STUIR(failover_least_failures_policy_failed, 0, 1)
 STUIR(failover_custom_policy, 0, 1)
 STUIR(failover_custom_policy_failed, 0, 1)
 #undef GROUP
+
 #define GROUP ods_stats | count_stats
 STUI(result_error_count, 0, 1)
 STUI(result_error_all_count, 0, 1)
@@ -162,7 +199,11 @@ STUI(result_tko_count, 0, 1)
 STUI(result_tko_all_count, 0, 1)
 STUI(result_local_error_count, 0, 1)
 STUI(result_local_error_all_count, 0, 1)
+STUI(failover_custom_limit_reached, 0, 1)
+STUI(failover_custom_master_region, 0, 1)
+STUI(failover_custom_master_region_skipped, 0, 1)
 #undef GROUP
+
 #define GROUP ods_stats | detailed_stats | rate_stats
 STUIR(final_result_error, 0, 1)
 STUIR(result_error, 0, 1)

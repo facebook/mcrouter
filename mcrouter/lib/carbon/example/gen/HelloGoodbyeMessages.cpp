@@ -22,8 +22,8 @@ void HelloRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
   writer.writeField(1 /* field id */, key());
   writer.writeField(2 /* field id */, shardId());
+  writer.writeFieldStop();
   writer.writeStructEnd();
-  writer.writeStop();
 }
 
 void HelloRequest::deserialize(carbon::CarbonProtocolReader& reader) {
@@ -58,8 +58,8 @@ void HelloRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 void HelloReply::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
   writer.writeField(1 /* field id */, result());
+  writer.writeFieldStop();
   writer.writeStructEnd();
-  writer.writeStop();
 }
 
 void HelloReply::deserialize(carbon::CarbonProtocolReader& reader) {
@@ -93,8 +93,8 @@ void GoodbyeRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
   writer.writeField(1 /* field id */, key());
   writer.writeField(2 /* field id */, shardId());
+  writer.writeFieldStop();
   writer.writeStructEnd();
-  writer.writeStop();
 }
 
 void GoodbyeRequest::deserialize(carbon::CarbonProtocolReader& reader) {
@@ -130,8 +130,8 @@ void GoodbyeReply::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
   writer.writeField(1 /* field id */, result());
   writer.writeField(2 /* field id */, message());
+  writer.writeFieldStop();
   writer.writeStructEnd();
-  writer.writeStop();
 }
 
 void GoodbyeReply::deserialize(carbon::CarbonProtocolReader& reader) {
@@ -162,5 +162,4 @@ void GoodbyeReply::deserialize(carbon::CarbonProtocolReader& reader) {
   }
   reader.readStructEnd();
 }
-
 } // namespace hellogoodbye

@@ -22,6 +22,16 @@ FailoverErrorsSettingsBase::List::List(std::vector<std::string> errors) {
   init(std::move(errors));
 }
 
+// copy
+FailoverErrorsSettingsBase::List::List(const List& other) {
+  init(other.failover_);
+}
+FailoverErrorsSettingsBase::List& FailoverErrorsSettingsBase::List::operator=(
+    const List& other) {
+  init(other.failover_);
+  return *this;
+}
+
 FailoverErrorsSettingsBase::List::List(const folly::dynamic& json) {
   checkLogic(json.isArray(), "List of failover errors is not an array.");
 
@@ -61,6 +71,14 @@ void FailoverErrorsSettingsBase::List::init(std::vector<std::string> errors) {
 
     checkLogic(
         i < mc_nres, "Failover error '{}' is not a valid error type.", error);
+  }
+}
+
+void FailoverErrorsSettingsBase::List::init(
+    const std::unique_ptr<std::array<bool, mc_nres>>& otherFailover) {
+  if (otherFailover) {
+    failover_ = std::make_unique<std::array<bool, mc_nres>>();
+    *failover_ = *otherFailover;
   }
 }
 

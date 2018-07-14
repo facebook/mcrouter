@@ -70,6 +70,5 @@ inline constexpr size_t
 CarbonTestRouterStatsConfig::getStatGroup<test2::util::YetAnotherRequest>() {
   return 3; // stat group 'yet_another'
 }
-
 } // namespace test
 } // namespace carbon

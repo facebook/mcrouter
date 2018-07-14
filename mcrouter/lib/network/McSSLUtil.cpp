@@ -5,7 +5,7 @@
  *  file in the root directory of this source tree.
  *
  */
-#include "McServerSSLUtil.h"
+#include "McSSLUtil.h"
 
 #include <folly/SharedMutex.h>
 #include <folly/io/async/ssl/OpenSSLUtils.h>
@@ -19,13 +19,23 @@ static folly::SharedMutex& getMutex() {
   return MUTEX;
 }
 
-static McServerSSLUtil::SSLVerifyFunction& getAppFuncRef() {
-  static McServerSSLUtil::SSLVerifyFunction VERIFIER;
+static McSSLUtil::SSLVerifyFunction& getAppFuncRef() {
+  static McSSLUtil::SSLVerifyFunction VERIFIER;
   return VERIFIER;
+}
+
+static McSSLUtil::SSLFinalizeFunction& getServerFinalizeFuncRef() {
+  static McSSLUtil::SSLFinalizeFunction FINALIZER;
+  return FINALIZER;
+}
+
+static McSSLUtil::SSLFinalizeFunction& getClientFinalizeFuncRef() {
+  static McSSLUtil::SSLFinalizeFunction FINALIZER;
+  return FINALIZER;
 }
 } // namespace
 
-bool McServerSSLUtil::verifySSLWithDefaultBehavior(
+bool McSSLUtil::verifySSLWithDefaultBehavior(
     folly::AsyncSSLSocket*,
     bool preverifyOk,
     X509_STORE_CTX* ctx) noexcept {
@@ -59,12 +69,12 @@ bool McServerSSLUtil::verifySSLWithDefaultBehavior(
       cert, reinterpret_cast<sockaddr*>(&addrStorage), addrLen);
 }
 
-void McServerSSLUtil::setApplicationSSLVerifier(SSLVerifyFunction func) {
+void McSSLUtil::setApplicationSSLVerifier(SSLVerifyFunction func) {
   folly::SharedMutex::WriteHolder wh(getMutex());
   getAppFuncRef() = std::move(func);
 }
 
-bool McServerSSLUtil::verifySSL(
+bool McSSLUtil::verifySSL(
     folly::AsyncSSLSocket* sock,
     bool preverifyOk,
     X509_STORE_CTX* ctx) noexcept {
@@ -76,6 +86,34 @@ bool McServerSSLUtil::verifySSL(
     return verifySSLWithDefaultBehavior(sock, preverifyOk, ctx);
   }
   return func(sock, preverifyOk, ctx);
+}
+
+void McSSLUtil::setApplicationServerSSLFinalizer(SSLFinalizeFunction func) {
+  folly::SharedMutex::WriteHolder wh(getMutex());
+  getServerFinalizeFuncRef() = std::move(func);
+}
+
+void McSSLUtil::setApplicationClientSSLFinalizer(SSLFinalizeFunction func) {
+  folly::SharedMutex::WriteHolder wh(getMutex());
+  getClientFinalizeFuncRef() = std::move(func);
+}
+
+void McSSLUtil::finalizeServerSSL(
+    folly::AsyncTransportWrapper* transport) noexcept {
+  folly::SharedMutex::ReadHolder rh(getMutex());
+  auto& func = getServerFinalizeFuncRef();
+  if (func) {
+    func(transport);
+  }
+}
+
+void McSSLUtil::finalizeClientSSL(
+    folly::AsyncTransportWrapper* transport) noexcept {
+  folly::SharedMutex::ReadHolder rh(getMutex());
+  auto& func = getClientFinalizeFuncRef();
+  if (func) {
+    func(transport);
+  }
 }
 
 } // namespace memcache

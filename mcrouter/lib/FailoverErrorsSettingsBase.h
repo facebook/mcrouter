@@ -37,6 +37,13 @@ class FailoverErrorsSettingsBase {
   class List {
    public:
     List() = default;
+
+    // copyable and movable.
+    List(const List&);
+    List& operator=(const List&);
+    List(List&&) = default;
+    List& operator=(List&&) = default;
+
     explicit List(std::vector<std::string> errors);
     explicit List(const folly::dynamic& json);
 
@@ -46,6 +53,7 @@ class FailoverErrorsSettingsBase {
     std::unique_ptr<std::array<bool, mc_nres>> failover_;
 
     void init(std::vector<std::string> errors);
+    void init(const std::unique_ptr<std::array<bool, mc_nres>>& otherFailover);
   };
 
   enum class FailoverType {

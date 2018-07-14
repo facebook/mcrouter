@@ -5,6 +5,8 @@ noinst_LIBRARIES = libmcrouter.a
 libmcrouter_a_SOURCES = \
   AuxiliaryCPUThreadPool.h \
   AuxiliaryCPUThreadPool.cpp \
+  AuxiliaryIOThreadPool.h \
+  AuxiliaryIOThreadPool.cpp \
   CacheClientStats.h \
   Ch3HashFunc.h \
   Clocks.cpp \
@@ -174,8 +176,8 @@ libmcrouter_a_SOURCES = \
   network/McServerRequestContext.h \
   network/McServerSession.cpp \
   network/McServerSession.h \
-  network/McServerSSLUtil.cpp \
-  network/McServerSSLUtil.h \
+  network/McSSLUtil.cpp \
+  network/McSSLUtil.h \
   network/MemcacheMessageHelpers.h \
   network/MemoryController.cpp \
   network/MemoryController.h \
@@ -185,6 +187,8 @@ libmcrouter_a_SOURCES = \
   network/ServerLoad.h \
   network/ServerMcParser-inl.h \
   network/ServerMcParser.h \
+  network/SocketConnector.cpp \
+  network/SocketConnector.h \
   network/ThreadLocalSSLContextProvider.cpp \
   network/ThreadLocalSSLContextProvider.h \
   network/UmbrellaProtocol.cpp \
@@ -197,6 +201,7 @@ libmcrouter_a_SOURCES = \
   routes/AllInitialRoute.h \
   routes/AllMajorityRoute.h \
   routes/AllSyncRoute.h \
+  routes/CarbonLookasideRoute.h \
   routes/LoadBalancerRoute.h \
   routes/LoggingRoute.h \
   routes/MigrateRoute.h \
@@ -213,4 +218,4 @@ check_PROGRAMS =
 
 libtestmain_la_CPPFLAGS = -Igtest/include -Igtest
 libtestmain_la_SOURCES = TestMain.cpp gtest/src/gtest-all.cc
-libtestmain_la_LIBADD = -lfolly -lfollyinit
+libtestmain_la_LIBADD = -lfolly

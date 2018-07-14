@@ -31,7 +31,8 @@ reply GoodbyeReply {
 
 service {
   additional_route_handles: [
-    DuplicateRoute @ "mcrouter/lib/carbon/example/DuplicateRoute.h"
+    DuplicateRoute @ "mcrouter/lib/carbon/example/DuplicateRoute.h",
+    CarbonLookasideRoute @ "mcrouter/lib/carbon/example/CarbonLookasideRoute.h"
   ];
   gen_client_tool: true;
 };

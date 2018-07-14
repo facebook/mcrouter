@@ -42,6 +42,8 @@ enum class SimpleEnum : int64_t {
   Negative = -92233
 };
 
+std::string enumSimpleEnumToString(SimpleEnum val);
+
 class SimpleStruct {
  public:
   static constexpr bool hasExptime = false;
@@ -286,7 +288,6 @@ class YetAnotherReply : public carbon::ReplyCommon {
  private:
   carbon::Result result_{mc_res_unknown};
 };
-
 } // namespace util
 } // namespace test2
 } // namespace carbon

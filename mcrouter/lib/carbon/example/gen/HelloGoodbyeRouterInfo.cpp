@@ -33,6 +33,7 @@
 #include <mcrouter/routes/FailoverRoute.h>
 #include <mcrouter/routes/HashRouteFactory.h>
 #include <mcrouter/routes/HostIdRouteFactory.h>
+#include <mcrouter/routes/LatencyInjectionRoute.h>
 #include <mcrouter/routes/LatestRoute.h>
 #include <mcrouter/routes/LoadBalancerRoute.h>
 #include <mcrouter/routes/LoggingRoute.h>
@@ -45,6 +46,7 @@
 
 #include <mcrouter/routes/McExtraRouteHandleProvider.h>
 
+#include "mcrouter/lib/carbon/example/CarbonLookasideRoute.h"
 #include "mcrouter/lib/carbon/example/DuplicateRoute.h"
 
 using namespace facebook::memcache;
@@ -68,6 +70,8 @@ HelloGoodbyeRouterInfo::buildRouteMap() {
          return makeHashRoute<HelloGoodbyeRouterInfo>(factory, json);
        }},
       {"HostIdRoute", &makeHostIdRoute<HelloGoodbyeRouterInfo>},
+      {"LatencyInjectionRoute",
+       &makeLatencyInjectionRoute<HelloGoodbyeRouterInfo>},
       {"LatestRoute", &makeLatestRoute<HelloGoodbyeRouterInfo>},
       {"LoadBalancerRoute", &makeLoadBalancerRoute<HelloGoodbyeRouterInfo>},
       {"LoggingRoute", &makeLoggingRoute<HelloGoodbyeRouterInfo>},
@@ -79,6 +83,8 @@ HelloGoodbyeRouterInfo::buildRouteMap() {
        &makeOperationSelectorRoute<HelloGoodbyeRouterInfo>},
       {"RandomRoute", &makeRandomRoute<HelloGoodbyeRouterInfo>},
       {"DuplicateRoute", &makeDuplicateRoute<HelloGoodbyeRouterInfo>},
+      {"CarbonLookasideRoute",
+       &makeCarbonLookasideRoute<HelloGoodbyeRouterInfo>},
   };
   return map;
 }
@@ -88,5 +94,4 @@ std::unique_ptr<ExtraRouteHandleProviderIf<HelloGoodbyeRouterInfo>>
 HelloGoodbyeRouterInfo::buildExtraProvider() {
   return std::make_unique<McExtraRouteHandleProvider<HelloGoodbyeRouterInfo>>();
 }
-
 } // namespace hellogoodbye

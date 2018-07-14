@@ -25,31 +25,42 @@ namespace mcrouter {
  *
  * Sample json format:
  * {
- *   "pool": "Pool|smc:blah.test.region.00",
- *   "shards": [
- *     [1, 3, 6],
- *     [2, 4, 5],
- *     ...
- *   ],
+ *   "pool": {
+ *     "type": "pool",
+ *     "name": "A",
+ *     "servers": [
+ *       "server1:12345",
+ *       "server2:12345"
+ *     ],
+ *     "shards": [
+ *       [1, 3, 6],
+ *       [2, 4, 5]
+ *     ]
+ *   },
  *   "out_of_range": "ErrorRoute"
  * }
  *
  * Alternatively, "shards" can be an array of strings of comma-separated
  * shard ids. For example:
  * {
- *   "pool": "Pool|smc:blah.test.region.00",
- *   "shards": [
- *     "1,3,6",
- *     "2,4,5",
- *     ...
- *   ],
+ *   "pool": {
+ *     "type": "pool",
+ *     "name": "A",
+ *     "servers": [
+ *       "server1:12345",
+ *       "server2:12345"
+ *     ],
+ *     "shards": [
+ *       "1,3,6",
+ *       "2,4,5"
+ *     ]
+ *   },
  * }
  *
  *
  * NOTE:
- *  - "shards" and "pool" must have the same number of entries, in exactly
- *    the same order (e.g. `shards[5]` shows the shards processed by
- *    `pool.servers[5]`).
+ *  - "shards" and "servers" must have the same number of entries, in exactly
+ *    the same order (e.g. shards[5] shows the shards processed by servers[5]).
  *
  * @tparam ShardSelector Class responsible for selecting the shard responsible
  *                       for handling the request. The ShardSelector constructor
@@ -76,14 +87,21 @@ typename RouterInfo::RouteHandlePtr createShardSelectionRoute(
  * {
  *   "children_type": "RouteHandle",
  *   "pools" : [
- *   {
- *     "pool": "Pool|smc:blah.test.region.00",
- *     "shards": [
- *       [1, 3, 6],
- *       [2, 4, 5],
- *       ...
- *     ],
- *   }
+ *      {
+ *        "pool": {
+ *          "type": "pool",
+ *          "name": "A",
+ *          "servers": [
+ *            "server1:12345",
+ *            "server2:12345"
+ *          ],
+ *          "shards": [
+ *            [1, 3, 6],
+ *            [2, 4, 5]
+ *          ]
+ *        },
+ *      }
+ *   ],
  *   "children_settings" : { .. },
  *   "out_of_range": "ErrorRoute"
  * }
@@ -92,9 +110,8 @@ typename RouterInfo::RouteHandlePtr createShardSelectionRoute(
  * shard ids, as stated in ShardSelectionRoute above
  *
  * NOTE:
- *  - "shards" and "pool" must have the same number of entries, in exactly
- *    the same order (e.g. `shards[5]` shows the shards processed by
- *    `pool.servers[5]`).
+ *  - "shards" and "servers" must have the same number of entries, in exactly
+ *    the same order (e.g. shards[5] shows the shards processed by servers[5]).
  *
  * @tparam ShardSelector Class responsible for selecting the shard responsible
  *                       for handling the request. The ShardSelector constructor

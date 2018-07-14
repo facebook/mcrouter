@@ -142,5 +142,12 @@ RouteHandleFactory<RouteHandleIf>::createList(const folly::dynamic& json) {
   throwLogic(
       "RouteHandle is {}, expected object/array/string", json.typeName());
 }
+
+template <class RouteHandleIf>
+const folly::dynamic& RouteHandleFactory<RouteHandleIf>::parsePool(
+    const folly::dynamic& json) {
+  return provider_.parsePool(json);
 }
-} // facebook::memcache
+
+} // namespace memcache
+} // namespace facebook

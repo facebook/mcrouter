@@ -22,9 +22,9 @@ namespace memcache {
 namespace mcrouter {
 
 template <class RouterInfo>
-class ShardSelectionRouteTestUtil : public ::testing::Test {
+class RouteHandleTestBase : public ::testing::Test {
  public:
-  ShardSelectionRouteTestUtil()
+  RouteHandleTestBase()
       : router_(memcache::mcrouter::CarbonRouterInstance<RouterInfo>::init(
             "testRouter",
             getOpts())),
@@ -32,7 +32,7 @@ class ShardSelectionRouteTestUtil : public ::testing::Test {
         rhProvider_(*router_->getProxy(0), poolFactory_),
         rhFactory_(rhProvider_, 0) {}
 
-  virtual ~ShardSelectionRouteTestUtil() {}
+  virtual ~RouteHandleTestBase() {}
 
   typename RouterInfo::RouteHandlePtr getRoute(folly::StringPiece jsonStr) {
     return rhFactory_.create(memcache::parseJsonString(jsonStr.str()));

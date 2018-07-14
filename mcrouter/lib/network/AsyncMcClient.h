@@ -65,7 +65,7 @@ class AsyncMcClient {
    *       some requests left, for wich reply callback wasn't called yet.
    */
   void setStatusCallbacks(
-      std::function<void(const folly::AsyncSocket&)> onUp,
+      std::function<void(const folly::AsyncTransportWrapper&)> onUp,
       std::function<void(ConnectionDownReason)> onDown);
 
   /**

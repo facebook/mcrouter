@@ -123,6 +123,16 @@ class Ref {
     return t;
   }
 
+  /**
+   * reset the managed object
+   */
+  void reset() noexcept {
+    if (ref_) {
+      RefPolicy::decref(ref_);
+      ref_ = nullptr;
+    }
+  }
+
   ~Ref() noexcept {
     RefPolicy::decref(ref_);
   }

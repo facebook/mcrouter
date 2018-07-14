@@ -11,7 +11,6 @@
 
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
-#include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 
 using facebook::memcache::ConnectionOptions;
 
@@ -21,10 +20,10 @@ namespace {
 ConnectionOptions getConnectionOptions(const JsonClient::Options& opts) {
   ConnectionOptions options(opts.host, opts.port, mc_caret_protocol);
   if (opts.useSsl) {
-    options.sslContextProvider = [=]() {
-      return facebook::memcache::getSSLContext(
-          opts.pemCertPath, opts.pemKeyPath, opts.pemCaPath, folly::none, true);
-    };
+    options.securityMech = ConnectionOptions::SecurityMech::TLS;
+    options.sslPemCertPath = opts.pemCertPath;
+    options.sslPemKeyPath = opts.pemKeyPath;
+    options.sslPemCaPath = opts.pemCaPath;
     options.sslServiceIdentity = opts.sslServiceIdentity;
     options.sessionCachingEnabled = true;
     options.tfoEnabledForSsl = true;

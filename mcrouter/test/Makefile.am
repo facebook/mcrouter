@@ -3,7 +3,6 @@ SUBDIRS = cpp_unit_tests .
 TESTS = \
   ../lib/config/test/mcrouter_config_test \
   ../lib/fbi/cpp/test/mcrouter_fbi_cpp_test \
-  ../lib/fbi/test/mcrouter_fbi_hash_test \
   ../lib/fbi/test/mcrouter_fbi_test \
   ../lib/test/mcrouter_lib_test \
   ../routes/test/mcrouter_routes_test \

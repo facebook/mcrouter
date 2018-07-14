@@ -27,6 +27,7 @@
 #include <folly/Format.h>
 #include <folly/Range.h>
 #include <folly/Singleton.h>
+#include <folly/logging/Init.h>
 
 #include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
@@ -366,6 +367,11 @@ void run() {
   }
 }
 
+// Configure folly to enable INFO+ messages, and everything else to
+// enable WARNING+.
+// Set the default log handler to log asynchronously by default.
+FOLLY_INIT_LOGGING_CONFIG(".=WARNING,folly=INFO; default:async=true");
+
 int main(int argc, char** argv) {
   folly::SingletonVault::singleton()->registrationComplete();
   FLAGS_v = 1;
@@ -452,6 +458,7 @@ int main(int argc, char** argv) {
         "Unrecognized option: {}",
         option);
   }
+  initStandaloneSSL();
 
   srand(time(nullptr) + getpid());
 

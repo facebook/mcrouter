@@ -45,7 +45,6 @@ namespace hellogoodbye {
 namespace detail {
 
 using HelloGoodbyeRoutableRequests = carbon::List<GoodbyeRequest, HelloRequest>;
-
 } // namespace detail
 
 struct HelloGoodbyeRouterInfo {
@@ -73,5 +72,4 @@ struct HelloGoodbyeRouterInfo {
                              ExtraRouteHandleProviderIf<HelloGoodbyeRouterInfo>>
   buildExtraProvider();
 };
-
 } // namespace hellogoodbye

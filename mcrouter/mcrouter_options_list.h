@@ -303,17 +303,17 @@ MCROUTER_OPTION_INTEGER(
 
 MCROUTER_OPTION_STRING(
     pem_cert_path,
-    facebook::memcache::mcrouter::getDefaultPemCertPath(),
+    "",  // this may get overwritten by finalizeOptions
     "pem-cert-path",
     no_short,
-    "Path of pem-style certificate for ssl")
+    "Path of pem-style client certificate for ssl.")
 
 MCROUTER_OPTION_STRING(
     pem_key_path,
-    facebook::memcache::mcrouter::getDefaultPemCertKey(),
+    "",  // this may get overwritten by finalizeOptions
     "pem-key-path",
     no_short,
-    "Path of pem-style key for ssl")
+    "Path of pem-style client key for ssl.")
 
 MCROUTER_OPTION_STRING(
     pem_ca_path,
@@ -364,6 +364,20 @@ MCROUTER_OPTION_TOGGLE(
     "ssl-connection-cache",
     no_short,
     "If enabled, limited number of SSL sessions will be cached")
+
+MCROUTER_OPTION_TOGGLE(
+    ssl_handshake_offload,
+    false,
+    "ssl-handshake-offload",
+    no_short,
+    "If enabled, SSL handshakes are offloaded to a separate threadpool")
+
+MCROUTER_OPTION_TOGGLE(
+    ssl_verify_peers,
+    false,
+    "ssl-verify-peers",
+    no_short,
+    "If enabled, clients will verify server certificates.")
 
 MCROUTER_OPTION_TOGGLE(
     enable_compression,
@@ -485,6 +499,14 @@ MCROUTER_OPTION_INTEGER(
     no_short,
     "Delay between config files change and mcrouter reconfiguration.")
 
+MCROUTER_OPTION_INTEGER(
+    int,
+    post_reconfiguration_delay_ms,
+    0,
+    "post-reconfiguration-delay-ms",
+    no_short,
+    "Delay after a reconfiguration is complete.")
+
 MCROUTER_OPTION_STRING_MAP(
     config_params,
     "config-params",
@@ -526,15 +548,6 @@ MCROUTER_OPTION_INTEGER(
     "timeouts-until-tko",
     no_short,
     "Mark as TKO after this many failures")
-
-MCROUTER_OPTION_INTEGER(
-    size_t,
-    maximum_soft_tkos,
-    40,
-    "maximum-soft-tkos",
-    no_short,
-    "The maximum number of machines we can mark TKO if they don't have a hard"
-    " failure.")
 
 MCROUTER_OPTION_TOGGLE(
     allow_only_gets,

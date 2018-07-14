@@ -12,8 +12,8 @@
 #include <folly/small_vector.h>
 
 #include "mcrouter/lib/debug/FifoManager.h"
+#include "mcrouter/lib/network/McSSLUtil.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
-#include "mcrouter/lib/network/McServerSSLUtil.h"
 #include "mcrouter/lib/network/MultiOpParent.h"
 #include "mcrouter/lib/network/WriteBuffer.h"
 
@@ -481,7 +481,7 @@ bool McServerSession::handshakeVer(
     folly::AsyncSSLSocket* sock,
     bool preverifyOk,
     X509_STORE_CTX* ctx) noexcept {
-  return McServerSSLUtil::verifySSL(sock, preverifyOk, ctx);
+  return McSSLUtil::verifySSL(sock, preverifyOk, ctx);
 }
 
 void McServerSession::handshakeSuc(folly::AsyncSSLSocket* sock) noexcept {
@@ -498,6 +498,7 @@ void McServerSession::handshakeSuc(folly::AsyncSSLSocket* sock) noexcept {
       clientCommonName_.assign(std::string(cn, res));
     }
   }
+  McSSLUtil::finalizeServerSSL(transport_.get());
 }
 
 void McServerSession::handshakeErr(

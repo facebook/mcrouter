@@ -651,7 +651,6 @@ class GoAwayRequest : public carbon::ReplyCommon {
   std::string reason_;
   carbon::Result result_{mc_res_unknown};
 };
-
 } // namespace memcache
 } // namespace facebook
 

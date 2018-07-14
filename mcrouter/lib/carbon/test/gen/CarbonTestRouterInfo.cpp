@@ -33,6 +33,7 @@
 #include <mcrouter/routes/FailoverRoute.h>
 #include <mcrouter/routes/HashRouteFactory.h>
 #include <mcrouter/routes/HostIdRouteFactory.h>
+#include <mcrouter/routes/LatencyInjectionRoute.h>
 #include <mcrouter/routes/LatestRoute.h>
 #include <mcrouter/routes/LoadBalancerRoute.h>
 #include <mcrouter/routes/LoggingRoute.h>
@@ -67,6 +68,8 @@ CarbonTestRouterInfo::buildRouteMap() {
          return makeHashRoute<CarbonTestRouterInfo>(factory, json);
        }},
       {"HostIdRoute", &makeHostIdRoute<CarbonTestRouterInfo>},
+      {"LatencyInjectionRoute",
+       &makeLatencyInjectionRoute<CarbonTestRouterInfo>},
       {"LatestRoute", &makeLatestRoute<CarbonTestRouterInfo>},
       {"LoadBalancerRoute", &makeLoadBalancerRoute<CarbonTestRouterInfo>},
       {"LoggingRoute", &makeLoggingRoute<CarbonTestRouterInfo>},
@@ -86,6 +89,5 @@ std::unique_ptr<ExtraRouteHandleProviderIf<CarbonTestRouterInfo>>
 CarbonTestRouterInfo::buildExtraProvider() {
   return std::make_unique<McExtraRouteHandleProvider<CarbonTestRouterInfo>>();
 }
-
 } // namespace test
 } // namespace carbon

@@ -148,6 +148,5 @@ using CarbonTestInternalConnection = CarbonTestConnectionImpl<
     carbon::InternalCarbonConnectionImpl<CarbonTestConnection>>;
 using CarbonTestExternalConnection =
     CarbonTestConnectionImpl<carbon::ExternalCarbonConnectionImpl>;
-
 } // namespace test
 } // namespace carbon

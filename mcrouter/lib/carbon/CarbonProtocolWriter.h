@@ -315,7 +315,7 @@ class CarbonProtocolWriter {
     nestedStructFieldIds_.pop_back();
   }
 
-  void writeStop() {
+  void writeFieldStop() {
     writeByte(FieldType::Stop);
   }
 

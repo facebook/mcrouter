@@ -88,5 +88,4 @@ void GoodbyeReply::visitFields(V&& v) const {
     return;
   }
 }
-
 } // namespace hellogoodbye

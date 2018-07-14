@@ -283,12 +283,11 @@ folly::Optional<StyledString> MessagePrinter::filterAndBuildOutput(
       out.popAppendColor();
     }
   }
-  if (options_.script) {
+  auto typeSpecificAttr = getTypeSpecificAttributes(message);
+  if (options_.script && !typeSpecificAttr.empty()) {
     out.pushBack(',');
-    out.append(getTypeSpecificAttributes(message));
-  } else {
-    out.append(getTypeSpecificAttributes(message));
   }
+  out.append(typeSpecificAttr);
 
   if (!value.empty()) {
     size_t uncompressedSize;

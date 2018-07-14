@@ -50,7 +50,6 @@ using CarbonTestRoutableRequests = carbon::List<
     TestRequest,
     TestRequestStringKey,
     test2::util::YetAnotherRequest>;
-
 } // namespace detail
 
 struct CarbonTestRouterInfo {
@@ -78,6 +77,5 @@ struct CarbonTestRouterInfo {
                              ExtraRouteHandleProviderIf<CarbonTestRouterInfo>>
   buildExtraProvider();
 };
-
 } // namespace test
 } // namespace carbon

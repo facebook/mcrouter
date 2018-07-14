@@ -90,8 +90,8 @@ struct SerializationTraits<folly::Optional<T>> {
       carbon::CarbonProtocolWriter& writer) {
     writer.writeStructBegin();
     writer.writeField(1 /* field id */, opt);
+    writer.writeFieldStop();
     writer.writeStructEnd();
-    writer.writeStop();
   }
 
   static bool isEmpty(const folly::Optional<T>& opt) {

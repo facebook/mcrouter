@@ -259,6 +259,5 @@ void GoAwayRequest::visitFields(V&& v) const {
     return;
   }
 }
-
 } // namespace memcache
 } // namespace facebook

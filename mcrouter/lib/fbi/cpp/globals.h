@@ -30,6 +30,6 @@ struct HostidMock {
     reset();
   }
 };
-}
-}
-} // facebook::memcache::globals
+} // namespace globals
+} // namespace memcache
+} // namespace facebook

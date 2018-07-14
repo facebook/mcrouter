@@ -28,7 +28,18 @@ class RequestCommon {
           McFbtraceRef::moveRef(mc_fbtrace_info_deep_copy(other.fbtraceInfo()));
     }
   }
-  RequestCommon& operator=(const RequestCommon&) = delete;
+  RequestCommon& operator=(const RequestCommon& other) {
+    if (this != &other) {
+      fbtraceInfo_.reset();
+      if (other.fbtraceInfo()) {
+        // mc_fbtrace_info_deep_copy returns new object, just keep the refcount
+        // as 1
+        fbtraceInfo_ = McFbtraceRef::moveRef(
+            mc_fbtrace_info_deep_copy(other.fbtraceInfo()));
+      }
+    }
+    return *this;
+  }
 
   RequestCommon(RequestCommon&&) = default;
   RequestCommon& operator=(RequestCommon&&) = default;

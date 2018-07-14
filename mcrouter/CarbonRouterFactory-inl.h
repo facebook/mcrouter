@@ -24,7 +24,7 @@ bool getOptionsFromFlavor(
     std::unordered_map<std::string, std::string>&& optionOverrides,
     McrouterOptions& routerOptions);
 
-} // detail
+} // namespace detail
 
 template <class RouterInfo>
 CarbonRouterInstance<RouterInfo>* createRouterFromFlavor(
@@ -44,6 +44,19 @@ CarbonRouterInstance<RouterInfo>* createRouterFromFlavor(
   return CarbonRouterInstance<RouterInfo>::init(persistenceId, options);
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+template <class RouterInfo>
+std::shared_ptr<CarbonRouterInstance<RouterInfo>> createRouterFromFlavor(
+    folly::StringPiece flavorUri,
+    std::unordered_map<std::string, std::string> optionOverrides) {
+  McrouterOptions options;
+  if (!detail::getOptionsFromFlavor(
+          flavorUri, std::move(optionOverrides), options)) {
+    return nullptr;
+  }
+
+  return CarbonRouterInstance<RouterInfo>::create(std::move(options));
+}
+
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

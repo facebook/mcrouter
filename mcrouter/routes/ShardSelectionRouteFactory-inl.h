@@ -5,7 +5,6 @@
  *  file in the root directory of this source tree.
  *
  */
-
 #include <folly/Range.h>
 #include <folly/dynamic.h>
 
@@ -21,30 +20,46 @@ namespace mcrouter {
 
 namespace detail {
 
-const folly::dynamic& getPoolJson(const folly::dynamic& json);
-
-const folly::dynamic& getShardsJson(const folly::dynamic& json);
-
 void parseShardsPerServerJson(
     const folly::dynamic& json,
     std::function<void(uint32_t)>&& f);
 
-size_t getMaxShardId(const std::vector<std::vector<size_t>>& allShards);
-
 std::vector<std::vector<size_t>> parseAllShardsJson(
     const folly::dynamic& allShardsJson);
 
+inline size_t getMaxShardId(const std::vector<std::vector<size_t>>& shardsMap) {
+  size_t maxShardId = 0;
+  for (const auto& shards : shardsMap) {
+    for (auto shardId : shards) {
+      maxShardId = std::max(maxShardId, shardId);
+    }
+  }
+  return maxShardId;
+}
+template <class T>
+size_t getMaxShardId(const std::unordered_map<uint32_t, T>& shardsMap) {
+  uint32_t maxShardId = 0;
+  for (const auto& item : shardsMap) {
+    auto shardId = item.first;
+    maxShardId = std::max(maxShardId, shardId);
+  }
+  return maxShardId;
+}
+
 template <class MapType>
-MapType prepareMap(size_t shardsMapSize);
+MapType prepareMap(size_t numDistinctShards, size_t maxShardId);
 template <>
-inline std::vector<uint16_t> prepareMap(size_t shardsMapSize) {
+inline std::vector<uint16_t> prepareMap(
+    size_t /* numDistinctShards */,
+    size_t maxShardId) {
   return std::vector<uint16_t>(
-      shardsMapSize, std::numeric_limits<uint16_t>::max());
+      maxShardId + 1, std::numeric_limits<uint16_t>::max());
 }
 template <>
 inline std::unordered_map<uint32_t, uint32_t> prepareMap(
-    size_t /* shardsMapSize */) {
-  return std::unordered_map<uint32_t, uint32_t>();
+    size_t numDistinctShards,
+    size_t /* maxShardId */) {
+  return std::unordered_map<uint32_t, uint32_t>(numDistinctShards);
 }
 
 inline bool containsShard(const std::vector<uint16_t>& vec, size_t shard) {
@@ -54,6 +69,38 @@ inline bool containsShard(
     const std::unordered_map<uint32_t, uint32_t>& map,
     size_t shard) {
   return (map.find(shard) != map.end());
+}
+
+template <class RouterInfo>
+const folly::dynamic& getPoolJson(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json) {
+  assert(json.isObject());
+
+  const auto* poolJson = json.get_ptr("pool");
+  checkLogic(poolJson, "ShardSelectionRoute: 'pool' not found");
+  return factory.parsePool(*poolJson);
+}
+
+template <class RouterInfo>
+const folly::dynamic& getShardsJson(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json) {
+  assert(json.isObject());
+
+  // first, look for shards inside the pool.
+  const auto& poolJson = getPoolJson<RouterInfo>(factory, json);
+  const auto* shardsJson = poolJson.get_ptr("shards");
+
+  // if not found, look outside.
+  // TODO: kill this fallback logic when every client is at version >= 28
+  if (!shardsJson) {
+    shardsJson = json.get_ptr("shards");
+  }
+  checkLogic(
+      shardsJson && shardsJson->isArray(),
+      "ShardSelectionRoute: 'shards' not found or not an array");
+  return *shardsJson;
 }
 
 /**
@@ -73,8 +120,8 @@ MapType getShardsMap(const folly::dynamic& json, size_t numDestinations) {
   // Validate and get a list of shards.
   auto allShards = parseAllShardsJson(json);
 
-  size_t shardsMapSize = getMaxShardId(allShards) + 1;
-  auto shardsMap = prepareMap<MapType>(shardsMapSize);
+  auto shardsMap =
+      prepareMap<MapType>(allShards.size(), getMaxShardId(allShards));
 
   // We don't need to validate here, as it was validated before.
   for (size_t i = 0; i < allShards.size(); ++i) {
@@ -100,8 +147,8 @@ using ShardDestinationsMap = std::
 
 template <class RouterInfo>
 ShardDestinationsMap<RouterInfo> getShardDestinationsMap(
-    const folly::dynamic& json,
-    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory) {
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json) {
   const auto jPools = [&json]() {
     auto poolsJson = json.get_ptr("pools");
     checkLogic(
@@ -112,13 +159,16 @@ ShardDestinationsMap<RouterInfo> getShardDestinationsMap(
   ShardDestinationsMap<RouterInfo> shardMap;
 
   for (const auto& jPool : jPools) {
-    auto poolJson = getPoolJson(jPool);
+    auto poolJson = getPoolJson<RouterInfo>(factory, jPool);
     auto destinations = factory.createList(poolJson);
-    auto shardsJson = getShardsJson(jPool);
+    auto shardsJson = getShardsJson<RouterInfo>(factory, jPool);
     checkLogic(
         shardsJson.size() == destinations.size(),
-        "EagerShardSelectionRoute: 'shards' must have the same number of "
-        "entries as servers in 'pool'");
+        folly::sformat(
+            "EagerShardSelectionRoute: 'shards' must have the same number of "
+            "entries as servers in 'pool'. Servers size: {}. Shards size: {}.",
+            destinations.size(),
+            shardsJson.size()));
     if (destinations.empty()) {
       continue;
     }
@@ -142,6 +192,46 @@ ShardDestinationsMap<RouterInfo> getShardDestinationsMap(
   return shardMap;
 }
 
+template <class RouterInfo, class MapType>
+void buildChildrenLatestRoutes(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json,
+    const ShardDestinationsMap<RouterInfo>& shardMap,
+    std::vector<typename RouterInfo::RouteHandlePtr>& destinations,
+    MapType& shardToDestinationIndexMap) {
+  LatestRouteOptions options =
+      parseLatestRouteJson(json, factory.getThreadId());
+  std::for_each(shardMap.begin(), shardMap.end(), [&](auto& item) {
+    auto shardId = item.first;
+    auto childrenRouteHandles = std::move(item.second);
+    size_t numChildren = childrenRouteHandles.size();
+    destinations.push_back(createLatestRoute<RouterInfo>(
+        json,
+        std::move(childrenRouteHandles),
+        options,
+        std::vector<double>(numChildren, 1.0)));
+    shardToDestinationIndexMap[shardId] = destinations.size() - 1;
+  });
+}
+
+template <class RouterInfo, class MapType>
+void buildChildrenLoadBalancerRoutes(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& /* factory */,
+    const folly::dynamic& json,
+    const ShardDestinationsMap<RouterInfo>& shardMap,
+    std::vector<typename RouterInfo::RouteHandlePtr>& destinations,
+    MapType& shardToDestinationIndexMap) {
+  LoadBalancerRouteOptions<RouterInfo> options =
+      parseLoadBalancerRouteJson<RouterInfo>(json);
+  std::for_each(shardMap.begin(), shardMap.end(), [&](auto& item) {
+    auto shardId = item.first;
+    auto childrenRouteHandles = std::move(item.second);
+    destinations.push_back(createLoadBalancerRoute<RouterInfo>(
+        std::move(childrenRouteHandles), options));
+    shardToDestinationIndexMap[shardId] = destinations.size() - 1;
+  });
+}
+
 } // namespace detail
 
 // routes
@@ -151,7 +241,7 @@ typename RouterInfo::RouteHandlePtr createShardSelectionRoute(
     const folly::dynamic& json) {
   checkLogic(json.isObject(), "ShardSelectionRoute config should be an object");
 
-  auto poolJson = detail::getPoolJson(json);
+  auto poolJson = detail::getPoolJson<RouterInfo>(factory, json);
   auto destinations = factory.createList(poolJson);
   if (destinations.empty()) {
     LOG(WARNING) << "ShardSelectionRoute: Empty list of destinations found. "
@@ -160,11 +250,14 @@ typename RouterInfo::RouteHandlePtr createShardSelectionRoute(
         "ShardSelectionRoute has an empty list of destinations");
   }
 
-  auto shardsJson = detail::getShardsJson(json);
+  const auto& shardsJson = detail::getShardsJson<RouterInfo>(factory, json);
   checkLogic(
       shardsJson.size() == destinations.size(),
-      "ShardSelectionRoute: 'shards' must have the same number of "
-      "entries as servers in 'pool'");
+      folly::sformat(
+          "ShardSelectionRoute: 'shards' must have the same number of "
+          "entries as servers in 'pool'. Servers size: {}. Shards size: {}.",
+          destinations.size(),
+          shardsJson.size()));
 
   auto selector = ShardSelector(
       detail::getShardsMap<MapType>(shardsJson, destinations.size()));
@@ -187,12 +280,6 @@ typename RouterInfo::RouteHandlePtr createEagerShardSelectionRoute(
   checkLogic(
       json.isObject(), "EagerShardSelectionRoute config should be an object");
 
-  auto shardMap = detail::getShardDestinationsMap<RouterInfo>(json, factory);
-  if (shardMap.empty()) {
-    return mcrouter::createErrorRoute<RouterInfo>(
-        "EagerShardSelectionRoute has an empty list of destinations");
-  }
-
   const auto childrenType = [&json]() {
     auto jChildType = json.get_ptr("children_type");
     checkLogic(
@@ -211,31 +298,34 @@ typename RouterInfo::RouteHandlePtr createEagerShardSelectionRoute(
     return *jSettings;
   }();
 
-  using CreateRouteFunc = typename RouterInfo::RouteHandlePtr (*)(
-      RouteHandleFactory<typename RouterInfo::RouteHandleIf> & factory,
-      const folly::dynamic&,
-      std::vector<typename RouterInfo::RouteHandlePtr>);
-  CreateRouteFunc createRouteFn;
+  auto shardMap = detail::getShardDestinationsMap<RouterInfo>(factory, json);
+  if (shardMap.empty()) {
+    return mcrouter::createErrorRoute<RouterInfo>(
+        "EagerShardSelectionRoute has an empty list of destinations");
+  }
+
+  MapType shardToDestinationIndexMap = detail::prepareMap<MapType>(
+      shardMap.size(), detail::getMaxShardId(shardMap));
+  std::vector<typename RouterInfo::RouteHandlePtr> destinations;
   if (childrenType == "LoadBalancerRoute") {
-    createRouteFn = createLoadBalancerRoute<RouterInfo>;
+    detail::buildChildrenLoadBalancerRoutes<RouterInfo, MapType>(
+        factory,
+        childrenSettings,
+        shardMap,
+        destinations,
+        shardToDestinationIndexMap);
   } else if (childrenType == "LatestRoute") {
-    createRouteFn = createLatestRoute<RouterInfo>;
+    detail::buildChildrenLatestRoutes<RouterInfo, MapType>(
+        factory,
+        childrenSettings,
+        shardMap,
+        destinations,
+        shardToDestinationIndexMap);
   } else {
     throwLogic(
         "EagerShardSelectionRoute: 'children_type' {} not supported",
         childrenType);
   }
-
-  MapType shardToDestinationIndexMap =
-      detail::prepareMap<MapType>(shardMap.size());
-  std::vector<typename RouterInfo::RouteHandlePtr> destinations;
-  std::for_each(shardMap.begin(), shardMap.end(), [&](auto& item) {
-    auto shardId = item.first;
-    auto childrenRouteHandles = std::move(item.second);
-    destinations.push_back(createRouteFn(
-        factory, childrenSettings, std::move(childrenRouteHandles)));
-    shardToDestinationIndexMap[shardId] = destinations.size() - 1;
-  });
 
   ShardSelector selector(std::move(shardToDestinationIndexMap));
 

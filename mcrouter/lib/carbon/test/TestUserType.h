@@ -64,8 +64,8 @@ struct SerializationTraits<carbon::test::UserType> {
     writer.writeStructBegin();
     writer.writeField(1 /* field id */, writeType.name);
     writer.writeField(2 /* field id */, writeType.points);
+    writer.writeFieldStop();
     writer.writeStructEnd();
-    writer.writeStop();
   }
 
   static bool isEmpty(const carbon::test::UserType& writeType) {

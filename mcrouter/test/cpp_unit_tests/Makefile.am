@@ -1,6 +1,7 @@
 check_PROGRAMS = mcrouter_test
 
 mcrouter_test_SOURCES = \
+	main.cpp \
   awriter_test.cpp \
   config_api_test.cpp \
   exponential_smooth_data_test.cpp \
@@ -16,9 +17,14 @@ mcrouter_test_SOURCES = \
   route_test.cpp \
   runtime_vars_data_test.cpp
 
-mcrouter_test_CPPFLAGS = -I$(top_srcdir)/.. -isystem $(top_srcdir)/lib/gtest/include
+mcrouter_test_CPPFLAGS = \
+	-I$(top_srcdir)/.. \
+	-isystem $(top_srcdir)/lib/gtest/include
+
 mcrouter_test_LDADD = \
   $(top_builddir)/libmcroutercore.a \
   $(top_builddir)/lib/libmcrouter.a \
   $(top_builddir)/lib/libtestmain.la \
-  $(top_builddir)/lib/network/libtest_util.a
+  $(top_builddir)/lib/network/libtest_util.a \
+  -lwangle \
+  -lfolly

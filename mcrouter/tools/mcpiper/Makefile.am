@@ -29,5 +29,8 @@ mcpiper_SOURCES = \
 	Util.h \
 	ValueFormatter.h
 
-mcpiper_LDADD = $(top_srcdir)/lib/libmcrouter.a
+mcpiper_LDADD = \
+	$(top_srcdir)/lib/libmcrouter.a \
+	-lfolly
+
 mcpiper_CPPFLAGS = -I$(top_srcdir)/..

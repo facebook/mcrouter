@@ -72,7 +72,6 @@ using MemcacheRoutableRequests = carbon::List<
     McReplaceRequest,
     McSetRequest,
     McTouchRequest>;
-
 } // namespace detail
 
 struct MemcacheRouterInfo {
@@ -101,6 +100,5 @@ struct MemcacheRouterInfo {
                              ExtraRouteHandleProviderIf<MemcacheRouterInfo>>
   buildExtraProvider();
 };
-
 } // namespace memcache
 } // namespace facebook

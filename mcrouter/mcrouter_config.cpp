@@ -122,13 +122,7 @@ std::string getBinPath(folly::StringPiece name) {
   return "unknown";
 }
 
-std::string getDefaultPemCertPath() {
-  return "";
-}
-
-std::string getDefaultPemCertKey() {
-  return "";
-}
+void finalizeOptions(McrouterOptions&) {}
 
 folly::dynamic readStaticJsonFile(folly::StringPiece file) {
   std::string contents;
@@ -139,6 +133,8 @@ folly::dynamic readStaticJsonFile(folly::StringPiece file) {
   return folly::parseJson(contents);
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+void initStandaloneSSL() {}
+
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
