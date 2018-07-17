@@ -757,6 +757,7 @@ class Memcached(MCProcess):
                 '--enable-hash-alias',
                 '--enable-unchecked-l1-sentinel-reads',
                 '--use-asmcs',
+                '--reaper_throttle=100',
             ])
             if port is None:
                 listen_sock = create_listen_socket()

@@ -542,8 +542,7 @@ TYPED_TEST(McAsciiParserTestMetaget, MetagetMiss) {
 TYPED_TEST(McAsciiParserTestMetaget, MetagetHit_Ipv6) {
   McAsciiParserHarness h(
       "META test:key age:345644; exptime:35; "
-      "from:2001:dbaf:7654:7578:12:06ef::1; "
-      "is_transient:38\r\nEND\r\n");
+      "from:2001:dbaf:7654:7578:12:06ef::1\r\nEND\r\n");
   h.expectNext<TypeParam>(
       createMetagetHitReply(345644, 35, 38, "2001:dbaf:7654:7578:12:06ef::1"));
   h.runTest(1);
@@ -552,8 +551,7 @@ TYPED_TEST(McAsciiParserTestMetaget, MetagetHit_Ipv6) {
 TYPED_TEST(McAsciiParserTestMetaget, MetagetHit_Ipv4) {
   McAsciiParserHarness h(
       "META test:key age:  345644; exptime:  35; "
-      "from:  23.84.127.32; "
-      "is_transient:  48\r\nEND\r\n");
+      "from:  23.84.127.32\r\nEND\r\n");
   h.expectNext<TypeParam>(
       createMetagetHitReply(345644, 35, 48, "23.84.127.32"));
   h.runTest(1);
@@ -562,8 +560,7 @@ TYPED_TEST(McAsciiParserTestMetaget, MetagetHit_Ipv4) {
 TYPED_TEST(McAsciiParserTestMetaget, MetagetHit_Unknown) {
   McAsciiParserHarness h(
       "META test:key age:  unknown; exptime:  37; "
-      "from: unknown; "
-      "is_transient:  48\r\nEND\r\n");
+      "from: unknown\r\nEND\r\n");
   h.expectNext<TypeParam>(createMetagetHitReply(-1, 37, 48, "unknown"));
   h.runTest(1);
 }
@@ -571,8 +568,7 @@ TYPED_TEST(McAsciiParserTestMetaget, MetagetHit_Unknown) {
 TYPED_TEST(McAsciiParserTestMetaget, MetagetHit_Unknown_NegativeOne) {
   McAsciiParserHarness h(
       "META test:key age:  -1; exptime:  37; "
-      "from: unknown; "
-      "is_transient:  48\r\nEND\r\n");
+      "from: unknown\r\nEND\r\n");
   h.expectNext<TypeParam>(createMetagetHitReply(-1, 37, 48, "unknown"));
   h.runTest(1);
 }
@@ -620,14 +616,11 @@ TEST(McAsciiParserHarness, AllAtOnce) {
       "NOT_FOUND\r\n"
       "END\r\n"
       "META test:key age:345644; exptime:35; "
-      "from:2001:dbaf:7654:7578:12:06ef::1; "
-      "is_transient:38\r\nEND\r\n"
+      "from:2001:dbaf:7654:7578:12:06ef::1\r\nEND\r\n"
       "META test:key age:  345644; exptime:  35; "
-      "from:  23.84.127.32; "
-      "is_transient:  48\r\nEND\r\n"
+      "from:  23.84.127.32\r\nEND\r\n"
       "META test:key age:  unknown; exptime:  37; "
-      "from: unknown; "
-      "is_transient:  48\r\nEND\r\n"
+      "from: unknown\r\nEND\r\n"
       "TOUCHED\r\n");
   h.expectNext<McGetRequest>(
       setFlags(setValue(McGetReply(mc_res_found), "te"), 10));

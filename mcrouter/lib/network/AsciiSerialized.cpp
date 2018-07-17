@@ -330,7 +330,7 @@ void AsciiSerializedReply::prepareImpl(
     folly::StringPiece key) {
   /**
    * META key age: (unknown|\d+); exptime: \d+;
-   * from: (\d+\.\d+\.\d+\.\d+|unknown); is_transient: (1|0)\r\n
+   * from: (\d+\.\d+\.\d+\.\d+|unknown)\r\n
    *
    * age is at most 11 characters, with - sign.
    * exptime is at most 10 characters.
@@ -366,7 +366,7 @@ void AsciiSerializedReply::prepareImpl(
         key,
         " age: ",
         folly::StringPiece(printBuffer_, static_cast<size_t>(len)),
-        "; is_transient: 0\r\n");
+        "\r\n");
   } else if (isErrorResult(reply.result())) {
     handleError(
         reply.result(),

@@ -409,8 +409,7 @@ transient = uint %{
 
 meta = 'META' % { message.result() = mc_res_found; };
 mhit = meta ' '+ skip_key ' '+ 'age:' ' '* (age | age_unknown) ';' ' '*
-  'exptime:' ' '* exptime ';' ' '* 'from:' ' '* (ip_addr|'unknown') ';' ' '*
-  'is_transient:' ' '* transient ' '* new_line;
+  'exptime:' ' '* exptime ';' ' '* 'from:' ' '* (ip_addr|'unknown') new_line;
 metaget = mhit? >{ message.result() = mc_res_notfound; } 'END' msg_end;
 metaget_reply := (metaget | error) msg_end;
 
