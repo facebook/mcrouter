@@ -38,6 +38,7 @@ namespace facebook {
 namespace memcache {
 
 namespace {
+constexpr size_t kReservedFDs = 2048;
 
 /* Global pointer to the server for signal handlers */
 facebook::memcache::AsyncMcServer* gServer;
@@ -441,7 +442,7 @@ void AsyncMcServer::Options::setPerThreadMaxConns(
     }
 
     size_t softLimit = rlim.rlim_cur;
-    globalMaxConns = std::max<size_t>(softLimit, 3) - 3;
+    globalMaxConns = std::max<size_t>(softLimit, kReservedFDs) - kReservedFDs;
     VLOG(1) << "Setting max conns to " << globalMaxConns
             << " based on soft resource limit of " << softLimit;
   }
