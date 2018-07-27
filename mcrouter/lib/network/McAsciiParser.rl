@@ -407,9 +407,11 @@ transient = uint %{
   // We no longer support is_transient with typed requests.
 };
 
+#TODO(stuclar): Remove optional parsing of is_transient (T32090075) 
 meta = 'META' % { message.result() = mc_res_found; };
 mhit = meta ' '+ skip_key ' '+ 'age:' ' '* (age | age_unknown) ';' ' '*
-  'exptime:' ' '* exptime ';' ' '* 'from:' ' '* (ip_addr|'unknown') new_line;
+  'exptime:' ' '* exptime ';' ' '* 'from:' ' '* (ip_addr|'unknown') (';' ' '*
+  'is_transient:' ' '* transient ' '*)? new_line;
 metaget = mhit? >{ message.result() = mc_res_notfound; } 'END' msg_end;
 metaget_reply := (metaget | error) msg_end;
 

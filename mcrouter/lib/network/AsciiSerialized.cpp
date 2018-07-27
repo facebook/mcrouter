@@ -330,7 +330,7 @@ void AsciiSerializedReply::prepareImpl(
     folly::StringPiece key) {
   /**
    * META key age: (unknown|\d+); exptime: \d+;
-   * from: (\d+\.\d+\.\d+\.\d+|unknown)\r\n
+   * from: (\d+\.\d+\.\d+\.\d+|unknown); is_transient: (1|0)\r\n
    *
    * age is at most 11 characters, with - sign.
    * exptime is at most 10 characters.
@@ -361,12 +361,15 @@ void AsciiSerializedReply::prepareImpl(
     assert(len > 0);
     assert(static_cast<size_t>(len) < kMaxBufferLength);
 
+    /* TODO(stuclar): Once mcrouter change to make ascii parsing of
+     *  is_transient is deployed everywhere, remove is_transient.
+     */
     addStrings(
         "META ",
         key,
         " age: ",
         folly::StringPiece(printBuffer_, static_cast<size_t>(len)),
-        "\r\n");
+        "; is_transient: 0\r\n");
   } else if (isErrorResult(reply.result())) {
     handleError(
         reply.result(),
