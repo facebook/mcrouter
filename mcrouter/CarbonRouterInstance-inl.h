@@ -120,6 +120,12 @@ CarbonRouterInstance<RouterInfo>* CarbonRouterInstance<RouterInfo>::get(
 }
 
 template <class RouterInfo>
+bool CarbonRouterInstance<RouterInfo>::hasInstance(
+    folly::StringPiece persistenceId) {
+  return get(persistenceId) != nullptr;
+}
+
+template <class RouterInfo>
 CarbonRouterInstance<RouterInfo>* CarbonRouterInstance<RouterInfo>::createRaw(
     McrouterOptions input_options,
     const std::vector<folly::EventBase*>& evbs) {
