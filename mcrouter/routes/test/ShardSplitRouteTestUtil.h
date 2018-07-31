@@ -48,7 +48,7 @@ void testShardingForOp(ShardSplitter splitter, uint64_t requestFlags = 0) {
 
     TestFiberManager fm{FiberManagerContextTag()};
     fm.run([&] {
-      mockFiberContext();
+      mockFiberContext<RouterInfo>();
       Request req("test:123:");
       req.flags() = requestFlags;
       auto reply = splitRoute.route(req);

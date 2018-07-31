@@ -131,6 +131,8 @@ struct TestHandleImpl {
 
   std::vector<int64_t> sawLeaseTokensSet;
 
+  std::vector<std::string> sawShadowIds;
+
   bool isTko;
 
   bool isPaused;
@@ -206,6 +208,13 @@ struct TestHandleImpl {
   }
 };
 
+template <class Request, class = std::string&>
+struct HasShadowId : public std::false_type {};
+
+template <class Request>
+struct HasShadowId<Request, decltype(std::declval<Request>().shadowId())>
+    : public std::true_type {};
+
 /* Records all the keys we saw */
 template <class RouteHandleIf>
 struct RecordingRoute {
@@ -242,6 +251,15 @@ struct RecordingRoute {
   }
 
   template <class Request>
+  std::enable_if_t<HasShadowId<Request>::value, void> recordShadowId(
+      const Request& req) {
+    h_->sawShadowIds.push_back(req.shadowId());
+  }
+  template <class Request>
+  std::enable_if_t<!HasShadowId<Request>::value, void> recordShadowId(
+      const Request&) {}
+
+  template <class Request>
   ReplyT<Request> routeInternal(const Request& req) {
     ReplyT<Request> reply;
 
@@ -256,6 +274,7 @@ struct RecordingRoute {
     h_->saw_keys.push_back(req.key().fullKey().str());
     h_->sawOperations.push_back(Request::name);
     h_->sawExptimes.push_back(req.exptime());
+    recordShadowId(req);
     if (carbon::GetLike<Request>::value) {
       reply.result() = dataGet_.result_;
       detail::setReplyValue(reply, dataGet_.value_);
@@ -263,10 +282,11 @@ struct RecordingRoute {
       return reply;
     }
     if (carbon::UpdateLike<Request>::value) {
-      assert(carbon::valuePtrUnsafe(req) != nullptr);
-      auto val = carbon::valuePtrUnsafe(req)->clone();
-      folly::StringPiece sp_value = coalesceAndGetRange(val);
-      h_->sawValues.push_back(sp_value.str());
+      if (carbon::valuePtrUnsafe(req) != nullptr) {
+        auto val = carbon::valuePtrUnsafe(req)->clone();
+        folly::StringPiece sp_value = coalesceAndGetRange(val);
+        h_->sawValues.push_back(sp_value.str());
+      }
       reply.result() = dataUpdate_.result_;
       detail::testSetFlags(reply, dataUpdate_.flags_);
       return reply;
