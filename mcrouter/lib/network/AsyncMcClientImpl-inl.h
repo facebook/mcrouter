@@ -16,6 +16,7 @@ template <class Request>
 ReplyT<Request> AsyncMcClientImpl::sendSync(
     const Request& request,
     std::chrono::milliseconds timeout,
+    size_t passThroughKey,
     ReplyStatsContext* replyContext) {
   DestructorGuard dg(this);
 
@@ -41,7 +42,8 @@ ReplyT<Request> AsyncMcClientImpl::sendSync(
       queue_,
       [](ParserT& parser) { parser.expectNext<Request>(); },
       requestStatusCallbacks_.onStateChange,
-      supportedCompressionCodecs_);
+      supportedCompressionCodecs_,
+      passThroughKey);
   sendCommon(ctx);
 
   // Wait for the reply.

@@ -58,7 +58,8 @@ McSerializedRequest::McSerializedRequest(
     const Request& req,
     size_t reqId,
     mc_protocol_t protocol,
-    const CodecIdRange& compressionCodecs)
+    const CodecIdRange& compressionCodecs,
+    size_t passThroughKey)
     : protocol_(protocol), typeId_(Request::typeId) {
   switch (protocol_) {
     case mc_ascii_protocol:
@@ -77,7 +78,12 @@ McSerializedRequest::McSerializedRequest(
         return;
       }
       if (!caretRequest_.prepare(
-              req, reqId, compressionCodecs, iovsBegin_, iovsCount_)) {
+              req,
+              reqId,
+              compressionCodecs,
+              passThroughKey,
+              iovsBegin_,
+              iovsCount_)) {
         result_ = Result::ERROR;
       }
       break;

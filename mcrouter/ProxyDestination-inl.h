@@ -23,10 +23,11 @@ ReplyT<Request> ProxyDestination::send(
     const Request& request,
     DestinationRequestCtx& requestContext,
     std::chrono::milliseconds timeout,
+    size_t passThroughKey,
     ReplyStatsContext& replyStatsContext) {
   proxy.destinationMap()->markAsActive(*this);
-  auto reply =
-      getAsyncMcClient().sendSync(request, timeout, &replyStatsContext);
+  auto reply = getAsyncMcClient().sendSync(
+      request, timeout, passThroughKey, &replyStatsContext);
   onReply(reply.result(), requestContext, replyStatsContext);
   return reply;
 }

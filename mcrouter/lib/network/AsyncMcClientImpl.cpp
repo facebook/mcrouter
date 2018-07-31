@@ -50,7 +50,12 @@ struct GoAwayContext : public folly::AsyncTransportWrapper::WriteCallback {
   std::unique_ptr<GoAwayContext> selfPtr;
 
   explicit GoAwayContext(const CodecIdRange& supportedCodecs)
-      : data(message, 0, mc_caret_protocol, supportedCodecs) {}
+      : data(
+            message,
+            0,
+            mc_caret_protocol,
+            supportedCodecs,
+            /* passThroughKey */ 0) {}
 
   void writeSuccess() noexcept final {
     auto self = std::move(selfPtr);

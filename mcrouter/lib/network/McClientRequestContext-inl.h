@@ -46,8 +46,9 @@ McClientRequestContextBase::McClientRequestContextBase(
     McClientRequestContextQueue& queue,
     InitializerFuncPtr initializer,
     const std::function<void(int pendingDiff, int inflightDiff)>& onStateChange,
-    const CodecIdRange& supportedCodecs)
-    : reqContext(request, reqid, protocol, supportedCodecs),
+    const CodecIdRange& supportedCodecs,
+    size_t passThroughKey)
+    : reqContext(request, reqid, protocol, supportedCodecs, passThroughKey),
       id(reqid),
       queue_(queue),
       replyType_(typeid(ReplyT<Request>)),
@@ -127,7 +128,8 @@ McClientRequestContext<Request>::McClientRequestContext(
     McClientRequestContextQueue& queue,
     McClientRequestContextBase::InitializerFuncPtr func,
     const std::function<void(int pendingDiff, int inflightDiff)>& onStateChange,
-    const CodecIdRange& supportedCodecs)
+    const CodecIdRange& supportedCodecs,
+    size_t passThroughKey)
     : McClientRequestContextBase(
           request,
           reqid,
@@ -136,7 +138,8 @@ McClientRequestContext<Request>::McClientRequestContext(
           queue,
           std::move(func),
           onStateChange,
-          supportedCodecs)
+          supportedCodecs,
+          passThroughKey)
 #ifndef LIBMC_FBTRACE_DISABLE
       ,
       fbtraceInfo_(getFbTraceInfo(request))
@@ -219,5 +222,5 @@ void McClientRequestContextQueue::reply(
     }
   }
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

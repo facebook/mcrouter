@@ -47,6 +47,7 @@ class CaretSerializedMessage {
    * @param iovOut            Set to the beginning of array of ivecs that
    *                          reference serialized data.
    * @param supportedCodecs   Range of supported compression codecs.
+   * @param passThroughKey    Key that can be used in pass-through proxies.
    * @param niovOut           Number of valid iovecs referenced by iovOut.
    *
    * @return true iff message was successfully prepared.
@@ -56,6 +57,7 @@ class CaretSerializedMessage {
       const Request& req,
       size_t reqId,
       const CodecIdRange& supportedCodecs,
+      size_t passThroughKey,
       const struct iovec*& iovOut,
       size_t& niovOut) noexcept;
 
@@ -88,19 +90,20 @@ class CaretSerializedMessage {
  private:
   carbon::CarbonQueueAppenderStorage storage_;
 
-  template <class Message>
+  template <class Request>
   bool fill(
-      const Message& message,
+      const Request& message,
       uint32_t reqId,
       size_t typeId,
       std::pair<uint64_t, uint64_t> traceId,
       const CodecIdRange& supportedCodecs,
+      size_t passThroughKey,
       const struct iovec*& iovOut,
       size_t& niovOut);
 
-  template <class Message>
+  template <class Reply>
   bool fill(
-      const Message& message,
+      const Reply& message,
       uint32_t reqId,
       size_t typeId,
       std::pair<uint64_t, uint64_t> traceId,

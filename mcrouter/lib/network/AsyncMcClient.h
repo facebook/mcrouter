@@ -86,13 +86,39 @@ class AsyncMcClient {
 
   /**
    * Send request synchronously (i.e. blocking call).
-   * Note: it must be called only from fiber context. It will block the current
+   * NOTE: it must be called only from fiber context. It will block the current
    *       stack and will send request only when we loop EventBase.
+   *
+   * @param request       The request to send.
+   * @param timeout       The timeout of this call.
+   * @param replyContext  Output argument that can be used to return information
+   *                      about the reply received. If nullptr, it will be
+   *                      ignored (i.e. no information is going be sent back up)
    */
   template <class Request>
   ReplyT<Request> sendSync(
       const Request& request,
       std::chrono::milliseconds timeout,
+      ReplyStatsContext* replyContext = nullptr);
+
+  /**
+   * Send request synchronously (i.e. blocking call).
+   * NOTE: it must be called only from fiber context. It will block the current
+   *       stack and will send request only when we loop EventBase.
+   *
+   * @param request         The request to send.
+   * @param timeout         The timeout of this call.
+   * @param passThroughKey  Integer key to be sent as and additional field.
+   * @param replyContext    Output argument that can be used to return
+   *                        information about the reply received. If nullptr, it
+   *                        will be ignored (i.e. no information is going be
+   *                        sent back up).
+   */
+  template <class Request>
+  ReplyT<Request> sendSync(
+      const Request& request,
+      std::chrono::milliseconds timeout,
+      size_t passThroughKey,
       ReplyStatsContext* replyContext = nullptr);
 
   /**

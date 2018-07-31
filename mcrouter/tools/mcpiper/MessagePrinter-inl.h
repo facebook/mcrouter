@@ -408,7 +408,8 @@ void MessagePrinter::printRawRequest(
     return;
   }
 
-  McSerializedRequest req(request, msgId, protocol, CodecIdRange::Empty);
+  McSerializedRequest req(
+      request, msgId, protocol, CodecIdRange::Empty, /* passThroughKey */ 0);
   if (req.serializationResult() == McSerializedRequest::Result::OK) {
     printRawMessage(req.getIovs(), req.getIovsCount());
   } else {

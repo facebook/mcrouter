@@ -36,13 +36,15 @@ class McSerializedRequest {
    * @param protocol          Protocol to serialize the request.
    * @param supportedCodecs   Range of supported compression codecs.
    *                          Only used for caret.
+   * @param passThroughKey    Integer key to be sent as and additional field.
    */
   template <class Request>
   McSerializedRequest(
       const Request& req,
       size_t reqId,
       mc_protocol_t protocol,
-      const CodecIdRange& supportedCodecs);
+      const CodecIdRange& supportedCodecs,
+      size_t passThroughKey);
 
   ~McSerializedRequest();
 

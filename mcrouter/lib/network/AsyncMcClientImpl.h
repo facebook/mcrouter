@@ -73,6 +73,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   ReplyT<Request> sendSync(
       const Request& request,
       std::chrono::milliseconds timeout,
+      size_t passThroughKey,
       ReplyStatsContext* replyContext);
 
   void setThrottle(size_t maxInflight, size_t maxPending);

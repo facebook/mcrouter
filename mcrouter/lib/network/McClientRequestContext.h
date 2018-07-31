@@ -98,7 +98,8 @@ class McClientRequestContextBase
       InitializerFuncPtr initializer,
       const std::function<void(int pendingDiff, int inflightDiff)>&
           onStateChange,
-      const CodecIdRange& supportedCodecs);
+      const CodecIdRange& supportedCodecs,
+      size_t passThroughKey);
 
   virtual void sendTraceOnReply() = 0;
 
@@ -192,7 +193,8 @@ class McClientRequestContext : public McClientRequestContextBase {
       McClientRequestContextBase::InitializerFuncPtr,
       const std::function<void(int pendingDiff, int inflightDiff)>&
           onStateChange,
-      const CodecIdRange& supportedCodecs);
+      const CodecIdRange& supportedCodecs,
+      size_t passThroughKey);
 
   std::string getContextTypeStr() const final;
 
@@ -358,7 +360,7 @@ class McClientRequestContextQueue {
 
   std::string getFirstAliveRequestInfo() const;
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook
 
 #include "McClientRequestContext-inl.h"

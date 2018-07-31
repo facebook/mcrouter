@@ -72,12 +72,23 @@ class ProxyDestination {
 
   ~ProxyDestination();
 
-  // This is a blocking call that will return reply, once it's ready.
+  /**
+   * Sends a request to this destination.
+   * NOTE: This is a blocking call that will return reply, once it's ready.
+   *
+   * @param request             The request to send.
+   * @param requestContext      Context about this request.
+   * @param timeout             The timeout of this call.
+   * @param passThroughKey      Integer key that will be sent as an additional
+   *                            field. If 0, it will not be sent.
+   * @param replyStatsContext   Output argument with stats about the reply.
+   */
   template <class Request>
   ReplyT<Request> send(
       const Request& request,
       DestinationRequestCtx& requestContext,
       std::chrono::milliseconds timeout,
+      size_t passThroughKey,
       ReplyStatsContext& replyStatsContext);
 
   // returns true if okay to send req using this client

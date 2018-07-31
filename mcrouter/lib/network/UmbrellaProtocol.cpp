@@ -15,6 +15,7 @@
 #include <folly/lang/Bits.h>
 
 #include "mcrouter/lib/mc/umbrella.h"
+#include "mcrouter/lib/network/CaretHeader.h"
 #include "mcrouter/lib/network/ServerLoad.h"
 
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -77,6 +78,7 @@ void resetAdditionalFields(UmbrellaMessageInfo& info) {
   info.uncompressedBodySize = 0;
   info.dropProbability = 0;
   info.serverLoad = ServerLoad::zero();
+  info.passThroughKey = 0;
 }
 
 size_t getNumAdditionalFields(const UmbrellaMessageInfo& info) {
@@ -103,6 +105,9 @@ size_t getNumAdditionalFields(const UmbrellaMessageInfo& info) {
     ++nAdditionalFields;
   }
   if (!info.serverLoad.isZero()) {
+    ++nAdditionalFields;
+  }
+  if (info.passThroughKey != 0) {
     ++nAdditionalFields;
   }
   return nAdditionalFields;
@@ -151,6 +156,8 @@ size_t serializeAdditionalFields(
       buf, CaretAdditionalFieldType::DROP_PROBABILITY, info.dropProbability);
   buf += serializeAdditionalFieldIfNonZero(
       buf, CaretAdditionalFieldType::SERVER_LOAD, info.serverLoad.raw());
+  buf += serializeAdditionalFieldIfNonZero(
+      buf, CaretAdditionalFieldType::PASS_THROUGH_KEY, info.passThroughKey);
 
   return buf - destination;
 }
@@ -246,7 +253,7 @@ UmbrellaParseStatus caretParseHeader(
     }
 
     if (fieldType >
-        static_cast<uint64_t>(CaretAdditionalFieldType::SERVER_LOAD)) {
+        static_cast<uint64_t>(CaretAdditionalFieldType::PASS_THROUGH_KEY)) {
       // Additional Field Type not recognized, ignore.
       continue;
     }
@@ -275,6 +282,9 @@ UmbrellaParseStatus caretParseHeader(
         break;
       case CaretAdditionalFieldType::SERVER_LOAD:
         headerInfo.serverLoad = ServerLoad(fieldValue);
+        break;
+      case CaretAdditionalFieldType::PASS_THROUGH_KEY:
+        headerInfo.passThroughKey = fieldValue;
         break;
       }
   }

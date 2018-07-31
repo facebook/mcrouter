@@ -154,8 +154,7 @@ class CarbonQueueAppenderStorage {
   static constexpr size_t kMaxIovecs{32};
   static constexpr size_t kInlineIOBufLen{128};
 
-  // Copied from UmbrellaProtocol.h, which will eventually die
-  static constexpr size_t kMaxAdditionalFields = 3;
+  static constexpr size_t kMaxAdditionalFields = 5;
   static constexpr size_t kMaxHeaderLength = 1 /* magic byte */ +
       1 /* GroupVarint header (lengths of 4 ints) */ +
       4 * sizeof(uint32_t) /* body size, typeId, reqId, num addl fields */ +
