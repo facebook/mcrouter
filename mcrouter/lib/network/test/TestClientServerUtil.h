@@ -217,6 +217,7 @@ class TestClient {
       std::string key,
       std::string value,
       mc_res_t expectedResult,
+      uint32_t timeoutMs = 200,
       std::function<void(const ReplyStatsContext&)> replyStatsCallback =
           nullptr);
 

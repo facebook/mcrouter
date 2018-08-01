@@ -361,21 +361,21 @@ void TestClient::sendSet(
     std::string key,
     std::string value,
     mc_res_t expectedResult,
+    uint32_t timeoutMs,
     std::function<void(const ReplyStatsContext&)> replyStatsCallback) {
   inflight_++;
-  fm_.addTask([
-    key = std::move(key),
-    value = std::move(value),
-    expectedResult,
-    replyStatsCallback = std::move(replyStatsCallback),
-    this
-  ]() {
+  fm_.addTask([key = std::move(key),
+               value = std::move(value),
+               expectedResult,
+               replyStatsCallback = std::move(replyStatsCallback),
+               this,
+               timeoutMs]() {
     McSetRequest req(key);
     req.value() = folly::IOBuf::wrapBufferAsValue(folly::StringPiece(value));
 
     ReplyStatsContext replyStatsContext;
     auto reply = client_->sendSync(
-        req, std::chrono::milliseconds(200), &replyStatsContext);
+        req, std::chrono::milliseconds(timeoutMs), &replyStatsContext);
     if (replyStatsCallback) {
       replyStatsCallback(replyStatsContext);
     }

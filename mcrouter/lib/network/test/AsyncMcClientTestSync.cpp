@@ -428,8 +428,8 @@ void reconnectTest(mc_protocol_t protocol) {
   auto server = TestServer::create(std::move(config));
 
   TestClient client("localhost", server->getListenPort(), 100, protocol);
-  client.sendGet("test1", mc_res_found);
-  client.sendSet("test", "testValue", mc_res_stored);
+  client.sendGet("test1", mc_res_found, 600);
+  client.sendSet("test", "testValue", mc_res_stored, 600);
   client.waitForReplies();
   client.sendGet("sleep", mc_res_timeout);
   // Wait for the reply, we will still have ~900ms for the write to fail.
@@ -629,7 +629,7 @@ TEST(AsyncMcClient, asciiSendingTimeouts) {
   // completely sent.
   client.waitForReplies();
   // Flush set reply.
-  client.sendGet("flush", mc_res_found);
+  client.sendGet("flush", mc_res_found, 600);
   client.sendGet("test3", mc_res_found);
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
