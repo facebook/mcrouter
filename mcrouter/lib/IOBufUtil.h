@@ -30,10 +30,6 @@ folly::StringPiece coalesceAndGetRange(std::unique_ptr<folly::IOBuf>& buf);
 folly::StringPiece coalesceAndGetRange(folly::IOBuf& buf);
 folly::StringPiece coalesceAndGetRange(folly::Optional<folly::IOBuf>& buf);
 
-bool hasSameMemoryRegion(const folly::IOBuf& buf, folly::StringPiece range);
-
-bool hasSameMemoryRegion(const folly::IOBuf& a, const folly::IOBuf& b);
-
 void copyInto(char* raw, const folly::IOBuf& buf);
 
 template <typename InputIterator>
