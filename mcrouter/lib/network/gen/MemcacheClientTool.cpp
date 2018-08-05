@@ -12,6 +12,7 @@
  *
  *  @generated
  */
+#include <folly/init/Init.h>
 
 #include <mcrouter/lib/carbon/CmdLineClient.h>
 #include <mcrouter/lib/carbon/JsonClient.h>
@@ -128,8 +129,10 @@ class MemcacheJsonClient : public JsonClient {
 };
 } // anonymous namespace
 
-int main(int argc, const char** argv) {
+int main(int argc, char** argv) {
+  int tmpArgc = 1;
+  folly::init(&tmpArgc, &argv, /* removeFlags */ false);
   CmdLineClient client;
-  client.sendRequests<MemcacheJsonClient>(argc, argv);
+  client.sendRequests<MemcacheJsonClient>(argc, const_cast<const char**>(argv));
   return 0;
 }
