@@ -13,6 +13,8 @@
 #include "mcrouter/lib/carbon/CarbonMessageConversionUtils.h"
 #include "mcrouter/lib/carbon/test/gen/CarbonTest.h"
 
+using carbon::test2::util::SimpleUnion;
+
 TEST(CarbonMessageConversionUtils, toFollyDynamic_Complex) {
   carbon::test::TestRequest r;
   r.baseInt64Member() = 1;
@@ -48,7 +50,7 @@ TEST(CarbonMessageConversionUtils, toFollyDynamic_Complex) {
   r.testEnumVec() = std::vector<carbon::test2::util::SimpleEnum>(
       {carbon::test2::util::SimpleEnum::One,
        carbon::test2::util::SimpleEnum::Twenty});
-  r.testUnion().emplace<2>(true);
+  r.testUnion().emplace<SimpleUnion::ValueType::UMEMBER2>(true);
   r.testNestedVec() = {{1, 1, 1}, {2, 2, 2}};
   r.testUMap() = std::unordered_map<std::string, std::string>(
       {{"key", "value"}, {"adele", "beyonce"}});
@@ -317,7 +319,7 @@ TEST(CarbonMessageConversionUtils, fromFollyDynamic_Complex) {
   ASSERT_TRUE(r.testOptionalString().hasValue());
   EXPECT_EQ("I exist!", r.testOptionalString().value());
 
-  ASSERT_EQ(3, r.testUnion().which());
+  ASSERT_EQ(SimpleUnion::ValueType::UMEMBER3, r.testUnion().which());
   EXPECT_EQ("abc def ghi", r.testUnion().umember3());
 
   ASSERT_EQ(3, r.testNestedVec().size());

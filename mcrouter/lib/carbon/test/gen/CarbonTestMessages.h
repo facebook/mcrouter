@@ -544,14 +544,21 @@ class TestOptionalUnion {
       facebook::memcache::KV<3, folly::Optional<std::string>>>;
 
  public:
+  enum class ValueType : uint32_t {
+    EMPTY = 0,
+    UMEMBER1 = 1,
+    UMEMBER2 = 2,
+    UMEMBER3 = 3
+  };
+
   TestOptionalUnion() = default;
   TestOptionalUnion(const TestOptionalUnion&) = default;
   TestOptionalUnion& operator=(const TestOptionalUnion&) = default;
   TestOptionalUnion(TestOptionalUnion&&) = default;
   TestOptionalUnion& operator=(TestOptionalUnion&&) = default;
 
-  uint32_t which() const {
-    return _which_;
+  ValueType which() const {
+    return static_cast<ValueType>(_which_);
   }
 
   folly::Optional<int64_t>& umember1() {
@@ -613,7 +620,8 @@ class TestOptionalUnion {
       class C = typename carbon::FindByKey<id, _IdTypeMap>::type>
   C& get() {
     if (id != _which_) {
-      throw std::runtime_error("Type id is not set in union SimpleUnion.");
+      throw std::runtime_error(
+          "Type id is not set in union TestOptionalUnion.");
     }
     return _carbon_variant.get<C>();
   }
@@ -623,7 +631,8 @@ class TestOptionalUnion {
       class C = typename carbon::FindByKey<id, _IdTypeMap>::type>
   const C& get() const {
     if (id != _which_) {
-      throw std::runtime_error("Type id is not set in union SimpleUnion.");
+      throw std::runtime_error(
+          "Type id is not set in union TestOptionalUnion.");
     }
     return _carbon_variant.get<C>();
   }
@@ -637,6 +646,16 @@ class TestOptionalUnion {
       class C = typename carbon::FindByKey<id, _IdTypeMap>::type>
   C& emplace(Args&&... args) {
     _which_ = id;
+    return _carbon_variant.emplace<C>(std::forward<Args>(args)...);
+  }
+
+  template <
+      ValueType id,
+      class... Args,
+      class C = typename carbon::
+          FindByKey<static_cast<uint32_t>(id), _IdTypeMap>::type>
+  C& emplace(Args&&... args) {
+    _which_ = static_cast<uint32_t>(id);
     return _carbon_variant.emplace<C>(std::forward<Args>(args)...);
   }
 

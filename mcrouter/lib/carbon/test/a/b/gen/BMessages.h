@@ -91,14 +91,21 @@ class SimpleUnion {
       facebook::memcache::KV<3, std::string>>;
 
  public:
+  enum class ValueType : uint32_t {
+    EMPTY = 0,
+    UMEMBER1 = 1,
+    UMEMBER2 = 2,
+    UMEMBER3 = 3
+  };
+
   SimpleUnion() = default;
   SimpleUnion(const SimpleUnion&) = default;
   SimpleUnion& operator=(const SimpleUnion&) = default;
   SimpleUnion(SimpleUnion&&) = default;
   SimpleUnion& operator=(SimpleUnion&&) = default;
 
-  uint32_t which() const {
-    return _which_;
+  ValueType which() const {
+    return static_cast<ValueType>(_which_);
   }
 
   int64_t& umember1() {
@@ -178,6 +185,16 @@ class SimpleUnion {
       class C = typename carbon::FindByKey<id, _IdTypeMap>::type>
   C& emplace(Args&&... args) {
     _which_ = id;
+    return _carbon_variant.emplace<C>(std::forward<Args>(args)...);
+  }
+
+  template <
+      ValueType id,
+      class... Args,
+      class C = typename carbon::
+          FindByKey<static_cast<uint32_t>(id), _IdTypeMap>::type>
+  C& emplace(Args&&... args) {
+    _which_ = static_cast<uint32_t>(id);
     return _carbon_variant.emplace<C>(std::forward<Args>(args)...);
   }
 
