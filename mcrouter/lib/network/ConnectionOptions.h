@@ -15,6 +15,7 @@
 #include "mcrouter/lib/CompressionCodecManager.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/network/AccessPoint.h"
+#include "mcrouter/lib/network/SecurityMech.h"
 
 namespace facebook {
 namespace memcache {
@@ -23,13 +24,6 @@ namespace memcache {
  * A struct for storing all connection related options.
  */
 struct ConnectionOptions {
-  // an enum to determine which security protocol to use to connect to the
-  // endpoint.
-  enum class SecurityMech {
-    NONE,
-    TLS,
-  };
-
   using SocketOptions = folly::AsyncSocket::OptionMap;
 
   ConnectionOptions(

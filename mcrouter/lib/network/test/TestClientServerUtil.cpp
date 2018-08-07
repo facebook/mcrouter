@@ -26,6 +26,7 @@
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/ReplyStatsContext.h"
+#include "mcrouter/lib/network/SecurityMech.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
 
@@ -232,7 +233,7 @@ TestClient::TestClient(
   opts.writeTimeout = std::chrono::milliseconds(timeoutMs);
   opts.compressionCodecMap = compressionCodecMap;
   if (ssl) {
-    opts.securityMech = ConnectionOptions::SecurityMech::TLS;
+    opts.securityMech = SecurityMech::TLS;
     opts.sslPemCertPath = ssl->sslCertPath;
     opts.sslPemKeyPath = ssl->sslKeyPath;
     opts.sslPemCaPath = ssl->sslCaPath;

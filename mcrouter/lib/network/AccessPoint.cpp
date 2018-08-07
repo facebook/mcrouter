@@ -42,15 +42,6 @@ void parseParts(folly::StringPiece s, folly::StringPiece& out, Args&... args) {
   }
 }
 
-bool parseSsl(folly::StringPiece s) {
-  if (s == "ssl") {
-    return true;
-  } else if (s == "plain") {
-    return false;
-  }
-  throw std::runtime_error("Invalid encryption");
-}
-
 bool parseCompressed(folly::StringPiece s) {
   if (s == "compressed") {
     return true;
@@ -77,12 +68,12 @@ AccessPoint::AccessPoint(
     folly::StringPiece host,
     uint16_t port,
     mc_protocol_t protocol,
-    bool useSsl,
+    SecurityMech mech,
     bool compressed,
     bool unixDomainSocket)
     : port_(port),
       protocol_(protocol),
-      useSsl_(useSsl),
+      securityMech_(mech),
       compressed_(compressed),
       unixDomainSocket_(unixDomainSocket) {
   try {
@@ -99,7 +90,7 @@ AccessPoint::AccessPoint(
 std::shared_ptr<AccessPoint> AccessPoint::create(
     folly::StringPiece apString,
     mc_protocol_t defaultProtocol,
-    bool defaultUseSsl,
+    SecurityMech defaultMech,
     uint16_t portOverride,
     bool defaultCompressed) {
   if (apString.empty()) {
@@ -142,7 +133,7 @@ std::shared_ptr<AccessPoint> AccessPoint::create(
       port = "0";
       parseParts(apString, protocol, encr, comp);
       // Unix Domain Sockets with SSL is not supported.
-      if (!encr.empty() && parseSsl(encr)) {
+      if (!encr.empty() && parseSecurityMech(encr) != SecurityMech::NONE) {
         return nullptr;
       }
     } else {
@@ -153,7 +144,7 @@ std::shared_ptr<AccessPoint> AccessPoint::create(
         host,
         portOverride != 0 ? portOverride : folly::to<uint16_t>(port),
         protocol.empty() ? defaultProtocol : parseProtocol(protocol),
-        encr.empty() ? defaultUseSsl : parseSsl(encr),
+        encr.empty() ? defaultMech : parseSecurityMech(encr),
         comp.empty() ? defaultCompressed : parseCompressed(comp),
         unixDomainSocket);
   } catch (const std::exception&) {
@@ -183,7 +174,7 @@ std::string AccessPoint::toString() const {
         ":",
         mc_protocol_to_string(protocol_),
         ":",
-        useSsl_ ? "ssl" : "plain",
+        securityMechToString(securityMech_),
         ":",
         compressed_ ? "compressed" : "notcompressed");
   }
@@ -194,7 +185,7 @@ std::string AccessPoint::toString() const {
       ":",
       mc_protocol_to_string(protocol_),
       ":",
-      useSsl_ ? "ssl" : "plain",
+      securityMechToString(securityMech_),
       ":",
       compressed_ ? "compressed" : "notcompressed");
 }

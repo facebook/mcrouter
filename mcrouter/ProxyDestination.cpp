@@ -341,7 +341,7 @@ void ProxyDestination::initializeAsyncMcClient() {
   }
 
   if (accessPoint_->useSsl()) {
-    options.securityMech = ConnectionOptions::SecurityMech::TLS;
+    options.securityMech = SecurityMech::TLS;
     options.sslPemCertPath = opts.pem_cert_path;
     options.sslPemKeyPath = opts.pem_key_path;
     if (opts.ssl_verify_peers) {

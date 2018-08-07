@@ -13,6 +13,7 @@
 #include "mcrouter/lib/network/ConnectionOptions.h"
 
 using facebook::memcache::ConnectionOptions;
+using facebook::memcache::SecurityMech;
 
 namespace carbon {
 
@@ -20,7 +21,7 @@ namespace {
 ConnectionOptions getConnectionOptions(const JsonClient::Options& opts) {
   ConnectionOptions options(opts.host, opts.port, mc_caret_protocol);
   if (opts.useSsl) {
-    options.securityMech = ConnectionOptions::SecurityMech::TLS;
+    options.securityMech = SecurityMech::TLS;
     options.sslPemCertPath = opts.pemCertPath;
     options.sslPemKeyPath = opts.pemKeyPath;
     options.sslPemCaPath = opts.pemCaPath;

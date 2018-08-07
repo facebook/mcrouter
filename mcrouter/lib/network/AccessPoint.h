@@ -13,6 +13,7 @@
 #include <folly/Range.h>
 
 #include "mcrouter/lib/mc/protocol.h"
+#include "mcrouter/lib/network/SecurityMech.h"
 
 namespace facebook {
 namespace memcache {
@@ -22,7 +23,7 @@ struct AccessPoint {
       folly::StringPiece host = "",
       uint16_t port = 0,
       mc_protocol_t protocol = mc_unknown_protocol,
-      bool useSsl = false,
+      SecurityMech mech = SecurityMech::NONE,
       bool compressed = false,
       bool unixDomainSocket = false);
 
@@ -41,7 +42,7 @@ struct AccessPoint {
   static std::shared_ptr<AccessPoint> create(
       folly::StringPiece apString,
       mc_protocol_t defaultProtocol,
-      bool defaultUseSsl = false,
+      SecurityMech defaultMech = SecurityMech::NONE,
       uint16_t portOverride = 0,
       bool defaultCompressed = false);
 
@@ -57,8 +58,12 @@ struct AccessPoint {
     return protocol_;
   }
 
+  SecurityMech getSecurityMech() const {
+    return securityMech_;
+  }
+
   bool useSsl() const {
-    return useSsl_;
+    return securityMech_ != SecurityMech::NONE;
   }
 
   bool compressed() const {
@@ -85,7 +90,7 @@ struct AccessPoint {
   std::string host_;
   uint16_t port_;
   mc_protocol_t protocol_ : 8;
-  bool useSsl_{false};
+  SecurityMech securityMech_{SecurityMech::NONE};
   bool compressed_{false};
   bool isV6_{false};
   bool unixDomainSocket_{false};

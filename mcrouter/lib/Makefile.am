@@ -183,6 +183,8 @@ libmcrouter_a_SOURCES = \
   network/MemoryController.h \
   network/MultiOpParent.cpp \
   network/MultiOpParent.h \
+  network/SecurityMech.cpp \
+  network/SecurityMech.h \
   network/ServerLoad.cpp \
   network/ServerLoad.h \
   network/ServerMcParser-inl.h \

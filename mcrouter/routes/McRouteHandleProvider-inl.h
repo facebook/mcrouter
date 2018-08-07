@@ -21,6 +21,7 @@
 #include "mcrouter/lib/fbi/cpp/ParsingUtil.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/network/AccessPoint.h"
+#include "mcrouter/lib/network/SecurityMech.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/routes/AsynclogRoute.h"
 #include "mcrouter/routes/DestinationRoute.h"
@@ -182,9 +183,16 @@ McRouteHandleProvider<RouterInfo>::makePool(
       }
     }
 
-    bool useSsl = false;
-    if (auto jUseSsl = json.get_ptr("use_ssl")) {
-      useSsl = parseBool(*jUseSsl, "use_ssl");
+    SecurityMech mech = SecurityMech::NONE;
+    if (auto jSecurityMech = json.get_ptr("security_mech")) {
+      auto mechStr = parseString(*jSecurityMech, "security_mech");
+      mech = parseSecurityMech(mechStr);
+    } else if (auto jUseSsl = json.get_ptr("use_ssl")) {
+      // deprecated - prefer security_mech
+      auto useSsl = parseBool(*jUseSsl, "use_ssl");
+      if (useSsl) {
+        mech = SecurityMech::TLS;
+      }
     }
 
     // default to 0, which doesn't override
@@ -221,7 +229,7 @@ McRouteHandleProvider<RouterInfo>::makePool(
         continue;
       }
       auto ap = AccessPoint::create(
-          server.stringPiece(), protocol, useSsl, port, enableCompression);
+          server.stringPiece(), protocol, mech, port, enableCompression);
       checkLogic(ap != nullptr, "invalid server {}", server.stringPiece());
 
       if (ap->compressed() && proxy_.router().getCodecManager() == nullptr) {

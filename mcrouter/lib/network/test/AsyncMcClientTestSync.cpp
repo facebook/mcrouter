@@ -17,6 +17,7 @@
 #include <folly/portability/GFlags.h>
 
 #include "mcrouter/lib/network/McSSLUtil.h"
+#include "mcrouter/lib/network/SecurityMech.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
@@ -991,7 +992,7 @@ class AsyncMcClientSSLOffloadTest : public testing::TestWithParam<bool> {
  protected:
   void enableSSL(ConnectionOptions& opts) {
     auto paths = validClientSsl();
-    opts.securityMech = ConnectionOptions::SecurityMech::TLS;
+    opts.securityMech = SecurityMech::TLS;
     opts.sslPemCertPath = paths.sslCertPath;
     opts.sslPemKeyPath = paths.sslKeyPath;
     opts.sslPemCaPath = paths.sslCaPath;
