@@ -66,11 +66,12 @@ class TkoTracker {
    * @return Is the destination currently marked TKO?
    */
   bool isTko() const {
+    // See sumFailures_ description for more details.
     return sumFailures_ > tkoThreshold_;
   }
 
   /**
-   * @return current number of consecutive failures.
+   * @return The current number of consecutive failures.
    *         This is basically a number of recordHardFailure/recordSoftFailure
    *         calls after last recordSuccess.
    */
@@ -141,16 +142,18 @@ class TkoTracker {
   const size_t tkoThreshold_;
   TkoTrackerMap& trackerMap_;
 
-  /* sumFailures_ is used for a few things depending on the state of the
-     destination. For a destination that is not TKO, it tracks the number of
-     consecutive soft failures to a destination.
-     If a destination is soft TKO, it contains the numerical representation of
-     the pointer to the proxy thread that is responsible for sending it probes.
-     If a destination is hard TKO, it contains the same value as for soft TKO,
-     but with the LSB set to 1 instead of 0.
-     In summary, allowed values are:
-       0, 1, .., tkoThreshold_ - 1, pdstn, pdstn | 0x1, where pdstn is the
-       address of any of the proxy threads for this destination. */
+  /**
+   * sumFailures_ is used for a few things depending on the state of the
+   * destination. For a destination that is not TKO, it tracks the number of
+   * consecutive soft failures to a destination.
+   * If a destination is soft TKO, it contains the numerical representation of
+   * the pointer to the proxy thread that is responsible for sending it probes.
+   * If a destination is hard TKO, it contains the same value as for soft TKO,
+   * but with the LSB set to 1 instead of 0.
+   * In summary, allowed values are:
+   *   0, 1, .., tkoThreshold_ - 1, pdstn, pdstn | 0x1, where pdstn is the
+   *   address of any of the proxy threads for this destination.
+   */
   std::atomic<uintptr_t> sumFailures_{0};
 
   std::atomic<size_t> consecutiveFailureCount_{0};

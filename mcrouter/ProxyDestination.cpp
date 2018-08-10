@@ -50,7 +50,7 @@ static_assert(
 
 } // anonymous namespace
 
-void ProxyDestination::schedule_next_probe() {
+void ProxyDestination::scheduleNextProbe() {
   assert(!proxy.router().opts().disable_tko_tracking);
 
   int delay_ms = probe_delay_next_ms;
@@ -78,7 +78,7 @@ void ProxyDestination::schedule_next_probe() {
   }
 }
 
-void ProxyDestination::start_sending_probes() {
+void ProxyDestination::startSendingProbes() {
   probe_delay_next_ms = proxy.router().opts().probe_delay_initial_ms;
   probeTimer_ =
       folly::AsyncTimeout::make(proxy.eventBase(), [this]() noexcept {
@@ -95,21 +95,21 @@ void ProxyDestination::start_sending_probes() {
             // will reconnect if connection was closed
             auto reply = pdstn->getAsyncMcClient().sendSync(
                 McVersionRequest(), pdstn->shortestTimeout_);
-            pdstn->handle_tko(reply.result(), true);
+            pdstn->handleTko(reply.result(), true);
             pdstn->probeInflight_ = false;
           });
         }
-        schedule_next_probe();
+        scheduleNextProbe();
       });
-  schedule_next_probe();
+  scheduleNextProbe();
 }
 
-void ProxyDestination::stop_sending_probes() {
+void ProxyDestination::stopSendingProbes() {
   stats_.probesSent = 0;
   probeTimer_.reset();
 }
 
-void ProxyDestination::handle_tko(const mc_res_t result, bool is_probe_req) {
+void ProxyDestination::handleTko(const mc_res_t result, bool is_probe_req) {
   if (proxy.router().opts().disable_tko_tracking) {
     return;
   }
@@ -118,12 +118,12 @@ void ProxyDestination::handle_tko(const mc_res_t result, bool is_probe_req) {
     if (isHardTkoErrorResult(result)) {
       if (tracker->recordHardFailure(this)) {
         onTkoEvent(TkoLogEvent::MarkHardTko, result);
-        start_sending_probes();
+        startSendingProbes();
       }
     } else if (isSoftTkoErrorResult(result)) {
       if (tracker->recordSoftFailure(this)) {
         onTkoEvent(TkoLogEvent::MarkSoftTko, result);
-        start_sending_probes();
+        startSendingProbes();
       }
     }
     return;
@@ -132,7 +132,7 @@ void ProxyDestination::handle_tko(const mc_res_t result, bool is_probe_req) {
   if (tracker->isTko()) {
     if (is_probe_req && tracker->recordSuccess(this)) {
       onTkoEvent(TkoLogEvent::UnMarkTko, result);
-      stop_sending_probes();
+      stopSendingProbes();
     }
     return;
   }
@@ -201,7 +201,7 @@ void ProxyDestination::onReply(
     const mc_res_t result,
     DestinationRequestCtx& destreqCtx,
     const ReplyStatsContext& replyStatsContext) {
-  handle_tko(result, false);
+  handleTko(result, false);
 
   if (!stats_.results) {
     stats_.results = std::make_unique<std::array<uint64_t, mc_nres>>();
@@ -255,7 +255,7 @@ std::shared_ptr<ProxyDestination> ProxyDestination::create(
 ProxyDestination::~ProxyDestination() {
   if (tracker->removeDestination(this)) {
     onTkoEvent(TkoLogEvent::RemoveFromConfig, mc_res_ok);
-    stop_sending_probes();
+    stopSendingProbes();
   }
 
   if (proxy.destinationMap()) {
@@ -298,7 +298,7 @@ ProxyDestination::ProxyDestination(
   }
 }
 
-bool ProxyDestination::may_send() const {
+bool ProxyDestination::maySend() const {
   return !tracker->isTko();
 }
 
@@ -424,7 +424,7 @@ void ProxyDestination::initializeAsyncMcClient() {
             pdstn->closeGracefully();
           }
           pdstn->setState(State::kDown);
-          pdstn->handle_tko(mc_res_connect_error, /* is_probe_req= */ false);
+          pdstn->handleTko(mc_res_connect_error, /* is_probe_req= */ false);
         }
       });
 

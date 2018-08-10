@@ -92,7 +92,7 @@ class ProxyDestination {
       ReplyStatsContext& replyStatsContext);
 
   // returns true if okay to send req using this client
-  bool may_send() const;
+  bool maySend() const;
 
   // Returns true if the current request should be dropped
   template <class Request>
@@ -164,12 +164,12 @@ class ProxyDestination {
    */
   void updateConnectionClosedInternalStat();
 
-  void start_sending_probes();
-  void stop_sending_probes();
+  void startSendingProbes();
+  void stopSendingProbes();
 
-  void schedule_next_probe();
+  void scheduleNextProbe();
 
-  void handle_tko(const mc_res_t result, bool is_probe_req);
+  void handleTko(const mc_res_t result, bool is_probe_req);
 
   // Process tko, stats and duration timer.
   void onReply(

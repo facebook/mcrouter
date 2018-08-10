@@ -122,7 +122,7 @@ class DestinationRoute {
   template <class Request>
   ReplyT<Request> checkAndRoute(const Request& req) const {
     auto& ctx = fiber_local<RouterInfo>::getSharedCtx();
-    if (!destination_->may_send()) {
+    if (!destination_->maySend()) {
       return constructAndLog(req, *ctx, TkoReply);
     }
 
