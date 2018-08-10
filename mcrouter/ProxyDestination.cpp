@@ -116,12 +116,12 @@ void ProxyDestination::handleTko(const mc_res_t result, bool is_probe_req) {
 
   if (isErrorResult(result)) {
     if (isHardTkoErrorResult(result)) {
-      if (tracker->recordHardFailure(this)) {
+      if (tracker->recordHardFailure(this, result)) {
         onTkoEvent(TkoLogEvent::MarkHardTko, result);
         startSendingProbes();
       }
     } else if (isSoftTkoErrorResult(result)) {
-      if (tracker->recordSoftFailure(this)) {
+      if (tracker->recordSoftFailure(this, result)) {
         onTkoEvent(TkoLogEvent::MarkSoftTko, result);
         startSendingProbes();
       }
@@ -298,8 +298,15 @@ ProxyDestination::ProxyDestination(
   }
 }
 
-bool ProxyDestination::maySend() const {
-  return !tracker->isTko();
+bool ProxyDestination::maySend(mc_res_t& tkoReason) const {
+  if (tracker->isTko()) {
+    // There's a small race window here, but as the tkoReason is used for
+    // logging/debugging purposes only, it's ok to eventually return an
+    // outdated value.
+    tkoReason = tracker->tkoReason();
+    return false;
+  }
+  return true;
 }
 
 void ProxyDestination::resetInactive() {

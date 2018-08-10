@@ -19,6 +19,7 @@
 #include <folly/experimental/StringKeyedUnorderedMap.h>
 
 #include "mcrouter/TkoCounters.h"
+#include "mcrouter/lib/mc/msg.h"
 
 namespace facebook {
 namespace memcache {
@@ -63,11 +64,19 @@ class TkoTracker {
   bool isSoftTko() const;
 
   /**
-   * @return Is the destination currently marked TKO?
+   * Tells whether or not the destination is marked as TKO.
    */
   bool isTko() const {
     // See sumFailures_ description for more details.
-    return sumFailures_ > tkoThreshold_;
+    return sumFailures_.load(std::memory_order_relaxed) > tkoThreshold_;
+  }
+
+  /**
+   * The reason why the destination is marked as TKO.
+   * NOTE: If this box is not TKO'd, returns mc_res_unkown.
+   */
+  mc_res_t tkoReason() const {
+    return tkoReason_.load(std::memory_order_relaxed);
   }
 
   /**
@@ -90,23 +99,25 @@ class TkoTracker {
    * tko_threshold "soft" failures in a row to mark a host TKO. Will not TKO
    * a host if currentSoftTkos would exceed maxSoftTkos
    *
-   * @param pdstn  a pointer to the calling proxydestination for tracking
-   *               responsibility.
+   * @param pdstn   A pointer to the calling proxydestination for tracking
+   *                responsibility.
+   * @param result  The result that caused the soft failure.
    *
    * @return true if we just reached tko_threshold with this result,
    *         marking the host TKO.  In this case, the calling proxy
    *         is responsible for sending probes and calling recordSuccess()
    *         once a probe is successful.
    */
-  bool recordSoftFailure(ProxyDestination* pdstn);
+  bool recordSoftFailure(ProxyDestination* pdstn, mc_res_t result);
 
   /**
    * Can be called from any proxy thread.
    * Signal that a "hard" failure occurred - marks the host TKO
    * right away.
    *
-   * @param pdstn  a pointer to the calling proxydestination for tracking
-   *               responsibility.
+   * @param pdstn   A pointer to the calling proxydestination for tracking
+   *                responsibility.
+   * @param result  The result that caused the hard failure.
    *
    * @return true if we just reached tko_threshold with this result,
    *         marking the host TKO.  In this case, the calling proxy
@@ -114,7 +125,7 @@ class TkoTracker {
    *         once a probe is successful. Note, transition from soft to hard
    *         TKO does not result in a change of responsibility.
    */
-  bool recordHardFailure(ProxyDestination* pdstn);
+  bool recordHardFailure(ProxyDestination* pdstn, mc_res_t result);
 
   /**
    * Resets all consecutive failures accumulated so far
@@ -157,6 +168,8 @@ class TkoTracker {
   std::atomic<uintptr_t> sumFailures_{0};
 
   std::atomic<size_t> consecutiveFailureCount_{0};
+
+  std::atomic<mc_res_t> tkoReason_{mc_res_unknown};
 
   /**
    * Decrement the global counter of current soft TKOs

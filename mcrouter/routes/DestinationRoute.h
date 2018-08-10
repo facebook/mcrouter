@@ -122,8 +122,14 @@ class DestinationRoute {
   template <class Request>
   ReplyT<Request> checkAndRoute(const Request& req) const {
     auto& ctx = fiber_local<RouterInfo>::getSharedCtx();
-    if (!destination_->maySend()) {
-      return constructAndLog(req, *ctx, TkoReply);
+    mc_res_t tkoReason;
+    if (!destination_->maySend(tkoReason)) {
+      return constructAndLog(
+          req,
+          *ctx,
+          TkoReply,
+          folly::to<std::string>(
+              "Server unavailable. Reason: ", mc_res_to_string(tkoReason)));
     }
 
     if (destination_->shouldDrop<Request>()) {

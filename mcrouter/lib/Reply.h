@@ -68,6 +68,13 @@ ReplyT<Request> createReply(TkoReplyT) {
 }
 
 template <class Request>
+ReplyT<Request> createReply(TkoReplyT, std::string errorMessage) {
+  ReplyT<Request> reply(mc_res_tko);
+  carbon::setMessageIfPresent(reply, std::move(errorMessage));
+  return reply;
+}
+
+template <class Request>
 ReplyT<Request> createReply(BusyReplyT) {
   return ReplyT<Request>(mc_res_busy);
 }

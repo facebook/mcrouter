@@ -1,4 +1,4 @@
-# Copyright (c) 2016, Facebook, Inc.
+# Copyright (c) 2016-present, Facebook, Inc.
 #
 # This source code is licensed under the MIT license found in the LICENSE
 # file in the root directory of this source tree.
@@ -19,6 +19,7 @@ from mcrouter.test.mock_servers import ConnectionErrorServer
 from mcrouter.test.mock_servers import CustomErrorServer
 from mcrouter.test.mock_servers import SleepServer
 
+
 class TestMcrouterForwardedErrors(McrouterTestCase):
     config = './mcrouter/test/mcrouter_test_basic_1_1_1.json'
     get_cmd = 'get test_key\r\n'
@@ -28,29 +29,29 @@ class TestMcrouterForwardedErrors(McrouterTestCase):
     prepend_cmd = 'prepend test_key 0 0 3\r\nabc\r\n'
     touch_cmd = 'touch test_key 3600\r\n'
     server_errors = [
-            'SERVER_ERROR out of order',
-            'SERVER_ERROR timeout',
-            'SERVER_ERROR connection timeout',
-            'SERVER_ERROR connection error',
-            'SERVER_ERROR 307 busy',
-            'SERVER_ERROR 302 try again',
-            'SERVER_ERROR unavailable',
-            'SERVER_ERROR bad value',
-            'SERVER_ERROR aborted',
-            'SERVER_ERROR local error',
-            'SERVER_ERROR remote error',
-            'SERVER_ERROR waiting'
-            ]
+        'SERVER_ERROR out of order',
+        'SERVER_ERROR timeout',
+        'SERVER_ERROR connection timeout',
+        'SERVER_ERROR connection error',
+        'SERVER_ERROR 307 busy',
+        'SERVER_ERROR 302 try again',
+        'SERVER_ERROR unavailable',
+        'SERVER_ERROR bad value',
+        'SERVER_ERROR aborted',
+        'SERVER_ERROR local error',
+        'SERVER_ERROR remote error',
+        'SERVER_ERROR waiting'
+    ]
     client_errors = [
-            'CLIENT_ERROR bad command',
-            'CLIENT_ERROR bad key',
-            'CLIENT_ERROR bad flags',
-            'CLIENT_ERROR bad exptime',
-            'CLIENT_ERROR bad lease_id',
-            'CLIENT_ERROR bad cas_id',
-            'CLIENT_ERROR malformed request',
-            'CLIENT_ERROR out of memory'
-            ]
+        'CLIENT_ERROR bad command',
+        'CLIENT_ERROR bad key',
+        'CLIENT_ERROR bad flags',
+        'CLIENT_ERROR bad exptime',
+        'CLIENT_ERROR bad lease_id',
+        'CLIENT_ERROR bad cas_id',
+        'CLIENT_ERROR malformed request',
+        'CLIENT_ERROR out of memory'
+    ]
 
     def setUp(self):
         self.server = self.add_server(CustomErrorServer())
@@ -239,7 +240,8 @@ class TestMcrouterGeneratedErrors(McrouterTestCase):
                 args=['--timeouts-until-tko', '1'])
         res = mcrouter.issue_command(self.set_cmd)
         res = mcrouter.issue_command(self.set_cmd)
-        self.assertEqual('SERVER_ERROR unavailable\r\n', res)
+        self.assertTrue(
+            re.match('SERVER_ERROR Server unavailable. Reason: .*', res))
 
     def test_tko_get(self):
         mcrouter = self.getMcrouter(SleepServer(),
