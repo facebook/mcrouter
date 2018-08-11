@@ -43,6 +43,9 @@ class HelloGoodbyeCarbonLookasideHelper {
     }
     return std::string();
   }
+
+  template <typename Reply>
+  void postProcessCachedReply(Reply& /* reply */) const {}
 };
 
 template <class RouterInfo>

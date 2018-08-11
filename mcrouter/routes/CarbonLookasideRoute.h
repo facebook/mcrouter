@@ -64,6 +64,9 @@ LeaseSettings parseLeaseSettings(const folly::dynamic& json);
  *
  *   template <typename Request>
  *   std::string buildKey(const Request& req);
+ *
+ *   template <typename Reply>
+ *   void postProcessCachedReply(Reply& reply);
  * };
  *
  * @tparam RouterInfo            The Router
@@ -140,6 +143,7 @@ class CarbonLookasideRoute {
     if (cacheCandidate) {
       key = buildKey(req);
       if (auto optReply = carbonLookasideGet<Request>(key, leaseToken)) {
+        carbonLookasideHelper_.postProcessCachedReply(optReply.value());
         return optReply.value();
       }
     }

@@ -74,6 +74,9 @@ class MemcacheCarbonLookasideHelper {
     }
     return std::string();
   }
+
+  template <typename Reply>
+  void postProcessCachedReply(Reply& /* reply */) const {}
 };
 
 McrouterRouteHandlePtr makeWarmUpRoute(
