@@ -81,9 +81,10 @@ class CarbonLookasideRoute {
  public:
   std::string routeName() const {
     return folly::sformat(
-        "lookaside-cache|name={}|ttl={}s|leases={}",
+        "lookaside-cache|name={}|ttl={}{}s|leases={}",
         carbonLookasideHelper_.name(),
         ttl_,
+        subSecTTL_ ? "m" : "",
         leaseSettings_.enableLeases ? "true" : "false");
   }
 
@@ -100,8 +101,11 @@ class CarbonLookasideRoute {
    *                      helper.
    * @param keySplitSize  Tells how many different keys we want to have for
    *                      the same request. Useful for dealing with hot keys.
-   * @param ttl           TTL of items stored in memcache by this route handle,
-   *                      in seconds.
+   * @param ttl           TTL of items stored in memcache by this route handle.
+   *                      Defaults to use seconds but can be milliseconds when
+   *                      the subSecTTL parameter is configured.
+   * @param subSecTTL     TTL specified in ttl parameter is in units of ms.
+   *                      The ttl can be {100,200,500}.
    * @param helper        The helper used to build keys and see if we should
    *                      cache a given request. This helper is use-case
    *                      specific.
@@ -114,6 +118,7 @@ class CarbonLookasideRoute {
       std::string prefix,
       size_t keySplitSize,
       int32_t ttl,
+      bool subSecTTL,
       CarbonLookasideHelper helper,
       LeaseSettings leaseSettings)
       : child_(std::move(child)),
@@ -122,6 +127,7 @@ class CarbonLookasideRoute {
         keyPrefix_(std::move(prefix)),
         keySuffix_(buildKeySuffix(keySplitSize)),
         ttl_(ttl),
+        subSecTTL_(subSecTTL),
         carbonLookasideHelper_(std::move(helper)),
         leaseSettings_(std::move(leaseSettings)) {
     assert(router_);
@@ -163,6 +169,7 @@ class CarbonLookasideRoute {
   const std::string keyPrefix_;
   const std::string keySuffix_;
   const int32_t ttl_;
+  const bool subSecTTL_;
   CarbonLookasideHelper carbonLookasideHelper_;
   const LeaseSettings leaseSettings_;
 
@@ -283,7 +290,13 @@ class CarbonLookasideRoute {
   template <typename Reply>
   void carbonLookasideSet(folly::StringPiece key, const Reply& reply) {
     McSetRequest req(key);
-    req.exptime() = ttl_;
+    if (subSecTTL_) {
+      // ms ttl translates to a 1 second ttl on the server. Sub-second
+      // ttl is acheived by appending a time based suffix to the key.
+      req.exptime() = 1;
+    } else {
+      req.exptime() = ttl_;
+    }
     req.value() = serializeOffFiber(reply);
     folly::fibers::addTask([this, req = std::move(req)]() {
       folly::fibers::Baton baton;
@@ -301,7 +314,13 @@ class CarbonLookasideRoute {
       const Reply& reply,
       const int64_t leaseToken) {
     McLeaseSetRequest req(key);
-    req.exptime() = ttl_;
+    if (subSecTTL_) {
+      // ms ttl translates to a 1 second ttl on the server. Sub-second
+      // ttl is acheived by appending a time based suffix to the key.
+      req.exptime() = 1;
+    } else {
+      req.exptime() = ttl_;
+    }
     req.leaseToken() = leaseToken;
     req.value() = serializeOffFiber(reply);
     folly::fibers::addTask([this, req = std::move(req)]() {
@@ -315,6 +334,20 @@ class CarbonLookasideRoute {
 
   template <typename Request>
   std::string buildKey(const Request& req) {
+    if (subSecTTL_) {
+      // Round current time down to the next TTL increment. The key uses a
+      // single digit for space efficiency.
+      // Convert from milliseconds to deciseconds.
+      auto ttlSuffix = (nowUs() / 100000) % 10;
+      // Round down to nearest ttlSuffix.
+      ttlSuffix -= (ttlSuffix % (ttl_ / 100));
+      return folly::to<std::string>(
+          keyPrefix_,
+          carbonLookasideHelper_.buildKey(req),
+          keySuffix_,
+          ":",
+          ttlSuffix);
+    }
     return folly::to<std::string>(
         keyPrefix_, carbonLookasideHelper_.buildKey(req), keySuffix_);
   }
@@ -357,11 +390,27 @@ typename RouterInfo::RouteHandlePtr createCarbonLookasideRoute(
       child != nullptr,
       "CarbonLookasideRoute: cannot create route handle from 'child'");
 
+  bool subSecTTL = false;
+  if (auto jTtlUnit = json.get_ptr("ttl_unit_ms")) {
+    checkLogic(
+        jTtlUnit->isBool(),
+        "CarbonLookasideRoute: 'ttl_unit_ms' is not a bool");
+    if (jTtlUnit->getBool()) {
+      subSecTTL = true;
+    }
+  }
+
   auto jTtl = json.get_ptr("ttl");
   checkLogic(
       jTtl != nullptr, "CarbonLookasideRoute: 'ttl' property is missing");
   checkLogic(jTtl->isInt(), "CarbonLookasideRoute: 'ttl' is not an integer");
   int32_t ttl = jTtl->getInt();
+
+  if (subSecTTL) {
+    checkLogic(
+        ttl == 100 || ttl == 200 || ttl == 500,
+        "CarbonLookasideRoute: 'ttl_ms' must be {100,200,500}");
+  }
 
   std::string prefix = ""; // Defaults to no prefix.
   if (auto jPrefix = json.get_ptr("prefix")) {
@@ -436,6 +485,7 @@ typename RouterInfo::RouteHandlePtr createCarbonLookasideRoute(
       std::move(prefix),
       keySplitSize,
       ttl,
+      subSecTTL,
       std::move(helper),
       std::move(leaseSettings));
 }
