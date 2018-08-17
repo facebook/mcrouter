@@ -96,7 +96,6 @@ TEST(LoadBalancerRouteTest, basic) {
       testHandles,
       "",
       std::chrono::milliseconds(100),
-      ServerLoad::fromPercentLoad(50),
       /* failoverCount */ 1);
 
   std::unordered_map<std::string, size_t> cmap;
@@ -130,7 +129,6 @@ TEST(LoadBalancerRouteTest, oneFullyLoaded) {
       testHandles,
       "SALT-STRING",
       std::chrono::milliseconds(100),
-      ServerLoad::fromPercentLoad(50),
       /* failoverCount */ 1);
 
   std::unordered_map<std::string, size_t> cmap;
@@ -164,7 +162,6 @@ TEST(LoadBalancerRouteTest, oneZeroLoad) {
       testHandles,
       "TEST-SALT",
       std::chrono::milliseconds(100),
-      ServerLoad::fromPercentLoad(50),
       /* failoverCount */ 1);
 
   std::unordered_map<std::string, size_t> cmap;
@@ -198,7 +195,6 @@ TEST(LoadBalancerRouteTest, AllFullyLoaded) {
       testHandles,
       "TEST-SALT",
       std::chrono::milliseconds(100),
-      ServerLoad::fromPercentLoad(50),
       /* failoverCount */ 1);
 
   std::unordered_map<std::string, size_t> cmap;
@@ -232,7 +228,6 @@ TEST(LoadBalancerRouteTest, AllZeroLoads) {
       testHandles,
       "TEST-SALT",
       std::chrono::milliseconds(100),
-      ServerLoad::fromPercentLoad(50),
       /* failoverCount */ 1);
 
   std::unordered_map<std::string, size_t> cmap;
@@ -266,7 +261,6 @@ TEST(LoadBalancerRouteTest, LoadsWithWait) {
       testHandles,
       "TEST-SALT",
       std::chrono::milliseconds(100),
-      ServerLoad::fromPercentLoad(50),
       /* failoverCount */ 1);
 
   std::unordered_map<std::string, size_t> cmap;
@@ -307,19 +301,16 @@ TEST(LoadBalancerRouteTest, failover) {
       testHandles,
       "",
       std::chrono::milliseconds(100),
-      ServerLoad::fromPercentLoad(50),
       /* failoverCount */ 1};
   TestRouteHandle<LoadBalancerRoute<TestRouterInfo>> rh2Failover{
       testHandles,
       "",
       std::chrono::milliseconds(100),
-      ServerLoad::fromPercentLoad(50),
       /* failoverCount */ 2};
   TestRouteHandle<LoadBalancerRoute<TestRouterInfo>> rh3Failover{
       testHandles,
       "",
       std::chrono::milliseconds(100),
-      ServerLoad::fromPercentLoad(50),
       /* failoverCount */ 3};
 
   // warm-up the route handles (so that all children have their final server
@@ -374,7 +365,6 @@ TEST(LoadBalancerRouteTest, failoverStress) {
       testHandles,
       "",
       std::chrono::milliseconds(100),
-      ServerLoad::fromPercentLoad(50),
       /* failoverCount */ 3};
 
   for (size_t i = 0; i < 1000; ++i) {
@@ -398,7 +388,6 @@ TEST(CpuLoadBalancerRouteTest, basicTwoChoice) {
       testHandles,
       "",
       std::chrono::milliseconds(100),
-      ServerLoad::fromPercentLoad(50),
       /* fauloverCount */ 1,
       LoadBalancerRoute<TestRouterInfo>::AlgorithmType::TWO_RANDOM_CHOICES,
       /* fixed seed */ 0);
@@ -434,7 +423,6 @@ TEST(CpuLoadBalancerRouteTest, basicTwoChoiceWithSeed) {
       testHandles,
       "",
       std::chrono::milliseconds(100),
-      ServerLoad::fromPercentLoad(50),
       /* fauloverCount */ 1,
       LoadBalancerRoute<TestRouterInfo>::AlgorithmType::TWO_RANDOM_CHOICES,
       /* fixed seed */ 0);
@@ -470,7 +458,6 @@ TEST(CpuLoadBalancerRouteTest, oneFullyLoadedTwoChoice) {
       testHandles,
       "SALT-STRING",
       std::chrono::milliseconds(100),
-      ServerLoad::fromPercentLoad(50),
       /* fauloverCount */ 1,
       LoadBalancerRoute<TestRouterInfo>::AlgorithmType::TWO_RANDOM_CHOICES,
       /* fixed seed */ 0);
@@ -506,7 +493,6 @@ TEST(CpuLoadBalancerRouteTest, oneZeroLoadTwoChoice) {
       testHandles,
       "TEST-SALT",
       std::chrono::milliseconds(100),
-      ServerLoad::fromPercentLoad(50),
       /* fauloverCount */ 1,
       LoadBalancerRoute<TestRouterInfo>::AlgorithmType::TWO_RANDOM_CHOICES,
       /* fixed seed */ 0);
@@ -542,7 +528,6 @@ TEST(CpuLoadBalancerRouteTest, AllFullyLoadedTwoChoice) {
       testHandles,
       "TEST-SALT",
       std::chrono::milliseconds(100),
-      ServerLoad::fromPercentLoad(50),
       /* fauloverCount */ 1,
       LoadBalancerRoute<TestRouterInfo>::AlgorithmType::TWO_RANDOM_CHOICES,
       /* fixed seed */ 0);
@@ -578,7 +563,6 @@ TEST(CpuLoadBalancerRouteTest, AllZeroLoadsTwoChoice) {
       testHandles,
       "TEST-SALT",
       std::chrono::milliseconds(100),
-      ServerLoad::fromPercentLoad(50),
       /* fauloverCount */ 1,
       LoadBalancerRoute<TestRouterInfo>::AlgorithmType::TWO_RANDOM_CHOICES,
       /* fixed seed */ 0);
@@ -614,7 +598,6 @@ TEST(CpuLoadBalancerRouteTest, LoadsWithWaitTwoChoice) {
       testHandles,
       "TEST-SALT",
       std::chrono::milliseconds(100),
-      ServerLoad::fromPercentLoad(50),
       /* fauloverCount */ 1,
       LoadBalancerRoute<TestRouterInfo>::AlgorithmType::TWO_RANDOM_CHOICES,
       /* fixed seed */ 0);
