@@ -685,8 +685,19 @@ MCROUTER_OPTION_INTEGER(
     0,
     "collect-rxmit-stats-every-hz",
     no_short,
-    "Will calculate retransmits per kB after every set cycles."
+    "Will calculate retransmits per kB after every set cycles whenever a "
+    "timeout or deviation from average latency occurs."
     " If value is 0, calculation won't be done.")
+
+MCROUTER_OPTION_INTEGER(
+    uint64_t,
+    rxmit_latency_deviation_us,
+    0,
+    "rxmit-latency-deviation-us",
+    no_short,
+    "Latency deviation of request in microseconds from the average latency on "
+    "the connection will trigger recalculation of retransmits per kB. "
+    "If value is 0, calculation won't be done.")
 
 MCROUTER_OPTION_INTEGER(
     uint64_t,

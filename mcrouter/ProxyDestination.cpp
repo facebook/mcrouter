@@ -140,12 +140,25 @@ void ProxyDestination::handleTko(const mc_res_t result, bool is_probe_req) {
   tracker->recordSuccess(this);
 }
 
-void ProxyDestination::handleRxmittingConnection() {
+bool ProxyDestination::latencyAboveThreshold(uint64_t latency) {
+  const auto rxmitDeviation = proxy.router().opts().rxmit_latency_deviation_us;
+  if (!rxmitDeviation) {
+    return false;
+  }
+  return (
+      static_cast<double>(latency) - stats_.avgLatency.value() >
+      static_cast<double>(rxmitDeviation));
+}
+
+void ProxyDestination::handleRxmittingConnection(
+    const mc_res_t result,
+    uint64_t latency) {
   if (!client_) {
     return;
   }
   const auto retransCycles = proxy.router().opts().collect_rxmit_stats_every_hz;
-  if (retransCycles > 0) {
+  if (retransCycles > 0 &&
+      (isDataTimeoutResult(result) || latencyAboveThreshold(latency))) {
     const auto curCycles = cycles::getCpuCycles();
     if (curCycles > lastRetransCycles_ + retransCycles) {
       lastRetransCycles_ = curCycles;
@@ -226,7 +239,7 @@ void ProxyDestination::onReply(
         replyStatsContext.replySizeAfterCompression);
   }
 
-  handleRxmittingConnection();
+  handleRxmittingConnection(result, latency);
 }
 
 size_t ProxyDestination::getPendingRequestCount() const {

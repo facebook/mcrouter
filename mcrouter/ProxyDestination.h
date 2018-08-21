@@ -190,7 +190,9 @@ class ProxyDestination {
 
   void onTkoEvent(TkoLogEvent event, mc_res_t result) const;
 
-  void handleRxmittingConnection();
+  void handleRxmittingConnection(const mc_res_t result, uint64_t latency);
+
+  bool latencyAboveThreshold(uint64_t latency);
 
   void onTransitionToState(State state);
   void onTransitionFromState(State state);
