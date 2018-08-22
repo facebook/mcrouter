@@ -200,7 +200,7 @@ mcrouter_SOURCES = \
 
 libmcroutercore_a_CPPFLAGS = -I..
 
-mcrouter_LDADD = libmcroutercore.a lib/libmcrouter.a -lwangle -lfolly
+mcrouter_LDADD = libmcroutercore.a lib/libmcrouter.a -lwangle -lsodium -lfizz -lfolly
 mcrouter_CPPFLAGS = -I..
 
 clean-local:
