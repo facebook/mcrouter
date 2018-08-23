@@ -43,8 +43,10 @@ void serverLoop(
   // Manually override proxy assignment
   routerClient->setProxy(proxy);
 
-  worker.setOnRequest(
-      RequestHandlerType(*routerClient, standaloneOpts.retain_source_ip));
+  worker.setOnRequest(RequestHandlerType(
+      *routerClient,
+      standaloneOpts.retain_source_ip,
+      standaloneOpts.enable_pass_through_mode));
   worker.setOnConnectionAccepted([proxy]() {
     proxy->stats().increment(successful_client_connections_stat);
     proxy->stats().increment(num_clients_stat);

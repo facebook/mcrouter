@@ -185,6 +185,14 @@ MCROUTER_OPTION_INTEGER(
     "TFO queue size for SSL connections.  "
     "(only matters if ssl tfo is enabled)")
 
+MCROUTER_OPTION_TOGGLE(
+    enable_pass_through_mode,
+    false,
+    "enable-pass-through-mode",
+    no_short,
+    "If enabled, mcrouter will avoid reserializing requests if the request"
+    " is not modified during routing.")
+
 #ifdef ADDITIONAL_STANDALONE_OPTIONS_FILE
 #include ADDITIONAL_STANDALONE_OPTIONS_FILE
 #endif

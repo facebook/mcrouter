@@ -40,8 +40,13 @@ class ServerOnRequest {
   using ReplyFunction =
       void (*)(McServerRequestContext&& ctx, ReplyT<Request>&& reply);
 
-  ServerOnRequest(CarbonRouterClient<RouterInfo>& client, bool retainSourceIp)
-      : client_(client), retainSourceIp_(retainSourceIp) {}
+  ServerOnRequest(
+      CarbonRouterClient<RouterInfo>& client,
+      bool retainSourceIp,
+      bool enablePassThroughMode)
+      : client_(client),
+        retainSourceIp_(retainSourceIp),
+        enablePassThroughMode_(enablePassThroughMode) {}
 
   template <class Request>
   void onRequest(
@@ -86,13 +91,16 @@ class ServerOnRequest {
       ReplyFunction<Request> replyFn,
       const folly::IOBuf* reqBuffer = nullptr,
       size_t reqBufferHeaderSize = 0) {
+    const folly::IOBuf* reusableRequestBuffer =
+        enablePassThroughMode_ ? reqBuffer : nullptr;
     auto rctx = std::make_unique<ServerRequestContext<Request>>(
-        std::move(ctx), std::move(req), reqBuffer);
+        std::move(ctx), std::move(req), reusableRequestBuffer);
     auto& reqRef = rctx->req;
     auto& sessionRef = rctx->ctx.session();
 
-    // if request buffer was provided, adjust start and set it to the request.
-    if (reqBuffer) {
+    // if we are reusing the request buffer, adjust the start offset and set
+    // it to the request.
+    if (reusableRequestBuffer) {
       auto& reqBufferRef = rctx->reqBuffer;
       reqBufferRef.trimStart(reqBufferHeaderSize);
       reqRef.setSerializedBuffer(reqBufferRef);
@@ -114,6 +122,7 @@ class ServerOnRequest {
  private:
   CarbonRouterClient<RouterInfo>& client_;
   bool retainSourceIp_{false};
+  bool enablePassThroughMode_{false};
 };
 } // mcrouter
 } // memcache
