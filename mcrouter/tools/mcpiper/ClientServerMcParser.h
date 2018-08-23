@@ -87,17 +87,14 @@ class ClientServerMcParser {
     Callback& callback_;
   };
 
-  struct RequestCallback : public CarbonMessageDispatcher<
-                               RequestList,
-                               RequestCallback,
-                               const UmbrellaMessageInfo&> {
+  struct RequestCallback
+      : public CarbonMessageDispatcher<RequestList, RequestCallback> {
    public:
     template <class M>
     void onTypedMessage(
+        const UmbrellaMessageInfo& headerInfo,
         const folly::IOBuf& /* reqBuffer */,
-        size_t /* reqBufferHeaderSize */,
-        M&& req,
-        const UmbrellaMessageInfo& headerInfo) {
+        M&& req) {
       callback_.requestReady(headerInfo.reqId, std::move(req));
     }
 
@@ -116,7 +113,7 @@ class ClientServerMcParser {
     void caretRequestReady(
         const UmbrellaMessageInfo& headerInfo,
         const folly::IOBuf& buffer) {
-      this->dispatchTypedRequest(headerInfo, buffer, headerInfo);
+      this->dispatchTypedRequest(headerInfo, buffer);
     }
 
     void multiOpEnd() {}

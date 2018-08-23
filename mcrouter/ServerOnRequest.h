@@ -11,6 +11,7 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
+#include "mcrouter/lib/network/CaretHeader.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 
@@ -52,15 +53,15 @@ class ServerOnRequest {
   void onRequest(
       McServerRequestContext&& ctx,
       Request&& req,
-      const folly::IOBuf* reqBuffer,
-      size_t reqBufferHeaderSize) {
+      const UmbrellaMessageInfo* headerInfo,
+      const folly::IOBuf* reqBuffer) {
     using Reply = ReplyT<Request>;
     send(
         std::move(ctx),
         std::move(req),
         &McServerRequestContext::reply<Reply>,
-        reqBuffer,
-        reqBufferHeaderSize);
+        headerInfo,
+        reqBuffer);
   }
   template <class Request>
   void onRequest(McServerRequestContext&& ctx, Request&& req) {
@@ -89,10 +90,15 @@ class ServerOnRequest {
       McServerRequestContext&& ctx,
       Request&& req,
       ReplyFunction<Request> replyFn,
-      const folly::IOBuf* reqBuffer = nullptr,
-      size_t reqBufferHeaderSize = 0) {
+      const UmbrellaMessageInfo* headerInfo = nullptr,
+      const folly::IOBuf* reqBuffer = nullptr) {
+    // We just reuse buffers iff:
+    //  1) enablePassThroughMode_ is true.
+    //  2) headerInfo is not NULL.
+    //  3) reqBuffer is not NULL.
     const folly::IOBuf* reusableRequestBuffer =
-        enablePassThroughMode_ ? reqBuffer : nullptr;
+        (enablePassThroughMode_ && headerInfo) ? reqBuffer : nullptr;
+
     auto rctx = std::make_unique<ServerRequestContext<Request>>(
         std::move(ctx), std::move(req), reusableRequestBuffer);
     auto& reqRef = rctx->req;
@@ -102,7 +108,7 @@ class ServerOnRequest {
     // it to the request.
     if (reusableRequestBuffer) {
       auto& reqBufferRef = rctx->reqBuffer;
-      reqBufferRef.trimStart(reqBufferHeaderSize);
+      reqBufferRef.trimStart(headerInfo->headerSize);
       reqRef.setSerializedBuffer(reqBufferRef);
     }
 

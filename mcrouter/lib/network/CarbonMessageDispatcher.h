@@ -51,20 +51,21 @@ void serializeCarbonRequest(
  * A dispatcher for binary protol serialized Carbon structs.
  *
  * Given a type id and an IOBuf, unserializes the corresponding Carbon struct
- * and calls Proc::onTypedMessage(reqBuffer, reqBufferHeaderSize, M&&, args...)
+ * and calls Proc::onTypedMessage(headerInfo, reqBuffer, M&&, args...)
  *
  * @param MessageList  List of supported Carbon messages: List<M, ...>
  *                     All Ms in the list must be Carbon struct types.
  * @param Proc         Derived processor class, may provide
- *                       void onTypedMessage(const folly::IOBuf& reqBuffer,
- *                                           size_t reqBufferHeaderSize,
- *                                           M&& msg,
- *                                           args...).
+ *                       void onTypedMessage(
+ *                          const UmbrellaMessageInfo& headerInfo,
+ *                          const folly::IOBuf& reqBuffer,
+ *                          M&& msg,
+ *                          args...).
  *                     If not provided, default implementation that forwards to
  *                       void onRequest(McServerRequestContext&& context,
  *                                      M&& req,
- *                                      const folly::IOBuf& reqBuffer,
- *                                      reqBufferHeaderSize);
+ *                                      const UmbrellaMessageInfo& headerInfo,
+ *                                      const folly::IOBuf& reqBuffer);
  *                     will be used.
  *                     Overloaded for every Carbon struct in MessageList.
  * @param Args         Additional arguments to pass through to onTypedMessage.
@@ -93,12 +94,12 @@ class CarbonMessageDispatcher {
   // Default onTypedMessage() implementation
   template <class M>
   void onTypedMessage(
+      const UmbrellaMessageInfo& headerInfo,
       const folly::IOBuf& reqBuffer,
-      size_t reqBufferHeaderSize,
       M&& req,
       McServerRequestContext&& ctx) {
     static_cast<Proc&>(*this).onRequest(
-        std::move(ctx), std::move(req), reqBuffer, reqBufferHeaderSize);
+        std::move(ctx), std::move(req), headerInfo, reqBuffer);
   }
 
   template <class M>
@@ -114,10 +115,7 @@ class CarbonMessageDispatcher {
     req.setTraceId(headerInfo.traceId);
     req.deserialize(reader);
     static_cast<Proc&>(me).onTypedMessage(
-        reqBuf,
-        headerInfo.headerSize,
-        std::move(req),
-        std::forward<Args>(args)...);
+        headerInfo, reqBuf, std::move(req), std::forward<Args>(args)...);
   }
 
  private:

@@ -19,6 +19,7 @@
 
 namespace facebook {
 namespace memcache {
+struct UmbrellaMessageInfo;
 class McServerRequestContext;
 } // namespace memcache
 } // namespace facebook
@@ -340,8 +341,8 @@ class CanHandleRequestWithBuffer {
       std::declval<OnRequest>().onRequest(
           std::declval<facebook::memcache::McServerRequestContext>(),
           std::declval<Request>(),
-          std::declval<folly::IOBuf*>(),
-          std::declval<size_t>()),
+          std::declval<facebook::memcache::UmbrellaMessageInfo*>(),
+          std::declval<folly::IOBuf*>()),
       std::true_type()) {
     return {};
   }
