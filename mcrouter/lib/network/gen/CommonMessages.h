@@ -59,6 +59,7 @@ class McVersionRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   uint64_t flags() const {
@@ -169,6 +170,7 @@ class McStatsRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   uint64_t flags() const {
@@ -278,6 +280,7 @@ class McShutdownRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   uint64_t flags() const {
@@ -381,6 +384,7 @@ class McQuitRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   uint64_t flags() const {
@@ -483,6 +487,7 @@ class McExecRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   uint64_t flags() const {

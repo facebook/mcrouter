@@ -22,9 +22,15 @@ template <class Request>
 struct ServerRequestContext {
   McServerRequestContext ctx;
   Request req;
+  folly::IOBuf reqBuffer;
 
-  ServerRequestContext(McServerRequestContext&& ctx_, Request&& req_)
-      : ctx(std::move(ctx_)), req(std::move(req_)) {}
+  ServerRequestContext(
+      McServerRequestContext&& ctx_,
+      Request&& req_,
+      const folly::IOBuf* reqBuffer_)
+      : ctx(std::move(ctx_)),
+        req(std::move(req_)),
+        reqBuffer(reqBuffer_ ? reqBuffer_->cloneAsValue() : folly::IOBuf()) {}
 };
 
 template <class RouterInfo>
@@ -37,6 +43,20 @@ class ServerOnRequest {
   ServerOnRequest(CarbonRouterClient<RouterInfo>& client, bool retainSourceIp)
       : client_(client), retainSourceIp_(retainSourceIp) {}
 
+  template <class Request>
+  void onRequest(
+      McServerRequestContext&& ctx,
+      Request&& req,
+      const folly::IOBuf* reqBuffer,
+      size_t reqBufferHeaderSize) {
+    using Reply = ReplyT<Request>;
+    send(
+        std::move(ctx),
+        std::move(req),
+        &McServerRequestContext::reply<Reply>,
+        reqBuffer,
+        reqBufferHeaderSize);
+  }
   template <class Request>
   void onRequest(McServerRequestContext&& ctx, Request&& req) {
     using Reply = ReplyT<Request>;
@@ -63,11 +83,20 @@ class ServerOnRequest {
   void send(
       McServerRequestContext&& ctx,
       Request&& req,
-      ReplyFunction<Request> replyFn) {
+      ReplyFunction<Request> replyFn,
+      const folly::IOBuf* reqBuffer = nullptr,
+      size_t reqBufferHeaderSize = 0) {
     auto rctx = std::make_unique<ServerRequestContext<Request>>(
-        std::move(ctx), std::move(req));
+        std::move(ctx), std::move(req), reqBuffer);
     auto& reqRef = rctx->req;
     auto& sessionRef = rctx->ctx.session();
+
+    // if request buffer was provided, adjust start and set it to the request.
+    if (reqBuffer) {
+      auto& reqBufferRef = rctx->reqBuffer;
+      reqBufferRef.trimStart(reqBufferHeaderSize);
+      reqRef.setSerializedBuffer(reqBufferRef);
+    }
 
     auto cb = [ sctx = std::move(rctx), replyFn ](
         const Request&, ReplyT<Request>&& reply) {

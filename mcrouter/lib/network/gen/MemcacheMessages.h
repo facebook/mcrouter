@@ -61,12 +61,14 @@ class McGetRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   uint64_t flags() const {
     return flags_;
   }
   uint64_t& flags() {
+    markBufferAsDirty();
     return flags_;
   }
   int32_t exptime() const {
@@ -178,24 +180,28 @@ class McSetRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   int32_t exptime() const {
     return exptime_;
   }
   int32_t& exptime() {
+    markBufferAsDirty();
     return exptime_;
   }
   uint64_t flags() const {
     return flags_;
   }
   uint64_t& flags() {
+    markBufferAsDirty();
     return flags_;
   }
   const folly::IOBuf& value() const {
     return value_;
   }
   folly::IOBuf& value() {
+    markBufferAsDirty();
     return value_;
   }
   void serialize(carbon::CarbonProtocolWriter& writer) const;
@@ -305,24 +311,28 @@ class McDeleteRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   uint64_t flags() const {
     return flags_;
   }
   uint64_t& flags() {
+    markBufferAsDirty();
     return flags_;
   }
   int32_t exptime() const {
     return exptime_;
   }
   int32_t& exptime() {
+    markBufferAsDirty();
     return exptime_;
   }
   const folly::IOBuf& value() const {
     return value_;
   }
   folly::IOBuf& value() {
+    markBufferAsDirty();
     return value_;
   }
   void serialize(carbon::CarbonProtocolWriter& writer) const;
@@ -432,12 +442,14 @@ class McLeaseGetRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   uint64_t flags() const {
     return flags_;
   }
   uint64_t& flags() {
+    markBufferAsDirty();
     return flags_;
   }
   int32_t exptime() const {
@@ -557,30 +569,35 @@ class McLeaseSetRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   int32_t exptime() const {
     return exptime_;
   }
   int32_t& exptime() {
+    markBufferAsDirty();
     return exptime_;
   }
   uint64_t flags() const {
     return flags_;
   }
   uint64_t& flags() {
+    markBufferAsDirty();
     return flags_;
   }
   const folly::IOBuf& value() const {
     return value_;
   }
   folly::IOBuf& value() {
+    markBufferAsDirty();
     return value_;
   }
   int64_t leaseToken() const {
     return leaseToken_;
   }
   int64_t& leaseToken() {
+    markBufferAsDirty();
     return leaseToken_;
   }
   void serialize(carbon::CarbonProtocolWriter& writer) const;
@@ -681,24 +698,28 @@ class McAddRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   int32_t exptime() const {
     return exptime_;
   }
   int32_t& exptime() {
+    markBufferAsDirty();
     return exptime_;
   }
   uint64_t flags() const {
     return flags_;
   }
   uint64_t& flags() {
+    markBufferAsDirty();
     return flags_;
   }
   const folly::IOBuf& value() const {
     return value_;
   }
   folly::IOBuf& value() {
+    markBufferAsDirty();
     return value_;
   }
   void serialize(carbon::CarbonProtocolWriter& writer) const;
@@ -797,24 +818,28 @@ class McReplaceRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   int32_t exptime() const {
     return exptime_;
   }
   int32_t& exptime() {
+    markBufferAsDirty();
     return exptime_;
   }
   uint64_t flags() const {
     return flags_;
   }
   uint64_t& flags() {
+    markBufferAsDirty();
     return flags_;
   }
   const folly::IOBuf& value() const {
     return value_;
   }
   folly::IOBuf& value() {
+    markBufferAsDirty();
     return value_;
   }
   void serialize(carbon::CarbonProtocolWriter& writer) const;
@@ -914,6 +939,7 @@ class McGetsRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   uint64_t flags() const {
@@ -1034,30 +1060,35 @@ class McCasRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   int32_t exptime() const {
     return exptime_;
   }
   int32_t& exptime() {
+    markBufferAsDirty();
     return exptime_;
   }
   uint64_t flags() const {
     return flags_;
   }
   uint64_t& flags() {
+    markBufferAsDirty();
     return flags_;
   }
   const folly::IOBuf& value() const {
     return value_;
   }
   folly::IOBuf& value() {
+    markBufferAsDirty();
     return value_;
   }
   uint64_t casToken() const {
     return casToken_;
   }
   uint64_t& casToken() {
+    markBufferAsDirty();
     return casToken_;
   }
   void serialize(carbon::CarbonProtocolWriter& writer) const;
@@ -1157,12 +1188,14 @@ class McIncrRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   int64_t delta() const {
     return delta_;
   }
   int64_t& delta() {
+    markBufferAsDirty();
     return delta_;
   }
   uint64_t flags() const {
@@ -1273,12 +1306,14 @@ class McDecrRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   int64_t delta() const {
     return delta_;
   }
   int64_t& delta() {
+    markBufferAsDirty();
     return delta_;
   }
   uint64_t flags() const {
@@ -1389,6 +1424,7 @@ class McMetagetRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   uint64_t flags() const {
@@ -1517,24 +1553,28 @@ class McAppendRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   int32_t exptime() const {
     return exptime_;
   }
   int32_t& exptime() {
+    markBufferAsDirty();
     return exptime_;
   }
   uint64_t flags() const {
     return flags_;
   }
   uint64_t& flags() {
+    markBufferAsDirty();
     return flags_;
   }
   const folly::IOBuf& value() const {
     return value_;
   }
   folly::IOBuf& value() {
+    markBufferAsDirty();
     return value_;
   }
   void serialize(carbon::CarbonProtocolWriter& writer) const;
@@ -1633,24 +1673,28 @@ class McPrependRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   int32_t exptime() const {
     return exptime_;
   }
   int32_t& exptime() {
+    markBufferAsDirty();
     return exptime_;
   }
   uint64_t flags() const {
     return flags_;
   }
   uint64_t& flags() {
+    markBufferAsDirty();
     return flags_;
   }
   const folly::IOBuf& value() const {
     return value_;
   }
   folly::IOBuf& value() {
+    markBufferAsDirty();
     return value_;
   }
   void serialize(carbon::CarbonProtocolWriter& writer) const;
@@ -1750,12 +1794,14 @@ class McTouchRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   int32_t exptime() const {
     return exptime_;
   }
   int32_t& exptime() {
+    markBufferAsDirty();
     return exptime_;
   }
   uint64_t flags() const {
@@ -1856,6 +1902,7 @@ class McFlushReRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   uint64_t flags() const {
@@ -1959,12 +2006,14 @@ class McFlushAllRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   int32_t delay() const {
     return delay_;
   }
   int32_t& delay() {
+    markBufferAsDirty();
     return delay_;
   }
   uint64_t flags() const {

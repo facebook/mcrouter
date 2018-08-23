@@ -28,7 +28,11 @@ ReplyT<Request> ProxyDestination::send(
   proxy.destinationMap()->markAsActive(*this);
   auto reply = getAsyncMcClient().sendSync(
       request, timeout, passThroughKey, &replyStatsContext);
-  onReply(reply.result(), requestContext, replyStatsContext);
+  onReply(
+      reply.result(),
+      requestContext,
+      replyStatsContext,
+      request.isBufferDirty());
   return reply;
 }
 

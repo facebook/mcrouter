@@ -377,6 +377,8 @@ void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
   uint64_t outstandingUpdateWaitTimeSumUs = 0;
   uint64_t retransPerKByteSum = 0;
   uint64_t retransNumTotal = 0;
+  uint64_t destinationRequestsDirtyBufferSum = 0;
+  uint64_t destinationRequestsTotalSum = 0;
 
   for (size_t i = 0; i < router.opts().num_proxies; ++i) {
     auto proxy = router.getProxyBase(i);
@@ -404,6 +406,12 @@ void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
         proxy->stats().getStatValueWithinWindow(retrans_per_kbyte_sum_stat);
     retransNumTotal +=
         proxy->stats().getStatValueWithinWindow(retrans_num_total_stat);
+
+    destinationRequestsDirtyBufferSum +=
+        proxy->stats().getStatValueWithinWindow(
+            destination_reqs_dirty_buffer_sum_stat);
+    destinationRequestsTotalSum += proxy->stats().getStatValueWithinWindow(
+        destination_reqs_total_sum_stat);
   }
 
   stat_set_uint64(
@@ -422,6 +430,14 @@ void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
     avgRetransPerKByte = retransPerKByteSum / (double)retransNumTotal;
   }
   stats[retrans_per_kbyte_avg_stat].data.dbl = avgRetransPerKByte;
+
+  double reqsDirtyBufferRatio = 0.0;
+  if (destinationRequestsTotalSum != 0) {
+    reqsDirtyBufferRatio =
+        destinationRequestsDirtyBufferSum / (double)destinationRequestsTotalSum;
+  }
+  stats[destination_reqs_dirty_buffer_ratio_stat].data.dbl =
+      reqsDirtyBufferRatio;
 
   stats[outstanding_route_get_avg_queue_size_stat].data.dbl = 0.0;
   stats[outstanding_route_get_avg_wait_time_sec_stat].data.dbl = 0.0;

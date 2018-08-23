@@ -32,6 +32,22 @@ class CarbonRequestHandler : public facebook::memcache::CarbonMessageDispatcher<
     onRequestImpl(
         std::move(ctx),
         std::move(req),
+        nullptr /* reqBuffer */,
+        0 /* reqBufferHeaderSize */,
+        carbon::detail::CanHandleRequest::value<Request, OnRequest>());
+  }
+
+  template <class Request>
+  void onRequest(
+      facebook::memcache::McServerRequestContext&& ctx,
+      Request&& req,
+      const folly::IOBuf& reqBuf,
+      size_t headerSize) {
+    onRequestImpl(
+        std::move(ctx),
+        std::move(req),
+        &reqBuf,
+        headerSize,
         carbon::detail::CanHandleRequest::value<Request, OnRequest>());
   }
 
@@ -42,20 +58,31 @@ class CarbonRequestHandler : public facebook::memcache::CarbonMessageDispatcher<
   void onRequestImpl(
       facebook::memcache::McServerRequestContext&& ctx,
       Request&& req,
+      const folly::IOBuf* reqBuf,
+      size_t headerSize,
       std::true_type) {
     if (UNLIKELY(
             facebook::memcache::getFbTraceInfo(req) != nullptr &&
             facebook::memcache::traceCheckRateLimit())) {
-      onRequestImplWithTracingEnabled(std::move(ctx), std::move(req));
+      onRequestImplWithTracingEnabled(
+          std::move(ctx), std::move(req), reqBuf, headerSize);
       return;
     }
-    onRequest_.onRequest(std::move(ctx), std::move(req));
+    callOnRequest(
+        std::move(ctx),
+        std::move(req),
+        reqBuf,
+        headerSize,
+        carbon::detail::CanHandleRequestWithBuffer::
+            value<Request, OnRequest>());
   }
 
   template <class Request>
   void onRequestImpl(
       facebook::memcache::McServerRequestContext&&,
       Request&&,
+      const folly::IOBuf*,
+      size_t,
       std::false_type) {
     facebook::memcache::throwRuntime(
         "onRequest for {} not defined", typeid(Request).name());
@@ -64,12 +91,40 @@ class CarbonRequestHandler : public facebook::memcache::CarbonMessageDispatcher<
   template <class Request>
   FOLLY_NOINLINE void onRequestImplWithTracingEnabled(
       facebook::memcache::McServerRequestContext&& ctx,
-      Request&& req) {
+      Request&& req,
+      const folly::IOBuf* reqBuf,
+      size_t headerSize) {
     folly::RequestContextScopeGuard requestContextGuard;
     const auto commId =
         facebook::memcache::traceRequestReceived(std::cref(req).get());
-    onRequest_.onRequest(std::move(ctx), std::move(req));
+    callOnRequest(
+        std::move(ctx),
+        std::move(req),
+        reqBuf,
+        headerSize,
+        carbon::detail::CanHandleRequestWithBuffer::
+            value<Request, OnRequest>());
     facebook::memcache::traceRequestHandlerCompleted(commId);
+  }
+
+  template <class Request>
+  void callOnRequest(
+      facebook::memcache::McServerRequestContext&& ctx,
+      Request&& req,
+      const folly::IOBuf* reqBuf,
+      size_t headerSize,
+      std::true_type) {
+    onRequest_.onRequest(std::move(ctx), std::move(req), reqBuf, headerSize);
+  }
+
+  template <class Request>
+  void callOnRequest(
+      facebook::memcache::McServerRequestContext&& ctx,
+      Request&& req,
+      const folly::IOBuf*,
+      size_t,
+      std::false_type) {
+    onRequest_.onRequest(std::move(ctx), std::move(req));
   }
 };
 

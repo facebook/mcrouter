@@ -35,18 +35,36 @@ void serializeCarbonStruct(
   msg.serialize(writer);
 }
 
+template <class Request>
+void serializeCarbonRequest(
+    const Request& req,
+    carbon::CarbonQueueAppenderStorage& storage) {
+  if (req.isBufferDirty()) {
+    serializeCarbonStruct(req, storage);
+  } else {
+    const auto& buf = *req.serializedBuffer();
+    storage.setFullBuffer(buf);
+  }
+}
+
 /**
  * A dispatcher for binary protol serialized Carbon structs.
  *
  * Given a type id and an IOBuf, unserializes the corresponding Carbon struct
- * and calls Proc::onTypedMessage(M&&, args...)
+ * and calls Proc::onTypedMessage(reqBuffer, reqBufferHeaderSize, M&&, args...)
  *
  * @param MessageList  List of supported Carbon messages: List<M, ...>
  *                     All Ms in the list must be Carbon struct types.
  * @param Proc         Derived processor class, may provide
- *                       void onTypedMessage(M&&, args...).
+ *                       void onTypedMessage(const folly::IOBuf& reqBuffer,
+ *                                           size_t reqBufferHeaderSize,
+ *                                           M&& msg,
+ *                                           args...).
  *                     If not provided, default implementation that forwards to
- *                       void onRequest(McServerRequestContext&&, M&& req)
+ *                       void onRequest(McServerRequestContext&& context,
+ *                                      M&& req,
+ *                                      const folly::IOBuf& reqBuffer,
+ *                                      reqBufferHeaderSize);
  *                     will be used.
  *                     Overloaded for every Carbon struct in MessageList.
  * @param Args         Additional arguments to pass through to onTypedMessage.
@@ -74,8 +92,13 @@ class CarbonMessageDispatcher {
 
   // Default onTypedMessage() implementation
   template <class M>
-  void onTypedMessage(M&& req, McServerRequestContext&& ctx) {
-    static_cast<Proc&>(*this).onRequest(std::move(ctx), std::move(req));
+  void onTypedMessage(
+      const folly::IOBuf& reqBuffer,
+      size_t reqBufferHeaderSize,
+      M&& req,
+      McServerRequestContext&& ctx) {
+    static_cast<Proc&>(*this).onRequest(
+        std::move(ctx), std::move(req), reqBuffer, reqBufferHeaderSize);
   }
 
   template <class M>
@@ -91,7 +114,10 @@ class CarbonMessageDispatcher {
     req.setTraceId(headerInfo.traceId);
     req.deserialize(reader);
     static_cast<Proc&>(me).onTypedMessage(
-        std::move(req), std::forward<Args>(args)...);
+        reqBuf,
+        headerInfo.headerSize,
+        std::move(req),
+        std::forward<Args>(args)...);
   }
 
  private:
@@ -103,5 +129,5 @@ class CarbonMessageDispatcher {
       Args...>
       dispatcher_;
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

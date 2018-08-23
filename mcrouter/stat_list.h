@@ -51,6 +51,10 @@ STAT(inactive_connection_closed_interval_sec, stat_double, 0, .dbl = 0.0)
 #define GROUP mcproxy_stats | rate_stats
 STUI(destination_batches_sum, 0, 1)
 STUI(destination_requests_sum, 0, 1)
+
+// count the dirty requests (i.e. requests that needed reserialization)
+STUI(destination_reqs_dirty_buffer_sum, 0, 1)
+STUI(destination_reqs_total_sum, 0, 1)
 #undef GROUP
 
 /**
@@ -91,6 +95,7 @@ STUI(destination_pending_reqs, 0, 1)
 /* Total reqs waiting for reply from memcache. */
 STUI(destination_inflight_reqs, 0, 1)
 STAT(destination_batch_size, stat_double, 0, .dbl = 0.0)
+STAT(destination_reqs_dirty_buffer_ratio, stat_double, 0, .dbl = 0.0)
 STUI(asynclog_requests, 0, 1)
 /* Proxy requests we started routing */
 STUI(proxy_reqs_processing, 0, 1)

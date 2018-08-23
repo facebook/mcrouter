@@ -60,12 +60,14 @@ class TestRequest : public carbon::RequestCommon {
   explicit TestRequest(folly::IOBuf&& carbonKey) : key_(std::move(carbonKey)) {}
 
   SimpleStruct& asBase() {
+    markBufferAsDirty();
     return _carbon_simplestruct_;
   }
   const SimpleStruct& asBase() const {
     return _carbon_simplestruct_;
   }
   BaseStruct& asBaseStruct() {
+    markBufferAsDirty();
     return asBase().asBaseStruct();
   }
   const BaseStruct& asBaseStruct() const {
@@ -75,228 +77,266 @@ class TestRequest : public carbon::RequestCommon {
     return _carbon_simplestruct_.int32Member();
   }
   int32_t& int32Member() {
+    markBufferAsDirty();
     return _carbon_simplestruct_.int32Member();
   }
   const std::string& stringMember() const {
     return _carbon_simplestruct_.stringMember();
   }
   std::string& stringMember() {
+    markBufferAsDirty();
     return _carbon_simplestruct_.stringMember();
   }
   const test2::util::SimpleEnum& enumMember() const {
     return _carbon_simplestruct_.enumMember();
   }
   test2::util::SimpleEnum& enumMember() {
+    markBufferAsDirty();
     return _carbon_simplestruct_.enumMember();
   }
   const std::vector<test2::util::SimpleStruct>& vectorMember() const {
     return _carbon_simplestruct_.vectorMember();
   }
   std::vector<test2::util::SimpleStruct>& vectorMember() {
+    markBufferAsDirty();
     return _carbon_simplestruct_.vectorMember();
   }
   int64_t baseInt64Member() const {
     return _carbon_simplestruct_.baseInt64Member();
   }
   int64_t& baseInt64Member() {
+    markBufferAsDirty();
     return _carbon_simplestruct_.baseInt64Member();
   }
   const carbon::Keys<folly::IOBuf>& key() const {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   const test2::util::SimpleEnum& testEnum() const {
     return testEnum_;
   }
   test2::util::SimpleEnum& testEnum() {
+    markBufferAsDirty();
     return testEnum_;
   }
   bool testBool() const {
     return testBool_;
   }
   bool& testBool() {
+    markBufferAsDirty();
     return testBool_;
   }
   char testChar() const {
     return testChar_;
   }
   char& testChar() {
+    markBufferAsDirty();
     return testChar_;
   }
   int8_t testInt8() const {
     return testInt8_;
   }
   int8_t& testInt8() {
+    markBufferAsDirty();
     return testInt8_;
   }
   int16_t testInt16() const {
     return testInt16_;
   }
   int16_t& testInt16() {
+    markBufferAsDirty();
     return testInt16_;
   }
   int32_t testInt32() const {
     return testInt32_;
   }
   int32_t& testInt32() {
+    markBufferAsDirty();
     return testInt32_;
   }
   int64_t testInt64() const {
     return testInt64_;
   }
   int64_t& testInt64() {
+    markBufferAsDirty();
     return testInt64_;
   }
   uint8_t testUInt8() const {
     return testUInt8_;
   }
   uint8_t& testUInt8() {
+    markBufferAsDirty();
     return testUInt8_;
   }
   uint16_t testUInt16() const {
     return testUInt16_;
   }
   uint16_t& testUInt16() {
+    markBufferAsDirty();
     return testUInt16_;
   }
   uint32_t testUInt32() const {
     return testUInt32_;
   }
   uint32_t& testUInt32() {
+    markBufferAsDirty();
     return testUInt32_;
   }
   uint64_t testUInt64() const {
     return testUInt64_;
   }
   uint64_t& testUInt64() {
+    markBufferAsDirty();
     return testUInt64_;
   }
   float testFloat() const {
     return testFloat_;
   }
   float& testFloat() {
+    markBufferAsDirty();
     return testFloat_;
   }
   double testDouble() const {
     return testDouble_;
   }
   double& testDouble() {
+    markBufferAsDirty();
     return testDouble_;
   }
   const std::string& testShortString() const {
     return testShortString_;
   }
   std::string& testShortString() {
+    markBufferAsDirty();
     return testShortString_;
   }
   const std::string& testLongString() const {
     return testLongString_;
   }
   std::string& testLongString() {
+    markBufferAsDirty();
     return testLongString_;
   }
   const folly::IOBuf& testIobuf() const {
     return testIobuf_;
   }
   folly::IOBuf& testIobuf() {
+    markBufferAsDirty();
     return testIobuf_;
   }
   const SimpleStruct& testStruct() const {
     return testStruct_;
   }
   SimpleStruct& testStruct() {
+    markBufferAsDirty();
     return testStruct_;
   }
   const std::vector<std::string>& testList() const {
     return testList_;
   }
   std::vector<std::string>& testList() {
+    markBufferAsDirty();
     return testList_;
   }
   const folly::Optional<std::string>& testOptionalString() const {
     return testOptionalString_;
   }
   folly::Optional<std::string>& testOptionalString() {
+    markBufferAsDirty();
     return testOptionalString_;
   }
   const folly::Optional<folly::IOBuf>& testOptionalIobuf() const {
     return testOptionalIobuf_;
   }
   folly::Optional<folly::IOBuf>& testOptionalIobuf() {
+    markBufferAsDirty();
     return testOptionalIobuf_;
   }
   const std::vector<test2::util::SimpleEnum>& testEnumVec() const {
     return testEnumVec_;
   }
   std::vector<test2::util::SimpleEnum>& testEnumVec() {
+    markBufferAsDirty();
     return testEnumVec_;
   }
   const test2::util::SimpleUnion& testUnion() const {
     return testUnion_;
   }
   test2::util::SimpleUnion& testUnion() {
+    markBufferAsDirty();
     return testUnion_;
   }
   const std::vector<std::vector<uint64_t>>& testNestedVec() const {
     return testNestedVec_;
   }
   std::vector<std::vector<uint64_t>>& testNestedVec() {
+    markBufferAsDirty();
     return testNestedVec_;
   }
   const std::unordered_map<std::string, std::string>& testUMap() const {
     return testUMap_;
   }
   std::unordered_map<std::string, std::string>& testUMap() {
+    markBufferAsDirty();
     return testUMap_;
   }
   const std::map<double, double>& testMap() const {
     return testMap_;
   }
   std::map<double, double>& testMap() {
+    markBufferAsDirty();
     return testMap_;
   }
   const std::map<std::string, std::vector<uint16_t>>& testComplexMap() const {
     return testComplexMap_;
   }
   std::map<std::string, std::vector<uint16_t>>& testComplexMap() {
+    markBufferAsDirty();
     return testComplexMap_;
   }
   const std::unordered_set<std::string>& testUSet() const {
     return testUSet_;
   }
   std::unordered_set<std::string>& testUSet() {
+    markBufferAsDirty();
     return testUSet_;
   }
   const std::set<uint64_t>& testSet() const {
     return testSet_;
   }
   std::set<uint64_t>& testSet() {
+    markBufferAsDirty();
     return testSet_;
   }
   const folly::Optional<bool>& testOptionalBool() const {
     return testOptionalBool_;
   }
   folly::Optional<bool>& testOptionalBool() {
+    markBufferAsDirty();
     return testOptionalBool_;
   }
   const std::vector<folly::Optional<std::string>>& testOptionalVec() const {
     return testOptionalVec_;
   }
   std::vector<folly::Optional<std::string>>& testOptionalVec() {
+    markBufferAsDirty();
     return testOptionalVec_;
   }
   const std::vector<folly::IOBuf>& testIOBufList() const {
     return testIOBufList_;
   }
   std::vector<folly::IOBuf>& testIOBufList() {
+    markBufferAsDirty();
     return testIOBufList_;
   }
   const UserType& testType() const {
     return testType_;
   }
   UserType& testType() {
+    markBufferAsDirty();
     return testType_;
   }
   uint64_t flags() const {
@@ -433,6 +473,7 @@ class TestRequestStringKey : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<std::string>& key() {
+    markBufferAsDirty();
     return key_;
   }
   uint64_t flags() const {

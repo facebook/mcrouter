@@ -60,12 +60,14 @@ class HelloRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   uint64_t shardId() const {
     return shardId_;
   }
   uint64_t& shardId() {
+    markBufferAsDirty();
     return shardId_;
   }
   uint64_t flags() const {
@@ -155,12 +157,14 @@ class GoodbyeRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   uint64_t shardId() const {
     return shardId_;
   }
   uint64_t& shardId() {
+    markBufferAsDirty();
     return shardId_;
   }
   uint64_t flags() const {

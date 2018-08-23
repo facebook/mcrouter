@@ -102,6 +102,17 @@ class CarbonQueueAppenderStorage {
 
   void coalesce();
 
+  bool setFullBuffer(const folly::IOBuf& buf) {
+    struct iovec* nextIov = iovs_ + nIovsUsed_;
+    const auto nFilled = buf.fillIov(nextIov, kMaxIovecs - nIovsUsed_);
+
+    if (nFilled > 0) {
+      nIovsUsed_ += nFilled;
+      return true;
+    }
+    return false;
+  }
+
   void reset() {
     storageIdx_ = kMaxHeaderLength;
     head_.clear();

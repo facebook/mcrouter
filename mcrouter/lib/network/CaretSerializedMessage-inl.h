@@ -65,7 +65,7 @@ bool CaretSerializedMessage::fill(
     size_t& niovOut) {
   // Serialize body into storage_. Note we must defer serialization of header.
   try {
-    serializeCarbonStruct(message, storage_);
+    serializeCarbonRequest(message, storage_);
   } catch (const std::exception& e) {
     LOG(ERROR) << "Failed to serialize: " << e.what();
     return false;

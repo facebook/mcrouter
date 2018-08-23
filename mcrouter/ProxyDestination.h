@@ -175,7 +175,8 @@ class ProxyDestination {
   void onReply(
       const mc_res_t result,
       DestinationRequestCtx& destreqCtx,
-      const ReplyStatsContext& replyStatsContext);
+      const ReplyStatsContext& replyStatsContext,
+      bool isRequestBufferDirty);
 
   AsyncMcClient& getAsyncMcClient();
   void initializeAsyncMcClient();

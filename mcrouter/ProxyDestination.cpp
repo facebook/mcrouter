@@ -213,7 +213,8 @@ void ProxyDestination::handleRxmittingConnection(
 void ProxyDestination::onReply(
     const mc_res_t result,
     DestinationRequestCtx& destreqCtx,
-    const ReplyStatsContext& replyStatsContext) {
+    const ReplyStatsContext& replyStatsContext,
+    bool isRequestBufferDirty) {
   handleTko(result, false);
 
   if (!stats_.results) {
@@ -237,6 +238,11 @@ void ProxyDestination::onReply(
     proxy.stats().increment(
         reply_traffic_after_compression_stat,
         replyStatsContext.replySizeAfterCompression);
+  }
+
+  proxy.stats().increment(destination_reqs_total_sum_stat);
+  if (isRequestBufferDirty) {
+    proxy.stats().increment(destination_reqs_dirty_buffer_sum_stat);
   }
 
   handleRxmittingConnection(result, latency);

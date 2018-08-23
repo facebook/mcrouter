@@ -93,7 +93,11 @@ class ClientServerMcParser {
                                const UmbrellaMessageInfo&> {
    public:
     template <class M>
-    void onTypedMessage(M&& req, const UmbrellaMessageInfo& headerInfo) {
+    void onTypedMessage(
+        const folly::IOBuf& /* reqBuffer */,
+        size_t /* reqBufferHeaderSize */,
+        M&& req,
+        const UmbrellaMessageInfo& headerInfo) {
       callback_.requestReady(headerInfo.reqId, std::move(req));
     }
 

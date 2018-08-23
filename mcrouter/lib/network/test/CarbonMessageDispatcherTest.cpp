@@ -32,11 +32,17 @@ struct TestCallback
   TestCallback(F&& onGet, B&& onSet)
       : onGet_(std::move(onGet)), onSet_(std::move(onSet)) {}
 
-  void onTypedMessage(McGetRequest&& req) {
+  void onTypedMessage(
+      const folly::IOBuf& /* reqBuffer */,
+      size_t /* reqBufferHeaderSize */,
+      McGetRequest&& req) {
     onGet_(std::move(req));
   }
 
-  void onTypedMessage(McSetRequest&& req) {
+  void onTypedMessage(
+      const folly::IOBuf& /* reqBuffer */,
+      size_t /* reqBufferHeaderSize */,
+      McSetRequest&& req) {
     onSet_(std::move(req));
   }
 };
