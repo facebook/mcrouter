@@ -80,7 +80,7 @@ class BlackholingPolicyVisitor {
   bool evaluatePolicy(const folly::dynamic& dObj, const T& t) {
     auto itOperator = dObj.find("op");
     auto itValue = dObj.find("value");
-    if (!itOperator || !itValue) {
+    if (itOperator == dObj.items().end() || itValue == dObj.items().end()) {
       LOG_EVERY_N(ERROR, 1000) << "Could not find 'op' or 'value' in "
                                << "blackholing routing policy. Will skip "
                                << "blackholing the field";
