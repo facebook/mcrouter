@@ -332,21 +332,40 @@ class CarbonLookasideRoute {
     });
   }
 
+  /**
+   * Generates a suffix for sub-second TTL requests.
+   * The idea is to return the bucket ID based on the TTL.
+   * For example: if the TTL is 50ms, we would generate TTLs based on the
+   * following pattern:
+   *  -----------------------------
+   *  | current_time_ms  | suffix |
+   *  -----------------------------
+   *  | 0-49             |      0 |
+   *  | 50-99            |      1 |
+   *  | 100-149          |      2 |
+   *  | 150-199          |      3 |
+   *  ...
+   *  | 950-999          |     19 |
+   *  -----------------------------
+   */
+  size_t getSubSecondTtlKeySuffix() {
+    assert(subSecTTL_);
+
+    // Get the milliseconds part of the current time.
+    size_t currentMs = (nowUs() / 1000) % 1000;
+
+    return currentMs / ttl_;
+  }
+
   template <typename Request>
   std::string buildKey(const Request& req) {
     if (subSecTTL_) {
-      // Round current time down to the next TTL increment. The key uses a
-      // single digit for space efficiency.
-      // Convert from milliseconds to deciseconds.
-      auto ttlSuffix = (nowUs() / 100000) % 10;
-      // Round down to nearest ttlSuffix.
-      ttlSuffix -= (ttlSuffix % (ttl_ / 100));
       return folly::to<std::string>(
           keyPrefix_,
           carbonLookasideHelper_.buildKey(req),
           keySuffix_,
           ":",
-          ttlSuffix);
+          getSubSecondTtlKeySuffix());
     }
     return folly::to<std::string>(
         keyPrefix_, carbonLookasideHelper_.buildKey(req), keySuffix_);
@@ -408,8 +427,9 @@ typename RouterInfo::RouteHandlePtr createCarbonLookasideRoute(
 
   if (subSecTTL) {
     checkLogic(
-        ttl == 100 || ttl == 200 || ttl == 500,
-        "CarbonLookasideRoute: 'ttl_ms' must be {100,200,500}");
+        ttl >= 10 && ttl < 1000 && (1000 % ttl == 0),
+        "CarbonLookasideRoute: for sub-second ttl, you must use a number "
+        "that is >= 10, < 1000, and 1000 must be a multiple of ttl.");
   }
 
   std::string prefix = ""; // Defaults to no prefix.
