@@ -101,6 +101,7 @@ bool runServer(
   }
 
   opts.numThreads = mcrouterOpts.num_proxies;
+  opts.numListeningSockets = mcrouterOpts.num_listening_sockets;
 
   opts.setPerThreadMaxConns(standaloneOpts.max_conns, opts.numThreads);
   opts.tcpListenBacklog = standaloneOpts.tcp_listen_backlog;

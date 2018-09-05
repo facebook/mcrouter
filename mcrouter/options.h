@@ -19,6 +19,8 @@
 
 #define DEFAULT_NUM_PROXIES 1
 
+constexpr size_t kListeningSocketsDefault{1};
+
 /**
  * NOTE: must be kept in sync with kLogLifetime in mcreplay2/EventReader.cpp
  */

@@ -24,11 +24,11 @@
 namespace folly {
 class EventBase;
 class ScopedEventBaseThread;
-} // folly
+} // namespace folly
 
 namespace wangle {
 class TLSCredProcessor;
-} // wangle
+} // namespace wangle
 
 namespace facebook {
 namespace memcache {
@@ -113,6 +113,12 @@ class AsyncMcServer {
      * Number of threads to spawn, must be positive.
      */
     size_t numThreads{1};
+
+    /**
+     * Number of threads that will listen for new connections. Must be > 0 &&
+     * <= numThreads.
+     */
+    size_t numListeningSockets{1};
 
     /**
      * Worker-specific options
@@ -234,5 +240,5 @@ class AsyncMcServer {
   friend class McServerThread;
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

@@ -84,6 +84,9 @@ class ShutdownPipe : public folly::EventHandler {
  */
 class McServerThreadSpawnController {
  public:
+  explicit McServerThreadSpawnController(size_t numListeningSockets)
+      : numListeningSockets_(numListeningSockets) {}
+
   /**
    * Blocks the current thread until it's ready to start running.
    */
@@ -131,7 +134,12 @@ class McServerThreadSpawnController {
     if (isAcceptorThread) {
       try {
         acceptorFn();
-        acceptorPromise_.set_value();
+        if (++listeningThreadCount == numListeningSockets_) {
+          acceptorPromise_.set_value();
+        } else {
+          // Last listening socket fulfills the promise, the others wait
+          waitForAcceptor();
+        }
       } catch (...) {
         auto exception = std::current_exception();
         acceptorPromise_.set_exception(exception);
@@ -143,6 +151,9 @@ class McServerThreadSpawnController {
   }
 
  private:
+  std::atomic<size_t> listeningThreadCount{0};
+  size_t numListeningSockets_{1};
+
   std::promise<void> runningPromise_;
   std::shared_future<void> runningFuture_{runningPromise_.get_future()};
 
@@ -166,7 +177,7 @@ class McServerThread {
 
   enum AcceptorT { Acceptor };
 
-  McServerThread(AcceptorT, AsyncMcServer& server, size_t id)
+  McServerThread(AcceptorT, AsyncMcServer& server, size_t id, bool reusePort)
       : server_(server),
         evb_(std::make_unique<folly::EventBase>(
             server.opts_.worker.enableEventBaseTimeMeasurement)),
@@ -175,6 +186,7 @@ class McServerThread {
         acceptCallback_(this, false),
         sslAcceptCallback_(this, true),
         accepting_(true),
+        reusePort_(reusePort),
         shutdownPipe_(std::make_unique<ShutdownPipe>(server, *evb_)) {
     startThread();
   }
@@ -308,6 +320,7 @@ class McServerThread {
   AcceptCallback acceptCallback_;
   AcceptCallback sslAcceptCallback_;
   bool accepting_{false};
+  bool reusePort_{false};
   std::thread thread_;
 
   folly::AsyncServerSocket::UniquePtr socket_;
@@ -330,6 +343,9 @@ class McServerThread {
       checkLogic(
           opts.ports.empty() && opts.sslPorts.empty(),
           "Can't use ports if using existing socket");
+      checkLogic(
+          !reusePort_,
+          "Can't use multiple listening sockets option if using existing socket");
       if (!opts.pemCertPath.empty() || !opts.pemKeyPath.empty() ||
           !opts.pemCaPath.empty()) {
         checkLogic(
@@ -349,6 +365,9 @@ class McServerThread {
           opts.ports.empty() && opts.sslPorts.empty() &&
               (opts.existingSocketFd == -1),
           "Can't listen on port and unix domain socket at the same time");
+      checkLogic(
+          !reusePort_,
+          "Can't use multiple listening sockets option with unix domain sockets.");
       std::remove(opts.unixDomainSockPath.c_str());
       socket_.reset(new folly::AsyncServerSocket());
       folly::SocketAddress serverAddress;
@@ -362,6 +381,7 @@ class McServerThread {
         socket_.reset(new folly::AsyncServerSocket());
         for (auto port : server_.opts_.ports) {
           if (server_.opts_.listenAddresses.empty()) {
+            socket_->setReusePortEnabled(reusePort_);
             socket_->bind(port);
           } else {
             std::vector<folly::IPAddress> ipAddresses;
@@ -375,6 +395,7 @@ class McServerThread {
               ipAddresses.push_back(std::move(ip));
             }
 
+            socket_->setReusePortEnabled(reusePort_);
             socket_->bind(ipAddresses, port);
           }
         }
@@ -388,6 +409,7 @@ class McServerThread {
             " with sslPorts");
 
         sslSocket_.reset(new folly::AsyncServerSocket());
+        sslSocket_->setReusePortEnabled(reusePort_);
         for (auto sslPort : server_.opts_.sslPorts) {
           sslSocket_->bind(sslPort);
         }
@@ -485,10 +507,27 @@ AsyncMcServer::AsyncMcServer(Options opts) : opts_(std::move(opts)) {
     throw std::invalid_argument(folly::sformat(
         "Unexpected option: opts_.numThreads={}", opts_.numThreads));
   }
-  threadsSpawnController_ = std::make_unique<McServerThreadSpawnController>();
-  threads_.emplace_back(std::make_unique<McServerThread>(
-      McServerThread::Acceptor, *this, /*id*/ 0));
-  for (size_t id = 1; id < opts_.numThreads; ++id) {
+
+  if (opts_.numListeningSockets == 0 ||
+      opts_.numListeningSockets > opts_.numThreads) {
+    throw std::invalid_argument(folly::sformat(
+        "Unexpected option: opts_.numListeningSockets={}",
+        opts_.numListeningSockets));
+  }
+
+  threadsSpawnController_ = std::make_unique<McServerThreadSpawnController>(
+      opts_.numListeningSockets);
+  size_t id;
+  // First construct the McServerThreads with listenng sockets.
+  for (id = 0; id < opts_.numListeningSockets; id++) {
+    threads_.emplace_back(std::make_unique<McServerThread>(
+        McServerThread::Acceptor,
+        *this,
+        /*id*/ id,
+        (opts_.numListeningSockets > 1)));
+  }
+  // Now the rest
+  for (; id < opts_.numThreads; ++id) {
     threads_.emplace_back(std::make_unique<McServerThread>(*this, id));
   }
 }
