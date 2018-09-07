@@ -893,6 +893,144 @@
       }
     }
   },
+  "bitwise": {
+    "macros": {
+      "set-msb": {
+        "type": "constDef",
+        "result": -9223372036854775808
+      },
+      "allones": {
+        "type": "constDef",
+        "result": -1
+      },
+      "allones-but-msb": {
+        "type": "constDef",
+        "result": 9223372036854775807
+      },
+      "allones-but-lsb": {
+        "type": "constDef",
+        "result": -2
+      }
+    },
+    "cases": {
+      "0&0": {
+        "orig": "@bitwiseAnd(@int(0), @int(0))",
+        "expand": 0
+      },
+      "0&1": {
+        "orig": "@bitwiseAnd(@int(0), @int(1))",
+        "expand": 0
+      },
+      "1&1": {
+        "orig": "@bitwiseAnd(@int(1), @int(1))",
+        "expand": 1
+      },
+      "1&15": {
+        "orig": "@bitwiseAnd(@int(1), @int(15))",
+        "expand": 1
+      },
+      "lsb&all": {
+        "orig": "@bitwiseAnd(@int(1), %allones%)",
+        "expand": 1
+      },
+      "msb&all": {
+        "orig": "@equals(@bitwiseAnd(%set-msb%, %allones%), @int(%set-msb%))",
+        "expand": true
+      },
+      "0|0": {
+        "orig": "@bitwiseOr(@int(0), @int(0))",
+        "expand": 0
+      },
+      "0|1": {
+        "orig": "@bitwiseOr(@int(0), @int(1))",
+        "expand": 1
+      },
+      "1|1": {
+        "orig": "@bitwiseOr(@int(1), @int(1))",
+        "expand": 1
+      },
+      "1|2": {
+        "orig": "@bitwiseOr(@int(1), @int(2))",
+        "expand": 3
+      },
+      "lsb|all": {
+        "orig": "@bitwiseOr(@int(1), %allones%)",
+        "expand": -1
+      },
+      "msb|all": {
+        "orig": "@bitwiseOr(%set-msb%, %allones%)",
+        "expand": -1
+      },
+      "0^0": {
+        "orig": "@bitwiseXor(@int(0), @int(0))",
+        "expand": 0
+      },
+      "0^1": {
+        "orig": "@bitwiseXor(@int(0), @int(1))",
+        "expand": 1
+      },
+      "1^1": {
+        "orig": "@bitwiseXor(@int(1), @int(1))",
+        "expand": 0
+      },
+      "1^2": {
+        "orig": "@bitwiseXor(@int(1), @int(2))",
+        "expand": 3
+      },
+      "lsb^all": {
+        "orig": "@equals(@bitwiseXor(@int(1), %allones%), @int(%allones-but-lsb%))",
+        "expand": true
+      },
+      "msb^all": {
+        "orig": "@equals(@bitwiseXor(%set-msb%, %allones%), @int(%allones-but-msb%))",
+        "expand": true
+      },
+      "~allones": {
+        "orig": "@bitwiseNot(%allones%)",
+        "expand": 0
+      },
+      "~allones-but-lsb": {
+        "orig": "@bitwiseNot(%allones-but-lsb%)",
+        "expand": 1
+      },
+      "~allones-but-msb": {
+        "orig": "@equals(@bitwiseNot(%allones-but-msb%), @int(%set-msb%))",
+        "expand": true
+      },
+      "1<<4": {
+        "orig": "@bitwiseLeftShift(@int(1), @int(4))",
+        "expand": 16
+      },
+      "16>>4": {
+        "orig": "@bitwiseRightShift(@int(16), @int(4))",
+        "expand": 1
+      },
+      "1<<63": {
+        "orig": "@equals(@bitwiseLeftShift(@int(1), @int(63)), %set-msb%)",
+        "expand": true
+      },
+      "msb>>63": {
+        "orig": "@bitwiseRightShift(%set-msb%, @int(63))",
+        "expand": 1
+      },
+      "msb<<1": {
+        "orig": "@bitwiseLeftShift(%set-msb%, @int(1))",
+        "expand": 0
+      },
+      "1>>1": {
+        "orig": "@bitwiseRightShift(@int(1), @int(1))",
+        "expand": 0
+      },
+      "allones-but-lsb>>1": {
+        "orig": "@equals(@bitwiseRightShift(%allones-but-lsb%, @int(1)), %allones-but-msb%)",
+        "expand": true
+      },
+      "allones-but-msb<<1": {
+        "orig": "@equals(@bitwiseLeftShift(%allones-but-msb%, @int(1)), %allones-but-lsb%)",
+        "expand": true
+      }
+    }
+  },
   "math": {
     "macros": {
       "factorial": {

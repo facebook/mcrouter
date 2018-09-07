@@ -1023,6 +1023,76 @@ class ConfigPreprocessor::BuiltIns {
   }
 
   /**
+   * Return the result of A & B.
+   * Usage: @bitwiseAnd(A, B)
+   */
+  static dynamic bitwiseAndMacro(Context&& ctx) {
+    const auto& A = ctx.at("A");
+    const auto& B = ctx.at("B");
+    checkLogic(A.isInt(), "bitwiseAnd: A is not an integer");
+    checkLogic(B.isInt(), "bitwiseAnd: B is not an integer");
+    return A.getInt() & B.getInt();
+  }
+
+  /**
+   * return the result of A | B
+   * Usage: @bitwiseOr(A, B)
+   */
+  static dynamic bitwiseOrMacro(Context&& ctx) {
+    const auto& A = ctx.at("A");
+    const auto& B = ctx.at("B");
+    checkLogic(A.isInt(), "bitwiseOr: A is not an integer");
+    checkLogic(B.isInt(), "bitwiseOr: B is not an integer");
+    return A.getInt() | B.getInt();
+  }
+
+  /**
+   * Return the result of A ^ B
+   * Usage: @bitwiseXor(A, B)
+   */
+  static dynamic bitwiseXorMacro(Context&& ctx) {
+    const auto& A = ctx.at("A");
+    const auto& B = ctx.at("B");
+    checkLogic(A.isInt(), "bitwiseXor: A is not an integer");
+    checkLogic(B.isInt(), "bitwiseXor: B is not an integer");
+    return A.getInt() ^ B.getInt();
+  }
+
+  /**
+   * Return the result of A << B
+   * Usage: @bitwiseLeftShift(A, B)
+   */
+  static dynamic bitwiseLeftShiftMacro(Context&& ctx) {
+    const auto& A = ctx.at("A");
+    const auto& B = ctx.at("B");
+    checkLogic(A.isInt(), "bitwiseLeftShift: A is not an integer");
+    checkLogic(B.isInt(), "bitwiseLeftShift: B is not an integer");
+    return static_cast<uint64_t>(A.getInt()) << B.getInt();
+  }
+
+  /**
+   * Return the result of A >> B
+   * Usage: @bitwiseRightShift(A, B)
+   */
+  static dynamic bitwiseRightShiftMacro(Context&& ctx) {
+    const auto& A = ctx.at("A");
+    const auto& B = ctx.at("B");
+    checkLogic(A.isInt(), "bitwiseRightShift: A is not an integer");
+    checkLogic(B.isInt(), "bitwiseRightShift: B is not an integer");
+    return static_cast<uint64_t>(A.getInt()) >> B.getInt();
+  }
+
+  /**
+   * Returns the complement of A.
+   * Usage: @bitwiseNot(A)
+   */
+  static dynamic bitwiseNotMacro(Context&& ctx) {
+    const auto& A = ctx.at("A");
+    checkLogic(A.isInt(), "bitwiseNot: A is not an integer");
+    return ~A.getInt();
+  }
+
+  /**
    * Returns true if A && B. B is evaluated only if A is true.
    * A and B should be booleans.
    * Usage: @and(A,B)
@@ -1653,6 +1723,18 @@ ConfigPreprocessor::ConfigPreprocessor(
   addMacro("isString", {"value"}, &BuiltIns::isStringMacro);
 
   addMacro("less", {"A", "B"}, &BuiltIns::lessMacro);
+
+  addMacro("bitwiseAnd", {"A", "B"}, &BuiltIns::bitwiseAndMacro);
+
+  addMacro("bitwiseOr", {"A", "B"}, &BuiltIns::bitwiseOrMacro);
+
+  addMacro("bitwiseXor", {"A", "B"}, &BuiltIns::bitwiseXorMacro);
+
+  addMacro("bitwiseNot", {"A"}, &BuiltIns::bitwiseNotMacro);
+
+  addMacro("bitwiseLeftShift", {"A", "B"}, &BuiltIns::bitwiseLeftShiftMacro);
+
+  addMacro("bitwiseRightShift", {"A", "B"}, &BuiltIns::bitwiseRightShiftMacro);
 
   addMacro("and", {"A", "B"}, &BuiltIns::andMacro, false);
 
