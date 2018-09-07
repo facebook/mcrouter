@@ -138,7 +138,7 @@ void MessagePrinter::replyReady(
     const folly::SocketAddress& to,
     mc_protocol_t protocol,
     int64_t latencyUs,
-    ReplyStatsContext replyStatsContext) {
+    RpcStatsContext rpcStatsContext) {
   if (auto out = filterAndBuildOutput(
           msgId,
           reply,
@@ -148,11 +148,11 @@ void MessagePrinter::replyReady(
           to,
           protocol,
           latencyUs,
-          replyStatsContext.serverLoad)) {
+          rpcStatsContext.serverLoad)) {
     stats_.numBytesBeforeCompression +=
-        replyStatsContext.replySizeBeforeCompression;
+        rpcStatsContext.replySizeBeforeCompression;
     stats_.numBytesAfterCompression +=
-        replyStatsContext.replySizeAfterCompression;
+        rpcStatsContext.replySizeAfterCompression;
     if (options_.raw) {
       printRawReply(msgId, std::forward<Reply>(reply), protocol);
     } else {

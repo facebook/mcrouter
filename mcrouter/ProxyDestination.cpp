@@ -25,7 +25,7 @@
 #include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/network/AccessPoint.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
-#include "mcrouter/lib/network/ReplyStatsContext.h"
+#include "mcrouter/lib/network/RpcStatsContext.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/routes/DestinationRoute.h"
 #include "mcrouter/stats.h"
@@ -213,7 +213,7 @@ void ProxyDestination::handleRxmittingConnection(
 void ProxyDestination::onReply(
     const mc_res_t result,
     DestinationRequestCtx& destreqCtx,
-    const ReplyStatsContext& replyStatsContext,
+    const RpcStatsContext& rpcStatsContext,
     bool isRequestBufferDirty) {
   handleTko(result, false);
 
@@ -227,17 +227,17 @@ void ProxyDestination::onReply(
   stats_.avgLatency.insertSample(latency);
 
   if (accessPoint_->compressed()) {
-    if (replyStatsContext.usedCodecId > 0) {
+    if (rpcStatsContext.usedCodecId > 0) {
       proxy.stats().increment(replies_compressed_stat);
     } else {
       proxy.stats().increment(replies_not_compressed_stat);
     }
     proxy.stats().increment(
         reply_traffic_before_compression_stat,
-        replyStatsContext.replySizeBeforeCompression);
+        rpcStatsContext.replySizeBeforeCompression);
     proxy.stats().increment(
         reply_traffic_after_compression_stat,
-        replyStatsContext.replySizeAfterCompression);
+        rpcStatsContext.replySizeAfterCompression);
   }
 
   proxy.stats().increment(destination_reqs_total_sum_stat);

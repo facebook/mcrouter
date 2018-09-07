@@ -23,7 +23,7 @@ class EventBase;
 namespace facebook {
 namespace memcache {
 
-struct ReplyStatsContext;
+struct RpcStatsContext;
 
 /**
  * A class for network communication with memcache protocol.
@@ -91,7 +91,7 @@ class AsyncMcClient {
    *
    * @param request       The request to send.
    * @param timeout       The timeout of this call.
-   * @param replyContext  Output argument that can be used to return information
+   * @param rpcContext    Output argument that can be used to return information
    *                      about the reply received. If nullptr, it will be
    *                      ignored (i.e. no information is going be sent back up)
    */
@@ -99,7 +99,7 @@ class AsyncMcClient {
   ReplyT<Request> sendSync(
       const Request& request,
       std::chrono::milliseconds timeout,
-      ReplyStatsContext* replyContext = nullptr);
+      RpcStatsContext* rpcContext = nullptr);
 
   /**
    * Send request synchronously (i.e. blocking call).
@@ -109,7 +109,7 @@ class AsyncMcClient {
    * @param request         The request to send.
    * @param timeout         The timeout of this call.
    * @param passThroughKey  Integer key to be sent as and additional field.
-   * @param replyContext    Output argument that can be used to return
+   * @param rpcContext      Output argument that can be used to return
    *                        information about the reply received. If nullptr, it
    *                        will be ignored (i.e. no information is going be
    *                        sent back up).
@@ -119,7 +119,7 @@ class AsyncMcClient {
       const Request& request,
       std::chrono::milliseconds timeout,
       size_t passThroughKey,
-      ReplyStatsContext* replyContext = nullptr);
+      RpcStatsContext* rpcContext = nullptr);
 
   /**
    * Set throttling options.

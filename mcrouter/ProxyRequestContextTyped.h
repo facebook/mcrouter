@@ -116,7 +116,7 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
       const int64_t startTimeUs,
       const int64_t endTimeUs,
       const int32_t poolStatIndex,
-      const ReplyStatsContext replyStatsContext) {
+      const RpcStatsContext rpcStatsContext) {
     if (recording()) {
       return;
     }
@@ -133,7 +133,7 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
         startTimeUs,
         endTimeUs,
         reply.result(),
-        replyStatsContext);
+        rpcStatsContext);
     assert(logger_.hasValue());
     logger_->template log<Request>(loggerContext);
     assert(additionalLogger_.hasValue());

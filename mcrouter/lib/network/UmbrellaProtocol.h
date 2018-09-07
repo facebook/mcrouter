@@ -146,6 +146,11 @@ class UmbrellaSerializedMessage {
     return prepareRequestImpl(request, op, reqid, iovOut, niovOut);
   }
 
+  /**
+   * Returns the size of the message without the header.
+   */
+  size_t getSizeNoHeader() const;
+
  private:
   static constexpr size_t kMaxIovs = 16;
   struct iovec iovs_[kMaxIovs];

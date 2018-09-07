@@ -30,7 +30,7 @@ namespace memcache {
 
 struct AccessPoint;
 class AsyncMcClient;
-struct ReplyStatsContext;
+struct RpcStatsContext;
 
 namespace mcrouter {
 
@@ -81,7 +81,7 @@ class ProxyDestination {
    * @param timeout             The timeout of this call.
    * @param passThroughKey      Integer key that will be sent as an additional
    *                            field. If 0, it will not be sent.
-   * @param replyStatsContext   Output argument with stats about the reply.
+   * @param rpcStatsContext     Output argument with stats about the RPC
    */
   template <class Request>
   ReplyT<Request> send(
@@ -89,7 +89,7 @@ class ProxyDestination {
       DestinationRequestCtx& requestContext,
       std::chrono::milliseconds timeout,
       size_t passThroughKey,
-      ReplyStatsContext& replyStatsContext);
+      RpcStatsContext& rpcStatsContext);
 
   // returns true if okay to send req using this client
   bool maySend(mc_res_t& tkoReason) const;
@@ -175,7 +175,7 @@ class ProxyDestination {
   void onReply(
       const mc_res_t result,
       DestinationRequestCtx& destreqCtx,
-      const ReplyStatsContext& replyStatsContext,
+      const RpcStatsContext& rpcStatsContext,
       bool isRequestBufferDirty);
 
   AsyncMcClient& getAsyncMcClient();

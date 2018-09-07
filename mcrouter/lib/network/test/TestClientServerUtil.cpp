@@ -25,7 +25,7 @@
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
-#include "mcrouter/lib/network/ReplyStatsContext.h"
+#include "mcrouter/lib/network/RpcStatsContext.h"
 #include "mcrouter/lib/network/SecurityMech.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
@@ -296,26 +296,24 @@ void TestClient::sendGet(
     std::string key,
     mc_res_t expectedResult,
     uint32_t timeoutMs,
-    std::function<void(const ReplyStatsContext&)> replyStatsCallback) {
+    std::function<void(const RpcStatsContext&)> rpcStatsCallback) {
   inflight_++;
-  fm_.addTask([
-    key = std::move(key),
-    expectedResult,
-    replyStatsCallback = std::move(replyStatsCallback),
-    this,
-    timeoutMs
-  ]() {
+  fm_.addTask([key = std::move(key),
+               expectedResult,
+               rpcStatsCallback = std::move(rpcStatsCallback),
+               this,
+               timeoutMs]() {
     McGetRequest req(key);
     if (req.key().fullKey() == "trace_id") {
       req.setTraceId({12345, 67890});
     }
 
     try {
-      ReplyStatsContext replyStatsContext;
+      RpcStatsContext rpcStatsContext;
       auto reply = client_->sendSync(
-          req, std::chrono::milliseconds(timeoutMs), &replyStatsContext);
-      if (replyStatsCallback) {
-        replyStatsCallback(replyStatsContext);
+          req, std::chrono::milliseconds(timeoutMs), &rpcStatsContext);
+      if (rpcStatsCallback) {
+        rpcStatsCallback(rpcStatsContext);
       }
 
       if (reply.result() == mc_res_found) {
@@ -363,22 +361,22 @@ void TestClient::sendSet(
     std::string value,
     mc_res_t expectedResult,
     uint32_t timeoutMs,
-    std::function<void(const ReplyStatsContext&)> replyStatsCallback) {
+    std::function<void(const RpcStatsContext&)> rpcStatsCallback) {
   inflight_++;
   fm_.addTask([key = std::move(key),
                value = std::move(value),
                expectedResult,
-               replyStatsCallback = std::move(replyStatsCallback),
+               rpcStatsCallback = std::move(rpcStatsCallback),
                this,
                timeoutMs]() {
     McSetRequest req(key);
     req.value() = folly::IOBuf::wrapBufferAsValue(folly::StringPiece(value));
 
-    ReplyStatsContext replyStatsContext;
+    RpcStatsContext rpcStatsContext;
     auto reply = client_->sendSync(
-        req, std::chrono::milliseconds(timeoutMs), &replyStatsContext);
-    if (replyStatsCallback) {
-      replyStatsCallback(replyStatsContext);
+        req, std::chrono::milliseconds(timeoutMs), &rpcStatsContext);
+    if (rpcStatsCallback) {
+      rpcStatsCallback(rpcStatsContext);
     }
 
     CHECK(expectedResult == reply.result())

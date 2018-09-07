@@ -10,6 +10,20 @@
 namespace facebook {
 namespace memcache {
 
+size_t McSerializedRequest::getBodySize() {
+  switch (protocol_) {
+    case mc_ascii_protocol:
+      return asciiRequest_.getSize();
+    case mc_caret_protocol:
+      return caretRequest_.getSizeNoHeader();
+    case mc_umbrella_protocol_DONOTUSE:
+      return umbrellaMessage_.getSizeNoHeader();
+    default:
+      // Unreachable, see constructor.
+      return 0;
+  }
+}
+
 McSerializedRequest::~McSerializedRequest() {
   switch (protocol_) {
     case mc_ascii_protocol:

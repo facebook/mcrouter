@@ -19,7 +19,7 @@
 #include "mcrouter/lib/network/ClientMcParser.h"
 #include "mcrouter/lib/network/FBTrace.h"
 #include "mcrouter/lib/network/McSerializedRequest.h"
-#include "mcrouter/lib/network/ReplyStatsContext.h"
+#include "mcrouter/lib/network/RpcStatsContext.h"
 
 namespace facebook {
 namespace memcache {
@@ -67,12 +67,13 @@ class McClientRequestContextBase
    */
   void scheduleTimeout();
 
-  void setReplyStatsContext(ReplyStatsContext value) {
-    replyStatsContext_ = value;
+  void setRpcStatsContext(RpcStatsContext value) {
+    rpcStatsContext_ = value;
+    rpcStatsContext_.requestBodySize = reqContext.getBodySize();
   }
 
-  ReplyStatsContext getReplyStatsContext() const {
-    return replyStatsContext_;
+  RpcStatsContext getRpcStatsContext() const {
+    return rpcStatsContext_;
   }
 
  protected:
@@ -132,7 +133,7 @@ class McClientRequestContextBase
 
   ReqState state_{ReqState::NONE};
 
-  ReplyStatsContext replyStatsContext_;
+  RpcStatsContext rpcStatsContext_;
 
   const std::function<void(int pendingDiff, int inflightDiff)>& onStateChange_;
 
@@ -282,7 +283,7 @@ class McClientRequestContextQueue {
    * Does nothing if the request was already removed from the queue.
    */
   template <class Reply>
-  void reply(uint64_t id, Reply&& reply, ReplyStatsContext replyStatsContext);
+  void reply(uint64_t id, Reply&& reply, RpcStatsContext rpcStatsContext);
 
   /**
    * Obtain a function that should be used to initialize parser for given

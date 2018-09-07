@@ -7,7 +7,7 @@
  */
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/network/FBTrace.h"
-#include "mcrouter/lib/network/ReplyStatsContext.h"
+#include "mcrouter/lib/network/RpcStatsContext.h"
 
 namespace facebook {
 namespace memcache {
@@ -17,7 +17,7 @@ ReplyT<Request> AsyncMcClientImpl::sendSync(
     const Request& request,
     std::chrono::milliseconds timeout,
     size_t passThroughKey,
-    ReplyStatsContext* replyContext) {
+    RpcStatsContext* rpcContext) {
   DestructorGuard dg(this);
 
   assert(folly::fibers::onFiber());
@@ -49,8 +49,8 @@ ReplyT<Request> AsyncMcClientImpl::sendSync(
   // Wait for the reply.
   auto reply = ctx.waitForReply(timeout);
 
-  if (replyContext) {
-    *replyContext = ctx.getReplyStatsContext();
+  if (rpcContext) {
+    *rpcContext = ctx.getRpcStatsContext();
   }
 
   // Schedule next writer loop, in case we didn't before
@@ -64,11 +64,11 @@ template <class Reply>
 void AsyncMcClientImpl::replyReady(
     Reply&& r,
     uint64_t reqId,
-    ReplyStatsContext replyStatsContext) {
+    RpcStatsContext rpcStatsContext) {
   assert(connectionState_ == ConnectionState::UP);
   DestructorGuard dg(this);
 
-  queue_.reply(reqId, std::move(r), replyStatsContext);
+  queue_.reply(reqId, std::move(r), rpcStatsContext);
 }
 
 template <class Request>

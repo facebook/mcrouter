@@ -66,12 +66,10 @@ class ClientServerMcParser {
     explicit ReplyCallback(Callback& callback) : callback_(callback) {}
 
     template <class Reply>
-    void replyReady(
-        Reply&& reply,
-        uint64_t msgId,
-        ReplyStatsContext replyStatsContext) {
+    void
+    replyReady(Reply&& reply, uint64_t msgId, RpcStatsContext rpcStatsContext) {
       callback_.template replyReady<Reply>(
-          msgId, std::move(reply), replyStatsContext);
+          msgId, std::move(reply), rpcStatsContext);
     }
 
     bool nextReplyAvailable(uint64_t) {

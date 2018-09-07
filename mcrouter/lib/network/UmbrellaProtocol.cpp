@@ -363,6 +363,10 @@ UmbrellaSerializedMessage::UmbrellaSerializedMessage() noexcept {
   iovs_[1].iov_base = entries_;
 }
 
+size_t UmbrellaSerializedMessage::getSizeNoHeader() const {
+  return offset_;
+}
+
 void UmbrellaSerializedMessage::clear() {
   nEntries_ = nStrings_ = offset_ = 0;
   error_ = false;

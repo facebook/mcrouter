@@ -13,11 +13,17 @@
 namespace facebook {
 namespace memcache {
 
+size_t AsciiSerializedRequest::getSize() const {
+  return iovsTotalLen_;
+}
+
 void AsciiSerializedRequest::addString(folly::ByteRange range) {
   assert(iovsCount_ < kMaxIovs);
+  auto bufLen = range.size();
   iovs_[iovsCount_].iov_base = const_cast<unsigned char*>(range.begin());
-  iovs_[iovsCount_].iov_len = range.size();
+  iovs_[iovsCount_].iov_len = bufLen;
   ++iovsCount_;
+  iovsTotalLen_ += bufLen;
 }
 
 void AsciiSerializedRequest::addString(folly::StringPiece str) {

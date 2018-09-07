@@ -92,7 +92,7 @@ void ClientMcParser<Callback>::forwardAsciiReply() {
   callback_.replyReady(
       std::move(reply),
       0, /* reqId */
-      ReplyStatsContext(
+      RpcStatsContext(
           0 /* usedCodecId  */,
           replySize /* reply size before compression */,
           replySize /* reply size after compression */,
@@ -116,7 +116,7 @@ void ClientMcParser<Callback>::forwardUmbrellaReply(
   callback_.replyReady(
       std::move(reply),
       reqId,
-      ReplyStatsContext(
+      RpcStatsContext(
           0 /* usedCodecId */, info.bodySize, info.bodySize, info.serverLoad));
 }
 
@@ -289,9 +289,9 @@ bool ClientMcParser<Callback>::shouldReadToAsciiBuffer() const {
 }
 
 template <class Callback>
-ReplyStatsContext ClientMcParser<Callback>::getReplyStats(
+RpcStatsContext ClientMcParser<Callback>::getReplyStats(
     const UmbrellaMessageInfo& headerInfo) const {
-  ReplyStatsContext replyStatsContext;
+  RpcStatsContext rpcStatsContext;
   if (headerInfo.usedCodecId > 0) {
     // We need to remove compression additional fields to calculate the
     // real size of reply if it was not compressed at all.
@@ -299,19 +299,19 @@ ReplyStatsContext ClientMcParser<Callback>::getReplyStats(
         2 + // varints of two compression additional field types
         (headerInfo.usedCodecId / 128 + 1) + // varint
         (headerInfo.uncompressedBodySize / 128 + 1); // varint
-    replyStatsContext.replySizeBeforeCompression = headerInfo.headerSize +
+    rpcStatsContext.replySizeBeforeCompression = headerInfo.headerSize +
         headerInfo.uncompressedBodySize - compressionOverhead;
-    replyStatsContext.replySizeAfterCompression =
+    rpcStatsContext.replySizeAfterCompression =
         headerInfo.headerSize + headerInfo.bodySize;
   } else {
-    replyStatsContext.replySizeBeforeCompression =
+    rpcStatsContext.replySizeBeforeCompression =
         headerInfo.headerSize + headerInfo.bodySize;
-    replyStatsContext.replySizeAfterCompression =
-        replyStatsContext.replySizeBeforeCompression;
+    rpcStatsContext.replySizeAfterCompression =
+        rpcStatsContext.replySizeBeforeCompression;
   }
-  replyStatsContext.usedCodecId = headerInfo.usedCodecId;
-  replyStatsContext.serverLoad = headerInfo.serverLoad;
-  return replyStatsContext;
+  rpcStatsContext.usedCodecId = headerInfo.usedCodecId;
+  rpcStatsContext.serverLoad = headerInfo.serverLoad;
+  return rpcStatsContext;
 }
 
 template <class Callback>

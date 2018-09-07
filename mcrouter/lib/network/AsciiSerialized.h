@@ -43,6 +43,11 @@ class AsciiSerializedRequest {
   bool
   prepare(const Request& request, const struct iovec*& iovOut, size_t& niovOut);
 
+  /**
+   * Returns the size of the request.
+   */
+  size_t getSize() const;
+
  private:
   // We need at most 5 iovecs (lease-set):
   //   command + key + printBuffer + value + "\r\n"
@@ -53,6 +58,7 @@ class AsciiSerializedRequest {
 
   struct iovec iovs_[kMaxIovs];
   size_t iovsCount_{0};
+  size_t iovsTotalLen_{0};
   char printBuffer_[kMaxBufferLength];
 
   void addString(folly::ByteRange range);

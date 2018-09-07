@@ -23,7 +23,7 @@
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/network/AccessPoint.h"
-#include "mcrouter/lib/network/ReplyStatsContext.h"
+#include "mcrouter/lib/network/RpcStatsContext.h"
 
 namespace facebook {
 namespace memcache {
@@ -58,7 +58,7 @@ class ErrorRoute {
     if (auto& ctx = fiber_local<RouterInfo>::getSharedCtx()) {
       auto now = nowUs();
       AccessPoint ap;
-      ReplyStatsContext replyContext;
+      RpcStatsContext rpcContext;
       ctx->onReplyReceived(
           routeName() /* poolName */,
           ap,
@@ -69,7 +69,7 @@ class ErrorRoute {
           now,
           now,
           -1,
-          replyContext);
+          rpcContext);
     }
     return reply;
   }

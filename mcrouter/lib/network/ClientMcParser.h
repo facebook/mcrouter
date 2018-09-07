@@ -17,7 +17,7 @@
 #include "mcrouter/lib/debug/ConnectionFifo.h"
 #include "mcrouter/lib/network/McAsciiParser.h"
 #include "mcrouter/lib/network/McParser.h"
-#include "mcrouter/lib/network/ReplyStatsContext.h"
+#include "mcrouter/lib/network/RpcStatsContext.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook {
@@ -117,7 +117,7 @@ class ClientMcParser : private McParser::ParserCallback {
 
   bool shouldReadToAsciiBuffer() const;
 
-  ReplyStatsContext getReplyStats(const UmbrellaMessageInfo& headerInfo) const;
+  RpcStatsContext getReplyStats(const UmbrellaMessageInfo& headerInfo) const;
 };
 }
 } // facebook::memcache

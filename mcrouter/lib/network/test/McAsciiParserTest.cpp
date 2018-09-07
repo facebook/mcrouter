@@ -92,7 +92,7 @@ class McAsciiParserHarness {
   void replyReady(
       Reply&& reply,
       uint64_t /* reqId */,
-      ReplyStatsContext /* replyStatsContext */) {
+      RpcStatsContext /* rpcStatsContext */) {
     EXPECT_TRUE(currentId_ < replies_.size());
     EXPECT_FALSE(replies_[currentId_]->shouldFail);
 

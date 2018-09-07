@@ -58,12 +58,16 @@ class McSerializedRequest {
   size_t getIovsCount() const {
     return iovsCount_;
   }
+
   const struct iovec* getIovs() const {
     return iovsBegin_;
   }
+
   uint32_t typeId() const {
     return typeId_;
   }
+
+  size_t getBodySize();
 
  private:
   static const size_t kMaxIovs = 20;

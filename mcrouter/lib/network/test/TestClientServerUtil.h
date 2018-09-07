@@ -43,7 +43,7 @@ namespace facebook {
 namespace memcache {
 
 class CompressionCodecMap;
-struct ReplyStatsContext;
+struct RpcStatsContext;
 
 namespace test {
 
@@ -210,16 +210,14 @@ class TestClient {
       std::string key,
       mc_res_t expectedResult,
       uint32_t timeoutMs = 200,
-      std::function<void(const ReplyStatsContext&)> replyStatsCallback =
-          nullptr);
+      std::function<void(const RpcStatsContext&)> rpcStatsCallback = nullptr);
 
   void sendSet(
       std::string key,
       std::string value,
       mc_res_t expectedResult,
       uint32_t timeoutMs = 200,
-      std::function<void(const ReplyStatsContext&)> replyStatsCallback =
-          nullptr);
+      std::function<void(const RpcStatsContext&)> rpcStatsCallback = nullptr);
 
   void sendVersion(std::string expectedVersion);
 

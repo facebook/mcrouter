@@ -87,6 +87,13 @@ class CaretSerializedMessage {
       const struct iovec*& iovOut,
       size_t& niovOut) noexcept;
 
+  /**
+   * Returns the size of the message without the header.
+   */
+  size_t getSizeNoHeader() {
+    return storage_.computeBodySize();
+  }
+
  private:
   carbon::CarbonQueueAppenderStorage storage_;
 

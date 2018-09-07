@@ -95,10 +95,8 @@ class SnifferParserBase {
   template <class Request>
   void requestReady(uint64_t msgId, Request&& request);
   template <class Reply>
-  void replyReady(
-      uint64_t msgId,
-      Reply&& reply,
-      ReplyStatsContext replyStatsContext);
+  void
+  replyReady(uint64_t msgId, Reply&& reply, RpcStatsContext rpcStatsContext);
 
   void evictOldItems(TimePoint now);
 

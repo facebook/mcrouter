@@ -39,9 +39,8 @@ template <class Request>
 ReplyT<Request> AsyncMcClient::sendSync(
     const Request& request,
     std::chrono::milliseconds timeout,
-    ReplyStatsContext* replyContext) {
-  return base_->sendSync(
-      request, timeout, /* passThroughKey  */ 0, replyContext);
+    RpcStatsContext* rpcContext) {
+  return base_->sendSync(request, timeout, /* passThroughKey  */ 0, rpcContext);
 }
 
 template <class Request>
@@ -49,8 +48,8 @@ ReplyT<Request> AsyncMcClient::sendSync(
     const Request& request,
     std::chrono::milliseconds timeout,
     size_t passThroughKey,
-    ReplyStatsContext* replyContext) {
-  return base_->sendSync(request, timeout, passThroughKey, replyContext);
+    RpcStatsContext* rpcContext) {
+  return base_->sendSync(request, timeout, passThroughKey, rpcContext);
 }
 
 inline void AsyncMcClient::setThrottle(size_t maxInflight, size_t maxPending) {

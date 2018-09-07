@@ -141,7 +141,7 @@ class MessagePrinter {
       const folly::SocketAddress& to,
       mc_protocol_t protocol,
       int64_t latencyUs,
-      ReplyStatsContext replyStatsContext);
+      RpcStatsContext rpcStatsContext);
 
   template <class Request>
   void printRawRequest(

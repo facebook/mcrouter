@@ -24,7 +24,7 @@
 #include "mcrouter/lib/network/ClientMcParser.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
 #include "mcrouter/lib/network/McClientRequestContext.h"
-#include "mcrouter/lib/network/ReplyStatsContext.h"
+#include "mcrouter/lib/network/RpcStatsContext.h"
 
 namespace facebook {
 namespace memcache {
@@ -74,7 +74,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
       const Request& request,
       std::chrono::milliseconds timeout,
       size_t passThroughKey,
-      ReplyStatsContext* replyContext);
+      RpcStatsContext* rpcContext);
 
   void setThrottle(size_t maxInflight, size_t maxPending);
 
@@ -222,7 +222,8 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
 
   // Callbacks for McParser.
   template <class Reply>
-  void replyReady(Reply&& reply, uint64_t reqId, ReplyStatsContext replyStats);
+  void
+  replyReady(Reply&& reply, uint64_t reqId, RpcStatsContext rpcStatsContext);
   void handleConnectionControlMessage(const UmbrellaMessageInfo& headerInfo);
   void parseError(mc_res_t result, folly::StringPiece reason);
   bool nextReplyAvailable(uint64_t reqId);
