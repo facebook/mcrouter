@@ -28,6 +28,7 @@
 #include <mcrouter/routes/AllInitialRouteFactory.h>
 #include <mcrouter/routes/AllMajorityRouteFactory.h>
 #include <mcrouter/routes/AllSyncRouteFactory.h>
+#include <mcrouter/routes/BlackholeRoute.h>
 #include <mcrouter/routes/DevNullRoute.h>
 #include <mcrouter/routes/ErrorRoute.h>
 #include <mcrouter/routes/FailoverRoute.h>
@@ -62,6 +63,7 @@ HelloGoodbyeRouterInfo::buildRouteMap() {
       {"AllInitialRoute", &makeAllInitialRoute<HelloGoodbyeRouterInfo>},
       {"AllMajorityRoute", &makeAllMajorityRoute<HelloGoodbyeRouterInfo>},
       {"AllSyncRoute", &makeAllSyncRoute<HelloGoodbyeRouterInfo>},
+      {"BlackholeRoute", &makeBlackholeRoute<HelloGoodbyeRouterInfo>},
       {"DevNullRoute", &makeDevNullRoute<HelloGoodbyeRouterInfo>},
       {"ErrorRoute", &makeErrorRoute<HelloGoodbyeRouterInfo>},
       {"HashRoute",

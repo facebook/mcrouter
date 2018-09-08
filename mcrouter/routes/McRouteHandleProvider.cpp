@@ -14,6 +14,7 @@
 #include "mcrouter/routes/AllInitialRouteFactory.h"
 #include "mcrouter/routes/AllMajorityRouteFactory.h"
 #include "mcrouter/routes/AllSyncRouteFactory.h"
+#include "mcrouter/routes/BlackholeRoute.h"
 #include "mcrouter/routes/CarbonLookasideRoute.h"
 #include "mcrouter/routes/DevNullRoute.h"
 #include "mcrouter/routes/ErrorRoute.h"
@@ -98,6 +99,7 @@ McRouteHandleProvider<MemcacheRouterInfo>::buildRouteMap() {
       {"AllInitialRoute", &makeAllInitialRoute<MemcacheRouterInfo>},
       {"AllMajorityRoute", &makeAllMajorityRoute<MemcacheRouterInfo>},
       {"AllSyncRoute", &makeAllSyncRoute<MemcacheRouterInfo>},
+      {"BlackholeRoute", &makeBlackholeRoute<MemcacheRouterInfo>},
       {"CarbonLookasideRoute",
        &createCarbonLookasideRoute<
            MemcacheRouterInfo,
@@ -139,6 +141,6 @@ McRouteHandleProvider<MemcacheRouterInfo>::buildRouteMap() {
   return map;
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

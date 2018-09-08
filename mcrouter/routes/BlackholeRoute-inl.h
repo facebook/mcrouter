@@ -15,7 +15,7 @@ namespace mcrouter {
 
 namespace detail {
 
-void validatePolicies(const folly::dynamic& jsonMap) {
+inline void validatePolicies(const folly::dynamic& jsonMap) {
   static std::unordered_set<std::string> kSupportedOps = {"equals",
                                                           "not_equals"};
 
