@@ -19,6 +19,12 @@ namespace folly {
 class SSLContext;
 } // folly
 
+namespace fizz {
+namespace server {
+class FizzServerContext;
+}
+} // namespace fizz
+
 namespace facebook {
 namespace memcache {
 
@@ -60,13 +66,17 @@ std::shared_ptr<folly::SSLContext> getClientContext(
     folly::StringPiece pemKeyPath,
     folly::StringPiece pemCaPath);
 
+using ServerContextPair = std::pair<
+    std::shared_ptr<folly::SSLContext>,
+    std::shared_ptr<fizz::server::FizzServerContext>>;
+
 /**
  * Get a context used for accepting ssl connections.  All paths must not be
  * empty.
  * If requireClientCerts is true, clients that do not present a client cert
  * during the handshake will be rejected.
  */
-std::shared_ptr<folly::SSLContext> getServerContext(
+ServerContextPair getServerContexts(
     folly::StringPiece pemCertPath,
     folly::StringPiece pemKeyPath,
     folly::StringPiece pemCaPath,

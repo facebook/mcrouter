@@ -12,6 +12,7 @@
 #include <folly/small_vector.h>
 
 #include "mcrouter/lib/debug/FifoManager.h"
+#include "mcrouter/lib/network/McFizzServer.h"
 #include "mcrouter/lib/network/McSSLUtil.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/MultiOpParent.h"
@@ -98,9 +99,9 @@ McServerSession::McServerSession(
     LOG(WARNING) << "Failed to get socket address: " << e.what();
   }
 
-  auto socket = transport_->getUnderlyingTransport<folly::AsyncSSLSocket>();
+  auto socket = transport_->getUnderlyingTransport<McFizzServer>();
   if (socket != nullptr) {
-    socket->sslAccept(this, /* timeout = */ std::chrono::milliseconds::zero());
+    socket->accept(this);
   }
 }
 
@@ -485,6 +486,9 @@ bool McServerSession::handshakeVer(
 }
 
 void McServerSession::handshakeSuc(folly::AsyncSSLSocket* sock) noexcept {
+  SCOPE_EXIT {
+    sock->setReadCB(this);
+  };
   auto cert = sock->getPeerCert();
   if (cert == nullptr) {
     return;
@@ -503,6 +507,58 @@ void McServerSession::handshakeSuc(folly::AsyncSSLSocket* sock) noexcept {
 
 void McServerSession::handshakeErr(
     folly::AsyncSSLSocket*,
-    const folly::AsyncSocketException&) noexcept {}
+    const folly::AsyncSocketException& e) noexcept {
+  LOG(ERROR) << "SSL Handshake failure: " << e.what();
+  close();
+}
+
+void McServerSession::fizzHandshakeSuccess(
+    fizz::server::AsyncFizzServer* transport) noexcept {
+  auto cert = transport->getPeerCert();
+  if (cert == nullptr) {
+    return;
+  }
+  auto sub = X509_get_subject_name(cert.get());
+  if (sub != nullptr) {
+    std::array<char, ub_common_name + 1> cn{};
+    const auto res = X509_NAME_get_text_by_NID(
+        sub, NID_commonName, cn.data(), ub_common_name);
+    if (res > 0) {
+      clientCommonName_.assign(std::string(cn.data(), res));
+    }
+  }
+  McSSLUtil::finalizeServerSSL(transport);
+}
+
+void McServerSession::fizzHandshakeError(
+    fizz::server::AsyncFizzServer*,
+    folly::exception_wrapper e) noexcept {
+  LOG(ERROR) << "Fizz Handshake failure: " << e.what();
+  close();
+}
+
+void McServerSession::fizzHandshakeAttemptFallback(
+    std::unique_ptr<folly::IOBuf> clientHello) {
+  auto transport = transport_->getUnderlyingTransport<McFizzServer>();
+  DCHECK(transport);
+  transport->setReadCB(nullptr);
+  auto evb = transport->getEventBase();
+  auto socket = transport->getUnderlyingTransport<folly::AsyncSocket>();
+  DCHECK(socket);
+  auto fd = socket->detachFd();
+  const auto& ctx = transport->getFallbackContext();
+
+  folly::AsyncSSLSocket::UniquePtr sslSocket(
+      new folly::AsyncSSLSocket(ctx, evb, fd, true /* server */));
+  sslSocket->setPreReceivedData(std::move(clientHello));
+  sslSocket->enableClientHelloParsing();
+  sslSocket->forceCacheAddrOnFailure(true);
+  sslSocket->sslAccept(this);
+
+  debugFifo_ =
+      getDebugFifo(options_.debugFifoPath, sslSocket.get(), onRequest_->name());
+
+  transport_.reset(sslSocket.release());
+}
 } // memcache
 } // facebook

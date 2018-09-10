@@ -15,6 +15,7 @@
 #include <folly/io/async/EventBase.h>
 #include <folly/io/async/SSLContext.h>
 
+#include "mcrouter/lib/network/McFizzServer.h"
 #include "mcrouter/lib/network/McServerSession.h"
 
 namespace facebook {
@@ -27,11 +28,13 @@ AsyncMcServerWorker::AsyncMcServerWorker(
 
 bool AsyncMcServerWorker::addSecureClientSocket(
     int fd,
-    const std::shared_ptr<folly::SSLContext>& context,
+    AsyncMcServerWorker::ContextPair contexts,
     void* userCtxt) {
-  folly::AsyncSSLSocket::UniquePtr sslSocket(
-      new folly::AsyncSSLSocket(context, &eventBase_, fd, /* server = */ true));
-  return addClientSocket(std::move(sslSocket), userCtxt);
+  McFizzServer::UniquePtr socket(new McFizzServer(
+      folly::AsyncSocket::UniquePtr(new folly::AsyncSocket(&eventBase_, fd)),
+      std::move(contexts.second),
+      std::move(contexts.first)));
+  return addClientSocket(std::move(socket), userCtxt);
 }
 
 bool AsyncMcServerWorker::addClientSocket(int fd, void* userCtxt) {
@@ -41,11 +44,13 @@ bool AsyncMcServerWorker::addClientSocket(int fd, void* userCtxt) {
 }
 
 bool AsyncMcServerWorker::addClientSocket(
-    folly::AsyncSocket::UniquePtr socket,
+    folly::AsyncTransportWrapper::UniquePtr transport,
     void* userCtxt) {
+  auto socket = transport->getUnderlyingTransport<folly::AsyncSocket>();
+  CHECK(socket) << "Underlying transport expected to be AsyncSocket";
   socket->setMaxReadsPerEvent(opts_.maxReadsPerEvent);
   socket->setNoDelay(true);
-  return addClientTransport(std::move(socket), userCtxt);
+  return addClientTransport(std::move(transport), userCtxt);
 }
 
 McServerSession* AsyncMcServerWorker::addClientTransport(

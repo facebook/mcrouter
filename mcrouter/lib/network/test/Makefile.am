@@ -28,4 +28,6 @@ mcrouter_network_test_LDADD = \
   $(top_builddir)/lib/libtestmain.la \
   $(top_builddir)/lib/network/libtest_util.a \
   -lwangle \
+  -lfizz \
+  -lsodium \
   -lfolly

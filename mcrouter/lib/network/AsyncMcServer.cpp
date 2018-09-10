@@ -288,15 +288,16 @@ class McServerThread {
       if (secure_) {
         const auto& server = mcServerThread_->server_;
         auto& opts = server.opts_;
-        auto sslCtx = getServerContext(
+        auto contextPair = getServerContexts(
             opts.pemCertPath,
             opts.pemKeyPath,
             opts.pemCaPath,
             opts.sslRequirePeerCerts,
             server.getTicketKeySeeds());
 
-        if (sslCtx) {
-          mcServerThread_->worker_.addSecureClientSocket(fd, std::move(sslCtx));
+        if (contextPair.first) {
+          mcServerThread_->worker_.addSecureClientSocket(
+              fd, std::move(contextPair));
         } else {
           ::close(fd);
         }

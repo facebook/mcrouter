@@ -894,18 +894,20 @@ TEST(AsyncMcClient, contextProviders) {
       clientCtxPaths.sslKeyPath,
       clientCtxPaths.sslCaPath);
 
-  auto serverCtx1 = getServerContext(
-      serverCtxPaths.sslCertPath,
-      serverCtxPaths.sslKeyPath,
-      serverCtxPaths.sslCaPath,
-      true,
-      folly::none);
-  auto serverCtx2 = getServerContext(
-      serverCtxPaths.sslCertPath,
-      serverCtxPaths.sslKeyPath,
-      serverCtxPaths.sslCaPath,
-      true,
-      folly::none);
+  auto serverCtx1 = getServerContexts(
+                        serverCtxPaths.sslCertPath,
+                        serverCtxPaths.sslKeyPath,
+                        serverCtxPaths.sslCaPath,
+                        true,
+                        folly::none)
+                        .first;
+  auto serverCtx2 = getServerContexts(
+                        serverCtxPaths.sslCertPath,
+                        serverCtxPaths.sslKeyPath,
+                        serverCtxPaths.sslCaPath,
+                        true,
+                        folly::none)
+                        .first;
 
   // client contexts should be the same since they are
   // thread local cached

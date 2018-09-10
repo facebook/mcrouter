@@ -7,6 +7,7 @@
  */
 #pragma once
 
+#include <fizz/server/AsyncFizzServer.h>
 #include <folly/IntrusiveList.h>
 #include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/io/async/AsyncSocket.h>
@@ -34,10 +35,12 @@ class WriteBufferQueue;
 /**
  * A session owns a single transport, and processes the request/reply stream.
  */
-class McServerSession : public folly::DelayedDestruction,
-                        private folly::AsyncSSLSocket::HandshakeCB,
-                        private folly::AsyncTransportWrapper::ReadCallback,
-                        private folly::AsyncTransportWrapper::WriteCallback {
+class McServerSession
+    : public folly::DelayedDestruction,
+      private fizz::server::AsyncFizzServer::HandshakeCallback,
+      private folly::AsyncSSLSocket::HandshakeCB,
+      private folly::AsyncTransportWrapper::ReadCallback,
+      private folly::AsyncTransportWrapper::WriteCallback {
  private:
   folly::SafeIntrusiveListHook hook_;
 
@@ -364,6 +367,16 @@ class McServerSession : public folly::DelayedDestruction,
   void handshakeErr(
       folly::AsyncSSLSocket* sock,
       const folly::AsyncSocketException& ex) noexcept final;
+
+  void fizzHandshakeSuccess(
+      fizz::server::AsyncFizzServer* transport) noexcept final;
+
+  void fizzHandshakeError(
+      fizz::server::AsyncFizzServer* transport,
+      folly::exception_wrapper ex) noexcept final;
+
+  void fizzHandshakeAttemptFallback(
+      std::unique_ptr<folly::IOBuf> clientHello) final;
 
   void onTransactionStarted(bool isSubRequest);
   void onTransactionCompleted(bool isSubRequest);

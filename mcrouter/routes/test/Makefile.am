@@ -21,5 +21,7 @@ mcrouter_routes_test_LDADD = \
   $(top_builddir)/lib/libmcrouter.a \
   $(top_builddir)/lib/libtestmain.la \
   -lwangle \
+  -lfizz \
+  -lsodium \
   -lfolly \
   -lfollybenchmark

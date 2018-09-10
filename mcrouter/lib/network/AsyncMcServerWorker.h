@@ -25,6 +25,12 @@ class EventBase;
 class SSLContext;
 } // folly
 
+namespace fizz {
+namespace server {
+class FizzServerContext;
+} // namespace server
+} // namespace fizz
+
 namespace facebook {
 namespace memcache {
 
@@ -50,15 +56,17 @@ class AsyncMcServerWorker {
    */
   bool addClientSocket(int fd, void* userCtxt = nullptr);
 
+  using ContextPair = std::pair<
+      std::shared_ptr<folly::SSLContext>,
+      std::shared_ptr<fizz::server::FizzServerContext>>;
+
   /**
    * Moves in ownership of an externally accepted client socket with an ssl
    * context which will be used to manage it.
    * @return    true on success, false on error
    */
-  bool addSecureClientSocket(
-      int fd,
-      const std::shared_ptr<folly::SSLContext>& context,
-      void* userCtxt = nullptr);
+  bool
+  addSecureClientSocket(int fd, ContextPair contexts, void* userCtxt = nullptr);
 
   /**
    * Certain situations call for a user to provide their own
@@ -179,7 +187,9 @@ class AsyncMcServerWorker {
   bool writesPending() const;
 
  private:
-  bool addClientSocket(folly::AsyncSocket::UniquePtr socket, void* userCtxt);
+  bool addClientSocket(
+      folly::AsyncTransportWrapper::UniquePtr socket,
+      void* userCtxt);
 
   AsyncMcServerWorkerOptions opts_;
   folly::EventBase& eventBase_;
