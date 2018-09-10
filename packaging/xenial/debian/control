@@ -2,7 +2,7 @@ Source: mcrouter
 Section: misc
 Priority: optional
 Maintainer: Ori Shalev <orish@fb.com>
-Build-Depends: debhelper (>=9), libc6 (>= 2.23), cmake (>=3.5.1), g++ (>=4:5.3.1), libdouble-conversion-dev (>=2.0.1), libgoogle-glog-dev (>=0.3.4), libevent-dev (>=2.0.21), libssl-dev (>=1.0.2), libboost-all-dev (>=1.58.0), libgtest-dev (>=1.7.0), devscripts (>=2.16.2), autoconf (>=2.69), git (>= 1:2.7.4), liblzma-dev (>=5.1.1), libdwarf-dev (>=20120410), libaio-dev (>=0.3.110), liburcu-dev (>=0.9.1), libbz2-dev (>=1.0.6), libiberty-dev (>=20160215), google-mock (>=1.7.0), ragel (>=6.8)
+Build-Depends: debhelper (>=9), libc6 (>= 2.23), cmake (>=3.5.1), g++ (>=4:5.3.1), libdouble-conversion-dev (>=2.0.1), libgoogle-glog-dev (>=0.3.4), libevent-dev (>=2.0.21), libssl-dev (>=1.0.2), libboost-all-dev (>=1.58.0), libgtest-dev (>=1.7.0), devscripts (>=2.16.2), autoconf (>=2.69), git (>= 1:2.7.4), liblzma-dev (>=5.1.1), libdwarf-dev (>=20120410), libaio-dev (>=0.3.110), liburcu-dev (>=0.9.1), libbz2-dev (>=1.0.6), libiberty-dev (>=20160215), google-mock (>=1.7.0), ragel (>=6.8), libunwind-dev (>=1.1), libsodium-dev (>=1.0.8)
 Standards-Version: 3.9.7
 Homepage: https://github.com/facebook/mcrouter/
 Vcs-Browser: https://github.com/facebook/mcrouter.git

@@ -35,34 +35,6 @@ Last-Update: <YYYY-MM-DD>
  mcrouter_CPPFLAGS = -I..
  
  clean-local:
---- mcrouter-0.38.0.orig/mcrouter/configure.ac
-+++ mcrouter-0.38.0/mcrouter/configure.ac
-@@ -112,13 +112,13 @@ AC_CHECK_LIB([z], [gzread], [], [AC_MSG_
- AC_CHECK_LIB([double-conversion],[ceil],[],[AC_MSG_ERROR(
-              [Please install double-conversion library])])
- AC_CHECK_LIB([dl], [dlopen], [])
--AC_CHECK_LIB([folly],[follyinit],[follylogging],[getenv],[],[AC_MSG_ERROR(
-+AC_CHECK_LIB([folly],[getenv],[],[AC_MSG_ERROR(
-              [Please install the folly library])])
- AC_CHECK_HEADER([folly/Likely.h], [], [AC_MSG_ERROR(
- [Couldn't find folly, please download from https://github.com/facebook/folly]
- )], [])
--AC_CHECK_LIB([wangle], [getenv], [], [AC_MSG_ERROR(
--             [Please install the wangle library])])
-+#AC_CHECK_LIB([wangle], [getenv], [], [AC_MSG_ERROR(
-+#             [Please install the wangle library])])
- 
- # Checks for typedefs, structures, and compiler characteristics.
- AC_HEADER_STDBOOL
-@@ -155,7 +155,7 @@ AC_CHECK_FUNCS([gettimeofday \
- 
- LIBS="$LIBS $BOOST_LDFLAGS $BOOST_CONTEXT_LIB $BOOST_FILESYSTEM_LIB \
-       $BOOST_PROGRAM_OPTIONS_LIB $BOOST_SYSTEM_LIB $BOOST_REGEX_LIB \
--      $BOOST_THREAD_LIB -lpthread -pthread -ldl"
-+      $BOOST_THREAD_LIB -lpthread -pthread"
- 
- AM_PATH_PYTHON([2.6],, [:])
- AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
 --- mcrouter-0.38.0.orig/mcrouter/lib/config/test/Makefile.am
 +++ mcrouter-0.38.0/mcrouter/lib/config/test/Makefile.am
 @@ -11,6 +11,4 @@ mcrouter_config_test_CPPFLAGS = \

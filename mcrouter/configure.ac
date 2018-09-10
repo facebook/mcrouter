@@ -114,6 +114,10 @@ AC_CHECK_LIB([double-conversion],[ceil],[],[AC_MSG_ERROR(
 AC_CHECK_LIB([dl], [dlopen], [])
 AC_CHECK_LIB([folly],[getenv],[],[AC_MSG_ERROR(
              [Please install the folly library])])
+AC_CHECK_LIB([sodium],[sodium_init],[],[AC_MSG_ERROR(
+             [Please install the libsodium library])])
+AC_CHECK_LIB([fizz],[getenv],[],[AC_MSG_ERROR(
+             [Please install the fizz library])])
 AC_CHECK_HEADER([folly/Likely.h], [], [AC_MSG_ERROR(
 [Couldn't find folly, please download from https://github.com/facebook/folly]
 )], [])
@@ -158,7 +162,7 @@ AC_CHECK_FUNCS([gettimeofday \
 
 LIBS="$LIBS $BOOST_LDFLAGS $BOOST_CONTEXT_LIB $BOOST_FILESYSTEM_LIB \
       $BOOST_PROGRAM_OPTIONS_LIB $BOOST_SYSTEM_LIB $BOOST_REGEX_LIB \
-      $BOOST_THREAD_LIB -lpthread -pthread"
+      $BOOST_THREAD_LIB -lpthread -pthread -ldl -lunwind"
 
 AM_PATH_PYTHON([2.6],, [:])
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
