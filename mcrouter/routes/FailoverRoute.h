@@ -244,6 +244,7 @@ class FailoverRoute {
                 normalReply,
                 failoverReply);
             logFailover(proxy, failoverContext);
+            carbon::setIsFailoverIfPresent(failoverReply, true);
             return failoverReply;
           };
 

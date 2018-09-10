@@ -188,6 +188,7 @@ class LoadBalancerRoute {
             expTimes_[idx] =
                 std::chrono::microseconds(nowUs() + loadTtl_.count());
           }
+          carbon::setIsFailoverIfPresent(reply, isFailover);
           return reply;
         });
   }

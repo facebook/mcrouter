@@ -28,15 +28,19 @@ namespace carbon {
 
 namespace detail {
 
+template <typename T, typename = bool&>
+struct HasIsFailover : std::false_type {};
+template <typename T>
+struct HasIsFailover<T, decltype(std::declval<T>().isFailover())>
+    : std::true_type {};
+
 template <typename T, typename = std::string&>
 struct HasMessage : std::false_type {};
-
 template <typename T>
 struct HasMessage<T, decltype(std::declval<T>().message())> : std::true_type {};
 
 template <class Request, class = bool&>
 struct HasFailover : public std::false_type {};
-
 template <class Request>
 struct HasFailover<Request, decltype(std::declval<Request>().failover())>
     : public std::true_type {};
@@ -89,7 +93,6 @@ typename std::enable_if_t<detail::HasMessage<Reply>::value> setMessageIfPresent(
     std::string msg) {
   reply.message() = std::move(msg);
 }
-
 template <typename Reply>
 typename std::enable_if_t<!detail::HasMessage<Reply>::value>
 setMessageIfPresent(Reply&, std::string) {}
@@ -99,12 +102,20 @@ typename std::enable_if_t<detail::HasMessage<Reply>::value, folly::StringPiece>
 getMessage(const Reply& reply) {
   return reply.message();
 }
-
 template <typename Reply>
 typename std::enable_if_t<!detail::HasMessage<Reply>::value, folly::StringPiece>
 getMessage(const Reply&) {
   return folly::StringPiece{};
 }
+
+template <typename Reply>
+typename std::enable_if_t<detail::HasIsFailover<Reply>::value>
+setIsFailoverIfPresent(Reply& reply, bool isFailover) {
+  reply.isFailover() = isFailover;
+}
+template <typename Reply>
+typename std::enable_if_t<!detail::HasIsFailover<Reply>::value>
+setIsFailoverIfPresent(Reply&, bool) {}
 
 namespace detail {
 
