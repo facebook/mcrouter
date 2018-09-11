@@ -15,8 +15,7 @@ template <class Reply>
 void McClientRequestContextBase::reply(Reply&& r) {
   assert(
       state() == ReqState::PENDING_REPLY_QUEUE ||
-      state() == ReqState::WRITE_QUEUE ||
-      state() == ReqState::WRITE_QUEUE_CANCELED);
+      state() == ReqState::WRITE_QUEUE);
   if (replyType_ != typeid(Reply)) {
     LOG_FAILURE(
         "AsyncMcClient",
@@ -85,18 +84,6 @@ McClientRequestContext<Request>::waitForReply(
       baton_.wait();
       assert(state() == ReqState::COMPLETE);
       return std::move(replyStorage_.value());
-    case ReqState::WRITE_QUEUE:
-      // Request is being written into socket, we need to wait for it to be
-      // completely written, then reply with timeout.
-      setState(ReqState::WRITE_QUEUE_CANCELED);
-      baton_.reset();
-      baton_.wait();
-      assert(state() == ReqState::COMPLETE || state() == ReqState::NONE);
-      // It is still possible that we'll receive a reply while waiting.
-      if (state() == ReqState::COMPLETE) {
-        return std::move(replyStorage_.value());
-      }
-      return Reply(mc_res_timeout);
     case ReqState::PENDING_QUEUE:
       // Request wasn't sent to the network yet, reply with timeout.
       queue_.removePending(*this);
@@ -109,7 +96,7 @@ McClientRequestContext<Request>::waitForReply(
     case ReqState::COMPLETE:
       assert(replyStorage_.hasValue());
       return std::move(replyStorage_.value());
-    case ReqState::WRITE_QUEUE_CANCELED:
+    case ReqState::WRITE_QUEUE:
     case ReqState::NONE:
       LOG_FAILURE(
           "AsyncMcClient",

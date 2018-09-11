@@ -21,11 +21,6 @@ void McClientRequestContextBase::replyError(
   baton_.post();
 }
 
-void McClientRequestContextBase::canceled() {
-  setState(ReqState::NONE);
-  baton_.post();
-}
-
 void McClientRequestContextBase::fireStateChangeCallbacks(
     ReqState old,
     ReqState current) const {
@@ -41,7 +36,6 @@ void McClientRequestContextBase::fireStateChangeCallbacks(
       pending--;
       break;
     case ReqState::WRITE_QUEUE:
-    case ReqState::WRITE_QUEUE_CANCELED:
     case ReqState::PENDING_REPLY_QUEUE:
     case ReqState::REPLIED_QUEUE:
       inflight--;
@@ -54,7 +48,6 @@ void McClientRequestContextBase::fireStateChangeCallbacks(
       pending++;
       break;
     case ReqState::WRITE_QUEUE:
-    case ReqState::WRITE_QUEUE_CANCELED:
     case ReqState::PENDING_REPLY_QUEUE:
     case ReqState::REPLIED_QUEUE:
       inflight++;
@@ -170,14 +163,7 @@ McClientRequestContextBase& McClientRequestContextQueue::markNextAsSent() {
 
   auto& req = writeQueue_.front();
   writeQueue_.pop_front();
-  if (req.state() == State::WRITE_QUEUE_CANCELED) {
-    removeFromSet(req);
-    // We already sent this request, so we're going to get a reply in future.
-    if (!outOfOrder_) {
-      timedOutInitializers_.push(req.initializer_);
-    }
-    req.canceled();
-  } else if (req.state() == State::COMPLETE) {
+  if (req.state() == State::COMPLETE) {
     req.baton_.post();
   } else {
     assert(req.state() == State::WRITE_QUEUE);

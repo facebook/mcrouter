@@ -81,7 +81,6 @@ class McClientRequestContextBase
     NONE,
     PENDING_QUEUE,
     WRITE_QUEUE,
-    WRITE_QUEUE_CANCELED,
     PENDING_REPLY_QUEUE,
     REPLIED_QUEUE,
     COMPLETE,
@@ -141,11 +140,6 @@ class McClientRequestContextBase
    * Fire the request state change callbacks.
    */
   void fireStateChangeCallbacks(ReqState old, ReqState current) const;
-
-  /**
-   * Notify context that request was canceled in AsyncMcClientImpl
-   */
-  void canceled();
 
   /**
    * Entry point for propagating reply to the user.
