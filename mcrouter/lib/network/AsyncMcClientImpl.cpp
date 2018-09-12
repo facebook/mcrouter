@@ -78,8 +78,9 @@ inline size_t calculateIovecsTotalSize(const struct iovec* iovecs, size_t num) {
 }
 
 std::string getServiceIdentity(const ConnectionOptions& opts) {
-  return opts.sslServiceIdentity.empty() ? opts.accessPoint->toHostPortString()
-                                         : opts.sslServiceIdentity;
+  const auto& svcIdentity = opts.securityOpts.sslServiceIdentity;
+  return svcIdentity.empty() ? opts.accessPoint->toHostPortString()
+                             : svcIdentity;
 }
 } // anonymous
 
@@ -495,8 +496,10 @@ void AsyncMcClientImpl::attemptConnection() {
     connectionState_ = ConnectionState::CONNECTING;
     pendingGoAwayReply_ = false;
 
+    auto& securityOpts = connectionOptions_.securityOpts;
+    auto securityMech = connectionOptions_.accessPoint->getSecurityMech();
     folly::AsyncSSLSocket* sslSocket = nullptr;
-    if (connectionOptions_.securityMech == SecurityMech::TLS) {
+    if (securityMech == SecurityMech::TLS) {
       // Unix Domain Sockets do not work with SSL because
       // the protocol is not implemented for Unix Domain
       // Sockets. Trying to use SSL with Unix Domain Sockets
@@ -508,11 +511,7 @@ void AsyncMcClientImpl::attemptConnection() {
         return;
       }
 
-      auto sslContext = getClientContext(
-          connectionOptions_.sslPemCertPath,
-          connectionOptions_.sslPemKeyPath,
-          connectionOptions_.sslPemCaPath);
-
+      auto sslContext = getClientContext(securityOpts, securityMech);
       if (!sslContext) {
         connectErr(folly::AsyncSocketException(
             folly::AsyncSocketException::SSL_ERROR,
@@ -522,7 +521,7 @@ void AsyncMcClientImpl::attemptConnection() {
       }
 
       sslSocket = new folly::AsyncSSLSocket(sslContext, &eventBase_);
-      if (connectionOptions_.sessionCachingEnabled) {
+      if (securityOpts.sessionCachingEnabled) {
         auto clientCtx =
             std::dynamic_pointer_cast<ClientSSLContext>(sslContext);
         if (clientCtx) {
@@ -534,7 +533,7 @@ void AsyncMcClientImpl::attemptConnection() {
           }
         }
       }
-      if (connectionOptions_.tfoEnabledForSsl) {
+      if (securityOpts.tfoEnabledForSsl) {
         sslSocket->enableTFO();
       }
       socket_.reset(sslSocket);
@@ -563,7 +562,7 @@ void AsyncMcClientImpl::attemptConnection() {
     auto socketOptions = createSocketOptions(address, connectionOptions_);
 
     socket_->setSendTimeout(connectionOptions_.writeTimeout.count());
-    if (sslSocket && connectionOptions_.sslHandshakeOffload) {
+    if (sslSocket && securityOpts.sslHandshakeOffload) {
       // we keep ourself alive during connection.
       auto self = selfPtr_.lock();
       socket_.release();
@@ -636,8 +635,8 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
     }
   }
 
-  if (connectionOptions_.securityMech == SecurityMech::TLS &&
-      connectionOptions_.sessionCachingEnabled) {
+  const auto securityMech = connectionOptions_.accessPoint->getSecurityMech();
+  if (securityMech == SecurityMech::TLS) {
     auto* sslSocket = socket_->getUnderlyingTransport<folly::AsyncSSLSocket>();
     assert(sslSocket != nullptr);
     McSSLUtil::finalizeClientSSL(sslSocket);

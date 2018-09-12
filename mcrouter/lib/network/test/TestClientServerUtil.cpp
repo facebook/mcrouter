@@ -26,7 +26,7 @@
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/RpcStatsContext.h"
-#include "mcrouter/lib/network/SecurityMech.h"
+#include "mcrouter/lib/network/SecurityOptions.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
 
@@ -229,18 +229,18 @@ TestClient::TestClient(
     : fm_(std::make_unique<folly::fibers::EventBaseLoopController>()) {
   dynamic_cast<folly::fibers::EventBaseLoopController&>(fm_.loopController())
       .attachEventBase(eventBase_);
-  ConnectionOptions opts(host, port, protocol);
+  auto mech = ssl ? SecurityMech::TLS : SecurityMech::NONE;
+  ConnectionOptions opts(host, port, protocol, mech);
   opts.writeTimeout = std::chrono::milliseconds(timeoutMs);
   opts.compressionCodecMap = compressionCodecMap;
   if (ssl) {
-    opts.securityMech = SecurityMech::TLS;
-    opts.sslPemCertPath = ssl->sslCertPath;
-    opts.sslPemKeyPath = ssl->sslKeyPath;
-    opts.sslPemCaPath = ssl->sslCaPath;
-    opts.sessionCachingEnabled = true;
-    opts.sslServiceIdentity = serviceIdentity;
-    opts.tfoEnabledForSsl = enableTfo;
-    opts.sslHandshakeOffload = offloadHandshakes;
+    opts.securityOpts.sslPemCertPath = ssl->sslCertPath;
+    opts.securityOpts.sslPemKeyPath = ssl->sslKeyPath;
+    opts.securityOpts.sslPemCaPath = ssl->sslCaPath;
+    opts.securityOpts.sessionCachingEnabled = true;
+    opts.securityOpts.sslServiceIdentity = serviceIdentity;
+    opts.securityOpts.tfoEnabledForSsl = enableTfo;
+    opts.securityOpts.sslHandshakeOffload = offloadHandshakes;
   }
   if (qosClass != 0 || qosPath != 0) {
     opts.enableQoS = true;

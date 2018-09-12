@@ -15,7 +15,7 @@
 #include "mcrouter/lib/CompressionCodecManager.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/network/AccessPoint.h"
-#include "mcrouter/lib/network/SecurityMech.h"
+#include "mcrouter/lib/network/SecurityOptions.h"
 
 namespace facebook {
 namespace memcache {
@@ -29,8 +29,10 @@ struct ConnectionOptions {
   ConnectionOptions(
       folly::StringPiece host_,
       uint16_t port_,
-      mc_protocol_t protocol_)
-      : accessPoint(std::make_shared<AccessPoint>(host_, port_, protocol_)) {}
+      mc_protocol_t protocol_,
+      SecurityMech mech_ = SecurityMech::NONE)
+      : accessPoint(
+            std::make_shared<AccessPoint>(host_, port_, protocol_, mech_)) {}
 
   explicit ConnectionOptions(std::shared_ptr<const AccessPoint> ap)
       : accessPoint(std::move(ap)) {}
@@ -92,38 +94,9 @@ struct ConnectionOptions {
   folly::StringPiece routerInfoName;
 
   /**
-   * Security mech to use
+   * Security options for this connection
    */
-  SecurityMech securityMech{SecurityMech::NONE};
-
-  /**
-   * Certificate paths for mutual auth or server cert verification.
-   * If cert and key paths are empty, then no client cert is presented
-   * If ca path is empty, then no server cert verification is attempted
-   */
-  std::string sslPemCertPath;
-  std::string sslPemKeyPath;
-  std::string sslPemCaPath;
-
-  /**
-   * enable ssl session caching
-   */
-  bool sessionCachingEnabled{false};
-
-  /**
-   * enable ssl handshake offload to a separate thread pool
-   */
-  bool sslHandshakeOffload{false};
-
-  /**
-   * Service identity of the destination service when SSL is used.
-   */
-  std::string sslServiceIdentity;
-
-  /**
-   * Whether TFO is enabled for SSL connections
-   */
-  bool tfoEnabledForSsl{false};
+  SecurityOptions securityOpts;
 
   /**
    * Use JemallocNodumpAllocator

@@ -19,15 +19,15 @@ namespace carbon {
 
 namespace {
 ConnectionOptions getConnectionOptions(const JsonClient::Options& opts) {
-  ConnectionOptions options(opts.host, opts.port, mc_caret_protocol);
+  auto mech = opts.useSsl ? SecurityMech::TLS : SecurityMech::NONE;
+  ConnectionOptions options(opts.host, opts.port, mc_caret_protocol, mech);
   if (opts.useSsl) {
-    options.securityMech = SecurityMech::TLS;
-    options.sslPemCertPath = opts.pemCertPath;
-    options.sslPemKeyPath = opts.pemKeyPath;
-    options.sslPemCaPath = opts.pemCaPath;
-    options.sslServiceIdentity = opts.sslServiceIdentity;
-    options.sessionCachingEnabled = true;
-    options.tfoEnabledForSsl = true;
+    options.securityOpts.sslPemCertPath = opts.pemCertPath;
+    options.securityOpts.sslPemKeyPath = opts.pemKeyPath;
+    options.securityOpts.sslPemCaPath = opts.pemCaPath;
+    options.securityOpts.sslServiceIdentity = opts.sslServiceIdentity;
+    options.securityOpts.sessionCachingEnabled = true;
+    options.securityOpts.tfoEnabledForSsl = true;
   }
   return options;
 }

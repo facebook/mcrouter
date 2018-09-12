@@ -28,6 +28,7 @@
 #include <wangle/ssl/TLSTicketKeySeeds.h>
 
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
+#include "mcrouter/lib/network/SecurityOptions.h"
 
 using folly::SSLContext;
 
@@ -44,6 +45,7 @@ struct ContextKey {
   folly::StringPiece pemKeyPath;
   folly::StringPiece pemCaPath;
   bool requireClientVerification{false};
+  SecurityMech mech{SecurityMech::TLS};
 
   bool operator==(const ContextKey& other) const {
     return pemCertPath == other.pemCertPath && pemKeyPath == other.pemKeyPath &&
@@ -56,6 +58,7 @@ struct ClientContextInfo {
   std::string pemCertPath;
   std::string pemKeyPath;
   std::string pemCaPath;
+  SecurityMech mech;
 
   std::shared_ptr<SSLContext> context;
   std::chrono::time_point<std::chrono::steady_clock> lastLoadTime;
@@ -115,7 +118,8 @@ struct ContextKeyHasher {
         key.pemCertPath,
         key.pemKeyPath,
         key.pemCaPath,
-        key.requireClientVerification);
+        key.requireClientVerification,
+        key.mech);
   }
 };
 
@@ -330,21 +334,21 @@ std::shared_ptr<fizz::server::FizzServerContext> createFizzServerContext(
   return ctx;
 }
 
-std::shared_ptr<SSLContext> createClientSSLContext(
-    folly::StringPiece pemCertPath,
-    folly::StringPiece pemKeyPath,
-    folly::StringPiece pemCaPath) {
+std::shared_ptr<SSLContext> createClientSSLContext(SecurityOptions opts) {
   auto context = std::make_shared<ClientSSLContext>(ticketCache.get());
+  const auto& pemCertPath = opts.sslPemCertPath;
+  const auto& pemKeyPath = opts.sslPemKeyPath;
+  const auto& pemCaPath = opts.sslPemCaPath;
   if (!pemCertPath.empty() && !pemKeyPath.empty()) {
     try {
-      context->loadCertificate(pemCertPath.begin());
+      context->loadCertificate(pemCertPath.c_str());
     } catch (const std::exception& ex) {
       logCertFailure("certificate", pemCertPath, ex);
       return nullptr;
     }
     // Load private key.
     try {
-      context->loadPrivateKey(pemKeyPath.begin());
+      context->loadPrivateKey(pemKeyPath.c_str());
     } catch (const std::exception& ex) {
       logCertFailure("private key", pemKeyPath, ex);
       return nullptr;
@@ -352,7 +356,7 @@ std::shared_ptr<SSLContext> createClientSSLContext(
   }
   if (!pemCaPath.empty()) {
     // we are going to verify server certificates
-    context->loadTrustedCertificates(pemCaPath.begin());
+    context->loadTrustedCertificates(pemCaPath.c_str());
     // only verify that the server is trusted - no peer name verification yet
     context->authenticate(true, false);
     context->setVerificationOption(
@@ -362,25 +366,26 @@ std::shared_ptr<SSLContext> createClientSSLContext(
 }
 
 ClientContextInfo& getClientContextInfo(
-    folly::StringPiece pemCertPath,
-    folly::StringPiece pemKeyPath,
-    folly::StringPiece pemCaPath) {
+    const SecurityOptions& opts,
+    SecurityMech mech) {
   thread_local std::
       unordered_map<ContextKey, ClientContextInfo, ContextKeyHasher>
           localContexts;
 
   ContextKey key;
-  key.pemCertPath = pemCertPath;
-  key.pemKeyPath = pemKeyPath;
-  key.pemCaPath = pemCaPath;
+  key.pemCertPath = opts.sslPemCertPath;
+  key.pemKeyPath = opts.sslPemKeyPath;
+  key.pemCaPath = opts.sslPemCaPath;
+  key.mech = mech;
 
   auto iter = localContexts.find(key);
   if (iter == localContexts.end()) {
     // Copy strings.
     ClientContextInfo info;
-    info.pemCertPath = pemCertPath.toString();
-    info.pemKeyPath = pemKeyPath.toString();
-    info.pemCaPath = pemCaPath.toString();
+    info.pemCertPath = opts.sslPemCertPath;
+    info.pemKeyPath = opts.sslPemKeyPath;
+    info.pemCaPath = opts.sslPemCaPath;
+    info.mech = mech;
 
     // Point all StringPiece's to our own strings.
     key.pemCertPath = info.pemCertPath;
@@ -428,13 +433,12 @@ ServerContextInfo& getServerContextInfo(
 } // namespace
 
 std::shared_ptr<folly::SSLContext> getClientContext(
-    folly::StringPiece pemCertPath,
-    folly::StringPiece pemKeyPath,
-    folly::StringPiece pemCaPath) {
-  auto& info = getClientContextInfo(pemCertPath, pemKeyPath, pemCaPath);
+    const SecurityOptions& opts,
+    SecurityMech mech) {
+  auto& info = getClientContextInfo(opts, mech);
   auto now = std::chrono::steady_clock::now();
   if (info.needsContext(now)) {
-    auto ctx = createClientSSLContext(pemCertPath, pemKeyPath, pemCaPath);
+    auto ctx = createClientSSLContext(opts);
     info.setContext(std::move(ctx), now);
   }
   return info.context;

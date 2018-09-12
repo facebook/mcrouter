@@ -367,16 +367,15 @@ void ProxyDestination::initializeAsyncMcClient() {
   }
 
   if (accessPoint_->useSsl()) {
-    options.securityMech = SecurityMech::TLS;
-    options.sslPemCertPath = opts.pem_cert_path;
-    options.sslPemKeyPath = opts.pem_key_path;
+    options.securityOpts.sslPemCertPath = opts.pem_cert_path;
+    options.securityOpts.sslPemKeyPath = opts.pem_key_path;
     if (opts.ssl_verify_peers) {
-      options.sslPemCaPath = opts.pem_ca_path;
+      options.securityOpts.sslPemCaPath = opts.pem_ca_path;
     }
-    options.sessionCachingEnabled = opts.ssl_connection_cache;
-    options.sslHandshakeOffload = opts.ssl_handshake_offload;
-    options.sslServiceIdentity = opts.ssl_service_identity;
-    options.tfoEnabledForSsl = opts.enable_ssl_tfo;
+    options.securityOpts.sessionCachingEnabled = opts.ssl_connection_cache;
+    options.securityOpts.sslHandshakeOffload = opts.ssl_handshake_offload;
+    options.securityOpts.sslServiceIdentity = opts.ssl_service_identity;
+    options.securityOpts.tfoEnabledForSsl = opts.enable_ssl_tfo;
   }
 
   auto client =

@@ -12,6 +12,7 @@
 #include <folly/Optional.h>
 #include <folly/Range.h>
 #include <folly/io/async/SSLContext.h>
+#include <mcrouter/lib/network/SecurityOptions.h>
 #include <wangle/client/ssl/SSLSessionCallbacks.h>
 #include <wangle/ssl/TLSTicketKeySeeds.h>
 
@@ -57,14 +58,15 @@ class ClientSSLContext : public folly::SSLContext {
  */
 
 /**
- * Get a context used for client connections.  If pemCaPath is not empty, the
+ * Get a context used for client connections.  If opts has an empty CA path, the
  * context will be configured to verify server ceritifcates against the CA.
- * pemCertPath and pemKeyPath may be empty.
+ * Cert paths for pemCertPath and pemKeyPath may be empty.
+ * Client contexts are cached for 24 hours and keyed off of various members in
+ * opts.
  */
 std::shared_ptr<folly::SSLContext> getClientContext(
-    folly::StringPiece pemCertPath,
-    folly::StringPiece pemKeyPath,
-    folly::StringPiece pemCaPath);
+    const SecurityOptions& opts,
+    SecurityMech mech);
 
 using ServerContextPair = std::pair<
     std::shared_ptr<folly::SSLContext>,

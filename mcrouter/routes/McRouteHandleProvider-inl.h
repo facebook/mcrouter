@@ -21,7 +21,7 @@
 #include "mcrouter/lib/fbi/cpp/ParsingUtil.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/network/AccessPoint.h"
-#include "mcrouter/lib/network/SecurityMech.h"
+#include "mcrouter/lib/network/SecurityOptions.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/routes/AsynclogRoute.h"
 #include "mcrouter/routes/DestinationRoute.h"

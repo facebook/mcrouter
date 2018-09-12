@@ -17,7 +17,7 @@
 #include <folly/portability/GFlags.h>
 
 #include "mcrouter/lib/network/McSSLUtil.h"
-#include "mcrouter/lib/network/SecurityMech.h"
+#include "mcrouter/lib/network/SecurityOptions.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
@@ -885,14 +885,12 @@ TEST(AsyncMcClient, contextProviders) {
   auto clientCtxPaths = validClientSsl();
   auto serverCtxPaths = validSsl();
 
-  auto clientCtx1 = getClientContext(
-      clientCtxPaths.sslCertPath,
-      clientCtxPaths.sslKeyPath,
-      clientCtxPaths.sslCaPath);
-  auto clientCtx2 = getClientContext(
-      clientCtxPaths.sslCertPath,
-      clientCtxPaths.sslKeyPath,
-      clientCtxPaths.sslCaPath);
+  SecurityOptions opts;
+  opts.sslPemCertPath = clientCtxPaths.sslCertPath;
+  opts.sslPemKeyPath = clientCtxPaths.sslKeyPath;
+  opts.sslPemCaPath = clientCtxPaths.sslCaPath;
+  auto clientCtx1 = getClientContext(opts, SecurityMech::TLS);
+  auto clientCtx2 = getClientContext(opts, SecurityMech::TLS);
 
   auto serverCtx1 = getServerContexts(
                         serverCtxPaths.sslCertPath,
@@ -994,10 +992,17 @@ class AsyncMcClientSSLOffloadTest : public testing::TestWithParam<bool> {
  protected:
   void enableSSL(ConnectionOptions& opts) {
     auto paths = validClientSsl();
-    opts.securityMech = SecurityMech::TLS;
-    opts.sslPemCertPath = paths.sslCertPath;
-    opts.sslPemKeyPath = paths.sslKeyPath;
-    opts.sslPemCaPath = paths.sslCaPath;
+    auto sslAp = std::make_shared<AccessPoint>(
+        opts.accessPoint->getHost(),
+        opts.accessPoint->getPort(),
+        opts.accessPoint->getProtocol(),
+        SecurityMech::TLS,
+        opts.accessPoint->compressed(),
+        opts.accessPoint->isUnixDomainSocket());
+    opts.accessPoint = std::move(sslAp);
+    opts.securityOpts.sslPemCertPath = paths.sslCertPath;
+    opts.securityOpts.sslPemKeyPath = paths.sslKeyPath;
+    opts.securityOpts.sslPemCaPath = paths.sslCaPath;
   }
 
   std::unique_ptr<TestServer> createServer() {
@@ -1044,7 +1049,7 @@ TEST_P(AsyncMcClientSSLOffloadTest, closeNow) {
   ConnectionOptions opts("::1", server->getListenPort(), mc_caret_protocol);
   opts.writeTimeout = std::chrono::milliseconds(1000);
   enableSSL(opts);
-  opts.sslHandshakeOffload = GetParam();
+  opts.securityOpts.sslHandshakeOffload = GetParam();
   auto lc = std::make_unique<folly::fibers::EventBaseLoopController>();
   lc->attachEventBase(evb);
   folly::fibers::FiberManager fm(std::move(lc));
@@ -1076,7 +1081,7 @@ TEST_P(AsyncMcClientSSLOffloadTest, clientReset) {
   ConnectionOptions opts("::1", server->getListenPort(), mc_caret_protocol);
   opts.writeTimeout = std::chrono::milliseconds(1000);
   enableSSL(opts);
-  opts.sslHandshakeOffload = GetParam();
+  opts.securityOpts.sslHandshakeOffload = GetParam();
   auto lc = std::make_unique<folly::fibers::EventBaseLoopController>();
   lc->attachEventBase(evb);
   folly::fibers::FiberManager fm(std::move(lc));

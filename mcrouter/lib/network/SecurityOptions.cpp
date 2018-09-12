@@ -5,7 +5,7 @@
  *  file in the root directory of this source tree.
  *
  */
-#include "SecurityMech.h"
+#include "SecurityOptions.h"
 
 #include <exception>
 

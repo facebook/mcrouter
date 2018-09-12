@@ -13,7 +13,7 @@
 #include <folly/Range.h>
 
 #include "mcrouter/lib/mc/protocol.h"
-#include "mcrouter/lib/network/SecurityMech.h"
+#include "mcrouter/lib/network/SecurityOptions.h"
 
 namespace facebook {
 namespace memcache {
