@@ -20,9 +20,7 @@ namespace mcrouter {
 
 namespace detail {
 
-void parseShardsPerServerJson(
-    const folly::dynamic& json,
-    std::function<void(uint32_t)>&& f);
+std::vector<size_t> parseShardsPerServerJson(const folly::dynamic& json);
 
 std::vector<std::vector<size_t>> parseAllShardsJson(
     const folly::dynamic& allShardsJson);
@@ -174,19 +172,17 @@ ShardDestinationsMap<RouterInfo> getShardDestinationsMap(
     }
 
     for (size_t j = 0; j < shardsJson.size(); j++) {
-      parseShardsPerServerJson(
-          shardsJson[j], [&destinations, &shardMap, j](uint32_t shard) {
-            auto rh = destinations[j];
-            auto it = shardMap.find(shard);
-            if (it == shardMap.end()) {
-              it = shardMap
-                       .insert(
-                           {shard,
+      for (auto shard : parseShardsPerServerJson(shardsJson[j])) {
+        auto rh = destinations[j];
+        auto it = shardMap.find(shard);
+        if (it == shardMap.end()) {
+          it = shardMap
+                   .insert({shard,
                             std::vector<typename RouterInfo::RouteHandlePtr>()})
-                       .first;
-            }
-            it->second.push_back(std::move(rh));
-          });
+                   .first;
+        }
+        it->second.push_back(std::move(rh));
+      }
     }
   }
   return shardMap;
