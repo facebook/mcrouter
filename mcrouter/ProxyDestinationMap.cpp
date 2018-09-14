@@ -152,6 +152,12 @@ void ProxyDestinationMap::scheduleTimer(bool initialAttempt) {
   }
 }
 
+void ProxyDestinationMap::releaseProxyDestinationRef(
+    std::shared_ptr<const ProxyDestination>&& destination) {
+  ProxyBase& proxy = destination->proxy;
+  proxy.eventBase().runInEventBaseThread([dst = std::move(destination)]() {});
+}
+
 ProxyDestinationMap::~ProxyDestinationMap() {}
 
 } // mcrouter

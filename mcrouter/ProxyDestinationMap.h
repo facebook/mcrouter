@@ -95,17 +95,14 @@ class ProxyDestinationMap {
    */
   template <typename Func>
   void foreachDestinationSynced(Func&& f) {
-    // The toFree vector is used to delay destruction as we have the following
-    // race condition: ProxyDestination destructor will try to grab a lock
-    // on destionationsLock_, which is already locked here.
-    std::vector<std::shared_ptr<const ProxyDestination>> toFree;
-    {
-      std::lock_guard<std::mutex> lock(destinationsLock_);
-      for (auto& it : destinations_) {
-        if (std::shared_ptr<const ProxyDestination> d = it.second.lock()) {
-          f(it.first, *d);
-          toFree.push_back(std::move(d));
-        }
+    std::lock_guard<std::mutex> lock(destinationsLock_);
+    for (auto& it : destinations_) {
+      if (std::shared_ptr<const ProxyDestination> dst = it.second.lock()) {
+        f(it.first, *dst);
+        // Disposal of the ProxyDestination object should execute on the proxy
+        // thread to prevent races in accessing members of ProxyDestination
+        // that are only accessed within eventbase-executed methods.
+        releaseProxyDestinationRef(std::move(dst));
       }
     }
   }
@@ -138,6 +135,12 @@ class ProxyDestinationMap {
    * @param initial  true iff this an initial attempt to schedule timer.
    */
   void scheduleTimer(bool initialAttempt);
+
+  /*
+   * Releases the shared_ptr reference on the destination's event-base.
+   */
+  static void releaseProxyDestinationRef(
+      std::shared_ptr<const ProxyDestination>&& destination);
 };
 } // namespace mcrouter
 } // namespace memcache
