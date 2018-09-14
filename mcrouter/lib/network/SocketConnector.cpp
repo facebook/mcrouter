@@ -67,11 +67,11 @@ folly::Future<folly::AsyncSocket::UniquePtr> connectSSLSocketWithAuxIO(
     auto* poolEvb = auxPool->getThreadPool().getEventBase();
     helper->getSocket()->detachEventBase();
     return via(poolEvb)
-        .then([opts = std::move(options),
-               addr = std::move(address),
-               helper,
-               poolEvb,
-               timeout] {
+        .thenValue([opts = std::move(options),
+                    addr = std::move(address),
+                    helper,
+                    poolEvb,
+                    timeout](auto&&) {
           helper->getSocket()->attachEventBase(poolEvb);
           return helper->connect(addr, timeout, opts);
         })
