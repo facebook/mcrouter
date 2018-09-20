@@ -12,6 +12,7 @@
 #include "mcrouter/lib/carbon/CommonSerializationTraits.h"
 #include "mcrouter/lib/carbon/Fields.h"
 #include "mcrouter/lib/carbon/Keys.h"
+#include "mcrouter/lib/mc/msg.h"
 
 namespace carbon {
 
@@ -79,6 +80,10 @@ class ToDynamicVisitor {
       return false;
     }
     return true;
+  }
+
+  folly::dynamic toDynamic(carbon::Result res) const {
+    return folly::dynamic(mc_res_to_string(res));
   }
 
   folly::dynamic toDynamic(char c) const {

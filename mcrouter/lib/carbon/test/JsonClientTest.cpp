@@ -124,6 +124,15 @@ inline void checkIntField(
   EXPECT_EQ(static_cast<int64_t>(expected), json[name].asInt());
 }
 
+inline void checkStringField(
+    const folly::dynamic& json,
+    folly::StringPiece name,
+    std::string expected) {
+  ASSERT_EQ(1, json.count(name));
+  ASSERT_TRUE(json[name].isString());
+  EXPECT_EQ(expected, json[name].asString());
+}
+
 } // anonymous namespace
 
 TEST(JsonClient, sendRequests) {
@@ -145,7 +154,7 @@ TEST(JsonClient, sendRequests) {
   ASSERT_TRUE(result);
   ASSERT_TRUE(reply.isObject());
 
-  checkIntField(reply, "result", mc_res_ok);
+  checkStringField(reply, "result", mc_res_to_string(mc_res_ok));
   checkIntField(reply, "valInt32", 34);
   checkIntField(reply, "valInt64", 60);
 
@@ -172,7 +181,7 @@ TEST(JsonClient, sendRequestsWithSsl) {
   ASSERT_TRUE(result);
   ASSERT_TRUE(reply.isObject());
 
-  checkIntField(reply, "result", mc_res_ok);
+  checkStringField(reply, "result", mc_res_to_string(mc_res_ok));
   checkIntField(reply, "valInt32", 34);
   checkIntField(reply, "valInt64", 60);
 
@@ -205,11 +214,11 @@ TEST(JsonClient, sendRequests_Array) {
   ASSERT_TRUE(result);
   ASSERT_TRUE(replies.isArray());
 
-  checkIntField(replies[0], "result", mc_res_ok);
+  checkStringField(replies[0], "result", mc_res_to_string(mc_res_ok));
   checkIntField(replies[0], "valInt32", 20);
   checkIntField(replies[0], "valInt64", 60);
 
-  checkIntField(replies[1], "result", mc_res_ok);
+  checkStringField(replies[1], "result", mc_res_to_string(mc_res_ok));
   checkIntField(replies[1], "valInt32", 70);
   checkIntField(replies[1], "valInt64", 100);
 
@@ -251,7 +260,7 @@ TEST(CmdLineClient, sendRequests) {
 
   auto reply = folly::parseJson(out);
 
-  checkIntField(reply, "result", mc_res_ok);
+  checkStringField(reply, "result", mc_res_to_string(mc_res_ok));
   checkIntField(reply, "valInt32", 34);
   checkIntField(reply, "valInt64", 60);
 
