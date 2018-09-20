@@ -169,6 +169,7 @@ struct SSLTestPaths {
   std::string sslCertPath;
   std::string sslKeyPath;
   std::string sslCaPath;
+  SecurityMech mech{SecurityMech::TLS};
 };
 
 // valid Client SSL Certs

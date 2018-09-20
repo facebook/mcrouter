@@ -20,7 +20,9 @@ const char* securityMechToString(SecurityMech mech) {
       return "plain";
     case SecurityMech::TLS:
       return "ssl";
-  };
+    case SecurityMech::TLS_TO_PLAINTEXT:
+      return "tls_to_plain";
+  }
   folly::assume_unreachable();
 }
 
@@ -29,6 +31,8 @@ SecurityMech parseSecurityMech(folly::StringPiece s) {
     return SecurityMech::TLS;
   } else if (s == "plain") {
     return SecurityMech::NONE;
+  } else if (s == "tls_to_plain") {
+    return SecurityMech::TLS_TO_PLAINTEXT;
   }
   throw std::invalid_argument("Invalid security mech");
 }

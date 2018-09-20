@@ -499,7 +499,8 @@ void AsyncMcClientImpl::attemptConnection() {
     auto& securityOpts = connectionOptions_.securityOpts;
     auto securityMech = connectionOptions_.accessPoint->getSecurityMech();
     folly::AsyncSSLSocket* sslSocket = nullptr;
-    if (securityMech == SecurityMech::TLS) {
+    if (securityMech == SecurityMech::TLS ||
+        securityMech == SecurityMech::TLS_TO_PLAINTEXT) {
       // Unix Domain Sockets do not work with SSL because
       // the protocol is not implemented for Unix Domain
       // Sockets. Trying to use SSL with Unix Domain Sockets
@@ -533,6 +534,7 @@ void AsyncMcClientImpl::attemptConnection() {
           }
         }
       }
+
       if (securityOpts.tfoEnabledForSsl) {
         sslSocket->enableTFO();
       }
@@ -635,11 +637,28 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
     }
   }
 
-  const auto securityMech = connectionOptions_.accessPoint->getSecurityMech();
-  if (securityMech == SecurityMech::TLS) {
+  const auto mech = connectionOptions_.accessPoint->getSecurityMech();
+  if (mech == SecurityMech::TLS || mech == SecurityMech::TLS_TO_PLAINTEXT) {
     auto* sslSocket = socket_->getUnderlyingTransport<folly::AsyncSSLSocket>();
     assert(sslSocket != nullptr);
     McSSLUtil::finalizeClientSSL(sslSocket);
+    if (mech == SecurityMech::TLS_TO_PLAINTEXT) {
+      // if we negotiated the right alpn, then server also supports this and we
+      // can fall back to plaintext.
+      auto fallback = McSSLUtil::moveToPlaintext(*sslSocket);
+      if (!fallback) {
+        // configured to use this but failed to negotiate.  will end up doing
+        // ssl anyway
+        auto errorMessage = folly::to<std::string>(
+            "Failed to negotiate TLS to plaintext.  SSL will be used for ",
+            connectionOptions_.accessPoint->toHostPortString());
+        LOG_FAILURE(
+            "AsyncMcClient", failure::Category::kBadEnvironment, errorMessage);
+      } else {
+        // replace socket with this
+        socket_.reset(fallback.release());
+      }
+    }
   }
 
   assert(getInflightRequestCount() == 0);

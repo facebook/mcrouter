@@ -176,7 +176,9 @@ void TestServer::run(std::function<void(AsyncMcServerWorker&)> init) {
     server_ = std::make_unique<AsyncMcServer>(opts_);
     if (useTicketKeySeeds_) {
       wangle::TLSTicketKeySeeds seeds{
-          .oldSeeds = {"aaaa"}, .currentSeeds = {"bbbb"}, .newSeeds = {"cccc"},
+          .oldSeeds = {std::string(96, 'a')},
+          .currentSeeds = {std::string(96, 'b')},
+          .newSeeds = {std::string(96, 'c')},
       };
       server_->setTicketKeySeeds(std::move(seeds));
     }
@@ -229,7 +231,7 @@ TestClient::TestClient(
     : fm_(std::make_unique<folly::fibers::EventBaseLoopController>()) {
   dynamic_cast<folly::fibers::EventBaseLoopController&>(fm_.loopController())
       .attachEventBase(eventBase_);
-  auto mech = ssl ? SecurityMech::TLS : SecurityMech::NONE;
+  auto mech = ssl ? ssl->mech : SecurityMech::NONE;
   ConnectionOptions opts(host, port, protocol, mech);
   opts.writeTimeout = std::chrono::milliseconds(timeoutMs);
   opts.compressionCodecMap = compressionCodecMap;
@@ -280,7 +282,9 @@ void TestClient::setStatusCallbacks(
   client_->setStatusCallbacks(
       [onUp](const folly::AsyncTransportWrapper& socket) {
         LOG(INFO) << "Client UP.";
-        onUp(socket);
+        if (onUp) {
+          onUp(socket);
+        }
       },
       [onDown](AsyncMcClient::ConnectionDownReason reason) {
         if (reason == AsyncMcClient::ConnectionDownReason::SERVER_GONE_AWAY) {
@@ -288,7 +292,9 @@ void TestClient::setStatusCallbacks(
         } else {
           LOG(INFO) << "Client DOWN.";
         }
-        onDown(reason);
+        if (onDown) {
+          onDown(reason);
+        }
       });
 }
 

@@ -8,7 +8,9 @@
 #include "McSSLUtil.h"
 
 #include <folly/SharedMutex.h>
+#include <folly/io/async/AsyncTransportCertificate.h>
 #include <folly/io/async/ssl/OpenSSLUtils.h>
+#include "mcrouter/lib/network/SecurityOptions.h"
 
 namespace facebook {
 namespace memcache {
@@ -33,6 +35,64 @@ static McSSLUtil::SSLFinalizeFunction& getClientFinalizeFuncRef() {
   static McSSLUtil::SSLFinalizeFunction FINALIZER;
   return FINALIZER;
 }
+
+class ClonedCertificate : public folly::AsyncTransportCertificate {
+ public:
+  static std::unique_ptr<folly::AsyncTransportCertificate> create(
+      const folly::AsyncTransportCertificate* cert) {
+    if (!cert) {
+      return nullptr;
+    }
+    return std::make_unique<ClonedCertificate>(cert);
+  }
+
+  explicit ClonedCertificate(const folly::AsyncTransportCertificate* cert)
+      : identity_(cert->getIdentity()), x509_(cert->getX509()) {}
+
+  std::string getIdentity() const override {
+    return identity_;
+  }
+
+  folly::ssl::X509UniquePtr getX509() const override {
+    if (!x509_) {
+      return nullptr;
+    }
+    auto x509raw = x509_.get();
+    X509_up_ref(x509raw);
+    return folly::ssl::X509UniquePtr(x509raw);
+  }
+
+ private:
+  const std::string identity_;
+  const folly::ssl::X509UniquePtr x509_;
+};
+
+class PlaintextWithCerts : public folly::AsyncSocket {
+ public:
+  using UniquePtr = std::
+      unique_ptr<PlaintextWithCerts, folly::DelayedDestruction::Destructor>;
+  using AsyncSocket::AsyncSocket;
+
+  const X509* getSelfCert() const override {
+    auto self = getSelfCertificate();
+    if (self) {
+      return self->getX509().get();
+    }
+    return nullptr;
+  }
+
+  folly::ssl::X509UniquePtr getPeerCert() const override {
+    auto peer = getPeerCertificate();
+    if (!peer) {
+      return nullptr;
+    }
+    return peer->getX509();
+  }
+
+  std::string getSecurityProtocol() const override {
+    return "mc_plaintext";
+  }
+};
 } // namespace
 
 bool McSSLUtil::verifySSLWithDefaultBehavior(
@@ -114,6 +174,30 @@ void McSSLUtil::finalizeClientSSL(
   if (func) {
     func(transport);
   }
+}
+
+bool McSSLUtil::negotiatedPlaintextFallback(
+    const folly::AsyncSSLSocket& sock) noexcept {
+  // get the negotiated protocol
+  auto nextProto = sock.getApplicationProtocol();
+  return nextProto == kMcSecurityTlsToPlaintextProto;
+}
+
+folly::AsyncTransportWrapper::UniquePtr McSSLUtil::moveToPlaintext(
+    folly::AsyncSSLSocket& sock) noexcept {
+  if (!negotiatedPlaintextFallback(sock)) {
+    return nullptr;
+  }
+  // fallback to plaintext
+  auto selfCert = ClonedCertificate::create(sock.getSelfCertificate());
+  auto peerCert = ClonedCertificate::create(sock.getPeerCertificate());
+  auto evb = sock.getEventBase();
+  auto zcId = sock.getZeroCopyBufId();
+  auto fd = sock.detachFd();
+  PlaintextWithCerts::UniquePtr res(new PlaintextWithCerts(evb, fd, zcId));
+  res->setSelfCertificate(std::move(selfCert));
+  res->setPeerCertificate(std::move(peerCert));
+  return res;
 }
 
 } // namespace memcache

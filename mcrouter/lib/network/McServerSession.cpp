@@ -486,23 +486,29 @@ bool McServerSession::handshakeVer(
 }
 
 void McServerSession::handshakeSuc(folly::AsyncSSLSocket* sock) noexcept {
+  // sock is currently wrapped by transport_, but underlying socket may
+  // change by end of this function.
   SCOPE_EXIT {
-    sock->setReadCB(this);
+    transport_->setReadCB(this);
   };
   auto cert = sock->getPeerCert();
-  if (cert == nullptr) {
-    return;
-  }
-  auto sub = X509_get_subject_name(cert.get());
-  if (sub != nullptr) {
-    char cn[ub_common_name + 1];
-    const auto res =
-        X509_NAME_get_text_by_NID(sub, NID_commonName, cn, ub_common_name);
-    if (res > 0) {
-      clientCommonName_.assign(std::string(cn, res));
+  if (cert != nullptr) {
+    auto sub = X509_get_subject_name(cert.get());
+    if (sub != nullptr) {
+      char cn[ub_common_name + 1];
+      const auto res =
+          X509_NAME_get_text_by_NID(sub, NID_commonName, cn, ub_common_name);
+      if (res > 0) {
+        clientCommonName_.assign(std::string(cn, res));
+      }
     }
   }
   McSSLUtil::finalizeServerSSL(transport_.get());
+  if (McSSLUtil::negotiatedPlaintextFallback(*sock)) {
+    auto fallback = McSSLUtil::moveToPlaintext(*sock);
+    DCHECK(fallback);
+    transport_.reset(fallback.release());
+  }
 }
 
 void McServerSession::handshakeErr(

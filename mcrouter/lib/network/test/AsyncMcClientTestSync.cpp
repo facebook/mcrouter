@@ -26,12 +26,26 @@
 
 using namespace facebook::memcache;
 using namespace facebook::memcache::test;
+using namespace testing;
 
 namespace folly {
 class AsyncSocket;
 } // namespace folly
 
-void serverShutdownTest(folly::Optional<SSLTestPaths> ssl) {
+folly::Optional<SSLTestPaths> getTlsToPtSSL() {
+  auto res = validClientSsl();
+  res.mech = SecurityMech::TLS_TO_PLAINTEXT;
+  return res;
+}
+
+class AsyncMcClientSimpleTest
+    : public TestWithParam<folly::Optional<SSLTestPaths>> {
+ public:
+  virtual ~AsyncMcClientSimpleTest() = default;
+};
+
+TEST_P(AsyncMcClientSimpleTest, serverShutdownTest) {
+  auto ssl = GetParam();
   TestServer::Config config;
   config.outOfOrder = false;
   config.useSsl = ssl.hasValue();
@@ -40,19 +54,30 @@ void serverShutdownTest(folly::Optional<SSLTestPaths> ssl) {
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
+
+  // ensure transport matches the mech
+  auto transport = client.getClient().getTransport();
+  if (!ssl.hasValue()) {
+    EXPECT_EQ(transport->getSecurityProtocol(), "");
+  } else if (ssl->mech == SecurityMech::TLS) {
+    EXPECT_EQ(transport->getSecurityProtocol(), "TLS");
+  } else {
+    // TLS_TO_PLAINTEXT
+    EXPECT_EQ(transport->getSecurityProtocol(), "mc_plaintext");
+    auto* sslsock = transport->getUnderlyingTransport<folly::AsyncSSLSocket>();
+    EXPECT_EQ(sslsock, nullptr);
+    auto peerCert = transport->getPeerCertificate();
+    auto selfCert = transport->getSelfCertificate();
+    EXPECT_NE(peerCert, nullptr);
+    EXPECT_NE(selfCert, nullptr);
+  }
+
   server->join();
   EXPECT_EQ(1, server->getAcceptedConns());
 }
 
-TEST(AsyncMcClient, serverShutdown) {
-  serverShutdownTest(folly::none);
-}
-
-TEST(AsyncMcClient, serverShutdownSsl) {
-  serverShutdownTest(validClientSsl());
-}
-
-void simpleAsciiTimeoutTest(folly::Optional<SSLTestPaths> ssl) {
+TEST_P(AsyncMcClientSimpleTest, asciiTimeout) {
+  auto ssl = GetParam();
   TestServer::Config config;
   config.outOfOrder = false;
   config.useSsl = ssl.hasValue();
@@ -69,15 +94,8 @@ void simpleAsciiTimeoutTest(folly::Optional<SSLTestPaths> ssl) {
   EXPECT_EQ(1, server->getAcceptedConns());
 }
 
-TEST(AsyncMcClient, simpleAsciiTimeout) {
-  simpleAsciiTimeoutTest(folly::none);
-}
-
-TEST(AsyncMcClient, simpleAsciiTimeoutSsl) {
-  simpleAsciiTimeoutTest(validClientSsl());
-}
-
-void simpleUmbrellaTimeoutTest(folly::Optional<SSLTestPaths> ssl) {
+TEST_P(AsyncMcClientSimpleTest, umbrellaTimeout) {
+  auto ssl = GetParam();
   TestServer::Config config;
   config.useSsl = ssl.hasValue();
   auto server = TestServer::create(std::move(config));
@@ -97,41 +115,108 @@ void simpleUmbrellaTimeoutTest(folly::Optional<SSLTestPaths> ssl) {
   EXPECT_EQ(1, server->getAcceptedConns());
 }
 
-TEST(AsyncMcClient, simpleUmbrellaTimeout) {
-  simpleUmbrellaTimeoutTest(folly::none);
-}
-
-TEST(AsyncMcClient, simpleUmbrellaTimeoutSsl) {
-  simpleUmbrellaTimeoutTest(validClientSsl());
-}
-
-void noServerTimeoutTest(folly::Optional<SSLTestPaths> ssl) {
+TEST_P(AsyncMcClientSimpleTest, noServerTimeout) {
+  auto ssl = GetParam();
   TestClient client("100::", 11302, 200, mc_ascii_protocol, ssl);
   client.sendGet("hold", mc_res_connect_timeout);
   client.waitForReplies();
 }
 
-TEST(AsyncMcClient, noServerTimeout) {
-  noServerTimeoutTest(folly::none);
-}
-
-TEST(AsyncMcClient, noServerTimeoutSsl) {
-  noServerTimeoutTest(validClientSsl());
-}
-
-void immediateConnectFailTest(folly::Optional<SSLTestPaths> ssl) {
+TEST_P(AsyncMcClientSimpleTest, immediateConnectFail) {
+  auto ssl = GetParam();
   TestClient client("255.255.255.255", 12345, 200, mc_ascii_protocol, ssl);
   client.sendGet("nohold", mc_res_connect_error);
   client.waitForReplies();
 }
 
-TEST(AsyncMcClient, immeadiateConnectFail) {
-  immediateConnectFailTest(folly::none);
+TEST_P(AsyncMcClientSimpleTest, inflightThrottle) {
+  auto ssl = GetParam();
+  TestServer::Config config;
+  config.outOfOrder = false;
+  config.useSsl = ssl.hasValue();
+  auto server = TestServer::create(std::move(config));
+  TestClient client(
+      "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
+  client.setThrottle(5, 6);
+  for (size_t i = 0; i < 5; ++i) {
+    client.sendGet("hold", mc_res_timeout);
+  }
+  client.waitForReplies();
+  EXPECT_EQ(5, client.getMaxPendingReqs());
+  EXPECT_EQ(5, client.getMaxInflightReqs());
+  client.sendGet("shutdown", mc_res_notfound);
+  client.waitForReplies();
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
 }
 
-TEST(AsyncMcClient, immeadiateConnectFailSsl) {
-  immediateConnectFailTest(validClientSsl());
+TEST_P(AsyncMcClientSimpleTest, inflightThrottleFlush) {
+  auto ssl = GetParam();
+  TestServer::Config config;
+  config.outOfOrder = false;
+  config.useSsl = ssl.hasValue();
+  auto server = TestServer::create(std::move(config));
+  TestClient client(
+      "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
+  client.setThrottle(6, 6);
+  for (size_t i = 0; i < 5; ++i) {
+    client.sendGet("hold", mc_res_found);
+  }
+  client.sendGet("flush", mc_res_found);
+  client.waitForReplies();
+  EXPECT_EQ(6, client.getMaxPendingReqs());
+  EXPECT_EQ(6, client.getMaxInflightReqs());
+  client.sendGet("shutdown", mc_res_notfound);
+  client.waitForReplies();
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
 }
+
+TEST_P(AsyncMcClientSimpleTest, outstandingThrottle) {
+  auto ssl = GetParam();
+  TestServer::Config config;
+  config.outOfOrder = false;
+  config.useSsl = ssl.hasValue();
+  auto server = TestServer::create(std::move(config));
+  TestClient client(
+      "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
+  client.setThrottle(5, 5);
+  for (size_t i = 0; i < 5; ++i) {
+    client.sendGet("hold", mc_res_timeout);
+  }
+  client.sendGet("flush", mc_res_local_error);
+  client.waitForReplies();
+  EXPECT_EQ(5, client.getMaxPendingReqs());
+  EXPECT_EQ(5, client.getMaxInflightReqs());
+  client.sendGet("shutdown", mc_res_notfound);
+  client.waitForReplies();
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
+}
+
+TEST_P(AsyncMcClientSimpleTest, connectionError) {
+  auto ssl = GetParam();
+  TestServer::Config config;
+  config.outOfOrder = false;
+  config.useSsl = ssl.hasValue();
+  auto server = TestServer::create(std::move(config));
+  TestClient client1(
+      "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
+  TestClient client2(
+      "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
+  client1.sendGet("shutdown", mc_res_notfound);
+  client1.waitForReplies();
+  /* sleep override */ usleep(10000);
+  client2.sendGet("test", mc_res_connect_error);
+  client2.waitForReplies();
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
+}
+
+INSTANTIATE_TEST_CASE_P(
+    AsyncMcClientTest,
+    AsyncMcClientSimpleTest,
+    Values(folly::none, validClientSsl(), getTlsToPtSSL()));
 
 void testCerts(
     std::string name,
@@ -220,204 +305,82 @@ TEST(AsyncMcClient, testClientFinalize) {
       [](folly::AsyncTransportWrapper*) {});
 }
 
-void inflightThrottleTest(folly::Optional<SSLTestPaths> ssl) {
-  TestServer::Config config;
-  config.outOfOrder = false;
-  config.useSsl = ssl.hasValue();
-  auto server = TestServer::create(std::move(config));
-  TestClient client(
-      "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
-  client.setThrottle(5, 6);
-  for (size_t i = 0; i < 5; ++i) {
-    client.sendGet("hold", mc_res_timeout);
-  }
-  client.waitForReplies();
-  EXPECT_EQ(5, client.getMaxPendingReqs());
-  EXPECT_EQ(5, client.getMaxInflightReqs());
-  client.sendGet("shutdown", mc_res_notfound);
-  client.waitForReplies();
-  server->join();
-  EXPECT_EQ(1, server->getAcceptedConns());
-}
-
-TEST(AsyncMcClient, inflightThrottle) {
-  inflightThrottleTest(folly::none);
-}
-
-TEST(AsyncMcClient, inflightThrottleSsl) {
-  inflightThrottleTest(validClientSsl());
-}
-
-void inflightThrottleFlushTest(folly::Optional<SSLTestPaths> ssl) {
-  TestServer::Config config;
-  config.outOfOrder = false;
-  config.useSsl = ssl.hasValue();
-  auto server = TestServer::create(std::move(config));
-  TestClient client(
-      "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
-  client.setThrottle(6, 6);
-  for (size_t i = 0; i < 5; ++i) {
+class AsyncMcClientBasicTestBase {
+ protected:
+  void basicTest(
+      mc_protocol_t protocol,
+      folly::Optional<SSLTestPaths> clientSsl,
+      uint64_t qosClass,
+      uint64_t qosPath) {
+    config.outOfOrder = (protocol != mc_ascii_protocol);
+    config.useSsl = clientSsl.hasValue();
+    auto server = TestServer::create(config);
+    TestClient client(
+        "localhost",
+        server->getListenPort(),
+        200,
+        protocol,
+        clientSsl,
+        qosClass,
+        qosPath);
+    client.sendGet("test1", mc_res_found);
+    client.sendGet("test2", mc_res_found);
+    client.sendGet("empty", mc_res_found);
     client.sendGet("hold", mc_res_found);
+    client.sendGet("test3", mc_res_found);
+    client.sendGet("test4", mc_res_found);
+    client.sendGet("value_size:4096", mc_res_found);
+    client.sendGet("value_size:8192", mc_res_found);
+    client.sendGet("value_size:16384", mc_res_found);
+    client.waitForReplies(6);
+    client.sendGet("shutdown", mc_res_notfound);
+    client.waitForReplies();
+    server->join();
+    EXPECT_EQ(1, server->getAcceptedConns());
   }
-  client.sendGet("flush", mc_res_found);
-  client.waitForReplies();
-  EXPECT_EQ(6, client.getMaxPendingReqs());
-  EXPECT_EQ(6, client.getMaxInflightReqs());
-  client.sendGet("shutdown", mc_res_notfound);
-  client.waitForReplies();
-  server->join();
-  EXPECT_EQ(1, server->getAcceptedConns());
-}
 
-TEST(AsyncMcClient, inflightThrottleFlush) {
-  inflightThrottleFlushTest(folly::none);
-}
-
-TEST(AsyncMcClient, inflightThrottleFlushSsl) {
-  inflightThrottleFlushTest(validClientSsl());
-}
-
-void outstandingThrottleTest(folly::Optional<SSLTestPaths> ssl) {
   TestServer::Config config;
-  config.outOfOrder = false;
-  config.useSsl = ssl.hasValue();
-  auto server = TestServer::create(std::move(config));
-  TestClient client(
-      "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
-  client.setThrottle(5, 5);
-  for (size_t i = 0; i < 5; ++i) {
-    client.sendGet("hold", mc_res_timeout);
+};
+
+using ProtocolAndSSL = std::tuple<mc_protocol_t, folly::Optional<SSLTestPaths>>;
+
+class AsyncMcClientBasicTest : public AsyncMcClientBasicTestBase,
+                               public TestWithParam<ProtocolAndSSL> {
+ protected:
+  void runTest(uint64_t qosClass = 0, uint64_t qosPath = 0) {
+    auto protocol = std::get<0>(GetParam());
+    auto ssl = std::get<1>(GetParam());
+    basicTest(protocol, ssl, qosClass, qosPath);
   }
-  client.sendGet("flush", mc_res_local_error);
-  client.waitForReplies();
-  EXPECT_EQ(5, client.getMaxPendingReqs());
-  EXPECT_EQ(5, client.getMaxInflightReqs());
-  client.sendGet("shutdown", mc_res_notfound);
-  client.waitForReplies();
-  server->join();
-  EXPECT_EQ(1, server->getAcceptedConns());
+};
+
+TEST_P(AsyncMcClientBasicTest, basicTest) {
+  runTest();
 }
 
-TEST(AsyncMcClient, outstandingThrottle) {
-  outstandingThrottleTest(folly::none);
+TEST_P(AsyncMcClientBasicTest, qosClass) {
+  for (uint64_t path = 0; path < 4; ++path) {
+    LOG(INFO) << "Path: " << path;
+    // SCOPED_TRACE(folly::to<std::string>("Path=", path));
+    auto qosClass = path + 1;
+    runTest(qosClass, path);
+  }
 }
 
-TEST(AsyncMcClient, outstandingThrottleSsl) {
-  outstandingThrottleTest(validClientSsl());
-}
+INSTANTIATE_TEST_CASE_P(
+    AsyncMcClientTest,
+    AsyncMcClientBasicTest,
+    Combine(
+        Values(
+            mc_ascii_protocol,
+            mc_umbrella_protocol_DONOTUSE,
+            mc_caret_protocol),
+        Values(folly::none, validClientSsl(), getTlsToPtSSL())));
 
-void connectionErrorTest(folly::Optional<SSLTestPaths> ssl) {
-  TestServer::Config config;
-  config.outOfOrder = false;
-  config.useSsl = ssl.hasValue();
-  auto server = TestServer::create(std::move(config));
-  TestClient client1(
-      "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
-  TestClient client2(
-      "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
-  client1.sendGet("shutdown", mc_res_notfound);
-  client1.waitForReplies();
-  /* sleep override */ usleep(10000);
-  client2.sendGet("test", mc_res_connect_error);
-  client2.waitForReplies();
-  server->join();
-  EXPECT_EQ(1, server->getAcceptedConns());
-}
-
-TEST(AsyncMcClient, connectionError) {
-  connectionErrorTest(folly::none);
-}
-
-TEST(AsyncMcClient, connectionErrorSsl) {
-  connectionErrorTest(validClientSsl());
-}
-
-void basicTest(
-    mc_protocol_t protocol,
-    folly::Optional<SSLTestPaths> clientSsl,
-    uint64_t qosClass = 0,
-    uint64_t qosPath = 0,
-    TestServer::Config config = TestServer::Config()) {
-  config.outOfOrder = (protocol != mc_ascii_protocol);
-  config.useSsl = clientSsl.hasValue();
-  auto server = TestServer::create(std::move(config));
-  TestClient client(
-      "localhost",
-      server->getListenPort(),
-      200,
-      protocol,
-      clientSsl,
-      qosClass,
-      qosPath);
-  client.sendGet("test1", mc_res_found);
-  client.sendGet("test2", mc_res_found);
-  client.sendGet("empty", mc_res_found);
-  client.sendGet("hold", mc_res_found);
-  client.sendGet("test3", mc_res_found);
-  client.sendGet("test4", mc_res_found);
-  client.sendGet("value_size:4096", mc_res_found);
-  client.sendGet("value_size:8192", mc_res_found);
-  client.sendGet("value_size:16384", mc_res_found);
-  client.waitForReplies(6);
-  client.sendGet("shutdown", mc_res_notfound);
-  client.waitForReplies();
-  server->join();
-  EXPECT_EQ(1, server->getAcceptedConns());
-}
-
-TEST(AsyncMcClient, basicAscii) {
-  basicTest(mc_ascii_protocol, folly::none);
-}
-
-TEST(AsyncMcClient, basicUmbrella) {
-  basicTest(mc_umbrella_protocol_DONOTUSE, folly::none);
-}
-
-TEST(AsyncMcClient, basicCaret) {
-  basicTest(mc_caret_protocol, folly::none);
-}
-
-TEST(AsyncMcClient, basicAsciiSsl) {
-  basicTest(mc_ascii_protocol, validClientSsl());
-}
-
-TEST(AsyncMcClient, basicUmbrellaSsl) {
-  basicTest(mc_umbrella_protocol_DONOTUSE, validClientSsl());
-}
-
-TEST(AsyncMcClient, basicCaretSsl) {
-  basicTest(mc_caret_protocol, validClientSsl());
-}
-
-TEST(AsyncMcClient, basicCaretSslNoCerts) {
-  TestServer::Config cfg;
-  cfg.requirePeerCerts = false;
-  basicTest(mc_caret_protocol, noCertClientSsl(), 0, 0, cfg);
-  basicTest(mc_caret_protocol, validClientSsl(), 0, 0, cfg);
-}
-
-void qosTest(
-    mc_protocol_t protocol,
-    folly::Optional<SSLTestPaths> ssl,
-    uint64_t qosClass,
-    uint64_t qosPath) {
-  basicTest(protocol, ssl, qosClass, qosPath);
-}
-
-TEST(AsyncMcClient, qosClass1) {
-  qosTest(mc_umbrella_protocol_DONOTUSE, folly::none, 1, 0);
-}
-
-TEST(AsyncMcClient, qosClass2) {
-  qosTest(mc_ascii_protocol, folly::none, 2, 1);
-}
-
-TEST(AsyncMcClient, qosClass3) {
-  qosTest(mc_umbrella_protocol_DONOTUSE, validClientSsl(), 3, 2);
-}
-
-TEST(AsyncMcClient, qosClass4) {
-  qosTest(mc_ascii_protocol, validClientSsl(), 4, 3);
+TEST_F(AsyncMcClientBasicTest, caretSslNoCerts) {
+  config.requirePeerCerts = false;
+  basicTest(mc_caret_protocol, noCertClientSsl(), 0, 0);
+  basicTest(mc_caret_protocol, validClientSsl(), 0, 0);
 }
 
 void reconnectTest(mc_protocol_t protocol) {
@@ -749,7 +712,10 @@ TEST(AsyncMcClient, curruptedUmbrellaReply) {
   umbrellaBinaryReply(data, mc_res_remote_error);
 }
 
-TEST(AsyncMcClient, SslSessionCache) {
+class AsyncMcClientSessionTest : public TestWithParam<SecurityMech> {};
+
+TEST_P(AsyncMcClientSessionTest, SessionResumption) {
+  auto mech = GetParam();
   TestServer::Config config;
   config.useDefaultVersion = true;
   config.numThreads = 4;
@@ -759,16 +725,22 @@ TEST(AsyncMcClient, SslSessionCache) {
 
   auto sendAndCheckRequest = [](TestClient& client, int i) {
     LOG(INFO) << "Connection attempt: " << i;
+    client.setStatusCallbacks(
+        [&](const folly::AsyncTransportWrapper& sock) {
+          auto* socket = sock.getUnderlyingTransport<folly::AsyncSSLSocket>();
+          if (i != 0) {
+            EXPECT_TRUE(socket->getSSLSessionReused());
+          } else {
+            EXPECT_FALSE(socket->getSSLSessionReused());
+          }
+        },
+        nullptr);
     client.sendGet("test", mc_res_found);
     client.waitForReplies();
-    auto transport = client.getClient().getTransport();
-    auto* socket = transport->getUnderlyingTransport<folly::AsyncSSLSocket>();
-    if (i != 0) {
-      EXPECT_TRUE(socket->getSSLSessionReused());
-    } else {
-      EXPECT_FALSE(socket->getSSLSessionReused());
-    }
   };
+
+  auto ssl = validClientSsl();
+  ssl.mech = mech;
 
   for (int i = 0; i < nConnAttempts; i++) {
     TestClient client(
@@ -776,7 +748,7 @@ TEST(AsyncMcClient, SslSessionCache) {
         server->getListenPort(),
         200,
         mc_umbrella_protocol_DONOTUSE,
-        validClientSsl());
+        ssl);
     sendAndCheckRequest(client, i);
   }
 
@@ -788,7 +760,7 @@ TEST(AsyncMcClient, SslSessionCache) {
         server->getListenPort(),
         200,
         mc_umbrella_protocol_DONOTUSE,
-        validClientSsl(),
+        ssl,
         0,
         0,
         "test");
@@ -797,16 +769,17 @@ TEST(AsyncMcClient, SslSessionCache) {
 
   // shutdown the server
   TestClient client(
-      "::1",
-      server->getListenPort(),
-      200,
-      mc_umbrella_protocol_DONOTUSE,
-      validClientSsl());
+      "::1", server->getListenPort(), 200, mc_umbrella_protocol_DONOTUSE, ssl);
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
 
   server->join();
 }
+
+INSTANTIATE_TEST_CASE_P(
+    AsyncMcClientTest,
+    AsyncMcClientSessionTest,
+    Values(SecurityMech::TLS, SecurityMech::TLS_TO_PLAINTEXT));
 
 void versionTest(mc_protocol_t protocol, bool useDefaultVersion) {
   TestServer::Config config;
@@ -889,37 +862,45 @@ TEST(AsyncMcClient, contextProviders) {
   opts.sslPemCertPath = clientCtxPaths.sslCertPath;
   opts.sslPemKeyPath = clientCtxPaths.sslKeyPath;
   opts.sslPemCaPath = clientCtxPaths.sslCaPath;
-  auto clientCtx1 = getClientContext(opts, SecurityMech::TLS);
-  auto clientCtx2 = getClientContext(opts, SecurityMech::TLS);
+  auto mech = SecurityMech::TLS;
+  auto clientCtx1 = getClientContext(opts, mech);
+  auto clientCtx2 = getClientContext(opts, mech);
 
-  auto serverCtx1 = getServerContexts(
-                        serverCtxPaths.sslCertPath,
-                        serverCtxPaths.sslKeyPath,
-                        serverCtxPaths.sslCaPath,
-                        true,
-                        folly::none)
-                        .first;
-  auto serverCtx2 = getServerContexts(
-                        serverCtxPaths.sslCertPath,
-                        serverCtxPaths.sslKeyPath,
-                        serverCtxPaths.sslCaPath,
-                        true,
-                        folly::none)
-                        .first;
+  // make sure mech changes the context
+  mech = SecurityMech::TLS_TO_PLAINTEXT;
+  auto clientCtx3 = getClientContext(opts, mech);
+  auto clientCtx4 = getClientContext(opts, mech);
+
+  auto serverCtxs1 = getServerContexts(
+      serverCtxPaths.sslCertPath,
+      serverCtxPaths.sslKeyPath,
+      serverCtxPaths.sslCaPath,
+      true,
+      folly::none);
+  auto serverCtxs2 = getServerContexts(
+      serverCtxPaths.sslCertPath,
+      serverCtxPaths.sslKeyPath,
+      serverCtxPaths.sslCaPath,
+      true,
+      folly::none);
 
   // client contexts should be the same since they are
   // thread local cached
   EXPECT_EQ(clientCtx1, clientCtx2);
+  EXPECT_EQ(clientCtx3, clientCtx4);
+  EXPECT_NE(clientCtx1, clientCtx3);
 
   // server contexts should be the same for the same reason
-  EXPECT_EQ(serverCtx1, serverCtx2);
+  EXPECT_EQ(serverCtxs1, serverCtxs2);
 
-  EXPECT_NE(clientCtx1, serverCtx1);
+  // client contexts should not equal server contexts
+  EXPECT_NE(clientCtx1, serverCtxs1.first);
+  EXPECT_NE(clientCtx3, serverCtxs1.first);
 }
 
-using TFOTestParams = std::tuple<bool, bool, bool>;
+using TFOTestParams = std::tuple<bool, bool, bool, SecurityMech>;
 
-class AsyncMcClientTFOTest : public testing::TestWithParam<TFOTestParams> {};
+class AsyncMcClientTFOTest : public TestWithParam<TFOTestParams> {};
 
 TEST_P(AsyncMcClientTFOTest, testTfoWithSSL) {
   auto serverEnabled = std::get<0>(GetParam());
@@ -936,30 +917,35 @@ TEST_P(AsyncMcClientTFOTest, testTfoWithSSL) {
   auto constexpr nConnAttempts = 10;
 
   auto sendReq = [serverEnabled, clientEnabled](TestClient& client) {
+    client.setStatusCallbacks(
+        [&](const folly::AsyncTransportWrapper& sock) {
+          auto* socket = sock.getUnderlyingTransport<folly::AsyncSocket>();
+          if (clientEnabled) {
+            EXPECT_TRUE(socket->getTFOAttempted());
+            EXPECT_TRUE(socket->getTFOFinished());
+            // we can not guarantee socket->getTFOSucceeded() will return true
+            // unless there are specific kernel + host settings applied
+            if (!serverEnabled) {
+              EXPECT_FALSE(socket->getTFOSucceded());
+            }
+          } else {
+            EXPECT_FALSE(socket->getTFOAttempted());
+          }
+        },
+        nullptr);
     client.sendGet("test", mc_res_found);
     client.waitForReplies();
-    auto transport = client.getClient().getTransport();
-    auto* socket = transport->getUnderlyingTransport<folly::AsyncSSLSocket>();
-    if (clientEnabled) {
-      EXPECT_TRUE(socket->getTFOAttempted());
-      EXPECT_TRUE(socket->getTFOFinished());
-      // we can not guarantee socket->getTFOSucceeded() will return true
-      // unless there are specific kernel + host settings applied
-      if (!serverEnabled) {
-        EXPECT_FALSE(socket->getTFOSucceded());
-      }
-    } else {
-      EXPECT_FALSE(socket->getTFOAttempted());
-    }
   };
 
+  auto ssl = validClientSsl();
+  ssl.mech = std::get<3>(GetParam());
   for (int i = 0; i < nConnAttempts; i++) {
     TestClient client(
         "::1",
         server->getListenPort(),
         200,
         mc_caret_protocol,
-        validClientSsl(),
+        ssl,
         0,
         0,
         "",
@@ -971,7 +957,7 @@ TEST_P(AsyncMcClientTFOTest, testTfoWithSSL) {
 
   // shutdown the server
   TestClient client(
-      "::1", server->getListenPort(), 200, mc_caret_protocol, validClientSsl());
+      "::1", server->getListenPort(), 200, mc_caret_protocol, ssl);
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
 
@@ -981,9 +967,13 @@ TEST_P(AsyncMcClientTFOTest, testTfoWithSSL) {
 INSTANTIATE_TEST_CASE_P(
     AsyncMcClientTest,
     AsyncMcClientTFOTest,
-    testing::Combine(testing::Bool(), testing::Bool(), testing::Bool()));
+    Combine(
+        Bool(),
+        Bool(),
+        Bool(),
+        Values(SecurityMech::TLS, SecurityMech::TLS_TO_PLAINTEXT)));
 
-class AsyncMcClientSSLOffloadTest : public testing::TestWithParam<bool> {
+class AsyncMcClientSSLOffloadTest : public TestWithParam<bool> {
  public:
   void TearDown() override {
     McSSLUtil::setApplicationSSLVerifier(nullptr);
@@ -1097,7 +1087,4 @@ TEST_P(AsyncMcClientSSLOffloadTest, clientReset) {
   evb.loop();
 }
 
-INSTANTIATE_TEST_CASE_P(
-    AsyncMcClientTest,
-    AsyncMcClientSSLOffloadTest,
-    testing::Bool());
+INSTANTIATE_TEST_CASE_P(AsyncMcClientTest, AsyncMcClientSSLOffloadTest, Bool());

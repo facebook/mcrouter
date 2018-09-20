@@ -254,6 +254,12 @@ std::shared_ptr<SSLContext> createServerSSLContext(
     sslContext->setVerificationOption(
         folly::SSLContext::SSLVerifyPeerEnum::VERIFY);
   }
+#ifdef OPENSSL_NPN_NEGOTIATED
+  // servers can always negotiate this - it is up to the client to do so.
+  sslContext->setAdvertisedNextProtocols(
+      {kMcSecurityTlsToPlaintextProto.str()},
+      SSLContext::NextProtocolType::ALPN);
+#endif
   return sslContext;
 }
 
@@ -334,7 +340,9 @@ std::shared_ptr<fizz::server::FizzServerContext> createFizzServerContext(
   return ctx;
 }
 
-std::shared_ptr<SSLContext> createClientSSLContext(SecurityOptions opts) {
+std::shared_ptr<SSLContext> createClientSSLContext(
+    SecurityOptions opts,
+    SecurityMech mech) {
   auto context = std::make_shared<ClientSSLContext>(ticketCache.get());
   const auto& pemCertPath = opts.sslPemCertPath;
   const auto& pemKeyPath = opts.sslPemKeyPath;
@@ -362,6 +370,13 @@ std::shared_ptr<SSLContext> createClientSSLContext(SecurityOptions opts) {
     context->setVerificationOption(
         folly::SSLContext::SSLVerifyPeerEnum::VERIFY);
   }
+#ifdef OPENSSL_NPN_NEGOTIATED
+  if (mech == SecurityMech::TLS_TO_PLAINTEXT) {
+    context->setAdvertisedNextProtocols(
+        {kMcSecurityTlsToPlaintextProto.str()},
+        SSLContext::NextProtocolType::ALPN);
+  }
+#endif
   return context;
 }
 
@@ -438,7 +453,7 @@ std::shared_ptr<folly::SSLContext> getClientContext(
   auto& info = getClientContextInfo(opts, mech);
   auto now = std::chrono::steady_clock::now();
   if (info.needsContext(now)) {
-    auto ctx = createClientSSLContext(opts);
+    auto ctx = createClientSSLContext(opts, mech);
     info.setContext(std::move(ctx), now);
   }
   return info.context;

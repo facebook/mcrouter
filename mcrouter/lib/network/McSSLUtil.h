@@ -71,6 +71,22 @@ class McSSLUtil {
    * transport after the connection has been accepted.
    */
   static void finalizeClientSSL(folly::AsyncTransportWrapper*) noexcept;
+
+  /**
+   * Check if the ssl connection successfully negotiated falling back to
+   * plaintext
+   */
+  static bool negotiatedPlaintextFallback(
+      const folly::AsyncSSLSocket& sock) noexcept;
+
+  /**
+   * Move the existing ssl socket to plaintext if "mc_tls_to_pt" was
+   * successfully negotiated.  Return value of nullptr means unable to
+   * move.  If non null, the returned transport should be used and sock
+   * has been detached.
+   */
+  static folly::AsyncTransportWrapper::UniquePtr moveToPlaintext(
+      folly::AsyncSSLSocket& sock) noexcept;
 };
 } // namespace memcache
 } // namespace facebook
