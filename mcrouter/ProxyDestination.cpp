@@ -350,6 +350,9 @@ void ProxyDestination::initializeAsyncMcClient() {
   options.tcpKeepAliveIdle = opts.keepalive_idle_s;
   options.tcpKeepAliveInterval = opts.keepalive_interval_s;
   options.writeTimeout = shortestTimeout_;
+  options.connectTimeout =
+      std::chrono::milliseconds(opts.connect_timeout_extra_ms) +
+      shortestTimeout_;
   options.routerInfoName = routerInfoName_;
   if (!opts.debug_fifo_root.empty()) {
     options.debugFifoPath = getClientDebugFifoFullPath(opts);
@@ -572,9 +575,15 @@ void ProxyDestination::updateShortestTimeout(
   }
   if (shortestTimeout_.count() == 0 || shortestTimeout_ > timeout) {
     shortestTimeout_ = timeout;
-    folly::SpinLockGuard g(clientLock_);
-    if (client_) {
-      client_->updateWriteTimeout(shortestTimeout_);
+    {
+      folly::SpinLockGuard g(clientLock_);
+      if (client_) {
+        const auto& opts = proxy.router().opts();
+        auto connectTimeout =
+            std::chrono::milliseconds(opts.connect_timeout_extra_ms) +
+            shortestTimeout_;
+        client_->updateTimeoutsIfShorter(connectTimeout, shortestTimeout_);
+      }
     }
   }
 }

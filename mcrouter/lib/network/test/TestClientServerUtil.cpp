@@ -233,6 +233,7 @@ TestClient::TestClient(
       .attachEventBase(eventBase_);
   auto mech = ssl ? ssl->mech : SecurityMech::NONE;
   ConnectionOptions opts(host, port, protocol, mech);
+  opts.connectTimeout = std::chrono::milliseconds(timeoutMs);
   opts.writeTimeout = std::chrono::milliseconds(timeoutMs);
   opts.compressionCodecMap = compressionCodecMap;
   if (ssl) {

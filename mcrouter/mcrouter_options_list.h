@@ -613,6 +613,17 @@ MCROUTER_OPTION_INTEGER(
     " discarded. Enabled only if value is non-zero and"
     " if proxy-max-throttled-requests is enabled.")
 
+MCROUTER_OPTION_INTEGER(
+    unsigned int,
+    connect_timeout_extra_ms,
+    0,
+    "connect-timeout-extra-ms",
+    no_short,
+    "The extra connect timeout (in ms). The actual connect timeout will be"
+    " (connect_timeout_extra_ms + server_timeout_ms). If there are multiple"
+    " connections to the same box with different timeouts, mcrouter will share"
+    " the same socket and the smallest server_timeout_ms will be used.")
+
 MCROUTER_OPTION_GROUP("Custom Memory Allocation")
 
 MCROUTER_OPTION_TOGGLE(

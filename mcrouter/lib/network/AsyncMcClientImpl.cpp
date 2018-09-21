@@ -573,7 +573,7 @@ void AsyncMcClientImpl::attemptConnection() {
       connectSSLSocketWithAuxIO(
           std::move(sslSockPtr),
           std::move(address),
-          connectionOptions_.writeTimeout.count(),
+          connectionOptions_.connectTimeout.count(),
           std::move(socketOptions))
           .then([self](folly::AsyncSocket::UniquePtr socket) {
             CHECK(self->eventBase_.isInEventBaseThread());
@@ -603,7 +603,7 @@ void AsyncMcClientImpl::attemptConnection() {
       asyncSock->connect(
           this,
           address,
-          connectionOptions_.writeTimeout.count(),
+          connectionOptions_.connectTimeout.count(),
           socketOptions);
     }
   });
@@ -919,16 +919,23 @@ void AsyncMcClientImpl::incMsgId(uint32_t& msgId) {
   msgId += 2;
 }
 
-void AsyncMcClientImpl::updateWriteTimeout(std::chrono::milliseconds timeout) {
-  if (!timeout.count()) {
+void AsyncMcClientImpl::updateTimeoutsIfShorter(
+    std::chrono::milliseconds connectTimeout,
+    std::chrono::milliseconds writeTimeout) {
+  if (!connectTimeout.count() && !writeTimeout.count()) {
     return;
   }
   auto selfWeak = selfPtr_;
-  eventBase_.runInEventBaseThread([selfWeak, timeout]() {
+  eventBase_.runInEventBaseThread([selfWeak, connectTimeout, writeTimeout]() {
     if (auto self = selfWeak.lock()) {
+      if (!self->connectionOptions_.connectTimeout.count() ||
+          self->connectionOptions_.connectTimeout > connectTimeout) {
+        self->connectionOptions_.connectTimeout = connectTimeout;
+      }
+
       if (!self->connectionOptions_.writeTimeout.count() ||
-          self->connectionOptions_.writeTimeout > timeout) {
-        self->connectionOptions_.writeTimeout = timeout;
+          self->connectionOptions_.writeTimeout > writeTimeout) {
+        self->connectionOptions_.writeTimeout = writeTimeout;
       }
 
       if (self->socket_) {

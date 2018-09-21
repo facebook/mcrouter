@@ -158,10 +158,15 @@ class AsyncMcClient {
   size_t getInflightRequestCount() const;
 
   /**
-   * Update send and connect timeout. If new value is larger than current
-   * it is ignored.
+   * Update connect and write timeouts. If the new value is larger than the
+   * current value, it is ignored.
+   *
+   * @param connectTimeout  The new connect timeout.
+   * @param writeTimeout    The new write timeout.
    */
-  void updateWriteTimeout(std::chrono::milliseconds timeout);
+  void updateTimeoutsIfShorter(
+      std::chrono::milliseconds connectTimeout,
+      std::chrono::milliseconds writeTimeout);
 
   /**
    * @return        The transport used to manage socket

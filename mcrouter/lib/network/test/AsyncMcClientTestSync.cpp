@@ -494,7 +494,7 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
   bool wentDown = false;
 
   ConnectionOptions opts("100::", 11302, mc_ascii_protocol);
-  opts.writeTimeout = std::chrono::milliseconds(1000);
+  opts.connectTimeout = std::chrono::milliseconds(1000);
   auto client = std::make_unique<AsyncMcClient>(*eventBase, opts);
   client->setStatusCallbacks(
       [&wasUp](const folly::AsyncTransportWrapper&) { wasUp = true; },

@@ -81,7 +81,9 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   size_t getPendingRequestCount() const;
   size_t getInflightRequestCount() const;
 
-  void updateWriteTimeout(std::chrono::milliseconds timeout);
+  void updateTimeoutsIfShorter(
+      std::chrono::milliseconds connectTimeout,
+      std::chrono::milliseconds writeTimeout);
 
   /**
    * @return        The transport used to manage socket

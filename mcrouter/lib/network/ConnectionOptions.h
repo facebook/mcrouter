@@ -61,7 +61,12 @@ struct ConnectionOptions {
   int tcpKeepAliveInterval{0};
 
   /**
-   * Write/connect timeout in ms.
+   * Connect timeout in ms.
+   */
+  std::chrono::milliseconds connectTimeout{0};
+
+  /**
+   * Write timeout in ms.
    */
   std::chrono::milliseconds writeTimeout{0};
 

@@ -64,9 +64,10 @@ inline size_t AsyncMcClient::getInflightRequestCount() const {
   return base_->getInflightRequestCount();
 }
 
-inline void AsyncMcClient::updateWriteTimeout(
-    std::chrono::milliseconds timeout) {
-  base_->updateWriteTimeout(timeout);
+inline void AsyncMcClient::updateTimeoutsIfShorter(
+    std::chrono::milliseconds connectTimeout,
+    std::chrono::milliseconds writeTimeout) {
+  base_->updateTimeoutsIfShorter(connectTimeout, writeTimeout);
 }
 
 inline const folly::AsyncTransportWrapper* AsyncMcClient::getTransport() {
