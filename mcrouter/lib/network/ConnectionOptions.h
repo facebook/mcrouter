@@ -61,6 +61,13 @@ struct ConnectionOptions {
   int tcpKeepAliveInterval{0};
 
   /**
+   * The number of times to retry establishing a connection in case of a
+   * connect timeout. We will just return the result back to the client after
+   * either the connection is esblished, or we exhausted all retries.
+   */
+  unsigned int numConnectTimeoutRetries{0};
+
+  /**
    * Connect timeout in ms.
    */
   std::chrono::milliseconds connectTimeout{0};

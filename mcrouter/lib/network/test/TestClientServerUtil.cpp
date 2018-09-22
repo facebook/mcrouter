@@ -252,8 +252,10 @@ TestClient::TestClient(
   }
   client_ = std::make_unique<AsyncMcClient>(eventBase_, opts);
   client_->setStatusCallbacks(
-      [](const folly::AsyncTransportWrapper&) { LOG(INFO) << "Client UP."; },
-      [](AsyncMcClient::ConnectionDownReason reason) {
+      [](const folly::AsyncTransportWrapper&, int64_t) {
+        LOG(INFO) << "Client UP.";
+      },
+      [](AsyncMcClient::ConnectionDownReason reason, int64_t) {
         if (reason == AsyncMcClient::ConnectionDownReason::SERVER_GONE_AWAY) {
           LOG(INFO) << "Server gone Away.";
         } else {
@@ -278,23 +280,27 @@ TestClient::TestClient(
 }
 
 void TestClient::setStatusCallbacks(
-    std::function<void(const folly::AsyncTransportWrapper&)> onUp,
-    std::function<void(AsyncMcClient::ConnectionDownReason)> onDown) {
+    std::function<void(const folly::AsyncTransportWrapper&, int64_t)> onUp,
+    std::function<void(AsyncMcClient::ConnectionDownReason, int64_t)> onDown) {
   client_->setStatusCallbacks(
-      [onUp](const folly::AsyncTransportWrapper& socket) {
+      [onUp](
+          const folly::AsyncTransportWrapper& socket,
+          int64_t numConnectRetries) {
         LOG(INFO) << "Client UP.";
         if (onUp) {
-          onUp(socket);
+          onUp(socket, numConnectRetries);
         }
       },
-      [onDown](AsyncMcClient::ConnectionDownReason reason) {
+      [onDown](
+          AsyncMcClient::ConnectionDownReason reason,
+          int64_t numConnectRetries) {
         if (reason == AsyncMcClient::ConnectionDownReason::SERVER_GONE_AWAY) {
           LOG(INFO) << "Server gone Away.";
         } else {
           LOG(INFO) << "Client DOWN.";
         }
         if (onDown) {
-          onDown(reason);
+          onDown(reason, numConnectRetries);
         }
       });
 }

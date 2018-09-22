@@ -62,8 +62,8 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   void closeNow();
 
   void setStatusCallbacks(
-      std::function<void(const folly::AsyncTransportWrapper&)> onUp,
-      std::function<void(ConnectionDownReason)> onDown);
+      std::function<void(const folly::AsyncTransportWrapper&, int64_t)> onUp,
+      std::function<void(ConnectionDownReason, int64_t)> onDown);
 
   void setRequestStatusCallbacks(
       std::function<void(int pendingDiff, int inflightDiff)> onStateChange,
@@ -113,8 +113,10 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   };
 
   struct ConnectionStatusCallbacks {
-    std::function<void(const folly::AsyncTransportWrapper&)> onUp;
-    std::function<void(ConnectionDownReason)> onDown;
+    std::function<
+        void(const folly::AsyncTransportWrapper&, size_t numConnectRetries)>
+        onUp;
+    std::function<void(ConnectionDownReason, size_t numConnectRetires)> onDown;
   };
   struct RequestStatusCallbacks {
     std::function<void(int pendingDiff, int inflightDiff)> onStateChange;
@@ -132,6 +134,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   folly::AsyncTransportWrapper::UniquePtr socket_;
   ConnectionStatusCallbacks statusCallbacks_;
   RequestStatusCallbacks requestStatusCallbacks_;
+  int32_t numConnectTimeoutRetriesLeft_{0};
 
   // Debug pipe.
   ConnectionFifo debugFifo_;
@@ -221,6 +224,8 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   void writeErr(
       size_t bytesWritten,
       const folly::AsyncSocketException& ex) noexcept final;
+
+  int64_t getNumConnectRetries() noexcept;
 
   // Callbacks for McParser.
   template <class Reply>

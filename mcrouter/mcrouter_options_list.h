@@ -624,6 +624,16 @@ MCROUTER_OPTION_INTEGER(
     " connections to the same box with different timeouts, mcrouter will share"
     " the same socket and the smallest server_timeout_ms will be used.")
 
+MCROUTER_OPTION_INTEGER(
+    unsigned int,
+    connect_timeout_retries,
+    0,
+    "connect-timeout-retries",
+    no_short,
+    "The number of times to retry establishing a connection in case of a"
+    " connect timeout. We will just return the result back to the client after"
+    " either the connection is esblished, or we exhausted all retries.")
+
 MCROUTER_OPTION_GROUP("Custom Memory Allocation")
 
 MCROUTER_OPTION_TOGGLE(

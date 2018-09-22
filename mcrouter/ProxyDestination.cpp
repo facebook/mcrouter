@@ -95,7 +95,7 @@ void ProxyDestination::startSendingProbes() {
             // will reconnect if connection was closed
             auto reply = pdstn->getAsyncMcClient().sendSync(
                 McVersionRequest(), pdstn->shortestTimeout_);
-            pdstn->handleTko(reply.result(), true);
+            pdstn->handleTko(reply.result(), /* is_probe_req */ true);
             pdstn->probeInflight_ = false;
           });
         }
@@ -215,7 +215,7 @@ void ProxyDestination::onReply(
     DestinationRequestCtx& destreqCtx,
     const RpcStatsContext& rpcStatsContext,
     bool isRequestBufferDirty) {
-  handleTko(result, false);
+  handleTko(result, /* is_probe_req */ false);
 
   if (!stats_.results) {
     stats_.results = std::make_unique<std::array<uint64_t, mc_nres>>();
@@ -349,6 +349,7 @@ void ProxyDestination::initializeAsyncMcClient() {
   options.tcpKeepAliveCount = opts.keepalive_cnt;
   options.tcpKeepAliveIdle = opts.keepalive_idle_s;
   options.tcpKeepAliveInterval = opts.keepalive_interval_s;
+  options.numConnectTimeoutRetries = opts.connect_timeout_retries;
   options.writeTimeout = shortestTimeout_;
   options.connectTimeout =
       std::chrono::milliseconds(opts.connect_timeout_extra_ms) +
@@ -415,7 +416,9 @@ void ProxyDestination::initializeAsyncMcClient() {
       });
 
   client_->setStatusCallbacks(
-      [this](const folly::AsyncTransportWrapper& socket) mutable {
+      [this](
+          const folly::AsyncTransportWrapper& socket,
+          int64_t numConnectRetries) mutable {
         setState(State::kUp);
         proxy.stats().increment(num_connections_opened_stat);
         if (const auto* sslSocket =
@@ -429,9 +432,16 @@ void ProxyDestination::initializeAsyncMcClient() {
           }
         }
 
+        if (numConnectRetries > 0) {
+          proxy.stats().increment(num_connect_success_after_retrying_stat);
+          proxy.stats().increment(num_connect_retries_stat, numConnectRetries);
+        }
+
         updateConnectionClosedInternalStat();
       },
-      [pdstnPtr = selfPtr_](AsyncMcClient::ConnectionDownReason reason) {
+      [pdstnPtr = selfPtr_](
+          AsyncMcClient::ConnectionDownReason reason,
+          int64_t numConnectRetries) {
         auto pdstn = pdstnPtr.lock();
         if (!pdstn) {
           LOG(WARNING) << "Proxy destination is already destroyed. "
@@ -452,8 +462,15 @@ void ProxyDestination::initializeAsyncMcClient() {
             pdstn->closeGracefully();
           }
           pdstn->setState(State::kDown);
-          pdstn->handleTko(mc_res_connect_error, /* is_probe_req= */ false);
+          pdstn->handleTko(
+              reason == AsyncMcClient::ConnectionDownReason::CONNECT_TIMEOUT
+                  ? mc_res_connect_timeout
+                  : mc_res_connect_error,
+              /* is_probe_req= */ false);
         }
+
+        pdstn->proxy.stats().increment(
+            num_connect_retries_stat, numConnectRetries);
       });
 
   if (opts.target_max_inflight_requests > 0) {

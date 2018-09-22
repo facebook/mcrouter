@@ -204,8 +204,8 @@ class TestClient {
   }
 
   void setStatusCallbacks(
-      std::function<void(const folly::AsyncTransportWrapper&)> onUp,
-      std::function<void(AsyncMcClient::ConnectionDownReason)> onDown);
+      std::function<void(const folly::AsyncTransportWrapper&, int64_t)> onUp,
+      std::function<void(AsyncMcClient::ConnectionDownReason, int64_t)> onDown);
 
   void sendGet(
       std::string key,

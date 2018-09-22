@@ -101,6 +101,7 @@ AsyncMcClientImpl::AsyncMcClientImpl(
     folly::VirtualEventBase& eventBase,
     ConnectionOptions options)
     : eventBase_(eventBase.getEventBase()),
+      numConnectTimeoutRetriesLeft_(options.numConnectTimeoutRetries),
       queue_(options.accessPoint->getProtocol() != mc_ascii_protocol),
       outOfOrder_(options.accessPoint->getProtocol() != mc_ascii_protocol),
       writer_(*this),
@@ -137,15 +138,15 @@ void AsyncMcClientImpl::closeNow() {
 }
 
 void AsyncMcClientImpl::setStatusCallbacks(
-    std::function<void(const folly::AsyncTransportWrapper&)> onUp,
-    std::function<void(ConnectionDownReason)> onDown) {
+    std::function<void(const folly::AsyncTransportWrapper&, int64_t)> onUp,
+    std::function<void(ConnectionDownReason, int64_t)> onDown) {
   DestructorGuard dg(this);
 
   statusCallbacks_ =
       ConnectionStatusCallbacks{std::move(onUp), std::move(onDown)};
 
   if (connectionState_ == ConnectionState::UP && statusCallbacks_.onUp) {
-    statusCallbacks_.onUp(*socket_);
+    statusCallbacks_.onUp(*socket_, getNumConnectRetries());
   }
 }
 
@@ -624,8 +625,10 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
   }
 
   if (statusCallbacks_.onUp) {
-    statusCallbacks_.onUp(*socket_);
+    statusCallbacks_.onUp(*socket_, getNumConnectRetries());
   }
+
+  numConnectTimeoutRetriesLeft_ = connectionOptions_.numConnectTimeoutRetries;
 
   if (!connectionOptions_.debugFifoPath.empty()) {
     if (auto fifoManager = FifoManager::getInstance()) {
@@ -695,21 +698,30 @@ void AsyncMcClientImpl::connectErr(
   if (ex.getType() == folly::AsyncSocketException::TIMED_OUT) {
     error = mc_res_connect_timeout;
     reason = ConnectionDownReason::CONNECT_TIMEOUT;
-    errorMessage = "Timed out when trying to connect to server";
+    errorMessage = folly::to<std::string>(
+        "Timed out when trying to connect to server. Ex: ", ex.what());
   } else if (isAborting_) {
     error = mc_res_aborted;
     reason = ConnectionDownReason::ABORTED;
-    errorMessage = "Connection aborted";
+    errorMessage =
+        folly::to<std::string>("Connection aborted. Ex: ", ex.what());
   }
 
   assert(getInflightRequestCount() == 0);
-  queue_.failAllPending(error, errorMessage);
   connectionState_ = ConnectionState::DOWN;
   // We don't need it anymore, so let it perform complete cleanup.
   socket_.reset();
 
-  if (statusCallbacks_.onDown) {
-    statusCallbacks_.onDown(reason);
+  if (ex.getType() == folly::AsyncSocketException::TIMED_OUT &&
+      numConnectTimeoutRetriesLeft_ > 0) {
+    --numConnectTimeoutRetriesLeft_;
+    attemptConnection();
+  } else {
+    queue_.failAllPending(error, errorMessage);
+    if (statusCallbacks_.onDown) {
+      statusCallbacks_.onDown(reason, getNumConnectRetries());
+    }
+    numConnectTimeoutRetriesLeft_ = connectionOptions_.numConnectTimeoutRetries;
   }
 }
 
@@ -742,7 +754,8 @@ void AsyncMcClientImpl::processShutdown(folly::StringPiece errorMessage) {
         if (statusCallbacks_.onDown) {
           statusCallbacks_.onDown(
               isAborting_ ? ConnectionDownReason::ABORTED
-                          : ConnectionDownReason::ERROR);
+                          : ConnectionDownReason::ERROR,
+              getNumConnectRetries());
         }
 
         connectionState_ = ConnectionState::DOWN;
@@ -878,7 +891,8 @@ void AsyncMcClientImpl::handleConnectionControlMessage(
         break;
       }
       if (statusCallbacks_.onDown) {
-        statusCallbacks_.onDown(ConnectionDownReason::SERVER_GONE_AWAY);
+        statusCallbacks_.onDown(
+            ConnectionDownReason::SERVER_GONE_AWAY, getNumConnectRetries());
       }
       pendingGoAwayReply_ = true;
       scheduleNextWriterLoop();
@@ -967,5 +981,11 @@ double AsyncMcClientImpl::getRetransmissionInfo() {
   }
   return -1.0;
 }
+
+int64_t AsyncMcClientImpl::getNumConnectRetries() noexcept {
+  return connectionOptions_.numConnectTimeoutRetries -
+      numConnectTimeoutRetriesLeft_;
+}
+
 } // memcache
 } // facebook

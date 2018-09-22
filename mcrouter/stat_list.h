@@ -46,6 +46,11 @@ STUI(num_ssl_resumption_attempts, 0, 1)
 STUI(num_ssl_resumption_successes, 0, 1)
 // time between closing an inactive connection and opening it again.
 STAT(inactive_connection_closed_interval_sec, stat_double, 0, .dbl = 0.0)
+
+// Information about connect retries
+STUI(num_connect_success_after_retrying, 0, 1)
+STUI(num_connect_retries, 0, 1)
+
 #undef GROUP
 
 #define GROUP mcproxy_stats | rate_stats

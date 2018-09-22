@@ -497,8 +497,10 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
   opts.connectTimeout = std::chrono::milliseconds(1000);
   auto client = std::make_unique<AsyncMcClient>(*eventBase, opts);
   client->setStatusCallbacks(
-      [&wasUp](const folly::AsyncTransportWrapper&) { wasUp = true; },
-      [&wentDown](AsyncMcClient::ConnectionDownReason) { wentDown = true; });
+      [&wasUp](const folly::AsyncTransportWrapper&, int64_t) { wasUp = true; },
+      [&wentDown](AsyncMcClient::ConnectionDownReason, int64_t) {
+        wentDown = true;
+      });
 
   fiberManager->addTask([&client, &replied] {
     McGetRequest req("hold");
@@ -635,8 +637,10 @@ TEST(AsyncMcClient, tonsOfConnections) {
   /* Create a client to see if it gets evicted. */
   TestClient client("localhost", server->getListenPort(), 1, mc_ascii_protocol);
   client.setStatusCallbacks(
-      [](const folly::AsyncTransportWrapper&) {},
-      [&wentDown](AsyncMcClient::ConnectionDownReason) { wentDown = true; });
+      [](const folly::AsyncTransportWrapper&, int64_t) {},
+      [&wentDown](AsyncMcClient::ConnectionDownReason, int64_t) {
+        wentDown = true;
+      });
   client.sendGet("test", mc_res_found);
   client.waitForReplies();
 
@@ -726,7 +730,7 @@ TEST_P(AsyncMcClientSessionTest, SessionResumption) {
   auto sendAndCheckRequest = [](TestClient& client, int i) {
     LOG(INFO) << "Connection attempt: " << i;
     client.setStatusCallbacks(
-        [&](const folly::AsyncTransportWrapper& sock) {
+        [&](const folly::AsyncTransportWrapper& sock, int64_t) {
           auto* socket = sock.getUnderlyingTransport<folly::AsyncSSLSocket>();
           if (i != 0) {
             EXPECT_TRUE(socket->getSSLSessionReused());
@@ -841,8 +845,8 @@ TEST(AsyncMcClient, caretGoAway) {
   client.sendGet("test", mc_res_found);
   client.sendGet("hold", mc_res_found);
   client.setStatusCallbacks(
-      [](const folly::AsyncTransportWrapper&) {},
-      [&client](AsyncMcClient::ConnectionDownReason reason) {
+      [](const folly::AsyncTransportWrapper&, int64_t) {},
+      [&client](AsyncMcClient::ConnectionDownReason reason, int64_t) {
         if (reason == AsyncMcClient::ConnectionDownReason::SERVER_GONE_AWAY) {
           LOG(INFO) << "Server gone away, flushing";
           client.sendGet("flush", mc_res_found);
@@ -918,7 +922,7 @@ TEST_P(AsyncMcClientTFOTest, testTfoWithSSL) {
 
   auto sendReq = [serverEnabled, clientEnabled](TestClient& client) {
     client.setStatusCallbacks(
-        [&](const folly::AsyncTransportWrapper& sock) {
+        [&](const folly::AsyncTransportWrapper& sock, int64_t) {
           auto* socket = sock.getUnderlyingTransport<folly::AsyncSocket>();
           if (clientEnabled) {
             EXPECT_TRUE(socket->getTFOAttempted());
@@ -1045,8 +1049,10 @@ TEST_P(AsyncMcClientSSLOffloadTest, closeNow) {
   folly::fibers::FiberManager fm(std::move(lc));
   bool upCalled = false;
   folly::Optional<AsyncMcClient::ConnectionDownReason> downReason;
-  auto upFunc = [&](const folly::AsyncTransportWrapper&) { upCalled = true; };
-  auto downFunc = [&](AsyncMcClient::ConnectionDownReason reason) {
+  auto upFunc = [&](const folly::AsyncTransportWrapper&, int64_t) {
+    upCalled = true;
+  };
+  auto downFunc = [&](AsyncMcClient::ConnectionDownReason reason, int64_t) {
     downReason = reason;
   };
 

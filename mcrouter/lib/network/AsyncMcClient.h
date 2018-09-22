@@ -53,7 +53,7 @@ class AsyncMcClient {
   /**
    * Set status callbacks for the underlying connection.
    *
-   * @param onUp  will be called whenever client successfully connects to the
+   * @param onUp  Will be called whenever client successfully connects to the
    *              server. Will be called immediately if we're already connected.
    *              Can be nullptr.
    * @param onDown  will be called whenever connection goes down. Will be passed
@@ -65,8 +65,11 @@ class AsyncMcClient {
    *       some requests left, for wich reply callback wasn't called yet.
    */
   void setStatusCallbacks(
-      std::function<void(const folly::AsyncTransportWrapper&)> onUp,
-      std::function<void(ConnectionDownReason)> onDown);
+      std::function<void(
+          const folly::AsyncTransportWrapper& socket,
+          int64_t numConnectRetries)> onUp,
+      std::function<void(ConnectionDownReason, int64_t numConnectRetires)>
+          onDown);
 
   /**
    * Set callbacks for when requests state change.
