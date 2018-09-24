@@ -86,6 +86,10 @@ struct AccessPoint {
 
   void disableCompression();
 
+  void setSecurityMech(SecurityMech mech) {
+    securityMech_ = mech;
+  }
+
  private:
   std::string host_;
   uint16_t port_;

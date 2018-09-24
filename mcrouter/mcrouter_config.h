@@ -191,6 +191,10 @@ startObservingRuntimeVarsFileCustom(
   return folly::none;
 }
 
+inline bool isInLocalDatacenter(const std::string& /* host */) {
+  return false;
+}
+
 } // mcrouter
 } // memcache
 } // facebook

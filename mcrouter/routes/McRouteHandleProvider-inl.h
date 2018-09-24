@@ -195,6 +195,18 @@ McRouteHandleProvider<RouterInfo>::makePool(
       }
     }
 
+    folly::Optional<SecurityMech> withinDcMech;
+    if (auto jSecurityMech = json.get_ptr("security_mech_within_dc")) {
+      auto mechStr = parseString(*jSecurityMech, "security_mech_within_dc");
+      withinDcMech = parseSecurityMech(mechStr);
+    }
+
+    folly::Optional<SecurityMech> crossDcMech;
+    if (auto jSecurityMech = json.get_ptr("security_mech_cross_dc")) {
+      auto mechStr = parseString(*jSecurityMech, "security_mech_cross_dc");
+      crossDcMech = parseSecurityMech(mechStr);
+    }
+
     // default to 0, which doesn't override
     uint16_t port = 0;
     if (auto jPort = json.get_ptr("port_override")) {
@@ -228,9 +240,20 @@ McRouteHandleProvider<RouterInfo>::makePool(
         destinations.push_back(factory.create(server));
         continue;
       }
+
       auto ap = AccessPoint::create(
           server.stringPiece(), protocol, mech, port, enableCompression);
       checkLogic(ap != nullptr, "invalid server {}", server.stringPiece());
+
+      if (withinDcMech.hasValue() || crossDcMech.hasValue()) {
+        bool isInLocalDc = isInLocalDatacenter(ap->getHost());
+        if (isInLocalDc && withinDcMech.hasValue()) {
+          ap->setSecurityMech(withinDcMech.value());
+        }
+        if (!isInLocalDc && crossDcMech.hasValue()) {
+          ap->setSecurityMech(crossDcMech.value());
+        }
+      }
 
       if (ap->compressed() && proxy_.router().getCodecManager() == nullptr) {
         if (!initCompression(proxy_.router())) {
@@ -241,7 +264,6 @@ McRouteHandleProvider<RouterInfo>::makePool(
               "Disabling compression for host: {}",
               name,
               server.stringPiece());
-
           ap->disableCompression();
         }
       }
