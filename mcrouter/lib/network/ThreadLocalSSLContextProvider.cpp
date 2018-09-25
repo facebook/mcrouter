@@ -17,6 +17,7 @@
 #include <folly/Singleton.h>
 #include <folly/hash/Hash.h>
 #include <folly/io/async/SSLContext.h>
+#include <folly/io/async/SSLOptions.h>
 #include <wangle/client/persistence/SharedMutexCacheLockGuard.h>
 #include <wangle/client/ssl/SSLSessionCacheData.h>
 #include <wangle/client/ssl/SSLSessionPersistentCache.h>
@@ -174,6 +175,9 @@ bool configureServerSSLContext(
     logCertFailure("client CA list", pemCaPath, ex);
     return false;
   }
+
+  folly::ssl::setCipherSuites<folly::ssl::SSLServerOptions>(sslContext);
+
   return true;
 }
 
@@ -344,6 +348,9 @@ std::shared_ptr<SSLContext> createClientSSLContext(
     SecurityOptions opts,
     SecurityMech mech) {
   auto context = std::make_shared<ClientSSLContext>(ticketCache.get());
+  // note we use setCipherSuites instead of setClientOptions since client
+  // options will enable false start by default.
+  folly::ssl::setCipherSuites<folly::ssl::SSLCommonOptions>(*context);
   const auto& pemCertPath = opts.sslPemCertPath;
   const auto& pemKeyPath = opts.sslPemKeyPath;
   const auto& pemCaPath = opts.sslPemCaPath;
