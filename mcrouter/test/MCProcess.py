@@ -135,11 +135,17 @@ class MCProcess(ProcessBase):
             self.addr = ('localhost', port)
             self.port = port
             self.addr_family = socket.AF_INET
+        memcached = False
+        if cmd is not None and 'memcached' in cmd[0]:
+            memcached = True
 
         if base_dir is None:
             base_dir = BaseDirectory('MCProcess')
 
         ProcessBase.__init__(self, cmd, base_dir, junk_fill)
+        # memcached could take little longer to initialize
+        if memcached:
+            time.sleep(3)
         self.deletes = 0
         self.others = 0
 
@@ -152,6 +158,7 @@ class MCProcess(ProcessBase):
         self.fd = self.socket.makefile()
 
     def ensure_connected(self):
+        retry_count = 0
         while True:
             try:
                 self.connect()
@@ -159,6 +166,10 @@ class MCProcess(ProcessBase):
             except Exception as e:
                 if e.errno == errno.ECONNREFUSED:
                     pass
+                # if socket is not present or not ready to listen
+                elif e.errno == errno.ENOENT and retry_count < 5:
+                    time.sleep(1)
+                    retry_count += 1
                 else:
                     raise
 
