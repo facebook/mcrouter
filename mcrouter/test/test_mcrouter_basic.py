@@ -1,4 +1,4 @@
-# Copyright (c) 2017, Facebook, Inc.
+# Copyright (c) 2017-present, Facebook, Inc.
 #
 # This source code is licensed under the MIT license found in the LICENSE
 # file in the root directory of this source tree.
@@ -163,6 +163,8 @@ class TestMcrouterBasic(TestMcrouterBasicBase):
 
         # past
         self.assertTrue(mcr.set('key', 'value', exptime=1432250000))
+        # items with past time may a second or two longer
+        time.sleep(2)
         self.assertIsNone(mcr.get('key'))
 
 
