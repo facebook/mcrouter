@@ -34,6 +34,8 @@
 #include "mcrouter/lib/carbon/test/a/gen/AMessages.h"
 #include "mcrouter/lib/network/gen/CommonMessages.h"
 
+#include "folly/container/F14Map.h"
+#include "folly/container/F14Set.h"
 #include "mcrouter/lib/carbon/test/TestUserType.h"
 
 namespace carbon {
@@ -332,6 +334,63 @@ class TestRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return testIOBufList_;
   }
+  const folly::F14FastMap<std::string, std::string>& testF14FastMap() const {
+    return testF14FastMap_;
+  }
+  folly::F14FastMap<std::string, std::string>& testF14FastMap() {
+    markBufferAsDirty();
+    return testF14FastMap_;
+  }
+  const folly::F14NodeMap<std::string, std::string>& testF14NodeMap() const {
+    return testF14NodeMap_;
+  }
+  folly::F14NodeMap<std::string, std::string>& testF14NodeMap() {
+    markBufferAsDirty();
+    return testF14NodeMap_;
+  }
+  const folly::F14ValueMap<std::string, std::string>& testF14ValueMap() const {
+    return testF14ValueMap_;
+  }
+  folly::F14ValueMap<std::string, std::string>& testF14ValueMap() {
+    markBufferAsDirty();
+    return testF14ValueMap_;
+  }
+  const folly::F14VectorMap<std::string, std::string>& testF14VectorMap()
+      const {
+    return testF14VectorMap_;
+  }
+  folly::F14VectorMap<std::string, std::string>& testF14VectorMap() {
+    markBufferAsDirty();
+    return testF14VectorMap_;
+  }
+  const folly::F14FastSet<std::string>& testF14FastSet() const {
+    return testF14FastSet_;
+  }
+  folly::F14FastSet<std::string>& testF14FastSet() {
+    markBufferAsDirty();
+    return testF14FastSet_;
+  }
+  const folly::F14NodeSet<std::string>& testF14NodeSet() const {
+    return testF14NodeSet_;
+  }
+  folly::F14NodeSet<std::string>& testF14NodeSet() {
+    markBufferAsDirty();
+    return testF14NodeSet_;
+  }
+  const folly::F14ValueSet<std::string>& testF14ValueSet() const {
+    return testF14ValueSet_;
+  }
+  folly::F14ValueSet<std::string>& testF14ValueSet() {
+    markBufferAsDirty();
+    return testF14ValueSet_;
+  }
+  const folly::F14VectorSet<std::string>& testF14VectorSet() const {
+    return testF14VectorSet_;
+  }
+  folly::F14VectorSet<std::string>& testF14VectorSet() {
+    markBufferAsDirty();
+    return testF14VectorSet_;
+  }
   const UserType& testType() const {
     return testType_;
   }
@@ -380,6 +439,14 @@ class TestRequest : public carbon::RequestCommon {
   folly::Optional<bool> testOptionalBool_;
   std::vector<folly::Optional<std::string>> testOptionalVec_;
   std::vector<folly::IOBuf> testIOBufList_;
+  folly::F14FastMap<std::string, std::string> testF14FastMap_;
+  folly::F14NodeMap<std::string, std::string> testF14NodeMap_;
+  folly::F14ValueMap<std::string, std::string> testF14ValueMap_;
+  folly::F14VectorMap<std::string, std::string> testF14VectorMap_;
+  folly::F14FastSet<std::string> testF14FastSet_;
+  folly::F14NodeSet<std::string> testF14NodeSet_;
+  folly::F14ValueSet<std::string> testF14ValueSet_;
+  folly::F14VectorSet<std::string> testF14VectorSet_;
   UserType testType_;
   int32_t testInt32_{0};
   uint32_t testUInt32_{0};
@@ -721,6 +788,182 @@ class TestOptionalUnion {
       _carbon_variant;
 
   uint32_t _which_{0};
+};
+
+class TestF14Containers {
+ public:
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasFlags = false;
+  static constexpr bool hasKey = false;
+  static constexpr bool hasValue = false;
+
+  TestF14Containers() = default;
+  TestF14Containers(const TestF14Containers&) = default;
+  TestF14Containers& operator=(const TestF14Containers&) = default;
+  TestF14Containers(TestF14Containers&&) = default;
+  TestF14Containers& operator=(TestF14Containers&&) = default;
+
+  const folly::F14FastMap<std::string, int64_t>& fastMap() const {
+    return fastMap_;
+  }
+  folly::F14FastMap<std::string, int64_t>& fastMap() {
+    return fastMap_;
+  }
+  const folly::F14NodeMap<std::string, int64_t>& nodeMap() const {
+    return nodeMap_;
+  }
+  folly::F14NodeMap<std::string, int64_t>& nodeMap() {
+    return nodeMap_;
+  }
+  const folly::F14ValueMap<std::string, int64_t>& valueMap() const {
+    return valueMap_;
+  }
+  folly::F14ValueMap<std::string, int64_t>& valueMap() {
+    return valueMap_;
+  }
+  const folly::F14VectorMap<std::string, int64_t>& vectorMap() const {
+    return vectorMap_;
+  }
+  folly::F14VectorMap<std::string, int64_t>& vectorMap() {
+    return vectorMap_;
+  }
+  const folly::F14FastSet<int64_t>& fastSet() const {
+    return fastSet_;
+  }
+  folly::F14FastSet<int64_t>& fastSet() {
+    return fastSet_;
+  }
+  const folly::F14FastSet<int64_t>& nodeSet() const {
+    return nodeSet_;
+  }
+  folly::F14FastSet<int64_t>& nodeSet() {
+    return nodeSet_;
+  }
+  const folly::F14FastSet<int64_t>& valueSet() const {
+    return valueSet_;
+  }
+  folly::F14FastSet<int64_t>& valueSet() {
+    return valueSet_;
+  }
+  const folly::F14FastSet<int64_t>& vectorSet() const {
+    return vectorSet_;
+  }
+  folly::F14FastSet<int64_t>& vectorSet() {
+    return vectorSet_;
+  }
+  uint64_t flags() const {
+    return 0;
+  }
+  int32_t exptime() const {
+    return 0;
+  }
+
+  void serialize(carbon::CarbonProtocolWriter& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  folly::F14FastMap<std::string, int64_t> fastMap_;
+  folly::F14NodeMap<std::string, int64_t> nodeMap_;
+  folly::F14ValueMap<std::string, int64_t> valueMap_;
+  folly::F14VectorMap<std::string, int64_t> vectorMap_;
+  folly::F14FastSet<int64_t> fastSet_;
+  folly::F14FastSet<int64_t> nodeSet_;
+  folly::F14FastSet<int64_t> valueSet_;
+  folly::F14FastSet<int64_t> vectorSet_;
+};
+
+class TestStdContainers {
+ public:
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasFlags = false;
+  static constexpr bool hasKey = false;
+  static constexpr bool hasValue = false;
+
+  TestStdContainers() = default;
+  TestStdContainers(const TestStdContainers&) = default;
+  TestStdContainers& operator=(const TestStdContainers&) = default;
+  TestStdContainers(TestStdContainers&&) = default;
+  TestStdContainers& operator=(TestStdContainers&&) = default;
+
+  const std::unordered_map<std::string, int64_t>& fastMap() const {
+    return fastMap_;
+  }
+  std::unordered_map<std::string, int64_t>& fastMap() {
+    return fastMap_;
+  }
+  const std::unordered_map<std::string, int64_t>& nodeMap() const {
+    return nodeMap_;
+  }
+  std::unordered_map<std::string, int64_t>& nodeMap() {
+    return nodeMap_;
+  }
+  const std::unordered_map<std::string, int64_t>& valueMap() const {
+    return valueMap_;
+  }
+  std::unordered_map<std::string, int64_t>& valueMap() {
+    return valueMap_;
+  }
+  const std::unordered_map<std::string, int64_t>& vectorMap() const {
+    return vectorMap_;
+  }
+  std::unordered_map<std::string, int64_t>& vectorMap() {
+    return vectorMap_;
+  }
+  const std::unordered_set<int64_t>& fastSet() const {
+    return fastSet_;
+  }
+  std::unordered_set<int64_t>& fastSet() {
+    return fastSet_;
+  }
+  const std::unordered_set<int64_t>& nodeSet() const {
+    return nodeSet_;
+  }
+  std::unordered_set<int64_t>& nodeSet() {
+    return nodeSet_;
+  }
+  const std::unordered_set<int64_t>& valueSet() const {
+    return valueSet_;
+  }
+  std::unordered_set<int64_t>& valueSet() {
+    return valueSet_;
+  }
+  const std::unordered_set<int64_t>& vectorSet() const {
+    return vectorSet_;
+  }
+  std::unordered_set<int64_t>& vectorSet() {
+    return vectorSet_;
+  }
+  uint64_t flags() const {
+    return 0;
+  }
+  int32_t exptime() const {
+    return 0;
+  }
+
+  void serialize(carbon::CarbonProtocolWriter& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  std::unordered_map<std::string, int64_t> fastMap_;
+  std::unordered_map<std::string, int64_t> nodeMap_;
+  std::unordered_map<std::string, int64_t> valueMap_;
+  std::unordered_map<std::string, int64_t> vectorMap_;
+  std::unordered_set<int64_t> fastSet_;
+  std::unordered_set<int64_t> nodeSet_;
+  std::unordered_set<int64_t> valueSet_;
+  std::unordered_set<int64_t> vectorSet_;
 };
 } // namespace test
 } // namespace carbon

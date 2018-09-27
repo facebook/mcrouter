@@ -40,11 +40,11 @@ std::string longString();
 void expectEqSimpleStruct(const SimpleStruct& a, const SimpleStruct& b);
 void expectEqTestRequest(const TestRequest& a, const TestRequest& b);
 
-template <class T>
-T serializeAndDeserialize(const T&);
+template <class T, class Out = T>
+Out serializeAndDeserialize(const T&);
 
-template <class T>
-T serializeAndDeserialize(const T&, size_t& bytesWritten);
+template <class T, class Out = T>
+Out serializeAndDeserialize(const T&, size_t& bytesWritten);
 
 /**
  * Takes a boolean predicate and returns the list of subranges over
@@ -88,8 +88,8 @@ std::vector<std::pair<T, T>> satisfiedSubranges(std::function<bool(T)> pred) {
   return satisfiedRanges;
 }
 
-} // util
-} // test
-} // carbon
+} // namespace util
+} // namespace test
+} // namespace carbon
 
 #include "Util-inl.h"

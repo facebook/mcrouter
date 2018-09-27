@@ -17,6 +17,8 @@
 
 #include <folly/Optional.h>
 #include <folly/Traits.h>
+#include <folly/container/F14Map.h>
+#include <folly/container/F14Set.h>
 #include <folly/io/IOBuf.h>
 
 #include "mcrouter/lib/carbon/CarbonProtocolReader.h"
@@ -157,7 +159,11 @@ struct SerializationTraits<
     typename std::enable_if<folly::IsOneOf<
         T,
         std::set<typename T::key_type>,
-        std::unordered_set<typename T::key_type>>::value>::type> {
+        std::unordered_set<typename T::key_type>,
+        folly::F14FastSet<typename T::key_type>,
+        folly::F14NodeSet<typename T::key_type>,
+        folly::F14ValueSet<typename T::key_type>,
+        folly::F14VectorSet<typename T::key_type>>::value>::type> {
   static constexpr carbon::FieldType kWireType = carbon::FieldType::Set;
 
   using inner_type = typename T::key_type;
@@ -181,6 +187,22 @@ struct SerializationTraits<
     set.reserve(len);
   }
 
+  static void reserve(folly::F14FastSet<inner_type>& set, size_t len) {
+    set.reserve(len);
+  }
+
+  static void reserve(folly::F14NodeSet<inner_type>& set, size_t len) {
+    set.reserve(len);
+  }
+
+  static void reserve(folly::F14ValueSet<inner_type>& set, size_t len) {
+    set.reserve(len);
+  }
+
+  static void reserve(folly::F14VectorSet<inner_type>& set, size_t len) {
+    set.reserve(len);
+  }
+
   static auto begin(const T& set) -> decltype(set.begin()) {
     return set.begin();
   }
@@ -196,7 +218,11 @@ struct SerializationTraits<
     typename std::enable_if<folly::IsOneOf<
         T,
         std::map<typename T::key_type, typename T::mapped_type>,
-        std::unordered_map<typename T::key_type, typename T::mapped_type>>::
+        std::unordered_map<typename T::key_type, typename T::mapped_type>,
+        folly::F14FastMap<typename T::key_type, typename T::mapped_type>,
+        folly::F14NodeMap<typename T::key_type, typename T::mapped_type>,
+        folly::F14ValueMap<typename T::key_type, typename T::mapped_type>,
+        folly::F14VectorMap<typename T::key_type, typename T::mapped_type>>::
                                 value>::type> {
   static constexpr carbon::FieldType kWireType = carbon::FieldType::Map;
 
@@ -221,6 +247,30 @@ struct SerializationTraits<
     map.reserve(len);
   }
 
+  static void reserve(
+      folly::F14FastMap<key_type, mapped_type>& map,
+      size_t len) {
+    map.reserve(len);
+  }
+
+  static void reserve(
+      folly::F14NodeMap<key_type, mapped_type>& map,
+      size_t len) {
+    map.reserve(len);
+  }
+
+  static void reserve(
+      folly::F14ValueMap<key_type, mapped_type>& map,
+      size_t len) {
+    map.reserve(len);
+  }
+
+  static void reserve(
+      folly::F14VectorMap<key_type, mapped_type>& map,
+      size_t len) {
+    map.reserve(len);
+  }
+
   template <class... Args>
   static auto emplace(T& map, Args&&... args)
       -> decltype(map.emplace(std::forward<Args>(args)...)) {
@@ -236,4 +286,4 @@ struct SerializationTraits<
   }
 };
 
-} // carbon
+} // namespace carbon

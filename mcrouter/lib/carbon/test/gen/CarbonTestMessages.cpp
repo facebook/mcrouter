@@ -54,6 +54,14 @@ void TestRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeField(30 /* field id */, testOptionalBool());
   writer.writeField(31 /* field id */, testOptionalVec());
   writer.writeField(32 /* field id */, testIOBufList());
+  writer.writeField(33 /* field id */, testF14FastMap());
+  writer.writeField(34 /* field id */, testF14NodeMap());
+  writer.writeField(35 /* field id */, testF14ValueMap());
+  writer.writeField(36 /* field id */, testF14VectorMap());
+  writer.writeField(37 /* field id */, testF14FastSet());
+  writer.writeField(38 /* field id */, testF14NodeSet());
+  writer.writeField(39 /* field id */, testF14ValueSet());
+  writer.writeField(40 /* field id */, testF14VectorSet());
   writer.writeField(100 /* field id */, testType());
   writer.writeFieldStop();
   writer.writeStructEnd();
@@ -201,6 +209,38 @@ void TestRequest::deserialize(carbon::CarbonProtocolReader& reader) {
       }
       case 32: {
         reader.readField(testIOBufList(), fieldType);
+        break;
+      }
+      case 33: {
+        reader.readField(testF14FastMap(), fieldType);
+        break;
+      }
+      case 34: {
+        reader.readField(testF14NodeMap(), fieldType);
+        break;
+      }
+      case 35: {
+        reader.readField(testF14ValueMap(), fieldType);
+        break;
+      }
+      case 36: {
+        reader.readField(testF14VectorMap(), fieldType);
+        break;
+      }
+      case 37: {
+        reader.readField(testF14FastSet(), fieldType);
+        break;
+      }
+      case 38: {
+        reader.readField(testF14NodeSet(), fieldType);
+        break;
+      }
+      case 39: {
+        reader.readField(testF14ValueSet(), fieldType);
+        break;
+      }
+      case 40: {
+        reader.readField(testF14VectorSet(), fieldType);
         break;
       }
       case 100: {
@@ -401,6 +441,140 @@ void TestOptionalUnion::deserialize(carbon::CarbonProtocolReader& reader) {
       }
       case 3: {
         reader.readRawInto(emplace<3>());
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+void TestF14Containers::serialize(carbon::CarbonProtocolWriter& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, fastMap());
+  writer.writeField(2 /* field id */, nodeMap());
+  writer.writeField(3 /* field id */, valueMap());
+  writer.writeField(4 /* field id */, vectorMap());
+  writer.writeField(5 /* field id */, fastSet());
+  writer.writeField(6 /* field id */, nodeSet());
+  writer.writeField(7 /* field id */, valueSet());
+  writer.writeField(8 /* field id */, vectorSet());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+void TestF14Containers::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readField(fastMap(), fieldType);
+        break;
+      }
+      case 2: {
+        reader.readField(nodeMap(), fieldType);
+        break;
+      }
+      case 3: {
+        reader.readField(valueMap(), fieldType);
+        break;
+      }
+      case 4: {
+        reader.readField(vectorMap(), fieldType);
+        break;
+      }
+      case 5: {
+        reader.readField(fastSet(), fieldType);
+        break;
+      }
+      case 6: {
+        reader.readField(nodeSet(), fieldType);
+        break;
+      }
+      case 7: {
+        reader.readField(valueSet(), fieldType);
+        break;
+      }
+      case 8: {
+        reader.readField(vectorSet(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+void TestStdContainers::serialize(carbon::CarbonProtocolWriter& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, fastMap());
+  writer.writeField(2 /* field id */, nodeMap());
+  writer.writeField(3 /* field id */, valueMap());
+  writer.writeField(4 /* field id */, vectorMap());
+  writer.writeField(5 /* field id */, fastSet());
+  writer.writeField(6 /* field id */, nodeSet());
+  writer.writeField(7 /* field id */, valueSet());
+  writer.writeField(8 /* field id */, vectorSet());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+void TestStdContainers::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readField(fastMap(), fieldType);
+        break;
+      }
+      case 2: {
+        reader.readField(nodeMap(), fieldType);
+        break;
+      }
+      case 3: {
+        reader.readField(valueMap(), fieldType);
+        break;
+      }
+      case 4: {
+        reader.readField(vectorMap(), fieldType);
+        break;
+      }
+      case 5: {
+        reader.readField(fastSet(), fieldType);
+        break;
+      }
+      case 6: {
+        reader.readField(nodeSet(), fieldType);
+        break;
+      }
+      case 7: {
+        reader.readField(valueSet(), fieldType);
+        break;
+      }
+      case 8: {
+        reader.readField(vectorSet(), fieldType);
         break;
       }
       default: {

@@ -5,6 +5,9 @@ import "mcrouter/lib/network/Common.idl"
 
 include "mcrouter/lib/carbon/test/TestUserType.h"
 
+include "folly/container/F14Map.h"
+include "folly/container/F14Set.h"
+
 request TestRequest with 1: SimpleStruct as Base {
   id: 3;
   name: "test";
@@ -42,6 +45,14 @@ request TestRequest with 1: SimpleStruct as Base {
   30: folly::Optional<bool> testOptionalBool;
   31: std::vector<folly::Optional<std::string>> testOptionalVec;
   32: std::vector<folly::IOBuf> testIOBufList;
+  33: folly::F14FastMap<std::string, std::string> testF14FastMap;
+  34: folly::F14NodeMap<std::string, std::string> testF14NodeMap;
+  35: folly::F14ValueMap<std::string, std::string> testF14ValueMap;
+  36: folly::F14VectorMap<std::string, std::string> testF14VectorMap;
+  37: folly::F14FastSet<std::string> testF14FastSet;
+  38: folly::F14NodeSet<std::string> testF14NodeSet;
+  39: folly::F14ValueSet<std::string> testF14ValueSet;
+  40: folly::F14VectorSet<std::string> testF14VectorSet;
   100: UserType testType;
 };
 
@@ -71,6 +82,28 @@ union TestOptionalUnion {
   1: folly::Optional<int64_t> umember1;
   2: folly::Optional<bool> umember2;
   3: folly::Optional<std::string> umember3;
+};
+
+struct TestF14Containers {
+  1: folly::F14FastMap<std::string, int64_t> fastMap;
+  2: folly::F14NodeMap<std::string, int64_t> nodeMap;
+  3: folly::F14ValueMap<std::string, int64_t> valueMap;
+  4: folly::F14VectorMap<std::string, int64_t> vectorMap;
+  5: folly::F14FastSet<int64_t> fastSet;
+  6: folly::F14FastSet<int64_t> nodeSet;
+  7: folly::F14FastSet<int64_t> valueSet;
+  8: folly::F14FastSet<int64_t> vectorSet;
+};
+
+struct TestStdContainers {
+  1: std::unordered_map<std::string, int64_t> fastMap;
+  2: std::unordered_map<std::string, int64_t> nodeMap;
+  3: std::unordered_map<std::string, int64_t> valueMap;
+  4: std::unordered_map<std::string, int64_t> vectorMap;
+  5: std::unordered_set<int64_t> fastSet;
+  6: std::unordered_set<int64_t> nodeSet;
+  7: std::unordered_set<int64_t> valueSet;
+  8: std::unordered_set<int64_t> vectorSet;
 };
 
 service {

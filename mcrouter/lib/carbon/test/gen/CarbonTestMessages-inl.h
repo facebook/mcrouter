@@ -120,6 +120,30 @@ void TestRequest::visitFields(V&& v) {
   if (!v.visitField(32, "testIOBufList", testIOBufList_)) {
     return;
   }
+  if (!v.visitField(33, "testF14FastMap", testF14FastMap_)) {
+    return;
+  }
+  if (!v.visitField(34, "testF14NodeMap", testF14NodeMap_)) {
+    return;
+  }
+  if (!v.visitField(35, "testF14ValueMap", testF14ValueMap_)) {
+    return;
+  }
+  if (!v.visitField(36, "testF14VectorMap", testF14VectorMap_)) {
+    return;
+  }
+  if (!v.visitField(37, "testF14FastSet", testF14FastSet_)) {
+    return;
+  }
+  if (!v.visitField(38, "testF14NodeSet", testF14NodeSet_)) {
+    return;
+  }
+  if (!v.visitField(39, "testF14ValueSet", testF14ValueSet_)) {
+    return;
+  }
+  if (!v.visitField(40, "testF14VectorSet", testF14VectorSet_)) {
+    return;
+  }
   if (!v.visitField(100, "testType", testType_)) {
     return;
   }
@@ -227,6 +251,30 @@ void TestRequest::visitFields(V&& v) const {
     return;
   }
   if (!v.visitField(32, "testIOBufList", testIOBufList_)) {
+    return;
+  }
+  if (!v.visitField(33, "testF14FastMap", testF14FastMap_)) {
+    return;
+  }
+  if (!v.visitField(34, "testF14NodeMap", testF14NodeMap_)) {
+    return;
+  }
+  if (!v.visitField(35, "testF14ValueMap", testF14ValueMap_)) {
+    return;
+  }
+  if (!v.visitField(36, "testF14VectorMap", testF14VectorMap_)) {
+    return;
+  }
+  if (!v.visitField(37, "testF14FastSet", testF14FastSet_)) {
+    return;
+  }
+  if (!v.visitField(38, "testF14NodeSet", testF14NodeSet_)) {
+    return;
+  }
+  if (!v.visitField(39, "testF14ValueSet", testF14ValueSet_)) {
+    return;
+  }
+  if (!v.visitField(40, "testF14VectorSet", testF14VectorSet_)) {
     return;
   }
   if (!v.visitField(100, "testType", testType_)) {
@@ -374,6 +422,118 @@ void TestOptionalUnion::foreachMember(V&& v) const {
 
   if (!v.template visitUnionMember<3, folly::Optional<std::string>>(
           "umember3", *this)) {
+    return;
+  }
+}
+
+template <class V>
+void TestF14Containers::visitFields(V&& v) {
+  if (!v.visitField(1, "fastMap", fastMap_)) {
+    return;
+  }
+  if (!v.visitField(2, "nodeMap", nodeMap_)) {
+    return;
+  }
+  if (!v.visitField(3, "valueMap", valueMap_)) {
+    return;
+  }
+  if (!v.visitField(4, "vectorMap", vectorMap_)) {
+    return;
+  }
+  if (!v.visitField(5, "fastSet", fastSet_)) {
+    return;
+  }
+  if (!v.visitField(6, "nodeSet", nodeSet_)) {
+    return;
+  }
+  if (!v.visitField(7, "valueSet", valueSet_)) {
+    return;
+  }
+  if (!v.visitField(8, "vectorSet", vectorSet_)) {
+    return;
+  }
+}
+
+template <class V>
+void TestF14Containers::visitFields(V&& v) const {
+  if (!v.visitField(1, "fastMap", fastMap_)) {
+    return;
+  }
+  if (!v.visitField(2, "nodeMap", nodeMap_)) {
+    return;
+  }
+  if (!v.visitField(3, "valueMap", valueMap_)) {
+    return;
+  }
+  if (!v.visitField(4, "vectorMap", vectorMap_)) {
+    return;
+  }
+  if (!v.visitField(5, "fastSet", fastSet_)) {
+    return;
+  }
+  if (!v.visitField(6, "nodeSet", nodeSet_)) {
+    return;
+  }
+  if (!v.visitField(7, "valueSet", valueSet_)) {
+    return;
+  }
+  if (!v.visitField(8, "vectorSet", vectorSet_)) {
+    return;
+  }
+}
+
+template <class V>
+void TestStdContainers::visitFields(V&& v) {
+  if (!v.visitField(1, "fastMap", fastMap_)) {
+    return;
+  }
+  if (!v.visitField(2, "nodeMap", nodeMap_)) {
+    return;
+  }
+  if (!v.visitField(3, "valueMap", valueMap_)) {
+    return;
+  }
+  if (!v.visitField(4, "vectorMap", vectorMap_)) {
+    return;
+  }
+  if (!v.visitField(5, "fastSet", fastSet_)) {
+    return;
+  }
+  if (!v.visitField(6, "nodeSet", nodeSet_)) {
+    return;
+  }
+  if (!v.visitField(7, "valueSet", valueSet_)) {
+    return;
+  }
+  if (!v.visitField(8, "vectorSet", vectorSet_)) {
+    return;
+  }
+}
+
+template <class V>
+void TestStdContainers::visitFields(V&& v) const {
+  if (!v.visitField(1, "fastMap", fastMap_)) {
+    return;
+  }
+  if (!v.visitField(2, "nodeMap", nodeMap_)) {
+    return;
+  }
+  if (!v.visitField(3, "valueMap", valueMap_)) {
+    return;
+  }
+  if (!v.visitField(4, "vectorMap", vectorMap_)) {
+    return;
+  }
+  if (!v.visitField(5, "fastSet", fastSet_)) {
+    return;
+  }
+  if (!v.visitField(6, "nodeSet", nodeSet_)) {
+    return;
+  }
+  if (!v.visitField(7, "valueSet", valueSet_)) {
+    return;
+  }
+  if (!v.visitField(8, "vectorSet", vectorSet_)) {
     return;
   }
 }

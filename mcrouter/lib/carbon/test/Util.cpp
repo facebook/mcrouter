@@ -33,7 +33,7 @@ void compareOptionalIobuf(
     EXPECT_EQ(coalesceAndGetRange(aCopy), coalesceAndGetRange(bCopy));
   }
 }
-}
+} // namespace
 
 void expectEqSimpleStruct(const SimpleStruct& a, const SimpleStruct& b) {
   EXPECT_EQ(a.int32Member(), b.int32Member());
@@ -85,10 +85,18 @@ void expectEqTestRequest(const TestRequest& a, const TestRequest& b) {
 
   EXPECT_EQ(a.testUMap(), b.testUMap());
   EXPECT_EQ(a.testMap(), b.testMap());
+  EXPECT_EQ(a.testF14FastMap(), b.testF14FastMap());
+  EXPECT_EQ(a.testF14NodeMap(), b.testF14NodeMap());
+  EXPECT_EQ(a.testF14ValueMap(), b.testF14ValueMap());
+  EXPECT_EQ(a.testF14VectorMap(), b.testF14VectorMap());
   EXPECT_EQ(a.testComplexMap(), b.testComplexMap());
 
   EXPECT_EQ(a.testUSet(), b.testUSet());
   EXPECT_EQ(a.testSet(), b.testSet());
+  EXPECT_EQ(a.testF14FastSet(), b.testF14FastSet());
+  EXPECT_EQ(a.testF14NodeSet(), b.testF14NodeSet());
+  EXPECT_EQ(a.testF14ValueSet(), b.testF14ValueSet());
+  EXPECT_EQ(a.testF14VectorSet(), b.testF14VectorSet());
 
   EXPECT_EQ(a.testOptionalString(), b.testOptionalString());
   compareOptionalIobuf(a.testOptionalIobuf(), b.testOptionalIobuf());
@@ -100,6 +108,6 @@ void expectEqTestRequest(const TestRequest& a, const TestRequest& b) {
   EXPECT_EQ(a.testOptionalVec(), b.testOptionalVec());
 }
 
-} // util
-} // test
-} // carbon
+} // namespace util
+} // namespace test
+} // namespace carbon

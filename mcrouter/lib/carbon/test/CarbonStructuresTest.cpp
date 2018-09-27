@@ -58,7 +58,7 @@ void checkKeyFilledProperly(const Key& key) {
   EXPECT_TRUE(key.hasHashStop());
 }
 
-} // anonymous
+} // namespace
 
 TEST(CarbonBasic, staticAsserts) {
   static_assert(!TestRequest::hasExptime, "");
@@ -369,10 +369,18 @@ TEST(CarbonTest, serializeDeserialize) {
 
   outRequest.testUMap().insert({"hello", "world"});
   outRequest.testMap().insert({1.08, 8.3});
+  outRequest.testF14FastMap().insert({"hello", "F14FastMap"});
+  outRequest.testF14NodeMap().insert({"hello", "F14NodeMap"});
+  outRequest.testF14ValueMap().insert({"hello", "F14ValueMap"});
+  outRequest.testF14VectorMap().insert({"hello", "F14VectorMap"});
   outRequest.testComplexMap().insert({"key", {1, 2}});
 
   outRequest.testUSet().insert("hello");
   outRequest.testSet().insert(123);
+  outRequest.testF14FastSet().insert("hello F14FastSet");
+  outRequest.testF14NodeSet().insert("hello F14NodeSet");
+  outRequest.testF14ValueSet().insert("hello F14ValueSet");
+  outRequest.testF14VectorSet().insert("hello F14VectorSet");
 
   outRequest.testType() = {"blah", {1, 2, 3}};
 
@@ -582,4 +590,40 @@ TEST(CarbonTest, unionWhich) {
 
   un.emplace<TestOptionalUnion::ValueType::UMEMBER3>("abc");
   EXPECT_EQ(TestOptionalUnion::ValueType::UMEMBER3, un.which());
+}
+
+TEST(CarbonTest, f14NodeMapToStdUnorderedMap) {
+  carbon::test::TestF14Containers f14;
+  f14.nodeMap().emplace("node", 1);
+  f14.nodeMap().emplace("node2", 2);
+  f14.fastMap().emplace("fast", 3);
+  f14.valueMap().emplace("value", 4);
+  f14.vectorMap().emplace("vector", 5);
+  f14.nodeSet().emplace(1);
+  f14.nodeSet().emplace(2);
+  f14.fastSet().emplace(3);
+  f14.valueSet().emplace(4);
+  f14.vectorSet().emplace(5);
+  auto std = carbon::test::util::serializeAndDeserialize<
+      carbon::test::TestF14Containers,
+      carbon::test::TestStdContainers>(f14);
+  ASSERT_EQ(std.nodeMap().size(), 2);
+  ASSERT_EQ(std.fastMap().size(), 1);
+  ASSERT_EQ(std.valueMap().size(), 1);
+  ASSERT_EQ(std.vectorMap().size(), 1);
+  EXPECT_EQ(std.nodeMap().at("node"), 1);
+  EXPECT_EQ(std.nodeMap().at("node2"), 2);
+  EXPECT_EQ(std.fastMap().at("fast"), 3);
+  EXPECT_EQ(std.valueMap().at("value"), 4);
+  EXPECT_EQ(std.vectorMap().at("vector"), 5);
+
+  ASSERT_EQ(std.nodeSet().size(), 2);
+  ASSERT_EQ(std.fastSet().size(), 1);
+  ASSERT_EQ(std.valueSet().size(), 1);
+  ASSERT_EQ(std.vectorSet().size(), 1);
+  EXPECT_FALSE(std.nodeSet().find(1) == std.nodeSet().end());
+  EXPECT_FALSE(std.nodeSet().find(2) == std.nodeSet().end());
+  EXPECT_FALSE(std.fastSet().find(3) == std.fastSet().end());
+  EXPECT_FALSE(std.valueSet().find(4) == std.valueSet().end());
+  EXPECT_FALSE(std.vectorSet().find(5) == std.vectorSet().end());
 }

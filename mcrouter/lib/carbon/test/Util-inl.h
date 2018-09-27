@@ -19,8 +19,8 @@ namespace carbon {
 namespace test {
 namespace util {
 
-template <class T>
-T serializeAndDeserialize(const T& toSerialize, size_t& bytesWritten) {
+template <class T, class Out>
+Out serializeAndDeserialize(const T& toSerialize, size_t& bytesWritten) {
   // Serialize the request
   CarbonQueueAppenderStorage storage;
   CarbonProtocolWriter writer(storage);
@@ -57,18 +57,18 @@ T serializeAndDeserialize(const T& toSerialize, size_t& bytesWritten) {
   }
 
   // Deserialize the serialized data
-  T deserialized;
+  Out deserialized;
   CarbonProtocolReader reader{carbon::CarbonCursor(&buf)};
   deserialized.deserialize(reader);
 
   return deserialized;
 }
 
-template <class T>
-T serializeAndDeserialize(const T& toSerialize) {
+template <class T, class Out>
+Out serializeAndDeserialize(const T& toSerialize) {
   size_t tmp;
-  return serializeAndDeserialize(toSerialize, tmp);
+  return serializeAndDeserialize<T, Out>(toSerialize, tmp);
 }
-} // util
-} // test
-} // carbon
+} // namespace util
+} // namespace test
+} // namespace carbon
