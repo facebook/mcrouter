@@ -22,6 +22,7 @@
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
+#include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/network/AccessPoint.h"
 #include "mcrouter/lib/network/RpcStatsContext.h"
 
@@ -39,48 +40,64 @@ class ErrorRoute {
 
   std::string routeName() const {
     const std::string name = "error";
+    const std::string log = enableLogging_ ? "log" : "no-log";
+    const std::string res = mc_res_to_string(result_);
+    const auto nameWithProps = folly::to<std::string>(name, "|", log, "|", res);
     if (valueToSet_.empty()) {
-      return name;
+      return nameWithProps;
     }
-    return folly::to<std::string>(name, "|", valueToSet_);
+    return folly::to<std::string>(nameWithProps, "|", valueToSet_);
   }
 
   template <class Request>
   void traverse(const Request&, const RouteHandleTraverser<RouteHandleIf>&)
       const {}
 
-  explicit ErrorRoute(std::string valueToSet = "")
-      : valueToSet_(std::move(valueToSet)) {}
+  explicit ErrorRoute(
+      std::string valueToSet = "",
+      bool enableLogging = true,
+      mc_res_t result = mc_res_local_error)
+      : valueToSet_(std::move(valueToSet)),
+        enableLogging_(enableLogging),
+        result_(result) {}
 
   template <class Request>
   ReplyT<Request> route(const Request& req) {
-    auto reply = createReply<Request>(ErrorReply, valueToSet_);
-    if (auto& ctx = fiber_local<RouterInfo>::getSharedCtx()) {
-      auto now = nowUs();
-      AccessPoint ap;
-      RpcStatsContext rpcContext;
-      ctx->onReplyReceived(
-          routeName() /* poolName */,
-          ap,
-          folly::StringPiece(),
-          req,
-          reply,
-          fiber_local<RouterInfo>::getRequestClass(),
-          now,
-          now,
-          -1,
-          rpcContext);
+    auto reply = createReply<Request>(ErrorReply, result_, valueToSet_);
+    if (enableLogging_) {
+      if (auto& ctx = fiber_local<RouterInfo>::getSharedCtx()) {
+        auto now = nowUs();
+        AccessPoint ap;
+        RpcStatsContext rpcContext;
+        ctx->onReplyReceived(
+            routeName() /* poolName */,
+            ap,
+            folly::StringPiece(),
+            req,
+            reply,
+            fiber_local<RouterInfo>::getRequestClass(),
+            now,
+            now,
+            -1,
+            rpcContext);
+      }
     }
     return reply;
   }
 
  private:
   const std::string valueToSet_;
+  const bool enableLogging_;
+  const mc_res_t result_;
 };
 
 template <class RouterInfo>
-typename RouterInfo::RouteHandlePtr createErrorRoute(std::string valueToSet) {
-  return makeRouteHandleWithInfo<RouterInfo, ErrorRoute>(std::move(valueToSet));
+typename RouterInfo::RouteHandlePtr createErrorRoute(
+    std::string valueToSet,
+    bool enableLogging = true,
+    mc_res_t result = mc_res_local_error) {
+  return makeRouteHandleWithInfo<RouterInfo, ErrorRoute>(
+      std::move(valueToSet), enableLogging, result);
 }
 
 template <class RouterInfo>
@@ -91,6 +108,9 @@ typename RouterInfo::RouteHandlePtr makeErrorRoute(
       json.isObject() || json.isString() || json.isNull(),
       "ErrorRoute: should be string or object");
   std::string response;
+  bool enableLogging{true};
+  mc_res_t result = mc_res_local_error;
+
   if (json.isString()) {
     response = json.getString();
   } else if (json.isObject()) {
@@ -98,8 +118,24 @@ typename RouterInfo::RouteHandlePtr makeErrorRoute(
       checkLogic(jResponse->isString(), "ErrorRoute: response is not a string");
       response = jResponse->getString();
     }
+
+    if (auto jEnableLog = json.get_ptr("enable_logging")) {
+      checkLogic(
+          jEnableLog->isBool(), "ErrorRoute: enable_logginng is not boolean");
+      enableLogging = jEnableLog->getBool();
+    }
+
+    if (auto jReplyResult = json.get_ptr("result")) {
+      checkLogic(
+          jReplyResult->isString(), "ErrorRoute: result is not a string");
+      result = mc_res_from_string(jReplyResult->getString().c_str());
+      checkLogic(
+          mc_res_is_err(result),
+          "ErrorRoute: result is not a valid error result");
+    }
   }
-  return createErrorRoute<RouterInfo>(std::move(response));
+  return createErrorRoute<RouterInfo>(
+      std::move(response), enableLogging, result);
 }
 
 } // namespace mcrouter

@@ -406,4 +406,11 @@ const char* mc_req_err_to_string(const mc_req_err_t err);
  */
 const char* mc_res_to_response_string(const mc_res_t result);
 
+/**
+ * @param result string like 'mc_res_notfound'
+ *
+ * @return mc_res_t code
+ */
+mc_res_t mc_res_from_string(const char* result);
+
 __END_DECLS

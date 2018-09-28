@@ -7,6 +7,9 @@
  */
 #include "msg.h"
 
+#include <string>
+#include <unordered_map>
+
 #include "mcrouter/lib/mc/protocol.h"
 
 mc_op_t mc_op_from_string(const char* str) {
@@ -73,4 +76,22 @@ const char* mc_res_to_response_string(const mc_res_t result) {
     case mc_nres: return "SERVER_ERROR unknown result\r\n";
   };
   return "SERVER_ERROR unknown result\r\n";
+}
+
+mc_res_t mc_res_from_string(const char* result) {
+  static const auto kStringToMcRes = [] {
+    std::unordered_map<std::string, mc_res_t> stringToMcRes;
+    for (size_t i = 0; i < mc_nres; ++i) {
+      auto mcRes = static_cast<mc_res_t>(i);
+      stringToMcRes[mc_res_to_string(mcRes)] = mcRes;
+    }
+    return stringToMcRes;
+  }();
+  static const auto kNoMatch = kStringToMcRes.cend();
+
+  const auto it = kStringToMcRes.find(result);
+  if (it != kNoMatch) {
+    return it->second;
+  }
+  return mc_res_unknown;
 }
