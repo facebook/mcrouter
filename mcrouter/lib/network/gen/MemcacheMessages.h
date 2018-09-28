@@ -149,7 +149,7 @@ class McGetReply : public carbon::ReplyCommon {
 
  private:
   folly::Optional<folly::IOBuf> value_;
-  uint64_t flags_{0};
+  uint64_t flags_{0};  // FIXME Shouldn't this be 32 bits?
   std::string message_;
   carbon::Result result_{mc_res_unknown};
   int16_t appSpecificErrorCode_{0};

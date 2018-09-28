@@ -79,7 +79,7 @@ class McVersionRequest : public carbon::RequestCommon {
   void visitFields(V&& v) const;
 
  private:
-  carbon::Keys<folly::IOBuf> key_;
+  carbon::Keys<folly::IOBuf> key_;  // TODO: Why?
 };
 
 class McVersionReply : public carbon::ReplyCommon {

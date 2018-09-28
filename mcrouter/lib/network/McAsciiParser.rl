@@ -10,6 +10,7 @@
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/lib/IOBufUtil.h"
 
 namespace facebook { namespace memcache {
 

@@ -232,6 +232,10 @@ bool McParser::readDataAvailable(size_t len) {
     callback_.handleAscii(readBuffer_);
     return true;
   }
+  if (protocol_ == mc_binary_protocol) {
+    callback_.handleBinary(readBuffer_);
+    return true;
+  }
   return readUmbrellaOrCaretData();
 }
 
