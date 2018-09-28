@@ -39,8 +39,8 @@ std::vector<double> ch3wParseWeights(const folly::dynamic& json, size_t n) {
 
 size_t weightedCh3Hash(
     folly::StringPiece key,
-    folly::Range<const double*> weights) {
-  constexpr size_t kNumTries = 32;
+    folly::Range<const double*> weights,
+    size_t retryCount) {
   constexpr uint32_t kHashSeed = 0xface2014;
 
   auto n = weights.size();
@@ -49,7 +49,7 @@ size_t weightedCh3Hash(
   size_t index = 0;
   std::string saltedKey;
   auto originalKey = key;
-  for (size_t i = 0; i < kNumTries; ++i) {
+  for (size_t i = 0; i < retryCount; ++i) {
     index = furc_hash(key.data(), key.size(), n);
 
     /* Use 32-bit hash, but store in 64-bit ints so that
