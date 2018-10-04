@@ -18,6 +18,7 @@
 #include <folly/hash/Hash.h>
 #include <folly/io/async/SSLContext.h>
 #include <folly/io/async/SSLOptions.h>
+#include <folly/portability/OpenSSL.h>
 #include <wangle/client/persistence/SharedMutexCacheLockGuard.h>
 #include <wangle/client/ssl/SSLSessionCacheData.h>
 #include <wangle/client/ssl/SSLSessionPersistentCache.h>
@@ -258,11 +259,10 @@ std::shared_ptr<SSLContext> createServerSSLContext(
     sslContext->setVerificationOption(
         folly::SSLContext::SSLVerifyPeerEnum::VERIFY);
   }
-#ifdef OPENSSL_NPN_NEGOTIATED
+#if FOLLY_OPENSSL_HAS_ALPN
   // servers can always negotiate this - it is up to the client to do so.
   sslContext->setAdvertisedNextProtocols(
-      {kMcSecurityTlsToPlaintextProto.str()},
-      SSLContext::NextProtocolType::ALPN);
+      {kMcSecurityTlsToPlaintextProto.str()});
 #endif
   return sslContext;
 }
@@ -377,11 +377,9 @@ std::shared_ptr<SSLContext> createClientSSLContext(
     context->setVerificationOption(
         folly::SSLContext::SSLVerifyPeerEnum::VERIFY);
   }
-#ifdef OPENSSL_NPN_NEGOTIATED
+#if FOLLY_OPENSSL_HAS_ALPN
   if (mech == SecurityMech::TLS_TO_PLAINTEXT) {
-    context->setAdvertisedNextProtocols(
-        {kMcSecurityTlsToPlaintextProto.str()},
-        SSLContext::NextProtocolType::ALPN);
+    context->setAdvertisedNextProtocols({kMcSecurityTlsToPlaintextProto.str()});
   }
 #endif
   return context;
