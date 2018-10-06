@@ -114,7 +114,9 @@ class ProxyDestination {
   size_t getPendingRequestCount() const;
   size_t getInflightRequestCount() const;
 
-  void updateShortestTimeout(std::chrono::milliseconds timeout);
+  void updateShortestTimeout(
+      std::chrono::milliseconds connectTimeout,
+      std::chrono::milliseconds writeTimeout);
 
   /**
    * Gracefully closes the connection, allowing it to properly drain if
@@ -130,7 +132,8 @@ class ProxyDestination {
   mutable folly::SpinLock clientLock_;
 
   // Shortest timeout among all DestinationRoutes using this destination
-  std::chrono::milliseconds shortestTimeout_{0};
+  std::chrono::milliseconds shortestConnectTimeout_{0};
+  std::chrono::milliseconds shortestWriteTimeout_{0};
   const uint64_t qosClass_{0};
   const uint64_t qosPath_{0};
   const folly::StringPiece routerInfoName_;

@@ -92,9 +92,11 @@ void ProxyDestination::startSendingProbes() {
               return;
             }
             pdstn->proxy.destinationMap()->markAsActive(*pdstn);
-            // will reconnect if connection was closed
+            // Will reconnect if connection was closed
+            // Version commands shouldn't take much longer than stablishing a
+            // connection, so just using shortestConnectTimeout_ here.
             auto reply = pdstn->getAsyncMcClient().sendSync(
-                McVersionRequest(), pdstn->shortestTimeout_);
+                McVersionRequest(), pdstn->shortestConnectTimeout_);
             pdstn->handleTko(reply.result(), /* is_probe_req */ true);
             pdstn->probeInflight_ = false;
           });
@@ -303,7 +305,8 @@ ProxyDestination::ProxyDestination(
     folly::StringPiece routerInfoName)
     : proxy(proxy_),
       accessPoint_(std::move(ap)),
-      shortestTimeout_(timeout),
+      shortestConnectTimeout_(timeout),
+      shortestWriteTimeout_(timeout),
       qosClass_(qosClass),
       qosPath_(qosPath),
       routerInfoName_(routerInfoName),
@@ -350,10 +353,8 @@ void ProxyDestination::initializeAsyncMcClient() {
   options.tcpKeepAliveIdle = opts.keepalive_idle_s;
   options.tcpKeepAliveInterval = opts.keepalive_interval_s;
   options.numConnectTimeoutRetries = opts.connect_timeout_retries;
-  options.writeTimeout = shortestTimeout_;
-  options.connectTimeout =
-      std::chrono::milliseconds(opts.connect_timeout_extra_ms) +
-      shortestTimeout_;
+  options.connectTimeout = shortestConnectTimeout_;
+  options.writeTimeout = shortestWriteTimeout_;
   options.routerInfoName = routerInfoName_;
   if (!opts.debug_fifo_root.empty()) {
     options.debugFifoPath = getClientDebugFifoFullPath(opts);
@@ -586,20 +587,22 @@ void ProxyDestination::setState(State newState) {
 }
 
 void ProxyDestination::updateShortestTimeout(
-    std::chrono::milliseconds timeout) {
-  if (!timeout.count()) {
+    std::chrono::milliseconds connectTimeout,
+    std::chrono::milliseconds writeTimeout) {
+  if (connectTimeout.count() == 0 && writeTimeout.count() == 0) {
     return;
   }
-  if (shortestTimeout_.count() == 0 || shortestTimeout_ > timeout) {
-    shortestTimeout_ = timeout;
+  if (shortestConnectTimeout_.count() == 0 ||
+      shortestConnectTimeout_ > connectTimeout ||
+      shortestWriteTimeout_.count() == 0 ||
+      shortestWriteTimeout_ > writeTimeout) {
+    shortestConnectTimeout_ = std::min(shortestConnectTimeout_, connectTimeout);
+    shortestWriteTimeout_ = std::min(shortestWriteTimeout_, writeTimeout);
     {
       folly::SpinLockGuard g(clientLock_);
       if (client_) {
-        const auto& opts = proxy.router().opts();
-        auto connectTimeout =
-            std::chrono::milliseconds(opts.connect_timeout_extra_ms) +
-            shortestTimeout_;
-        client_->updateTimeoutsIfShorter(connectTimeout, shortestTimeout_);
+        client_->updateTimeoutsIfShorter(
+            shortestConnectTimeout_, shortestWriteTimeout_);
       }
     }
   }

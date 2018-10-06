@@ -130,6 +130,11 @@ McRouteHandleProvider<RouterInfo>::makePool(
       timeout = parseTimeout(*jTimeout, "server_timeout");
     }
 
+    std::chrono::milliseconds connectTimeout = timeout;
+    if (auto jConnectTimeout = json.get_ptr("connect_timeout")) {
+      connectTimeout = parseTimeout(*jConnectTimeout, "connect_timeout");
+    }
+
     if (!region.empty() && !cluster.empty()) {
       auto& route = opts.default_route;
       if (region == route.getRegion() && cluster == route.getCluster()) {
@@ -281,7 +286,7 @@ McRouteHandleProvider<RouterInfo>::makePool(
         pdstn = proxy_.destinationMap()->emplace(
             std::move(ap), timeout, qosClass, qosPath, RouterInfo::name);
       }
-      pdstn->updateShortestTimeout(timeout);
+      pdstn->updateShortestTimeout(connectTimeout, timeout);
 
       destinations.push_back(makeDestinationRoute<RouterInfo>(
           std::move(pdstn),
