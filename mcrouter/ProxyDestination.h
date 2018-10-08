@@ -79,8 +79,6 @@ class ProxyDestination {
    * @param request             The request to send.
    * @param requestContext      Context about this request.
    * @param timeout             The timeout of this call.
-   * @param passThroughKey      Integer key that will be sent as an additional
-   *                            field. If 0, it will not be sent.
    * @param rpcStatsContext     Output argument with stats about the RPC
    */
   template <class Request>
@@ -88,7 +86,6 @@ class ProxyDestination {
       const Request& request,
       DestinationRequestCtx& requestContext,
       std::chrono::milliseconds timeout,
-      size_t passThroughKey,
       RpcStatsContext& rpcStatsContext);
 
   // returns true if okay to send req using this client

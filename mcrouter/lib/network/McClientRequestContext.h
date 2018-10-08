@@ -98,8 +98,7 @@ class McClientRequestContextBase
       InitializerFuncPtr initializer,
       const std::function<void(int pendingDiff, int inflightDiff)>&
           onStateChange,
-      const CodecIdRange& supportedCodecs,
-      size_t passThroughKey);
+      const CodecIdRange& supportedCodecs);
 
   virtual void sendTraceOnReply() = 0;
 
@@ -188,8 +187,7 @@ class McClientRequestContext : public McClientRequestContextBase {
       McClientRequestContextBase::InitializerFuncPtr,
       const std::function<void(int pendingDiff, int inflightDiff)>&
           onStateChange,
-      const CodecIdRange& supportedCodecs,
-      size_t passThroughKey);
+      const CodecIdRange& supportedCodecs);
 
   std::string getContextTypeStr() const final;
 

@@ -45,9 +45,8 @@ McClientRequestContextBase::McClientRequestContextBase(
     McClientRequestContextQueue& queue,
     InitializerFuncPtr initializer,
     const std::function<void(int pendingDiff, int inflightDiff)>& onStateChange,
-    const CodecIdRange& supportedCodecs,
-    size_t passThroughKey)
-    : reqContext(request, reqid, protocol, supportedCodecs, passThroughKey),
+    const CodecIdRange& supportedCodecs)
+    : reqContext(request, reqid, protocol, supportedCodecs),
       id(reqid),
       queue_(queue),
       replyType_(typeid(ReplyT<Request>)),
@@ -115,8 +114,7 @@ McClientRequestContext<Request>::McClientRequestContext(
     McClientRequestContextQueue& queue,
     McClientRequestContextBase::InitializerFuncPtr func,
     const std::function<void(int pendingDiff, int inflightDiff)>& onStateChange,
-    const CodecIdRange& supportedCodecs,
-    size_t passThroughKey)
+    const CodecIdRange& supportedCodecs)
     : McClientRequestContextBase(
           request,
           reqid,
@@ -125,8 +123,7 @@ McClientRequestContext<Request>::McClientRequestContext(
           queue,
           std::move(func),
           onStateChange,
-          supportedCodecs,
-          passThroughKey)
+          supportedCodecs)
 #ifndef LIBMC_FBTRACE_DISABLE
       ,
       fbtraceInfo_(getFbTraceInfo(request))

@@ -213,13 +213,7 @@ class DestinationRoute {
 
     const auto& reqToSend = newReq ? *newReq : req;
     RpcStatsContext rpcContext;
-    size_t passThroughKey = 0;
-    if (ctx.proxy().getRouterOptions().use_server_index_as_pass_through_key) {
-      // passThroughKey should be the 1-based index of the server in the pool.
-      passThroughKey = indexInPool_ + 1;
-    }
-    auto reply = destination_->send(
-        reqToSend, dctx, timeout_, passThroughKey, rpcContext);
+    auto reply = destination_->send(reqToSend, dctx, timeout_, rpcContext);
     ctx.onReplyReceived(
         poolName_,
         *destination_->accessPoint(),

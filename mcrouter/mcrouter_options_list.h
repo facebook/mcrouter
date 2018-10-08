@@ -773,14 +773,6 @@ MCROUTER_OPTION_TOGGLE(
     no_short,
     "enable TFO when connecting/accepting via SSL")
 
-MCROUTER_OPTION_TOGGLE(
-    use_server_index_as_pass_through_key,
-    false,
-    "use-server-index-as-pass-through-key",
-    no_short,
-    "Enable using the server index as the pass through key additional field. "
-    "The server index will be 1-based.")
-
 #ifdef ADDITIONAL_OPTIONS_FILE
 #include ADDITIONAL_OPTIONS_FILE
 #endif

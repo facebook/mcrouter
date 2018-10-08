@@ -40,16 +40,7 @@ ReplyT<Request> AsyncMcClient::sendSync(
     const Request& request,
     std::chrono::milliseconds timeout,
     RpcStatsContext* rpcContext) {
-  return base_->sendSync(request, timeout, /* passThroughKey  */ 0, rpcContext);
-}
-
-template <class Request>
-ReplyT<Request> AsyncMcClient::sendSync(
-    const Request& request,
-    std::chrono::milliseconds timeout,
-    size_t passThroughKey,
-    RpcStatsContext* rpcContext) {
-  return base_->sendSync(request, timeout, passThroughKey, rpcContext);
+  return base_->sendSync(request, timeout, rpcContext);
 }
 
 inline void AsyncMcClient::setThrottle(size_t maxInflight, size_t maxPending) {

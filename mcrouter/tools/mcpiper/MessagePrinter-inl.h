@@ -408,8 +408,7 @@ void MessagePrinter::printRawRequest(
     return;
   }
 
-  McSerializedRequest req(
-      request, msgId, protocol, CodecIdRange::Empty, /* passThroughKey */ 0);
+  McSerializedRequest req(request, msgId, protocol, CodecIdRange::Empty);
   if (req.serializationResult() == McSerializedRequest::Result::OK) {
     printRawMessage(req.getIovs(), req.getIovsCount());
   } else {
@@ -422,5 +421,5 @@ StyledString MessagePrinter::getTypeSpecificAttributes(const Message& msg) {
   return carbon::print(msg, detail::getName<Message>(), options_.script);
 }
 
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

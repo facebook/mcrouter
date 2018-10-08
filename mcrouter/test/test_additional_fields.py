@@ -14,7 +14,6 @@ from mcrouter.test.McrouterTestCase import McrouterTestCase
 
 class TestAdditionalFields(McrouterTestCase):
     config = './mcrouter/test/test_basic_caret.json'
-    extra_args = ['--use-server-index-as-pass-through-key']
 
     def setUp(self):
         self.mc = self.add_server(Memcached())
