@@ -22,6 +22,7 @@ import time
 
 from mcrouter.test.config import McrouterGlobals
 
+
 class BaseDirectory(object):
     def __init__(self, prefix="mctest"):
         self.path = tempfile.mkdtemp(prefix=prefix + '.')
@@ -29,8 +30,13 @@ class BaseDirectory(object):
     def __del__(self):
         shutil.rmtree(self.path)
 
-def MCPopen(cmd, stdout=None, stderr=None, env=None):
+
+def MCPopen(cmd, stdout=None, stderr=None, env=None, pass_fds=()):
+    if sys.version_info >= (3, 2):  # Python 3.2 supports pass_fds
+        return subprocess.Popen(
+            cmd, stdout=stdout, stderr=stderr, env=env, pass_fds=pass_fds)
     return subprocess.Popen(cmd, stdout=stdout, stderr=stderr, env=env)
+
 
 class ProcessBase(object):
     """
@@ -39,14 +45,14 @@ class ProcessBase(object):
 
     proc = None
 
-    def __init__(self, cmd, base_dir=None, junk_fill=False):
+    def __init__(self, cmd, base_dir=None, junk_fill=False, pass_fds=()):
         if base_dir is None:
             base_dir = BaseDirectory('ProcessBase')
         self.base_dir = base_dir
         self.stdout = os.path.join(base_dir.path, 'stdout')
         self.stderr = os.path.join(base_dir.path, 'stderr')
-        stdout = open(self.stdout, 'w')
-        stderr = open(self.stderr, 'w')
+        self.stdout_file = open(self.stdout, 'w')  # noqa: P201
+        self.stderr_file = open(self.stderr, 'w')  # noqa: P201
 
         self.cmd_line = 'no command line'
         if cmd:
@@ -61,10 +67,11 @@ class ProcessBase(object):
 
             try:
                 if junk_fill:
-                    env = dict(MALLOC_CONF='junk:true')
+                    env = {'MALLOC_CONF': 'junk:true'}
                 else:
                     env = None
-                self.proc = MCPopen(cmd, stdout, stderr, env)
+                self.proc = MCPopen(cmd, self.stdout_file, self.stderr_file,
+                                    env, pass_fds=pass_fds)
 
             except OSError:
                 sys.exit("Fatal: Could not run " + repr(" ".join(cmd)))
@@ -74,6 +81,8 @@ class ProcessBase(object):
     def __del__(self):
         if self.proc:
             self.proc.terminate()
+        self.stdout_file.close()
+        self.stderr_file.close()
 
     def getprocess(self):
         return self.proc
@@ -120,10 +129,12 @@ class ProcessBase(object):
         if stderr:
             print("{} ({}) stdout:\n{}".format(self, self.cmd_line, stderr))
 
+
 class MCProcess(ProcessBase):
     proc = None
 
-    def __init__(self, cmd, addr, base_dir=None, junk_fill=False):
+    def __init__(self, cmd, addr, base_dir=None, junk_fill=False, pass_fds=()):
+        self.fd = None
         if cmd is not None and '-s' in cmd:
             if os.path.exists(addr):
                 raise Exception('file path already existed')
@@ -142,12 +153,29 @@ class MCProcess(ProcessBase):
         if base_dir is None:
             base_dir = BaseDirectory('MCProcess')
 
-        ProcessBase.__init__(self, cmd, base_dir, junk_fill)
+        ProcessBase.__init__(self, cmd, base_dir, junk_fill, pass_fds=pass_fds)
         # memcached could take little longer to initialize
         if memcached:
             time.sleep(3)
         self.deletes = 0
         self.others = 0
+
+    def _sendall(self, s):
+        if type(s) is not bytes:
+            s = s.encode('utf8')
+        self.socket.sendall(s)
+
+    def _fdread(self, n):
+        data = self.fd.read(n)
+        if data is not None and type(data) is not str:
+            data = data.decode('utf8')
+        return data
+
+    def _fdreadline(self):
+        data = self.fd.readline()
+        if data is not None and type(data) is not str:
+            data = data.decode('utf8')
+        return data
 
     def getport(self):
         return self.port
@@ -155,7 +183,7 @@ class MCProcess(ProcessBase):
     def connect(self):
         self.socket = socket.socket(self.addr_family, socket.SOCK_STREAM)
         self.socket.connect(self.addr)
-        self.fd = self.socket.makefile()
+        self.fd = self.socket.makefile(mode="rb")
 
     def ensure_connected(self):
         retry_count = 0
@@ -164,6 +192,7 @@ class MCProcess(ProcessBase):
                 self.connect()
                 return
             except Exception as e:
+                self.disconnect()
                 if e.errno == errno.ECONNREFUSED:
                     pass
                 # if socket is not present or not ready to listen
@@ -210,26 +239,26 @@ class MCProcess(ProcessBase):
         if not isinstance(keys, list):
             multi = False
             keys = [keys]
-        self.socket.sendall("{} {}\r\n".format(cmd, " ".join(keys)))
-        res = dict([(key, None) for key in keys])
+        self._sendall("{} {}\r\n".format(cmd, " ".join(keys)))
+        res = {key: None for key in keys}
 
         while True:
-            l = self.fd.readline().strip()
-            if l == 'END':
+            line = self._fdreadline().strip()
+            if line == 'END':
                 if multi:
                     return res
                 else:
                     assert len(res) == 1
-                    return res.values()[0]
-            elif l.startswith("VALUE"):
+                    return next(v for v in res.values())
+            elif line.startswith("VALUE"):
                 hadValue = True
-                parts = l.split()
+                parts = line.split()
                 k = parts[1]
                 f = int(parts[2])
                 n = int(parts[3])
                 assert k in keys
-                payload = self.fd.read(n)
-                self.fd.read(2)
+                payload = self._fdread(n)
+                self._fdread(2)
                 if return_all_info:
                     res[k] = dict({"key": k,
                                   "flags": f,
@@ -239,14 +268,14 @@ class MCProcess(ProcessBase):
                         res[k]["cas"] = int(parts[4])
                 else:
                     res[k] = payload
-            elif l.startswith("SERVER_ERROR"):
+            elif line.startswith("SERVER_ERROR"):
                 if hadValue:
                     raise Exception('Received hit reply + SERVER_ERROR for '
                                     'multiget request')
-                return l
+                return line
             else:
                 self.connect()
-                raise Exception('Unexpected response "%s" (%s)' % (l, keys))
+                raise Exception('Unexpected response "%s" (%s)' % (line, keys))
 
     def get(self, keys, return_all_info=False):
         return self._get('get', keys, expect_cas=False,
@@ -262,14 +291,14 @@ class MCProcess(ProcessBase):
         #    multi = False
         #    keys = [keys]
         res = {}
-        self.socket.sendall("metaget %s\r\n" % keys)
+        self._sendall("metaget %s\r\n" % keys)
 
         while True:
-            l = self.fd.readline().strip()
-            if l.startswith("END"):
+            line = self._fdreadline().strip()
+            if line.startswith("END"):
                 return res
-            elif l.startswith("META"):
-                meta_list = l.split()
+            elif line.startswith("META"):
+                meta_list = line.split()
                 for i in range(1, len(meta_list) // 2):
                     res[meta_list[2 * i].strip(':')] = \
                         meta_list[2 * i + 1].strip(';')
@@ -279,28 +308,28 @@ class MCProcess(ProcessBase):
         if not isinstance(keys, list):
             multi = False
             keys = [keys]
-        self.socket.sendall("lease-get %s\r\n" % " ".join(keys))
-        res = dict([(key, None) for key in keys])
+        self._sendall("lease-get %s\r\n" % " ".join(keys))
+        res = {key: None for key in keys}
 
         while True:
-            l = self.fd.readline().strip()
-            if l == 'END':
+            line = self._fdreadline().strip()
+            if line == 'END':
                 if multi:
                     assert(len(res) == len(keys))
                     return res
                 else:
                     assert len(res) == 1
-                    return res.values()[0]
-            elif l.startswith("VALUE"):
-                v, k, f, n = l.split()
+                    return next(v for v in res.values())
+            elif line.startswith("VALUE"):
+                v, k, f, n = line.split()
                 assert k in keys
-                res[k] = {"value": self.fd.read(int(n)),
+                res[k] = {"value": self._fdread(int(n)),
                           "token": None}
-                self.fd.read(2)
-            elif l.startswith("LVALUE"):
-                v, k, t, f, n = l.split()
+                self._fdread(2)
+            elif line.startswith("LVALUE"):
+                v, k, t, f, n = line.split()
                 assert k in keys
-                res[k] = {"value": self.fd.read(int(n)),
+                res[k] = {"value": self._fdread(int(n)),
                           "token": int(t)}
 
     def expectNoReply(self):
@@ -316,13 +345,13 @@ class MCProcess(ProcessBase):
              exptime=0, flags=0):
         value = str(value)
         flags = flags | (1024 if replicate else 0)
-        self.socket.sendall("%s %s %d %d %d%s\r\n%s\r\n" %
-                            (command, key, flags, exptime, len(value),
-                            (' noreply' if noreply else ''), value))
+        self._sendall("%s %s %d %d %d%s\r\n%s\r\n" %
+                      (command, key, flags, exptime, len(value),
+                      (' noreply' if noreply else ''), value))
         if noreply:
             return self.expectNoReply()
 
-        answer = self.fd.readline().strip()
+        answer = self._fdreadline().strip()
         if re.search('ERROR', answer):
             print(answer)
             self.connect()
@@ -335,9 +364,9 @@ class MCProcess(ProcessBase):
         flags = 0
         cmd = "lease-set %s %d %d %d %d\r\n%s\r\n" % \
                 (key, token, flags, exptime, len(value), value)
-        self.socket.sendall(cmd)
+        self._sendall(cmd)
 
-        answer = self.fd.readline().strip()
+        answer = self._fdreadline().strip()
         if re.search('ERROR', answer):
             print(answer)
             self.connect()
@@ -360,26 +389,26 @@ class MCProcess(ProcessBase):
         exptime_str = ''
         if exptime is not None:
             exptime_str = " {}".format(exptime)
-        self.socket.sendall("delete {}{}{}\r\n".format(
-                            key, exptime_str, (' noreply' if noreply else '')))
+        self._sendall("delete {}{}{}\r\n".format(
+                      key, exptime_str, (' noreply' if noreply else '')))
         self.deletes += 1
 
         if noreply:
             return self.expectNoReply()
 
-        answer = self.fd.readline()
+        answer = self._fdreadline()
 
         assert re.match("DELETED|NOT_FOUND|SERVER_ERROR", answer), answer
         return re.match("DELETED", answer)
 
     def touch(self, key, exptime, noreply=False):
-        self.socket.sendall("touch {} {}{}\r\n".format(
-                            key, exptime, (' noreply' if noreply else '')))
+        self._sendall("touch {} {}{}\r\n".format(
+                      key, exptime, (' noreply' if noreply else '')))
 
         if noreply:
             return self.expectNoReply()
 
-        answer = self.fd.readline()
+        answer = self._fdreadline()
 
         if answer == "TOUCHED\r\n":
             return "TOUCHED"
@@ -392,12 +421,12 @@ class MCProcess(ProcessBase):
         return None
 
     def _arith(self, cmd, key, value, noreply):
-        self.socket.sendall("%s %s %d%s\r\n" %
-                            (cmd, key, value, (' noreply' if noreply else '')))
+        self._sendall("%s %s %d%s\r\n" %
+                      (cmd, key, value, (' noreply' if noreply else '')))
         if noreply:
             return self.expectNoReply()
 
-        answer = self.fd.readline()
+        answer = self._fdreadline()
         if re.match("NOT_FOUND", answer):
             return None
         else:
@@ -410,14 +439,14 @@ class MCProcess(ProcessBase):
         return self._arith('decr', key, value, noreply)
 
     def _affix(self, cmd, key, value, noreply=False, flags=0, exptime=0):
-        self.socket.sendall("%s %s %d %d %d%s\r\n%s\r\n" %
-                            (cmd, key, flags, exptime, len(value),
-                            (' noreply' if noreply else ''), value))
+        self._sendall("%s %s %d %d %d%s\r\n%s\r\n" %
+                      (cmd, key, flags, exptime, len(value),
+                      (' noreply' if noreply else ''), value))
 
         if noreply:
             return self.expectNoReply()
 
-        answer = self.fd.readline()
+        answer = self._fdreadline()
         if answer == "STORED\r\n":
             return "STORED"
         if answer == "NOT_STORED\r\n":
@@ -436,10 +465,10 @@ class MCProcess(ProcessBase):
 
     def cas(self, key, value, cas_token):
         value = str(value)
-        self.socket.sendall("cas %s 0 0 %d %d\r\n%s\r\n" %
-                            (key, len(value), cas_token, value))
+        self._sendall("cas %s 0 0 %d %d\r\n%s\r\n" %
+                      (key, len(value), cas_token, value))
 
-        answer = self.fd.readline().strip()
+        answer = self._fdreadline().strip()
         if re.search('ERROR', answer):
             print(answer)
             self.connect()
@@ -450,18 +479,18 @@ class MCProcess(ProcessBase):
         q = 'stats\r\n'
         if spec:
             q = 'stats {0}\r\n'.format(spec)
-        self.socket.sendall(q)
+        self._sendall(q)
 
         s = {}
-        l = None
+        line = None
         fds = select.select([self.fd], [], [], 5.0)
         if len(fds[0]) == 0:
             return None
-        while l != 'END':
-            l = self.fd.readline().strip()
-            if len(l) == 0:
+        while line != 'END':
+            line = self._fdreadline().strip()
+            if len(line) == 0:
                 return None
-            a = l.split(None, 2)
+            a = line.split(None, 2)
             if len(a) == 3:
                 s[a[1]] = a[2]
 
@@ -471,16 +500,16 @@ class MCProcess(ProcessBase):
         q = 'stats\r\n'
         if spec:
             q = 'stats {0}\r\n'.format(spec)
-        self.socket.sendall(q)
+        self._sendall(q)
 
         s = []
-        l = None
-        fds = select.select([self.fd], [], [], 2.0)
+        line = None
+        fds = select.select([self.fd], [], [], 5.0)
         if len(fds[0]) == 0:
             return None
-        while l != 'END':
-            l = self.fd.readline().strip()
-            a = l.split(None, 1)
+        while line != 'END':
+            line = self._fdreadline().strip()
+            a = line.split(None, 1)
             if len(a) == 2:
                 s.append(a[1])
 
@@ -488,7 +517,7 @@ class MCProcess(ProcessBase):
 
     def issue_command_and_read_all(self, command):
         self.others += 1
-        self.socket.sendall(command)
+        self._sendall(command)
 
         # Handle no response
         fds = select.select([self.fd], [], [], 2.0)
@@ -496,36 +525,37 @@ class MCProcess(ProcessBase):
             return None
 
         answer = ""
-        l = None
-        while l != 'END':
-            l = self.fd.readline().strip()
+        line = None
+        while line != 'END':
+            line = self._fdreadline().strip()
             # Handle error
-            if not answer and 'ERROR' in l:
+            if not answer and 'ERROR' in line:
                 self.connect()
-                return l
-            answer += l + "\r\n"
+                return line
+            answer += line + "\r\n"
         return answer
 
     def issue_command(self, command):
         self.others += 1
-        self.socket.sendall(command)
-        answer = self.fd.readline()
+        self._sendall(command)
+        answer = self._fdreadline()
         return answer
 
     def version(self):
-        self.socket.sendall("version\r\n")
-        return self.fd.readline()
+        self._sendall("version\r\n")
+        return self._fdreadline()
 
     def shutdown(self):
-        self.socket.sendall("shutdown\r\n")
-        return self.fd.readline()
+        self._sendall("shutdown\r\n")
+        return self._fdreadline()
 
     def flush_all(self, delay=None):
         if delay is None:
-            self.socket.sendall("flush_all\r\n")
+            self._sendall("flush_all\r\n")
         else:
-            self.socket.sendall("flush_all {}\r\n".format(delay))
-        return self.fd.readline().rstrip()
+            self._sendall("flush_all {}\r\n".format(delay))
+        return self._fdreadline().rstrip()
+
 
 def sub_port(s, substitute_ports, port_map):
     parts = s.split(':')
@@ -598,10 +628,12 @@ def replace_ports(json, substitute_ports):
                         " of mock servers started")
     return out
 
+
 def replace_strings(json, replace_map):
     for (key, value) in replace_map.items():
         json = json.replace(key, str(value))
     return json
+
 
 def create_listen_socket():
     if socket.has_ipv6:
@@ -610,6 +642,7 @@ def create_listen_socket():
         listen_sock = socket.socket(socket.AF_INET)
     listen_sock.listen(100)
     return listen_sock
+
 
 class McrouterBase(MCProcess):
     def __init__(self, args, port=None, base_dir=None):
@@ -653,7 +686,7 @@ class McrouterBase(MCProcess):
 
 
 class Mcrouter(McrouterBase):
-    def __init__(self, config, port=None, default_route=None, extra_args=None,
+    def __init__(self, config, port=None, default_route=None, extra_args=None,  # noqa: C901
                  base_dir=None, substitute_config_ports=None,
                  substitute_port_map=None, replace_map=None):
         if base_dir is None:
@@ -716,6 +749,7 @@ class McrouterClient(MCProcess):
     def __init__(self, port):
         MCProcess.__init__(self, None, str(port))
 
+
 class McrouterClients:
     def __init__(self, port, count):
         self.clients = []
@@ -725,6 +759,7 @@ class McrouterClients:
 
     def __getitem__(self, idx):
         return self.clients[idx]
+
 
 class MockMemcached(MCProcess):
     def __init__(self, port=None):
@@ -741,6 +776,7 @@ class MockMemcached(MCProcess):
 
         if listen_sock is not None:
             listen_sock.close()
+
 
 class Memcached(MCProcess):
     def __init__(self, port=None):
@@ -785,16 +821,17 @@ class Memcached(MCProcess):
 
             # delay here until the server goes up
             self.ensure_connected()
-            l = 10
+            tries = 10
             s = self.stats()
-            while ((not s or len(s) == 0) and l > 0):
+            while ((not s or len(s) == 0) and tries > 0):
                 # Note, we need to reconnect, because it's possible the
                 # server is still going to process previous requests.
                 self.ensure_connected()
                 s = self.stats()
                 time.sleep(0.5)
-                l = l - 1
+                tries -= 1
             self.disconnect()
+
 
 class Mcpiper(ProcessBase):
     def __init__(self, fifos_dir, extra_args=None):
