@@ -17,8 +17,7 @@ class TestAdditionalFields(McrouterTestCase):
 
     def setUp(self):
         self.mc = self.add_server(Memcached())
-        self.mcrouter = self.add_mcrouter(self.config,
-                                          extra_args=self.extra_args)
+        self.mcrouter = self.add_mcrouter(self.config)
 
     def test_basic(self):
         self.assertTrue(self.mcrouter.set("abc", "def"))
