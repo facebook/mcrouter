@@ -162,7 +162,7 @@ uint16_t peekLE(const IovecCursor& cursor) {
  * @param diff  Result of XOR between two numbers.
  * @return      The number of bytes that are common in the two numbers.
  */
-size_t numCommonBytes(register size_t diff) {
+size_t numCommonBytes(size_t diff) {
 #if (defined(__clang__) || ((__GNUC__ * 100 + __GNUC_MINOR__) >= 304))
   if (folly::Endian::order == folly::Endian::Order::LITTLE) {
     // __builtin_ctzll returns the number of trailling zeros in the binary
