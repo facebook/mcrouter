@@ -119,8 +119,8 @@ AC_CHECK_LIB([sodium],[sodium_init],[],[AC_MSG_ERROR(
 AC_CHECK_LIB([fizz],[getenv],[],[AC_MSG_ERROR(
              [Please install the fizz library])])
 AC_CHECK_HEADER([folly/Likely.h], [], [AC_MSG_ERROR(
-[Couldn't find folly, please download from https://github.com/facebook/folly]
-)], [])
+                [Could not find folly, please download from https://github.com/facebook/folly])], [])
+
 # Commenting out the wangle dependency from here, because there is a tricky
 # inter-library dependency that resolves with the right order of LDFLAGS, and
 # this dependency here messes the order.

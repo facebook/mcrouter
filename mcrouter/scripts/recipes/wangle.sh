@@ -17,4 +17,4 @@ fi
 cd "$PKG_DIR/wangle/wangle/" || die "cd fail"
 
 cmake . -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" -DBUILD_TESTS=OFF
-make $MAKE_ARGS && make install $MAKE_ARGS
+make "$MAKE_ARGS" && make install "$MAKE_ARGS"
