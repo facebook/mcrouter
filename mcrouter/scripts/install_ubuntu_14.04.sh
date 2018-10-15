@@ -6,6 +6,7 @@ set -ex
 
 sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
 sudo add-apt-repository -y ppa:george-edison55/cmake-3.x
+sudo add-apt-repository -y ppa:chris-lea/libsodium
 
 sudo apt-get update
 
