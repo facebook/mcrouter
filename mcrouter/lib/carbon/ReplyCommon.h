@@ -9,6 +9,7 @@
 
 #include <memory>
 
+#include "mcrouter/lib/carbon/MessageCommon.h"
 #include "mcrouter/lib/mc/msg.h"
 
 namespace facebook {
@@ -19,7 +20,7 @@ struct AccessPoint;
 
 namespace carbon {
 
-class ReplyCommon {
+class ReplyCommon : public MessageCommon {
  public:
   const std::shared_ptr<const facebook::memcache::AccessPoint>& destination()
       const noexcept {

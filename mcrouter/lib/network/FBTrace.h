@@ -46,7 +46,8 @@ bool traceCheckRateLimit();
 
 // Returns the cumulative number of traces logged.
 uint64_t traceGetCount();
-}
-} // facebook::memcache
+
+} // namespace memcache
+} // namespace facebook
 
 #include "FBTrace-inl.h"

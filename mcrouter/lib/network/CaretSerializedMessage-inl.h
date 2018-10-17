@@ -5,11 +5,26 @@
  *  file in the root directory of this source tree.
  *
  */
+#pragma once
+
+#include "mcrouter/lib/carbon/Artillery.h"
 #include "mcrouter/lib/network/CarbonMessageDispatcher.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook {
 namespace memcache {
+
+namespace detail {
+
+template <class Request>
+std::pair<uint64_t, uint64_t> getTraceId(const Request& req) {
+  if (!req.traceContext().empty()) {
+    return carbon::tracing::client::sendingRequest(req);
+  }
+  return req.traceToInts();
+}
+
+} // namespace detail
 
 template <class Request>
 bool CaretSerializedMessage::prepare(
@@ -22,7 +37,7 @@ bool CaretSerializedMessage::prepare(
       req,
       reqId,
       Request::typeId,
-      req.traceToInts(),
+      detail::getTraceId(req),
       supportedCodecs,
       iovOut,
       niovOut);

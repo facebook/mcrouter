@@ -117,6 +117,17 @@ template <typename Reply>
 typename std::enable_if_t<!detail::HasIsFailover<Reply>::value>
 setIsFailoverIfPresent(Reply&, bool) {}
 
+template <class Request>
+typename std::enable_if_t<Request::hasKey, folly::StringPiece> getFullKey(
+    const Request& req) {
+  return req.key().fullKey();
+}
+template <class Request>
+typename std::enable_if_t<!Request::hasKey, folly::StringPiece> getFullKey(
+    const Request&) {
+  return "";
+}
+
 namespace detail {
 
 inline folly::IOBuf* bufPtr(folly::Optional<folly::IOBuf>& buf) {

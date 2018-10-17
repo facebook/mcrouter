@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "mcrouter/lib/Ref.h"
+#include "mcrouter/lib/carbon/MessageCommon.h"
 
 #ifndef LIBMC_FBTRACE_DISABLE
 #include "mcrouter/lib/mc/mc_fbtrace_info.h"
@@ -17,7 +18,7 @@
 
 namespace carbon {
 
-class RequestCommon {
+class RequestCommon : public MessageCommon {
  public:
 #ifndef LIBMC_FBTRACE_DISABLE
   RequestCommon() = default;
@@ -66,6 +67,9 @@ class RequestCommon {
       return;
     }
 
+    // if using the old fbtrace api, remove tracing context.
+    setTraceContext("");
+
     auto traceInfo = McFbtraceRef::moveRef(new_mc_fbtrace_info(0));
     if (!traceInfo.get() ||
         fbtrace_encode(traceId.first, traceInfo->metadata) != 0 ||
@@ -86,6 +90,8 @@ class RequestCommon {
    * Note: will not incref info, it's up to the caller.
    */
   void setFbtraceInfo(mc_fbtrace_info_s* carbonFbtraceInfo) {
+    // if using the old fbtrace api, remove tracing context.
+    setTraceContext("");
     fbtraceInfo_ = McFbtraceRef::moveRef(carbonFbtraceInfo);
   }
 #endif
@@ -156,4 +162,4 @@ class RequestCommon {
 #endif
 };
 
-} // carbon
+} // namespace carbon

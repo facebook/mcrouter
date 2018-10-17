@@ -204,5 +204,6 @@ inline CommIdType traceRequestReceived(const Request& req) {
 }
 
 #endif
-}
-} // facebook::memcache
+
+} // namespace memcache
+} // namespace facebook

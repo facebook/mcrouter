@@ -105,7 +105,7 @@ class ClientMcParser : private McParser::ParserCallback {
       const UmbrellaMessageInfo& headerInfo,
       const folly::IOBuf& buffer);
 
-  /* McParser callbacks */
+  // McParser callbacks
   bool umMessageReady(
       const UmbrellaMessageInfo& info,
       const folly::IOBuf& buffer) final;

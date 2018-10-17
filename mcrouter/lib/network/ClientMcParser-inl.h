@@ -5,9 +5,12 @@
  *  file in the root directory of this source tree.
  *
  */
+#pragma once
+
 #include <folly/Format.h>
 #include <folly/io/Cursor.h>
 
+#include "mcrouter/lib/carbon/Artillery.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
 
@@ -142,6 +145,8 @@ void ClientMcParser<Callback>::forwardCaretReply(
   cur += offset;
   carbon::CarbonProtocolReader reader(cur);
   reply.deserialize(reader);
+  reply.setTraceContext(
+      carbon::tracing::client::getReplyTraceContext(headerInfo.traceId));
 
   callback_.replyReady(std::move(reply), reqId, getReplyStats(headerInfo));
 }

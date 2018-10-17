@@ -196,9 +196,12 @@ class McClientRequestContext : public McClientRequestContextBase {
  private:
   folly::Optional<Reply> replyStorage_;
 
+  // tracing fields
+  const std::string& requestTraceContext_;
 #ifndef LIBMC_FBTRACE_DISABLE
   const mc_fbtrace_info_s* fbtraceInfo_;
 #endif
+
   void sendTraceOnReply() final;
   void replyErrorImpl(mc_res_t result, folly::StringPiece errorMessage) final;
 };

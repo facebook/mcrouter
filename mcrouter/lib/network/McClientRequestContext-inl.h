@@ -5,7 +5,10 @@
  *  file in the root directory of this source tree.
  *
  */
+#pragma once
+
 #include "mcrouter/lib/Reply.h"
+#include "mcrouter/lib/carbon/Artillery.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 
 namespace facebook {
@@ -123,7 +126,8 @@ McClientRequestContext<Request>::McClientRequestContext(
           queue,
           std::move(func),
           onStateChange,
-          supportedCodecs)
+          supportedCodecs),
+      requestTraceContext_(request.traceContext())
 #ifndef LIBMC_FBTRACE_DISABLE
       ,
       fbtraceInfo_(getFbTraceInfo(request))
@@ -133,6 +137,8 @@ McClientRequestContext<Request>::McClientRequestContext(
 
 template <class Request>
 void McClientRequestContext<Request>::sendTraceOnReply() {
+  carbon::tracing::client::replyReceived(
+      requestTraceContext_, replyStorage_.value());
 #ifndef LIBMC_FBTRACE_DISABLE
   fbTraceOnReceive(fbtraceInfo_, replyStorage_.value().result());
 #endif
