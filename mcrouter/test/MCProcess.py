@@ -159,6 +159,8 @@ class MCProcess(ProcessBase):
             time.sleep(3)
         self.deletes = 0
         self.others = 0
+        self.socket = None
+        self.fd = None
 
     def _sendall(self, s):
         if type(s) is not bytes:
