@@ -7,6 +7,7 @@ set -ex
 sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
 sudo add-apt-repository -y ppa:george-edison55/cmake-3.x
 sudo add-apt-repository -y ppa:chris-lea/libsodium
+sudo add-apt-repository -y ppa:sickpig/boost
 
 sudo apt-get update
 
@@ -20,7 +21,12 @@ sudo apt-get install -y \
     g++-5 \
     gcc \
     git \
-    libboost1.54-all-dev \
+    libboost1.58-dev \
+    libboost-thread1.58-dev \
+    libboost-filesystem1.58-dev \
+    libboost-context1.58-dev \
+    libboost-regex1.58-dev \
+    libboost-program-options1.58-dev \
     libdouble-conversion-dev \
     libevent-dev \
     libgflags-dev \
