@@ -46,9 +46,8 @@ class McrouterOptions;
 struct MemcacheRouterInfo;
 
 using LogPostprocessCallbackFunc = std::function<void(
-    folly::StringPiece, // Key requested
-    uint64_t flags, // Reply flags
-    folly::StringPiece, // The value in the reply
+    const folly::dynamic&, // Serialized request
+    const folly::dynamic&, // Serialized reply
     const char* const, // Name of operation (e.g. 'get')
     const folly::StringPiece)>; // User ip
 

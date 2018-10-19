@@ -15,6 +15,7 @@
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/carbon/CarbonMessageConversionUtils.h"
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 
@@ -78,9 +79,8 @@ class LoggingRoute {
     if (callback) {
       if (isHitResult(reply.result())) {
         callback(
-            req.key().fullKey(),
-            carbon::getFlags(reply),
-            carbon::valueRangeSlow(reply),
+            carbon::convertToFollyDynamic(req),
+            carbon::convertToFollyDynamic(reply),
             Request::name,
             userIp);
       }
