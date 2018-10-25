@@ -23,12 +23,14 @@ class PoolStats {
             folly::to<std::string>(poolName, ".requests.sum")),
         finalResultErrorStatName_(
             folly::to<std::string>(poolName, ".final_result_error.sum")),
+        nConnectionsStatName_(folly::to<std::string>(poolName, ".connections")),
         durationUsStatName_(
             folly::to<std::string>(poolName, ".duration_us.avg")),
         totalDurationUsStatName_(
             folly::to<std::string>(poolName, ".total_duration_us.avg")) {
     initStat(requestCountStat_, requestsCountStatName_);
     initStat(finalResultErrorStat_, finalResultErrorStatName_);
+    initStat(nConnectionsStat_, nConnectionsStatName_);
   }
 
   std::vector<stat_t> getStats() const {
@@ -41,6 +43,7 @@ class PoolStats {
 
     return {requestCountStat_,
             finalResultErrorStat_,
+            nConnectionsStat_,
             std::move(durationStat),
             std::move(totalDurationStat)};
   }
@@ -55,6 +58,10 @@ class PoolStats {
 
   void addDurationSample(int64_t duration) {
     durationUsStat_.insertSample(duration);
+  }
+
+  void updateConnections(int64_t amount = 1) {
+    nConnectionsStat_.data.uint64 += amount;
   }
 
   void addTotalDurationSample(int64_t duration) {
@@ -72,8 +79,10 @@ class PoolStats {
 
   const std::string requestsCountStatName_;
   const std::string finalResultErrorStatName_;
+  const std::string nConnectionsStatName_;
   const std::string durationUsStatName_;
   const std::string totalDurationUsStatName_;
+  stat_t nConnectionsStat_;
   stat_t requestCountStat_;
   stat_t finalResultErrorStat_;
   ExponentialSmoothData<64> totalDurationUsStat_;

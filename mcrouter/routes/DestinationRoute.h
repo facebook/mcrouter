@@ -73,7 +73,9 @@ class DestinationRoute {
         indexInPool_(indexInPool),
         poolStatIndex_(poolStatIdx),
         timeout_(timeout),
-        keepRoutingPrefix_(keepRoutingPrefix) {}
+        keepRoutingPrefix_(keepRoutingPrefix) {
+    destination_->setPoolStatsIndex(poolStatIdx);
+  }
 
   template <class Request>
   void traverse(

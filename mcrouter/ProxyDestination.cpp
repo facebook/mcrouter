@@ -344,6 +344,27 @@ void ProxyDestination::resetInactive() {
   }
 }
 
+void ProxyDestination::setPoolStatsIndex(int32_t index) {
+  proxy.eventBase().runInEventBaseThread([selfPtr = selfPtr_, index]() {
+    auto pdstn = selfPtr.lock();
+    if (!pdstn) {
+      return;
+    }
+    pdstn->stats_.poolStatIndex_ = index;
+    if (pdstn->stats_.state == State::kUp) {
+      if (auto* poolStats = pdstn->proxy.stats().getPoolStats(index)) {
+        poolStats->updateConnections(1);
+      }
+    }
+  });
+}
+
+void ProxyDestination::updatePoolStatConnections(bool connected) {
+  if (auto poolStats = proxy.stats().getPoolStats(stats_.poolStatIndex_)) {
+    poolStats->updateConnections(connected ? 1 : -1);
+  }
+}
+
 void ProxyDestination::initializeAsyncMcClient() {
   assert(!client_);
 
@@ -422,6 +443,9 @@ void ProxyDestination::initializeAsyncMcClient() {
           int64_t numConnectRetries) mutable {
         setState(State::kUp);
         proxy.stats().increment(num_connections_opened_stat);
+
+        updatePoolStatConnections(true);
+
         if (const auto* sslSocket =
                 socket.getUnderlyingTransport<folly::AsyncSSLSocket>()) {
           proxy.stats().increment(num_ssl_connections_opened_stat);
@@ -454,6 +478,9 @@ void ProxyDestination::initializeAsyncMcClient() {
         if (pdstn->accessPoint_->useSsl()) {
           pdstn->proxy.stats().increment(num_ssl_connections_closed_stat);
         }
+
+        pdstn->updatePoolStatConnections(false);
+
         if (reason == AsyncMcClient::ConnectionDownReason::ABORTED) {
           pdstn->setState(State::kClosed);
         } else {

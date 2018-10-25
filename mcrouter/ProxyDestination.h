@@ -61,6 +61,9 @@ class ProxyDestination {
     std::unique_ptr<std::array<uint64_t, mc_nres>> results;
     size_t probesSent{0};
     double retransPerKByte{0.0};
+    // If poolstats config is present, keep track of most recent
+    // pool with this destination
+    int32_t poolStatIndex_{-1};
 
     // last time this connection was closed due to inactivity
     uint64_t inactiveConnectionClosedTimestampUs{0};
@@ -105,6 +108,9 @@ class ProxyDestination {
   const std::shared_ptr<const AccessPoint>& accessPoint() const {
     return accessPoint_;
   }
+
+  // Set poolStatIndex_
+  void setPoolStatsIndex(int32_t index);
 
   void resetInactive();
 
@@ -163,6 +169,9 @@ class ProxyDestination {
    * log for how long it was closed.
    */
   void updateConnectionClosedInternalStat();
+
+  // update per pool connections
+  void updatePoolStatConnections(bool connected);
 
   void startSendingProbes();
   void stopSendingProbes();
