@@ -28,6 +28,7 @@ class RequestCommon : public MessageCommon {
       fbtraceInfo_ =
           McFbtraceRef::moveRef(mc_fbtrace_info_deep_copy(other.fbtraceInfo()));
     }
+    traceContext_ = other.traceContext_;
   }
   RequestCommon& operator=(const RequestCommon& other) {
     if (this != &other) {
@@ -38,6 +39,7 @@ class RequestCommon : public MessageCommon {
         fbtraceInfo_ = McFbtraceRef::moveRef(
             mc_fbtrace_info_deep_copy(other.fbtraceInfo()));
       }
+      traceContext_ = other.traceContext_;
     }
     return *this;
   }

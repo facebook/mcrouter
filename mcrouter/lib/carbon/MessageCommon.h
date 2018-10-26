@@ -31,7 +31,7 @@ class MessageCommon {
     traceContext_ = std::move(traceContext);
   }
 
- private:
+ protected:
   std::string traceContext_;
 };
 
