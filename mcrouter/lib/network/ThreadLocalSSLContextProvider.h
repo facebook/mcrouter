@@ -12,6 +12,7 @@
 #include <folly/Optional.h>
 #include <folly/Range.h>
 #include <folly/io/async/SSLContext.h>
+#include <mcrouter/lib/network/FizzContextProvider.h>
 #include <mcrouter/lib/network/SecurityOptions.h>
 #include <wangle/client/ssl/SSLSessionCallbacks.h>
 #include <wangle/ssl/TLSTicketKeySeeds.h>
@@ -19,12 +20,6 @@
 namespace folly {
 class SSLContext;
 } // folly
-
-namespace fizz {
-namespace server {
-class FizzServerContext;
-}
-} // namespace fizz
 
 namespace facebook {
 namespace memcache {
@@ -56,6 +51,7 @@ class ClientSSLContext : public folly::SSLContext {
  * The following methods return thread local managed SSL Contexts.  Contexts are
  * reloaded on demand if they are 30 minutes old on a per thread basis.
  */
+FizzContextAndVerifier getFizzClientConfig(const SecurityOptions& opts);
 
 /**
  * Get a context used for client connections.  If opts has an empty CA path, the

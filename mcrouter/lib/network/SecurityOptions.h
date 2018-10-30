@@ -17,12 +17,14 @@ constexpr folly::StringPiece kMcSecurityTlsToPlaintextProto = "mc_tls_to_pt";
 // an enum to determine which security protocol to use to connect to the
 // endpoint.
 enum class SecurityMech : uint8_t {
-  NONE,
+  NONE = 0,
   TLS,
   // A mechanism for exchanging identity via certificates via TLS handshake
   // and then falling back to plaintext over the wire.  This is not considered
   // a secure transport since it lacks confidentiality and integrity.
   TLS_TO_PLAINTEXT,
+  // tls 1.3 w/ fizz
+  TLS13_FIZZ,
 };
 
 const char* securityMechToString(SecurityMech mech);

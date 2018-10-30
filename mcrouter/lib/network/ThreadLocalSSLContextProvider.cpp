@@ -9,11 +9,6 @@
 
 #include <unordered_map>
 
-#include <fizz/protocol/DefaultCertificateVerifier.h>
-#include <fizz/server/FizzServerContext.h>
-#include <fizz/server/TicketCodec.h>
-#include <fizz/server/TicketTypes.h>
-
 #include <folly/Singleton.h>
 #include <folly/hash/Hash.h>
 #include <folly/io/async/SSLContext.h>
@@ -52,7 +47,8 @@ struct ContextKey {
   bool operator==(const ContextKey& other) const {
     return pemCertPath == other.pemCertPath && pemKeyPath == other.pemKeyPath &&
         pemCaPath == other.pemCaPath &&
-        requireClientVerification == other.requireClientVerification;
+        requireClientVerification == other.requireClientVerification &&
+        mech == other.mech;
   }
 };
 
@@ -63,6 +59,7 @@ struct ClientContextInfo {
   SecurityMech mech;
 
   std::shared_ptr<SSLContext> context;
+  FizzContextAndVerifier fizzData;
   std::chrono::time_point<std::chrono::steady_clock> lastLoadTime;
 
   bool needsContext(
@@ -74,11 +71,29 @@ struct ClientContextInfo {
     return now - lastLoadTime > kSslReloadInterval;
   }
 
+  bool needsFizzContext(
+      std::chrono::time_point<std::chrono::steady_clock> now) const {
+    constexpr auto kSslReloadInterval = std::chrono::minutes(30);
+    if (!fizzData.first) {
+      return true;
+    }
+    return now - lastLoadTime > kSslReloadInterval;
+  }
+
   void setContext(
       std::shared_ptr<SSLContext> ctx,
       std::chrono::time_point<std::chrono::steady_clock> loadTime) {
     if (ctx) {
       context = std::move(ctx);
+      lastLoadTime = loadTime;
+    }
+  }
+
+  void setFizzData(
+      FizzContextAndVerifier ctxAndVerifier,
+      std::chrono::time_point<std::chrono::steady_clock> loadTime) {
+    if (ctxAndVerifier.first) {
+      fizzData = std::move(ctxAndVerifier);
       lastLoadTime = loadTime;
     }
   }
@@ -282,68 +297,6 @@ std::string readFile(folly::StringPiece path) {
   return data;
 }
 
-std::shared_ptr<fizz::server::FizzServerContext> createFizzServerContext(
-    folly::StringPiece pemCertPath,
-    folly::StringPiece certData,
-    folly::StringPiece pemKeyPath,
-    folly::StringPiece keyData,
-    folly::StringPiece pemCaPath,
-    bool requireClientVerification,
-    wangle::TLSTicketKeySeeds* ticketKeySeeds) {
-  auto certMgr = std::make_unique<fizz::server::CertManager>();
-  try {
-    auto selfCert =
-        fizz::CertUtils::makeSelfCert(certData.str(), keyData.str());
-    // add the default cert
-    certMgr->addCert(std::move(selfCert), true);
-  } catch (const std::exception& ex) {
-    LOG_FAILURE(
-        "SSLCert",
-        failure::Category::kBadEnvironment,
-        "Failed to create self cert from \"{}\" and \"{}\".  ex: {}",
-        pemCertPath,
-        pemKeyPath,
-        ex.what());
-    return nullptr;
-  }
-
-  auto ctx = std::make_shared<fizz::server::FizzServerContext>();
-  ctx->setSupportedVersions({fizz::ProtocolVersion::tls_1_3});
-  ctx->setSupportedPskModes(
-      {fizz::PskKeyExchangeMode::psk_ke, fizz::PskKeyExchangeMode::psk_dhe_ke});
-  ctx->setVersionFallbackEnabled(true);
-  ctx->setCertManager(std::move(certMgr));
-  if (!pemCaPath.empty()) {
-    auto verifier = fizz::DefaultCertificateVerifier::createFromCAFile(
-        fizz::VerificationContext::Server, pemCaPath.str());
-    ctx->setClientCertVerifier(std::move(verifier));
-    ctx->setClientAuthMode(fizz::server::ClientAuthMode::Optional);
-  }
-  if (requireClientVerification) {
-    ctx->setClientAuthMode(fizz::server::ClientAuthMode::Required);
-  }
-
-  // set ticket seeds
-  if (ticketKeySeeds) {
-    std::vector<folly::ByteRange> ticketSecrets;
-    for (const auto& secret : ticketKeySeeds->currentSeeds) {
-      ticketSecrets.push_back(folly::StringPiece(secret));
-    }
-    for (const auto& secret : ticketKeySeeds->oldSeeds) {
-      ticketSecrets.push_back(folly::StringPiece(secret));
-    }
-    for (const auto& secret : ticketKeySeeds->newSeeds) {
-      ticketSecrets.push_back(folly::StringPiece(secret));
-    }
-    auto cipher = std::make_shared<fizz::server::AES128TicketCipher>();
-    cipher->setTicketSecrets(std::move(ticketSecrets));
-    cipher->setValidity(std::chrono::seconds(kSessionLifeTime));
-    ctx->setTicketCipher(std::move(cipher));
-  }
-  // TODO: allow use of custom fizz factories
-  return ctx;
-}
-
 std::shared_ptr<SSLContext> createClientSSLContext(
     SecurityOptions opts,
     SecurityMech mech) {
@@ -452,9 +405,30 @@ ServerContextInfo& getServerContextInfo(
 
 } // namespace
 
+FizzContextAndVerifier getFizzClientConfig(const SecurityOptions& opts) {
+  auto& info = getClientContextInfo(opts, SecurityMech::TLS13_FIZZ);
+  auto now = std::chrono::steady_clock::now();
+  if (info.needsFizzContext(now)) {
+    auto certData = readFile(opts.sslPemCertPath);
+    auto keyData = readFile(opts.sslPemKeyPath);
+    auto fizzData = createClientFizzContextAndVerifier(
+        std::move(certData), std::move(keyData), opts.sslPemCaPath);
+    info.setFizzData(std::move(fizzData), now);
+  }
+  return info.fizzData;
+}
+
 std::shared_ptr<folly::SSLContext> getClientContext(
     const SecurityOptions& opts,
     SecurityMech mech) {
+  if (mech != SecurityMech::TLS && mech != SecurityMech::TLS_TO_PLAINTEXT) {
+    LOG_FAILURE(
+        "SSLConfig",
+        failure::Category::kInvalidOption,
+        "getClientContext specified invalid security mech: {}",
+        static_cast<uint8_t>(mech));
+    return nullptr;
+  }
   auto& info = getClientContextInfo(opts, mech);
   auto now = std::chrono::steady_clock::now();
   if (info.needsContext(now)) {

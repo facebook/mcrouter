@@ -132,6 +132,14 @@ TEST(AccessPoint, host_port_proto_ssl) {
   EXPECT_EQ(mc_ascii_protocol, ap->getProtocol());
   EXPECT_TRUE(ap->useSsl());
   EXPECT_EQ(ap->getSecurityMech(), SecurityMech::TLS_TO_PLAINTEXT);
+
+  ap = AccessPoint::create("127.0.0.1:12345:ascii:fizz", proto);
+  EXPECT_TRUE(ap != nullptr);
+  EXPECT_EQ("127.0.0.1", ap->getHost());
+  EXPECT_EQ(12345, ap->getPort());
+  EXPECT_EQ(mc_ascii_protocol, ap->getProtocol());
+  EXPECT_TRUE(ap->useSsl());
+  EXPECT_EQ(ap->getSecurityMech(), SecurityMech::TLS13_FIZZ);
 }
 
 TEST(AccessPoint, port_override) {

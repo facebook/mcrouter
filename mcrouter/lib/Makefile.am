@@ -160,6 +160,8 @@ libmcrouter_a_SOURCES = \
   network/gen/MemcacheMessages-inl.h \
   network/gen/MemcacheMessages.cpp \
   network/gen/MemcacheMessages.h \
+  network/FizzContextProvider.cpp \
+  network/FizzContextProvider.h \
   network/McAsciiParser-gen.cpp \
   network/McAsciiParser-inl.h \
   network/McAsciiParser.cpp \

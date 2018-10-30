@@ -9,6 +9,7 @@
 
 #include <gtest/gtest.h>
 
+#include <fizz/client/AsyncFizzClient.h>
 #include <folly/FileUtil.h>
 #include <folly/ScopeGuard.h>
 #include <folly/fibers/EventBaseLoopController.h>
@@ -38,6 +39,12 @@ folly::Optional<SSLTestPaths> getTlsToPtSSL() {
   return res;
 }
 
+folly::Optional<SSLTestPaths> getFizzSSL() {
+  auto res = validClientSsl();
+  res.mech = SecurityMech::TLS13_FIZZ;
+  return res;
+}
+
 class AsyncMcClientSimpleTest
     : public TestWithParam<folly::Optional<SSLTestPaths>> {
  public:
@@ -61,7 +68,7 @@ TEST_P(AsyncMcClientSimpleTest, serverShutdownTest) {
     EXPECT_EQ(transport->getSecurityProtocol(), "");
   } else if (ssl->mech == SecurityMech::TLS) {
     EXPECT_EQ(transport->getSecurityProtocol(), "TLS");
-  } else {
+  } else if (ssl->mech == SecurityMech::TLS_TO_PLAINTEXT) {
     // TLS_TO_PLAINTEXT
     EXPECT_EQ(transport->getSecurityProtocol(), "mc_plaintext");
     auto* sslsock = transport->getUnderlyingTransport<folly::AsyncSSLSocket>();
@@ -70,6 +77,12 @@ TEST_P(AsyncMcClientSimpleTest, serverShutdownTest) {
     auto selfCert = transport->getSelfCertificate();
     EXPECT_NE(peerCert, nullptr);
     EXPECT_NE(selfCert, nullptr);
+  } else {
+    EXPECT_EQ(ssl->mech, SecurityMech::TLS13_FIZZ);
+    EXPECT_EQ(transport->getSecurityProtocol(), "Fizz");
+    EXPECT_NE(
+        transport->getUnderlyingTransport<fizz::client::AsyncFizzClient>(),
+        nullptr);
   }
 
   server->join();
@@ -216,7 +229,7 @@ TEST_P(AsyncMcClientSimpleTest, connectionError) {
 INSTANTIATE_TEST_CASE_P(
     AsyncMcClientTest,
     AsyncMcClientSimpleTest,
-    Values(folly::none, validClientSsl(), getTlsToPtSSL()));
+    Values(folly::none, validClientSsl(), getTlsToPtSSL(), getFizzSSL()));
 
 void testCerts(
     std::string name,
@@ -375,7 +388,7 @@ INSTANTIATE_TEST_CASE_P(
             mc_ascii_protocol,
             mc_umbrella_protocol_DONOTUSE,
             mc_caret_protocol),
-        Values(folly::none, validClientSsl(), getTlsToPtSSL())));
+        Values(folly::none, validClientSsl(), getTlsToPtSSL(), getFizzSSL())));
 
 TEST_F(AsyncMcClientBasicTest, caretSslNoCerts) {
   config.requirePeerCerts = false;
@@ -727,15 +740,27 @@ TEST_P(AsyncMcClientSessionTest, SessionResumption) {
   auto server = TestServer::create(std::move(config));
   auto constexpr nConnAttempts = 10;
 
-  auto sendAndCheckRequest = [](TestClient& client, int i) {
+  auto sendAndCheckRequest = [mech](TestClient& client, int i) {
     LOG(INFO) << "Connection attempt: " << i;
     client.setStatusCallbacks(
         [&](const folly::AsyncTransportWrapper& sock, int64_t) {
-          auto* socket = sock.getUnderlyingTransport<folly::AsyncSSLSocket>();
-          if (i != 0) {
-            EXPECT_TRUE(socket->getSSLSessionReused());
+          if (mech == SecurityMech::TLS ||
+              mech == SecurityMech::TLS_TO_PLAINTEXT) {
+            auto* socket = sock.getUnderlyingTransport<folly::AsyncSSLSocket>();
+            if (i != 0) {
+              EXPECT_TRUE(socket->getSSLSessionReused());
+            } else {
+              EXPECT_FALSE(socket->getSSLSessionReused());
+            }
           } else {
-            EXPECT_FALSE(socket->getSSLSessionReused());
+            EXPECT_EQ(mech, SecurityMech::TLS13_FIZZ);
+            auto* fizzSock =
+                sock.getUnderlyingTransport<fizz::client::AsyncFizzClient>();
+            if (i != 0) {
+              EXPECT_TRUE(fizzSock->pskResumed());
+            } else {
+              EXPECT_FALSE(fizzSock->pskResumed());
+            }
           }
         },
         nullptr);
@@ -783,7 +808,10 @@ TEST_P(AsyncMcClientSessionTest, SessionResumption) {
 INSTANTIATE_TEST_CASE_P(
     AsyncMcClientTest,
     AsyncMcClientSessionTest,
-    Values(SecurityMech::TLS, SecurityMech::TLS_TO_PLAINTEXT));
+    Values(
+        SecurityMech::TLS,
+        SecurityMech::TLS_TO_PLAINTEXT,
+        SecurityMech::TLS13_FIZZ));
 
 void versionTest(mc_protocol_t protocol, bool useDefaultVersion) {
   TestServer::Config config;
@@ -874,6 +902,10 @@ TEST(AsyncMcClient, contextProviders) {
   mech = SecurityMech::TLS_TO_PLAINTEXT;
   auto clientCtx3 = getClientContext(opts, mech);
   auto clientCtx4 = getClientContext(opts, mech);
+
+  auto fizzCfg1 = getFizzClientConfig(opts);
+  auto fizzCfg2 = getFizzClientConfig(opts);
+  EXPECT_EQ(fizzCfg1, fizzCfg2);
 
   auto serverCtxs1 = getServerContexts(
       serverCtxPaths.sslCertPath,
@@ -975,7 +1007,10 @@ INSTANTIATE_TEST_CASE_P(
         Bool(),
         Bool(),
         Bool(),
-        Values(SecurityMech::TLS, SecurityMech::TLS_TO_PLAINTEXT)));
+        Values(
+            SecurityMech::TLS,
+            SecurityMech::TLS_TO_PLAINTEXT,
+            SecurityMech::TLS13_FIZZ)));
 
 class AsyncMcClientSSLOffloadTest : public TestWithParam<bool> {
  public:

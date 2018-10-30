@@ -25,6 +25,7 @@
 #include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/network/AccessPoint.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
+#include "mcrouter/lib/network/McFizzClient.h"
 #include "mcrouter/lib/network/RpcStatsContext.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/routes/DestinationRoute.h"
@@ -454,6 +455,20 @@ void ProxyDestination::initializeAsyncMcClient() {
           }
           if (sslSocket->getSSLSessionReused()) {
             proxy.stats().increment(num_ssl_resumption_successes_stat);
+          }
+        } else if (
+            const auto* fizzSock =
+                socket.getUnderlyingTransport<McFizzClient>()) {
+          proxy.stats().increment(num_ssl_connections_opened_stat);
+          if (fizzSock->pskResumed()) {
+            proxy.stats().increment(num_ssl_resumption_successes_stat);
+            proxy.stats().increment(num_ssl_resumption_attempts_stat);
+          } else {
+            auto pskState = fizzSock->getState().pskType();
+            if (pskState && pskState.value() == fizz::PskType::Rejected) {
+              // session resumption was attempted, but failed
+              proxy.stats().increment(num_ssl_resumption_attempts_stat);
+            }
           }
         }
 
