@@ -90,6 +90,10 @@ struct AccessPoint {
     securityMech_ = mech;
   }
 
+  void setPort(uint16_t port) {
+    port_ = port;
+  }
+
  private:
   std::string host_;
   uint16_t port_;

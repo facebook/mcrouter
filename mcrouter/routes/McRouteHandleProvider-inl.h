@@ -212,6 +212,16 @@ McRouteHandleProvider<RouterInfo>::makePool(
       crossDcMech = parseSecurityMech(mechStr);
     }
 
+    folly::Optional<uint16_t> withinDcPort;
+    if (auto jPort = json.get_ptr("port_override_within_dc")) {
+      withinDcPort = parseInt(*jPort, "port_override_within_dc", 1, 65535);
+    }
+
+    folly::Optional<uint16_t> crossDcPort;
+    if (auto jPort = json.get_ptr("port_override_cross_dc")) {
+      crossDcPort = parseInt(*jPort, "port_override_cross_dc", 1, 65535);
+    }
+
     // default to 0, which doesn't override
     uint16_t port = 0;
     if (auto jPort = json.get_ptr("port_override")) {
@@ -250,13 +260,23 @@ McRouteHandleProvider<RouterInfo>::makePool(
           server.stringPiece(), protocol, mech, port, enableCompression);
       checkLogic(ap != nullptr, "invalid server {}", server.stringPiece());
 
-      if (withinDcMech.hasValue() || crossDcMech.hasValue()) {
+      if (withinDcMech.hasValue() || crossDcMech.hasValue() ||
+          withinDcPort.hasValue() || crossDcPort.hasValue()) {
         bool isInLocalDc = isInLocalDatacenter(ap->getHost());
-        if (isInLocalDc && withinDcMech.hasValue()) {
-          ap->setSecurityMech(withinDcMech.value());
-        }
-        if (!isInLocalDc && crossDcMech.hasValue()) {
-          ap->setSecurityMech(crossDcMech.value());
+        if (isInLocalDc) {
+          if (withinDcMech.hasValue()) {
+            ap->setSecurityMech(withinDcMech.value());
+          }
+          if (withinDcPort.hasValue()) {
+            ap->setPort(withinDcPort.value());
+          }
+        } else {
+          if (crossDcMech.hasValue()) {
+            ap->setSecurityMech(crossDcMech.value());
+          }
+          if (crossDcPort.hasValue()) {
+            ap->setPort(crossDcPort.value());
+          }
         }
       }
 
