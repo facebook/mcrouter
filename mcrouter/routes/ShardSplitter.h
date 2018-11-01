@@ -72,7 +72,8 @@ class ShardSplitter {
 
   explicit ShardSplitter(
       const folly::dynamic& json,
-      const folly::dynamic& defaultSplitJson = 1);
+      const folly::dynamic& defaultSplitJson = 1,
+      bool enablePrefixMatching = false);
 
   /**
    * Returns information about shard split if it exists. If it does, stores
@@ -99,6 +100,7 @@ class ShardSplitter {
  private:
   folly::StringKeyedUnorderedMap<ShardSplitInfo> shardSplits_;
   ShardSplitInfo defaultShardSplit_;
+  bool enablePrefixMatching_;
 };
 } // namespace mcrouter
 } // namespace memcache

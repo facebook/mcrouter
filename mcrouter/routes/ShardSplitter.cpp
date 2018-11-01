@@ -127,11 +127,13 @@ size_t ShardSplitter::ShardSplitInfo::getSplitSizeForCurrentHost() const {
 
 ShardSplitter::ShardSplitter(
     const folly::dynamic& json,
-    const folly::dynamic& defaultSplitJson)
+    const folly::dynamic& defaultSplitJson,
+    bool enablePrefixMatching)
     : defaultShardSplit_(parseSplit(
           defaultSplitJson,
           "default",
-          std::chrono::system_clock::now())) {
+          std::chrono::system_clock::now())),
+      enablePrefixMatching_(enablePrefixMatching) {
   checkLogic(json.isObject(), "ShardSplitter: config is not an object");
 
   auto now = std::chrono::system_clock::now();
@@ -154,11 +156,25 @@ ShardSplitter::ShardSplitter(
 
 const ShardSplitter::ShardSplitInfo& ShardSplitter::getShardSplit(
     folly::StringPiece shard) const {
-  auto splitIt = shardSplits_.find(shard);
-  if (splitIt == shardSplits_.end()) {
-    return defaultShardSplit_;
+  for (;;) {
+    auto splitIt = shardSplits_.find(shard);
+    if (splitIt != shardSplits_.end()) {
+      return splitIt->second;
+    }
+
+    if (!enablePrefixMatching_) {
+      break;
+    }
+
+    // No match, lop off the last section and try again
+    auto pos = shard.rfind('.');
+    if (pos == std::string::npos) {
+      break;
+    }
+
+    shard = shard.subpiece(0, pos);
   }
-  return splitIt->second;
+  return defaultShardSplit_;
 }
 
 const ShardSplitter::ShardSplitInfo* ShardSplitter::getShardSplit(
