@@ -103,7 +103,14 @@ bool runServer(
   opts.numThreads = mcrouterOpts.num_proxies;
   opts.numListeningSockets = mcrouterOpts.num_listening_sockets;
 
-  opts.setPerThreadMaxConns(standaloneOpts.max_conns, opts.numThreads);
+  size_t maxConns =
+      opts.setMaxConnections(standaloneOpts.max_conns, opts.numThreads);
+  if (maxConns > 0) {
+    VLOG(1) << "The system will allow " << maxConns
+            << " simultaneos connections before start closing connections"
+            << " using an LRU algorithm";
+  }
+
   opts.tcpListenBacklog = standaloneOpts.tcp_listen_backlog;
   opts.worker.defaultVersionHandler = false;
   opts.worker.maxInFlight = standaloneOpts.max_client_outstanding_reqs;

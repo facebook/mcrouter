@@ -38,7 +38,6 @@ namespace facebook {
 namespace memcache {
 
 namespace {
-constexpr size_t kReservedFDs = 2048;
 
 /* Global pointer to the server for signal handlers */
 facebook::memcache::AsyncMcServer* gServer;
@@ -447,29 +446,90 @@ class McServerThread {
   }
 };
 
-void AsyncMcServer::Options::setPerThreadMaxConns(
+size_t AsyncMcServer::Options::setMaxConnections(
     size_t globalMaxConns,
-    size_t numThreads_) {
+    size_t nThreads) {
   if (globalMaxConns == 0) {
     worker.maxConns = 0;
-    return;
+    return 0;
   }
-  assert(numThreads_ > 0);
+  assert(nThreads > 0);
+
+  // reserve some FDs for things like file, pipes (mcpiper uses pipes), etc.
+  constexpr size_t kReservedFDs = 2048;
+
+  rlimit rlim;
+  auto rlimRes = getrlimit(RLIMIT_NOFILE, &rlim);
+
   if (globalMaxConns == 1) {
-    rlimit rlim;
-    if (getrlimit(RLIMIT_NOFILE, &rlim) != 0) {
+    if (rlimRes != 0) {
       LOG(ERROR) << "getrlimit failed. Errno: " << folly::errnoStr(errno)
                  << ". Disabling connection limits.";
       worker.maxConns = 0;
-      return;
+      return 0;
     }
 
     size_t softLimit = rlim.rlim_cur;
     globalMaxConns = std::max<size_t>(softLimit, kReservedFDs) - kReservedFDs;
-    VLOG(1) << "Setting max conns to " << globalMaxConns
+    VLOG(2) << "Setting max conns to " << globalMaxConns
             << " based on soft resource limit of " << softLimit;
+
+    worker.maxConns = globalMaxConns / nThreads;
+    return globalMaxConns;
   }
-  worker.maxConns = (globalMaxConns + numThreads_ - 1) / numThreads_;
+
+  // globalMaxConns > 1
+
+  if (rlimRes != 0) {
+    // if the call to getrlimit fails, just set maxConns to what was specified.
+    LOG(ERROR) << "getrlimit failed. Errno: " << folly::errnoStr(errno)
+               << ". Using the number provided by the user"
+               << " without raising rlimit";
+    worker.maxConns = globalMaxConns / nThreads;
+    return globalMaxConns;
+  }
+
+  size_t desiredRlim = globalMaxConns + kReservedFDs;
+
+  // if the hard rlimit is not large enough, try and raise it.
+  // this call will fail for unprivileged services.
+  if (rlim.rlim_max < desiredRlim) {
+    rlimit newRlim;
+    newRlim.rlim_cur = desiredRlim;
+    newRlim.rlim_max = desiredRlim;
+    if (setrlimit(RLIMIT_NOFILE, &newRlim) == 0) {
+      VLOG(2) << "Successfully updated hard and soft rlimit to " << desiredRlim;
+      rlim = newRlim;
+    } else {
+      LOG(WARNING) << "Setting hard rlimit failed. Errno: "
+                   << folly::errnoStr(errno);
+      // we failed to set hard limt, lower the globalMaxConns to the current
+      // hard limit.
+      globalMaxConns =
+          std::max<size_t>(rlim.rlim_max, kReservedFDs) - kReservedFDs;
+    }
+  }
+
+  // if the soft limit is not large enough, increase it.
+  if (rlim.rlim_cur < desiredRlim && rlim.rlim_cur < rlim.rlim_max) {
+    auto newRlim = rlim;
+    newRlim.rlim_cur = std::min(rlim.rlim_max, desiredRlim);
+    if (setrlimit(RLIMIT_NOFILE, &newRlim) == 0) {
+      VLOG(2) << "Successfully updated soft rlimit to " << newRlim.rlim_cur;
+      // setrlimit succeeded, update globalMaxConns.
+      globalMaxConns =
+          std::max<size_t>(newRlim.rlim_cur, kReservedFDs) - kReservedFDs;
+    } else {
+      LOG(ERROR) << "setrlimit for soft limit failed. "
+                 << "Errno: " << folly::errnoStr(errno)
+                 << ". Disabling connection limits.";
+      worker.maxConns = 0;
+      return 0;
+    }
+  }
+
+  worker.maxConns = globalMaxConns / nThreads;
+  return globalMaxConns;
 }
 
 AsyncMcServer::AsyncMcServer(Options opts) : opts_(std::move(opts)) {

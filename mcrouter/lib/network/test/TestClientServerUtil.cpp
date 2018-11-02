@@ -151,7 +151,7 @@ TestServer::TestServer(Config config)
   opts_.worker.sendTimeout = std::chrono::milliseconds{config.timeoutMs};
   opts_.worker.goAwayTimeout =
       std::chrono::milliseconds{config.goAwayTimeoutMs};
-  opts_.setPerThreadMaxConns(config.maxConns, opts_.numThreads);
+  opts_.setMaxConnections(config.maxConns, opts_.numThreads);
   if (config.useSsl) {
     opts_.pemKeyPath = config.keyPath;
     opts_.pemCertPath = config.certPath;
