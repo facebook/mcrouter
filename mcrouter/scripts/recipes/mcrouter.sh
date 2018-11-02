@@ -16,5 +16,6 @@ LD_LIBRARY_PATH="$INSTALL_DIR/lib:$LD_LIBRARY_PATH" \
     LD_RUN_PATH="$INSTALL_DIR/lib:$LD_RUN_PATH" \
     LDFLAGS="-L$INSTALL_DIR/lib $LDFLAGS" \
     CPPFLAGS="-I$INSTALL_DIR/include $CPPFLAGS" \
+    CFLAGS="-I$INSTALL_DIR/include $CPPFLAGS" \
     ./configure --prefix="$INSTALL_DIR"
 make $MAKE_ARGS && make install $MAKE_ARGS
