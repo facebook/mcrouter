@@ -22,6 +22,7 @@
 #include "mcrouter/routes/FailoverWithExptimeRouteFactory.h"
 #include "mcrouter/routes/HashRouteFactory.h"
 #include "mcrouter/routes/HostIdRouteFactory.h"
+#include "mcrouter/routes/KeySplitRoute.h"
 #include "mcrouter/routes/L1L2CacheRouteFactory.h"
 #include "mcrouter/routes/L1L2SizeSplitRoute.h"
 #include "mcrouter/routes/LatencyInjectionRoute.h"
@@ -116,6 +117,7 @@ McRouteHandleProvider<MemcacheRouterInfo>::buildRouteMap() {
       {"LatencyInjectionRoute", &makeLatencyInjectionRoute<MemcacheRouterInfo>},
       {"L1L2CacheRoute", &makeL1L2CacheRoute<MemcacheRouterInfo>},
       {"L1L2SizeSplitRoute", &makeL1L2SizeSplitRoute},
+      {"KeySplitRoute", &makeKeySplitRoute},
       {"LatestRoute", &makeLatestRoute<MemcacheRouterInfo>},
       {"LoadBalancerRoute", &makeLoadBalancerRoute<MemcacheRouterInfo>},
       {"LoggingRoute", &makeLoggingRoute<MemcacheRouterInfo>},

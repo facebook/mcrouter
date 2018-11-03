@@ -47,5 +47,13 @@ mc_req_err_t isKeyValid(folly::StringPiece key) {
   return mc_req_err_valid;
 }
 
+namespace mcrouter {
+namespace detail {
+constexpr size_t numDigitsBase10(uint64_t n) {
+  return n < 10 ? 1 : 1 + numDigitsBase10(n / 10);
+}
+} // namespace detail
+} // namespace mcrouter
+
 } // memcache
 } // facebook

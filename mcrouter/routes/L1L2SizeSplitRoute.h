@@ -17,6 +17,7 @@
 #include <folly/Range.h>
 #include <folly/io/IOBuf.h>
 
+#include "mcrouter/lib/McKey.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/network/gen/MemcacheMessages.h"
@@ -33,12 +34,6 @@ template <class RouteHandleIf>
 class RouteHandleFactory;
 
 namespace mcrouter {
-
-namespace detail {
-constexpr size_t numDigitsBase10(uint64_t n) {
-  return n < 10 ? 1 : 1 + numDigitsBase10(n / 10);
-}
-} // namespace detail
 
 /**
  * This route handle is intended to be used for asymmetric data storage.
