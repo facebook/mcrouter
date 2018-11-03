@@ -17,11 +17,16 @@ namespace memcache {
 namespace detail {
 
 template <class Request>
-std::pair<uint64_t, uint64_t> getTraceId(const Request& req) {
+std::pair<uint64_t, uint64_t> getRequestTraceId(const Request& req) {
   if (!req.traceContext().empty()) {
-    return carbon::tracing::client::sendingRequest(req);
+    return carbon::tracing::sendingRequest(req);
   }
   return req.traceToInts();
+}
+
+template <class Reply>
+std::pair<uint64_t, uint64_t> getReplyTraceId(const Reply& reply) {
+  return carbon::tracing::sendingReply(reply);
 }
 
 } // namespace detail
@@ -37,7 +42,7 @@ bool CaretSerializedMessage::prepare(
       req,
       reqId,
       Request::typeId,
-      detail::getTraceId(req),
+      detail::getRequestTraceId(req),
       supportedCodecs,
       iovOut,
       niovOut);
@@ -57,7 +62,7 @@ bool CaretSerializedMessage::prepare(
       reply,
       reqId,
       Reply::typeId,
-      {0, 0} /* traceId */,
+      detail::getReplyTraceId(reply),
       supportedCodecs,
       compressionCodecMap,
       dropProbability,

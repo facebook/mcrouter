@@ -146,7 +146,7 @@ void ClientMcParser<Callback>::forwardCaretReply(
   carbon::CarbonProtocolReader reader(cur);
   reply.deserialize(reader);
   reply.setTraceContext(
-      carbon::tracing::client::getReplyTraceContext(headerInfo.traceId));
+      carbon::tracing::getReplyTraceContext(headerInfo.traceId));
 
   callback_.replyReady(std::move(reply), reqId, getReplyStats(headerInfo));
 }

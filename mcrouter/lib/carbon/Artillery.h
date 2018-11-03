@@ -12,13 +12,12 @@
 namespace carbon {
 namespace tracing {
 
-namespace client {
 /**
  * To be called when we are about to send a request to an upstream server.
  *
  * @param request   The request we are about to send.
  *
- * @return          The serialized traceId, that we need upsteam with
+ * @return          The serialized traceId, that we need to send upsteam with
  *                  the request.
  */
 template <class Request>
@@ -47,7 +46,17 @@ std::string getReplyTraceContext(
 template <class Reply>
 void replyReceived(const std::string& requestTraceContext, const Reply& reply);
 
-} // namespace client
+/**
+ * To be called when we are about to send a reply back to the client.
+ * If the reply has a traceContext(), serializes it and returns.
+ * Otherwise, returns {0, 0}.
+ *
+ * @param reply   The reply we are about to send.
+ *
+ * @return        The serialized traceId, that we need to send with the reply.
+ */
+template <class Reply>
+std::pair<uint64_t, uint64_t> sendingReply(const Reply& reply);
 
 } // namespace tracing
 } // namespace carbon

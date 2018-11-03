@@ -16,7 +16,6 @@
 namespace carbon {
 namespace tracing {
 
-namespace client {
 #ifdef LIBMC_FBTRACE_DISABLE
 
 template <class Request>
@@ -30,6 +29,11 @@ inline std::string getReplyTraceContext(std::pair<uint64_t, uint64_t>) {
 
 template <class Reply>
 void replyReceived(const std::string&, const Reply&) {}
+
+template <class Reply>
+std::pair<uint64_t, uint64_t> sendingReply(const Reply&) {
+  return {0, 0};
+}
 
 #else
 
@@ -59,9 +63,15 @@ void replyReceived(const std::string& requestTraceContext, const Reply& reply) {
   }
 }
 
-#endif
+template <class Reply>
+std::pair<uint64_t, uint64_t> sendingReply(const Reply& reply) {
+  if (!reply.traceContext().empty()) {
+    return serializeTraceContext(reply.traceContext());
+  }
+  return {0, 0};
+}
 
-} // namespace client
+#endif
 
 } // namespace tracing
 } // namespace carbon

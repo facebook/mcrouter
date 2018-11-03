@@ -137,8 +137,7 @@ McClientRequestContext<Request>::McClientRequestContext(
 
 template <class Request>
 void McClientRequestContext<Request>::sendTraceOnReply() {
-  carbon::tracing::client::replyReceived(
-      requestTraceContext_, replyStorage_.value());
+  carbon::tracing::replyReceived(requestTraceContext_, replyStorage_.value());
 #ifndef LIBMC_FBTRACE_DISABLE
   fbTraceOnReceive(fbtraceInfo_, replyStorage_.value().result());
 #endif
