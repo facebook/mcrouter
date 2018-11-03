@@ -171,6 +171,8 @@ libmcroutercore_a_SOURCES = \
   routes/SlowWarmupRoute.h \
   routes/SlowWarmUpRouteSettings.cpp \
   routes/SlowWarmupRouteSettings.h \
+  routes/StagingRoute.cpp \
+  routes/StagingRoute.h \
   routes/TimeProviderFunc.h \
   routes/WarmUpRoute.cpp \
   routes/WarmUpRoute.h \
