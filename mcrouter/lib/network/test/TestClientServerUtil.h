@@ -104,6 +104,7 @@ class TestServer {
     std::string certPath = getDefaultCertPath();
     std::string keyPath = getDefaultKeyPath();
     bool requirePeerCerts = true;
+    std::function<void(McServerSession&)> onConnectionAcceptedAdditionalCb;
   };
 
   template <class OnRequest = TestServerOnRequest>
@@ -159,6 +160,7 @@ class TestServer {
   bool useTicketKeySeeds_{false};
   folly::fibers::Baton shutdownLock_;
   std::atomic<size_t> acceptedConns_{0};
+  std::function<void(McServerSession&)> onConnectionAcceptedAdditionalCb_;
 
   explicit TestServer(Config config);
 

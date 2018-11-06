@@ -113,7 +113,7 @@ class AsyncMcServerWorker {
    * Will be called once for every new accepted connection.
    * Can be nullptr for no action.
    */
-  void setOnConnectionAccepted(std::function<void()> cb) {
+  void setOnConnectionAccepted(std::function<void(McServerSession&)> cb) {
     onAccepted_ = std::move(cb);
   }
 
@@ -195,7 +195,7 @@ class AsyncMcServerWorker {
   folly::EventBase& eventBase_;
 
   std::shared_ptr<McServerOnRequest> onRequest_;
-  std::function<void()> onAccepted_;
+  std::function<void(McServerSession&)> onAccepted_;
 
   const CompressionCodecMap* compressionCodecMap_{nullptr};
 

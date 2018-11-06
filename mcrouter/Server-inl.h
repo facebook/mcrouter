@@ -47,14 +47,13 @@ void serverLoop(
       *routerClient,
       standaloneOpts.retain_source_ip,
       standaloneOpts.enable_pass_through_mode));
-  worker.setOnConnectionAccepted([proxy]() {
+  worker.setOnConnectionAccepted([proxy](McServerSession&) {
     proxy->stats().increment(successful_client_connections_stat);
     proxy->stats().increment(num_clients_stat);
   });
-  worker.setOnConnectionCloseFinish(
-      [proxy](facebook::memcache::McServerSession&) {
-        proxy->stats().decrement(num_clients_stat);
-      });
+  worker.setOnConnectionCloseFinish([proxy](McServerSession&) {
+    proxy->stats().decrement(num_clients_stat);
+  });
 
   // Setup compression on each worker.
   if (standaloneOpts.enable_server_compression) {

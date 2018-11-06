@@ -60,21 +60,21 @@ McServerSession* AsyncMcServerWorker::addClientTransport(
     throw std::logic_error("can't add a transport without onRequest callback");
   }
 
-  if (onAccepted_) {
-    onAccepted_();
-  }
-
   transport->setSendTimeout(opts_.sendTimeout.count());
 
   try {
-    return std::addressof(tracker_.add(
+    auto& session = tracker_.add(
         std::move(transport),
         onRequest_,
         opts_,
         userCtxt,
-        compressionCodecMap_));
+        compressionCodecMap_);
+    if (onAccepted_) {
+      onAccepted_(session);
+    }
+    return std::addressof(session);
   } catch (const std::exception& ex) {
-    // TODO: record stats about failure
+    LOG(ERROR) << "Error creating new session: " << ex.what();
     return nullptr;
   }
 }

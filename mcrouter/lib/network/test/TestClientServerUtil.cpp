@@ -21,6 +21,7 @@
 #include <wangle/ssl/TLSTicketKeySeeds.h>
 
 #include "mcrouter/lib/IOBufUtil.h"
+#include "mcrouter/lib/carbon/RequestReplyUtil.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
@@ -108,7 +109,7 @@ void TestServerOnRequest::onRequest(
 
     if (req.key().fullKey() == "hold") {
       waitingReplies_.push_back(
-          [ ctx = std::move(ctx), reply = std::move(foundReply) ]() mutable {
+          [ctx = std::move(ctx), reply = std::move(foundReply)]() mutable {
             McServerRequestContext::reply(std::move(ctx), std::move(reply));
           });
     } else if (req.key().fullKey() == "flush") {
@@ -143,7 +144,9 @@ void TestServerOnRequest::flushQueue() {
 
 TestServer::TestServer(Config config)
     : outOfOrder_(config.outOfOrder),
-      useTicketKeySeeds_(config.useSsl && config.useTicketKeySeeds) {
+      useTicketKeySeeds_(config.useSsl && config.useTicketKeySeeds),
+      onConnectionAcceptedAdditionalCb_(
+          std::move(config.onConnectionAcceptedAdditionalCb)) {
   opts_.existingSocketFd = sock_.getSocketFd();
   opts_.numThreads = config.numThreads;
   opts_.worker.defaultVersionHandler = config.useDefaultVersion;
@@ -182,13 +185,19 @@ void TestServer::run(std::function<void(AsyncMcServerWorker&)> init) {
       };
       server_->setTicketKeySeeds(std::move(seeds));
     }
-    server_->spawn([this, init](
-        size_t, folly::EventBase& evb, AsyncMcServerWorker& worker) {
-      init(worker);
-      worker.setOnConnectionAccepted([this]() { ++acceptedConns_; });
+    server_->spawn(
+        [this, init](
+            size_t, folly::EventBase& evb, AsyncMcServerWorker& worker) {
+          init(worker);
+          worker.setOnConnectionAccepted([this](McServerSession& session) {
+            ++acceptedConns_;
+            if (onConnectionAcceptedAdditionalCb_) {
+              onConnectionAcceptedAdditionalCb_(session);
+            }
+          });
 
-      evb.loop();
-    });
+          evb.loop();
+        });
 
     // allow server some time to startup
     /* sleep override */
@@ -358,10 +367,11 @@ void TestClient::sendGet(
       }
       checkLogic(
           expectedResult == reply.result(),
-          "Expected {}, got {} for key '{}'",
+          "Expected {}, got {} for key '{}'. Reply message: {}",
           mc_res_to_string(expectedResult),
           mc_res_to_string(reply.result()),
-          req.key().fullKey());
+          req.key().fullKey(),
+          carbon::getMessage(reply));
     } catch (const std::exception& e) {
       CHECK(false) << "Failed: " << e.what();
     }
@@ -394,7 +404,8 @@ void TestClient::sendSet(
 
     CHECK(expectedResult == reply.result())
         << "Expected: " << mc_res_to_string(expectedResult) << " got "
-        << mc_res_to_string(reply.result());
+        << mc_res_to_string(reply.result())
+        << ". Reply message: " << carbon::getMessage(reply);
 
     inflight_--;
   });
@@ -402,7 +413,7 @@ void TestClient::sendSet(
 
 void TestClient::sendVersion(std::string expectedVersion) {
   ++inflight_;
-  fm_.addTask([ this, expectedVersion = std::move(expectedVersion) ]() {
+  fm_.addTask([this, expectedVersion = std::move(expectedVersion)]() {
     McVersionRequest req;
 
     auto reply = client_->sendSync(req, std::chrono::milliseconds(200));
@@ -437,6 +448,6 @@ std::string genBigValue() {
   }
   return bigValue;
 }
-} // test
-} // memcache
-} // facebook
+} // namespace test
+} // namespace memcache
+} // namespace facebook

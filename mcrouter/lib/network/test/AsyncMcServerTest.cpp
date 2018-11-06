@@ -33,6 +33,24 @@ struct VerifyCommonNameOnRequest {
   }
 };
 
+TEST(AsyncMcServer, basic) {
+  TestServer::Config config;
+  config.useSsl = false;
+  auto server = TestServer::create(std::move(config));
+
+  LOG(INFO) << "creating client";
+
+  TestClient client(
+      "localhost", server->getListenPort(), 200, mc_caret_protocol);
+  client.sendGet("empty", mc_res_found);
+  client.waitForReplies();
+
+  LOG(INFO) << "Joining...";
+  server->shutdown();
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
+}
+
 TEST(AsyncMcServer, sslCertCommonName) {
   TestServer::Config config;
   config.outOfOrder = false;
@@ -80,6 +98,27 @@ TEST(AsyncMcServer, sslVerify) {
   sadClient.sendGet("empty", mc_res_connect_error);
   sadClient.waitForReplies();
 
+  server->shutdown();
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
+}
+
+TEST(AsyncMcServer, rejectAllConnections) {
+  TestServer::Config config;
+  config.useSsl = false;
+  config.onConnectionAcceptedAdditionalCb = [](McServerSession& session) {
+    session.close();
+  };
+  auto server = TestServer::create(std::move(config));
+
+  LOG(INFO) << "creating client";
+
+  TestClient client(
+      "localhost", server->getListenPort(), 200, mc_caret_protocol);
+  client.sendGet("empty", mc_res_remote_error);
+  client.waitForReplies();
+
+  LOG(INFO) << "Joining...";
   server->shutdown();
   server->join();
   EXPECT_EQ(1, server->getAcceptedConns());
