@@ -545,12 +545,13 @@ void McServerSession::fizzHandshakeError(
 
 void McServerSession::fizzHandshakeAttemptFallback(
     std::unique_ptr<folly::IOBuf> clientHello) {
+  DestructorGuard dg(this);
   auto transport = transport_->getUnderlyingTransport<McFizzServer>();
-  DCHECK(transport);
+  CHECK(transport) << " transport should not be nullptr";
   transport->setReadCB(nullptr);
   auto evb = transport->getEventBase();
   auto socket = transport->getUnderlyingTransport<folly::AsyncSocket>();
-  DCHECK(socket);
+  CHECK(socket) << " socket should not be nullptr";
   auto fd = socket->detachFd();
   const auto& ctx = transport->getFallbackContext();
 
