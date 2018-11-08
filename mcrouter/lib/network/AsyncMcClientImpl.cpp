@@ -602,7 +602,7 @@ void AsyncMcClientImpl::attemptConnection() {
           std::move(address),
           connectionOptions_.connectTimeout.count(),
           std::move(socketOptions))
-          .then([self](folly::AsyncSocket::UniquePtr socket) {
+          .thenValue([self](folly::AsyncSocket::UniquePtr socket) {
             CHECK(self->eventBase_.isInEventBaseThread());
             if (self->isAborting_) {
               // closeNow was called before we connected, so we need to fail
