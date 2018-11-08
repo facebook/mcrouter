@@ -39,12 +39,13 @@ template <class Request>
 void serializeCarbonRequest(
     const Request& req,
     carbon::CarbonQueueAppenderStorage& storage) {
-  if (req.isBufferDirty()) {
-    serializeCarbonStruct(req, storage);
-  } else {
+  if (!req.isBufferDirty()) {
     const auto& buf = *req.serializedBuffer();
-    storage.setFullBuffer(buf);
+    if (LIKELY(storage.setFullBuffer(buf))) {
+      return;
+    }
   }
+  serializeCarbonStruct(req, storage);
 }
 
 /**
