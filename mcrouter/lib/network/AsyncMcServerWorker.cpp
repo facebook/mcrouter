@@ -50,6 +50,9 @@ bool AsyncMcServerWorker::addClientSocket(
   CHECK(socket) << "Underlying transport expected to be AsyncSocket";
   socket->setMaxReadsPerEvent(opts_.maxReadsPerEvent);
   socket->setNoDelay(true);
+  if (isZeroCopyEnabled()) {
+    socket->setZeroCopy(true);
+  }
   return addClientTransport(std::move(transport), userCtxt);
 }
 
@@ -92,5 +95,5 @@ bool AsyncMcServerWorker::writesPending() const {
   return tracker_.writesPending();
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

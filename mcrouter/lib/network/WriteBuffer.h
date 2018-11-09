@@ -64,7 +64,8 @@ class WriteBuffer {
       Reply&& reply,
       Destructor destructor,
       const CompressionCodecMap* compressionCodecMap,
-      const CodecIdRange& codecIdRange);
+      const CodecIdRange& codecIdRange,
+      size_t tcpZeroCopyThreshold = 0);
 
   template <class Reply>
   typename std::enable_if<
@@ -77,7 +78,8 @@ class WriteBuffer {
       Reply&& reply,
       Destructor destructor,
       const CompressionCodecMap* compressionCodecMap,
-      const CodecIdRange& codecIdRange);
+      const CodecIdRange& codecIdRange,
+      size_t tcpZeroCopyThreshold = 0);
 
   const struct iovec* getIovsBegin() const {
     return iovsBegin_;
@@ -110,6 +112,14 @@ class WriteBuffer {
 
   uint32_t typeId() const {
     return typeId_;
+  }
+
+  /* TCP Zero copy only supported for caret */
+  bool shouldApplyZeroCopy() {
+    if (protocol_ == mc_caret_protocol) {
+      return caretReply_.shouldApplyZeroCopy();
+    }
+    return false;
   }
 
  private:
@@ -176,11 +186,37 @@ class WriteBufferQueue {
     return queue_.empty();
   }
 
+  void releaseZeroCopyChain(WriteBuffer& buf, bool batch) {
+    assert(tlFreeStack_ && "must have been initialized");
+    auto it = zeroCopyQueue_.iterator_to(buf);
+    bool done = false;
+    do {
+      assert(!zeroCopyQueue_.empty());
+      if (tlFreeStack_->size() < kMaxFreeQueueSz) {
+        auto& wb = tlFreeStack_->pushFront(
+            zeroCopyQueue_.extractAndAdvanceIterator(it));
+        done = wb.isEndOfBatch();
+        wb.clear();
+      } else {
+        done = zeroCopyQueue_.extractAndAdvanceIterator(it)->isEndOfBatch();
+      }
+    } while (!done && batch);
+  }
+
+  WriteBuffer& insertZeroCopy(std::unique_ptr<WriteBuffer> buf) {
+    return zeroCopyQueue_.pushBack(std::move(buf));
+  }
+
+  size_t zeroCopyQueueSize() const noexcept {
+    return zeroCopyQueue_.size();
+  }
+
  private:
   constexpr static size_t kMaxFreeQueueSz = 50;
 
   WriteBuffer::List* tlFreeStack_{nullptr};
   WriteBuffer::List queue_;
+  WriteBuffer::List zeroCopyQueue_;
 
   static WriteBuffer::List& initFreeStack(mc_protocol_t protocol) noexcept;
 
@@ -190,7 +226,7 @@ class WriteBufferQueue {
   WriteBufferQueue& operator=(WriteBufferQueue&&) = delete;
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
 
 #include "WriteBuffer-inl.h"

@@ -57,6 +57,52 @@ class McServerSession
     virtual void onShutdown() = 0;
   };
 
+  class ZeroCopySessionCB : public folly::AsyncTransportWrapper::WriteCallback {
+   public:
+    explicit ZeroCopySessionCB(McServerSession& session) : session_(session) {}
+
+    ZeroCopySessionCB(const ZeroCopySessionCB&) = delete;
+    ZeroCopySessionCB& operator=(const ZeroCopySessionCB&) = delete;
+
+    /*
+     * CB invoked on successful write of zero copy buffer, this does
+     * not however indicate transmission.
+     */
+    void writeSuccess() noexcept final {
+      // Zero Copy write still in progress until async notification
+      assert(numCallbackPending_ > 0);
+      if (--numCallbackPending_ == 0 && session_.state_ == STREAMING) {
+        session_.stateCb_.onWriteQuiescence(session_);
+        // No-op if not paused
+        session_.resume(PAUSE_WRITE);
+      }
+    }
+
+    /**
+     * CB invoked on unsuccessful write of zero copy buffer.
+     */
+    void writeErr(
+        size_t /* bytesWritten */,
+        const folly::AsyncSocketException&) noexcept final {
+      assert(numCallbackPending_ > 0);
+      // Buffers will be freed by FreeFn in ~IOBuf
+      --numCallbackPending_;
+      session_.close();
+    }
+
+    void incCallbackPending() {
+      ++numCallbackPending_;
+    }
+
+    uint64_t getCallbackPending() const {
+      return numCallbackPending_;
+    }
+
+   private:
+    McServerSession& session_;
+    uint64_t numCallbackPending_{0};
+  };
+
   /**
    * Returns true if this object is a part of an intrusive list
    */
@@ -176,6 +222,19 @@ class McServerSession
     return transport_.get();
   }
 
+  /**
+   * Called to create a chained IOBuf from iovecs which has a free function that
+   * manages the lifetime of the WriteBuffer.
+   */
+  void sendZeroCopyIOBuf(
+      WriteBuffer& wb,
+      const struct iovec* iovs,
+      size_t iovsCount);
+
+  bool isZeroCopyEnabled() const {
+    return options_.tcpZeroCopyThresholdBytes > 0;
+  }
+
  private:
   const AsyncMcServerWorkerOptions& options_;
 
@@ -213,6 +272,11 @@ class McServerSession
    * True iff SendWritesCallback has been scheduled.
    */
   bool writeScheduled_{false};
+
+  /**
+   * True iff the next write batch should be a zero copy write.
+   */
+  bool isNextWriteBatchZeroCopy_{false};
 
   /**
    * Total number of alive McTransactions in the system.
@@ -276,6 +340,8 @@ class McServerSession
   void* userCtxt_{nullptr};
 
   std::unique_ptr<folly::AsyncTimeout> goAwayTimeout_;
+
+  ZeroCopySessionCB zeroCopySessionCB_;
 
   /**
    * pause()/resume() reads from the socket (TODO: does not affect the already
@@ -404,8 +470,9 @@ class McServerSession
 
   friend class McServerRequestContext;
   friend class ServerMcParser<McServerSession>;
+  friend class ZeroCopySessionCB;
 };
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
 
 #include "McServerSession-inl.h"

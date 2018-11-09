@@ -193,6 +193,16 @@ MCROUTER_OPTION_TOGGLE(
     "If enabled, mcrouter will avoid reserializing requests if the request"
     " is not modified during routing.")
 
+MCROUTER_OPTION_INTEGER(
+    size_t,
+    tcp_zero_copy_threshold,
+    0,
+    "tcp-zero-copy-threshold",
+    no_short,
+    "TCP packets with payload >= tcp-zero-copy-threshold bytes will use"
+    "use the zero copy optimization on TX."
+    "If 0, the tcp zero copy optimization will not be applied.")
+
 #ifdef ADDITIONAL_STANDALONE_OPTIONS_FILE
 #include ADDITIONAL_STANDALONE_OPTIONS_FILE
 #endif

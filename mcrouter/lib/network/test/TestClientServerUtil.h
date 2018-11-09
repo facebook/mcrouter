@@ -105,6 +105,7 @@ class TestServer {
     std::string keyPath = getDefaultKeyPath();
     bool requirePeerCerts = true;
     std::function<void(McServerSession&)> onConnectionAcceptedAdditionalCb;
+    size_t tcpZeroCopyThresholdBytes = 0;
   };
 
   template <class OnRequest = TestServerOnRequest>
@@ -268,6 +269,6 @@ class TestClient {
 };
 
 std::string genBigValue();
-} // test
-} // memcache
-} // facebook
+} // namespace test
+} // namespace memcache
+} // namespace facebook

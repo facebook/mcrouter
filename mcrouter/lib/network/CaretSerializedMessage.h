@@ -44,9 +44,10 @@ class CaretSerializedMessage {
    * Prepare requests for serialization for an Operation
    *
    * @param req               Request
+   * @param reqId             Request id.
+   * @param supportedCodecs   Range of supported compression codecs.
    * @param iovOut            Set to the beginning of array of ivecs that
    *                          reference serialized data.
-   * @param supportedCodecs   Range of supported compression codecs.
    * @param niovOut           Number of valid iovecs referenced by iovOut.
    *
    * @return true iff message was successfully prepared.
@@ -90,6 +91,16 @@ class CaretSerializedMessage {
    */
   size_t getSizeNoHeader() {
     return storage_.computeBodySize();
+  }
+
+  // Enable zero copy if an IOBuf exceeds this size threshold
+  void setTCPZeroCopyThreshold(size_t threshold) {
+    storage_.setTCPZeroCopyThreshold(threshold);
+  }
+
+  // Indicates if storage has been marked for zero copy
+  bool shouldApplyZeroCopy() const {
+    return storage_.shouldApplyZeroCopy();
   }
 
  private:
@@ -139,7 +150,7 @@ class CaretSerializedMessage {
   bool maybeCompress(CompressionCodec* codec, size_t uncompressedSize);
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
 
 #include "CaretSerializedMessage-inl.h"

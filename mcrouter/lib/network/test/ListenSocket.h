@@ -69,5 +69,5 @@ class ListenSocket {
  * @return true  if port is open, false otherwise
  */
 bool isPortOpen(uint16_t port);
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

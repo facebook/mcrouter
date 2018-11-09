@@ -53,6 +53,11 @@ class CarbonQueueAppenderStorage {
     struct iovec* nextIov = iovs_ + nIovsUsed_;
     const auto nFilled = buf.fillIov(nextIov, kMaxIovecs - nIovsUsed_);
 
+    if (tcpZeroCopyThreshold_ && !applyZeroCopy_ &&
+        buf.capacity() >= tcpZeroCopyThreshold_) {
+      applyZeroCopy_ = true;
+    }
+
     if (nFilled > 0) {
       nIovsUsed_ += nFilled;
       if (!head_) {
@@ -161,6 +166,15 @@ class CarbonQueueAppenderStorage {
     }
   }
 
+  // If an IOBuf exceeds this size threshold, zero copy will be enabled
+  void setTCPZeroCopyThreshold(size_t threshold) {
+    tcpZeroCopyThreshold_ = threshold;
+  }
+
+  bool shouldApplyZeroCopy() const {
+    return applyZeroCopy_;
+  }
+
  private:
   static constexpr size_t kMaxIovecs{32};
   static constexpr size_t kInlineIOBufLen{128};
@@ -176,6 +190,8 @@ class CarbonQueueAppenderStorage {
   size_t nIovsUsed_{1};
   size_t headerOverlap_{0};
   bool canUsePreviousIov_{false};
+  bool applyZeroCopy_{false};
+  size_t tcpZeroCopyThreshold_{0};
 
   // Buffer used for non-IOBuf data, e.g., ints, strings, and protocol
   // data

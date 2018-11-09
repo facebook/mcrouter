@@ -368,6 +368,9 @@ class McServerThread {
       checkLogic(
           !reusePort_,
           "Can't use multiple listening sockets option with unix domain sockets.");
+      checkLogic(
+          !opts.worker.tcpZeroCopyThresholdBytes,
+          "Can't use tcp zero copy with unix domain sockets.");
       std::remove(opts.unixDomainSockPath.c_str());
       socket_.reset(new folly::AsyncServerSocket());
       folly::SocketAddress serverAddress;
@@ -379,9 +382,9 @@ class McServerThread {
           "At least one port (plain or SSL) must be speicified");
       if (!server_.opts_.ports.empty()) {
         socket_.reset(new folly::AsyncServerSocket());
+        socket_->setReusePortEnabled(reusePort_);
         for (auto port : server_.opts_.ports) {
           if (server_.opts_.listenAddresses.empty()) {
-            socket_->setReusePortEnabled(reusePort_);
             socket_->bind(port);
           } else {
             std::vector<folly::IPAddress> ipAddresses;
@@ -394,8 +397,6 @@ class McServerThread {
               auto ip = std::move(maybeIp).value();
               ipAddresses.push_back(std::move(ip));
             }
-
-            socket_->setReusePortEnabled(reusePort_);
             socket_->bind(ipAddresses, port);
           }
         }
@@ -579,7 +580,7 @@ AsyncMcServer::AsyncMcServer(Options opts) : opts_(std::move(opts)) {
   threadsSpawnController_ = std::make_unique<McServerThreadSpawnController>(
       opts_.numListeningSockets);
   size_t id;
-  // First construct the McServerThreads with listenng sockets.
+  // First construct the McServerThreads with listening sockets.
   for (id = 0; id < opts_.numListeningSockets; id++) {
     threads_.emplace_back(std::make_unique<McServerThread>(
         McServerThread::Acceptor,
@@ -728,5 +729,5 @@ void AsyncMcServer::startPollingTicketKeySeeds() {
       });
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

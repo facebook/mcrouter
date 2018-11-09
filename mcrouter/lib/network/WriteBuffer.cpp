@@ -101,5 +101,5 @@ WriteBuffer::List& WriteBufferQueue::initFreeStack(
   return freeBuffers[static_cast<size_t>(protocol)];
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

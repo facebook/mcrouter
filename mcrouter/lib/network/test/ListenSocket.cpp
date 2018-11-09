@@ -138,5 +138,5 @@ bool isPortOpen(uint16_t port) {
     return true;
   }
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

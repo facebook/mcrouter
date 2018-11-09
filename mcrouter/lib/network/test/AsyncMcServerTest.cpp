@@ -123,3 +123,89 @@ TEST(AsyncMcServer, rejectAllConnections) {
   server->join();
   EXPECT_EQ(1, server->getAcceptedConns());
 }
+
+TEST(AsyncMcServer, tcpZeroCopyDisabled) {
+  auto bigValue = genBigValue();
+  TestServer::Config config;
+  config.outOfOrder = false;
+  config.tcpZeroCopyThresholdBytes = 0;
+  config.useSsl = false;
+  auto server = TestServer::create(std::move(config));
+  // Use very large write timeout, so that we never timeout writes.
+  TestClient client(
+      "localhost", server->getListenPort(), 10000, mc_caret_protocol);
+  // Allow only up to two requests in flight.
+  client.sendGet("test", mc_res_found);
+  client.waitForReplies();
+  client.sendGet("sleep", mc_res_timeout);
+  // Wait for the request to timeout.
+  client.waitForReplies();
+  // We'll need to hold the reply to the set request.
+  client.sendGet("hold", mc_res_timeout);
+  // Will overfill write queue of the server and timeout before completely
+  // written.
+  client.sendSet("testKey", bigValue.data(), mc_res_timeout);
+  // Wait until we complete send, note this will happen after server wakes up.
+  // This is due to the fact that we cannot timeout until the request wasn't
+  // completely sent.
+  client.waitForReplies();
+  // Flush set reply.
+  client.sendGet("flush", mc_res_found, 600);
+  client.sendGet("test3", mc_res_found);
+  client.sendGet("shutdown", mc_res_notfound);
+  client.waitForReplies();
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
+}
+
+TEST(AsyncMcServer, tcpZeroCopyEnabled) {
+  auto bigValue = genBigValue();
+  TestServer::Config config;
+  config.outOfOrder = false;
+  config.tcpZeroCopyThresholdBytes = 12000;
+  config.useSsl = false;
+  auto server = TestServer::create(std::move(config));
+  // Use very large write timeout, so that we never timeout writes.
+  TestClient client(
+      "localhost", server->getListenPort(), 10000, mc_caret_protocol);
+  // Allow only up to two requests in flight.
+  client.sendGet("test", mc_res_found);
+  client.waitForReplies();
+  client.sendGet("sleep", mc_res_timeout);
+  // Wait for the request to timeout.
+  client.waitForReplies();
+  // We'll need to hold the reply to the set request.
+  client.sendGet("hold", mc_res_timeout);
+  // Will overfill write queue of the server and timeout before completely
+  // written.
+  client.sendSet("testKey", bigValue.data(), mc_res_timeout);
+  // Wait until we complete send, note this will happen after server wakes up.
+  // This is due to the fact that we cannot timeout until the request wasn't
+  // completely sent.
+  client.waitForReplies();
+  // Flush set reply.
+  client.sendGet("flush", mc_res_found, 600);
+  client.sendGet("test3", mc_res_found);
+  client.sendGet("shutdown", mc_res_notfound);
+  client.waitForReplies();
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
+}
+
+TEST(AsyncMcServer, tcpZeroCopySSLEnabled) {
+  McSSLUtil::setApplicationSSLVerifier(
+      [](folly::AsyncSSLSocket*, bool, X509_STORE_CTX*) { return false; });
+  TestServer::Config config;
+  config.tcpZeroCopyThresholdBytes = 12000;
+  config.outOfOrder = false;
+  auto server = TestServer::create(std::move(config));
+
+  TestClient sadClient(
+      "localhost",
+      server->getListenPort(),
+      200,
+      mc_ascii_protocol,
+      validClientSsl());
+  sadClient.sendGet("empty", mc_res_connect_error);
+  sadClient.waitForReplies();
+}

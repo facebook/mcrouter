@@ -74,7 +74,7 @@ void serverLoop(
   }
 }
 
-} // detail
+} // namespace detail
 
 template <class RouterInfo, template <class> class RequestHandler>
 bool runServer(
@@ -101,6 +101,8 @@ bool runServer(
 
   opts.numThreads = mcrouterOpts.num_proxies;
   opts.numListeningSockets = mcrouterOpts.num_listening_sockets;
+  opts.worker.tcpZeroCopyThresholdBytes =
+      standaloneOpts.tcp_zero_copy_threshold;
 
   size_t maxConns =
       opts.setMaxConnections(standaloneOpts.max_conns, opts.numThreads);
@@ -190,6 +192,6 @@ bool runServer(
   return true;
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

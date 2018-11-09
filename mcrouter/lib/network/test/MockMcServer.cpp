@@ -326,6 +326,7 @@ void serverLoop(
                "  -P <port>      TCP port on which to listen\n"
                "  -t <fd>        TCP listen sock fd\n"
                "  -s             Use ssl\n"
+               "  -z             Zero Copy Threshold (Default disabled)\n"
                "Usage:\n"
                "  $ "
             << argv[0] << " -p 15213\n";
@@ -347,7 +348,7 @@ int main(int argc, char** argv) {
   uint16_t port = 0;
 
   int c;
-  while ((c = getopt(argc, argv, "P:t:sh")) >= 0) {
+  while ((c = getopt(argc, argv, "P:t:z:sh")) >= 0) {
     switch (c) {
       case 's':
         ssl = true;
@@ -357,6 +358,9 @@ int main(int argc, char** argv) {
         break;
       case 't':
         opts.existingSocketFd = folly::to<int>(optarg);
+        break;
+      case 'z':
+        opts.worker.tcpZeroCopyThresholdBytes = folly::to<int>(optarg);
         break;
       default:
         usage(argv);

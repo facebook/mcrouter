@@ -27,7 +27,8 @@ WriteBuffer::prepareTyped(
     Reply&& reply,
     Destructor destructor,
     const CompressionCodecMap* compressionCodecMap,
-    const CodecIdRange& codecIdRange) {
+    const CodecIdRange& codecIdRange,
+    size_t tcpZeroCopyThreshold) {
   ctx_.emplace(std::move(ctx));
   assert(!destructor_.hasValue());
   if (destructor) {
@@ -48,6 +49,7 @@ WriteBuffer::prepareTyped(
           std::move(reply), ctx_->reqid_, iovsBegin_, iovsCount_);
 
     case mc_caret_protocol:
+      caretReply_.setTCPZeroCopyThreshold(tcpZeroCopyThreshold);
       return caretReply_.prepare(
           std::move(reply),
           ctx_->reqid_,
@@ -75,7 +77,8 @@ WriteBuffer::prepareTyped(
     Reply&& reply,
     Destructor destructor,
     const CompressionCodecMap* compressionCodecMap,
-    const CodecIdRange& codecIdRange) {
+    const CodecIdRange& codecIdRange,
+    size_t tcpZeroCopyThreshold) {
   assert(protocol_ == mc_caret_protocol);
   ctx_.emplace(std::move(ctx));
   assert(!destructor_.hasValue());
@@ -84,6 +87,8 @@ WriteBuffer::prepareTyped(
   }
 
   typeId_ = static_cast<uint32_t>(Reply::typeId);
+
+  caretReply_.setTCPZeroCopyThreshold(tcpZeroCopyThreshold);
 
   return caretReply_.prepare(
       std::move(reply),
@@ -96,5 +101,5 @@ WriteBuffer::prepareTyped(
       iovsCount_);
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

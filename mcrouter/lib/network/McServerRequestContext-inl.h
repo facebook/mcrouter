@@ -87,7 +87,8 @@ void McServerRequestContext::replyImpl2(
           std::move(reply),
           std::move(destructorContainer),
           session->compressionCodecMap_,
-          session->codecIdRange_)) {
+          session->codecIdRange_,
+          session->options_.tcpZeroCopyThresholdBytes)) {
     session->transport_->close();
     return;
   }

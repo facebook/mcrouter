@@ -57,7 +57,6 @@ McServerSession& McServerSession::create(
       codecMap);
 
   assert(ptr->state_ == STREAMING);
-
   DestructorGuard dg(ptr);
   ptr->transport_->setReadCB(ptr);
   if (ptr->state_ != STREAMING) {
@@ -91,7 +90,8 @@ McServerSession::McServerSession(
           options_.minBufferSize,
           options_.maxBufferSize,
           &debugFifo_),
-      userCtxt_(userCtxt) {
+      userCtxt_(userCtxt),
+      zeroCopySessionCB_(*this) {
   try {
     transport_->getPeerAddress(&socketAddress_);
   } catch (const std::exception& e) {
@@ -132,7 +132,8 @@ void McServerSession::onTransactionStarted(bool isSubRequest) {
 }
 
 void McServerSession::checkClosed() {
-  if (!inFlight_) {
+  if (!inFlight_ &&
+      (!isZeroCopyEnabled() || (writeBufs_.zeroCopyQueueSize() == 0))) {
     assert(pendingWrites_.empty());
 
     if (state_ == CLOSING) {
@@ -384,6 +385,65 @@ void McServerSession::parseError(mc_res_t result, folly::StringPiece reason) {
   close();
 }
 
+void McServerSession::sendZeroCopyIOBuf(
+    WriteBuffer& wbuf,
+    const struct iovec* iovs,
+    size_t iovsCount) {
+  DestructorGuard dg(this);
+  using BufferContext = std::tuple<
+      std::reference_wrapper<WriteBuffer>,
+      std::reference_wrapper<WriteBufferQueue>,
+      bool /* batch */,
+      DestructorGuard>;
+
+  // IOBuf FreeFn is a function pointer, so cannot use lambdas. Pass in
+  // destructor guard to ensure that McServerSession is not destructed before
+  // this IOBuf is destroyed.
+  auto wbufInfo = std::make_unique<BufferContext>(
+      std::ref(wbuf), std::ref(writeBufs_), !options_.singleWrite, dg);
+
+  std::unique_ptr<folly::IOBuf> chainTail;
+
+  for (size_t i = 0; i < iovsCount; i++) {
+    size_t len = iovs[i].iov_len;
+    if (len > 0) {
+      std::unique_ptr<folly::IOBuf> iobuf;
+      if (!chainTail) {
+        iobuf = folly::IOBuf::takeOwnership(
+            iovs[i].iov_base,
+            len,
+            [](void* /* unused */, void* userData) {
+              auto bufferContext = std::unique_ptr<BufferContext>(
+                  reinterpret_cast<BufferContext*>(userData));
+              auto& q = std::get<1>(*bufferContext).get();
+              auto& wb = std::get<0>(*bufferContext).get();
+              auto batch = std::get<2>(*bufferContext);
+              q.releaseZeroCopyChain(wb, batch);
+            },
+            wbufInfo.release(),
+            true /* freeOnError */);
+        chainTail = std::move(iobuf);
+      } else {
+        // The IOBufs not at the head of chain have a noop free function given
+        // that the head of chain will free the entire chain.
+        iobuf = folly::IOBuf::takeOwnership(
+            iovs[i].iov_base,
+            len,
+            [](void* /* unused */, void* /* unused */) {},
+            nullptr,
+            true /* freeOnError */);
+        chainTail->prependChain(std::move(iobuf));
+      }
+    }
+  }
+
+  zeroCopySessionCB_.incCallbackPending();
+  transport_->writeChain(
+      &zeroCopySessionCB_ /* write cb */,
+      std::move(chainTail),
+      folly::WriteFlags::WRITE_MSG_ZEROCOPY);
+}
+
 void McServerSession::queueWrite(std::unique_ptr<WriteBuffer> wb) {
   if (wb == nullptr) {
     return;
@@ -394,29 +454,43 @@ void McServerSession::queueWrite(std::unique_ptr<WriteBuffer> wb) {
     }
     const struct iovec* iovs = wb->getIovsBegin();
     size_t iovCount = wb->getIovsCount();
-    writeBufs_.push(std::move(wb));
-    transport_->writev(this, iovs, iovCount);
-    if (!writeBufs_.empty()) {
-      /* We only need to pause if the sendmsg() call didn't write everything
-         in one go */
-      pause(PAUSE_WRITE);
+    if (isZeroCopyEnabled() && wb->shouldApplyZeroCopy()) {
+      auto& wbuf = writeBufs_.insertZeroCopy(std::move(wb));
+      // Creates a chain of IOBufs and uses TCP copy avoidance
+      sendZeroCopyIOBuf(wbuf, iovs, iovCount);
+      if (zeroCopySessionCB_.getCallbackPending() > 0) {
+        pause(PAUSE_WRITE);
+      }
+    } else {
+      writeBufs_.push(std::move(wb));
+      transport_->writev(this, iovs, iovCount);
+      if (!writeBufs_.empty()) {
+        /* We only need to pause if the sendmsg() call didn't write everything
+           in one go */
+        pause(PAUSE_WRITE);
+      }
     }
   } else {
-    pendingWrites_.pushBack(std::move(wb));
-
     if (!writeScheduled_) {
       eventBase_.runInLoop(&sendWritesCallback_, /* thisIteration= */ true);
       writeScheduled_ = true;
+      if (isZeroCopyEnabled() && wb->shouldApplyZeroCopy()) {
+        isNextWriteBatchZeroCopy_ = true;
+      }
     }
+    pendingWrites_.pushBack(std::move(wb));
   }
 }
 
 void McServerSession::sendWrites() {
   DestructorGuard dg(this);
 
+  bool doZeroCopy = isNextWriteBatchZeroCopy_;
   writeScheduled_ = false;
+  isNextWriteBatchZeroCopy_ = false;
 
   folly::small_vector<struct iovec, kIovecVectorSize> iovs;
+  WriteBuffer* firstBuf = nullptr;
   while (!pendingWrites_.empty()) {
     auto wb = pendingWrites_.popFront();
     if (!wb->noReply()) {
@@ -431,10 +505,23 @@ void McServerSession::sendWrites() {
     if (pendingWrites_.empty()) {
       wb->markEndOfBatch();
     }
-    writeBufs_.push(std::move(wb));
+    if (doZeroCopy) {
+      if (!firstBuf) {
+        firstBuf = &writeBufs_.insertZeroCopy(std::move(wb));
+      } else {
+        writeBufs_.insertZeroCopy(std::move(wb));
+      }
+    } else {
+      writeBufs_.push(std::move(wb));
+    }
   }
 
-  transport_->writev(this, iovs.data(), iovs.size());
+  if (doZeroCopy) {
+    assert(firstBuf != nullptr);
+    sendZeroCopyIOBuf(*firstBuf, iovs.data(), iovs.size());
+  } else {
+    transport_->writev(this, iovs.data(), iovs.size());
+  }
 }
 
 void McServerSession::writeToDebugFifo(const WriteBuffer* wb) noexcept {
@@ -567,5 +654,5 @@ void McServerSession::fizzHandshakeAttemptFallback(
 
   transport_.reset(sslSocket.release());
 }
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

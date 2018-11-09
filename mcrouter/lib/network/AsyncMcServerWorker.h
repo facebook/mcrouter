@@ -23,7 +23,7 @@
 namespace folly {
 class EventBase;
 class SSLContext;
-} // folly
+} // namespace folly
 
 namespace fizz {
 namespace server {
@@ -186,6 +186,10 @@ class AsyncMcServerWorker {
    */
   bool writesPending() const;
 
+  bool isZeroCopyEnabled() const {
+    return opts_.tcpZeroCopyThresholdBytes > 0;
+  }
+
  private:
   bool addClientSocket(
       folly::AsyncTransportWrapper::UniquePtr socket,
@@ -210,5 +214,5 @@ class AsyncMcServerWorker {
   AsyncMcServerWorker(AsyncMcServerWorker&&) noexcept = delete;
   AsyncMcServerWorker& operator=(AsyncMcServerWorker&&) = delete;
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook
