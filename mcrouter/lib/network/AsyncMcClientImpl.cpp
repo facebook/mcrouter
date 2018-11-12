@@ -740,6 +740,8 @@ void AsyncMcClientImpl::connectErr(
     reason = ConnectionDownReason::ABORTED;
     errorMessage =
         folly::to<std::string>("Connection aborted. Ex: ", ex.what());
+  } else {
+    errorMessage = ex.what();
   }
 
   assert(getInflightRequestCount() == 0);
