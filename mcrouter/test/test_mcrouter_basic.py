@@ -66,13 +66,13 @@ class TestMcrouterBasic(TestMcrouterBasicBase):
 
         # Stats without args
         res = mcr.issue_command_and_read_all('stats\r\n')
-        self.assertTrue(res)
+        self.assertIsNotNone(res)
         res = mcr.issue_command_and_read_all('stats \r\n')
-        self.assertTrue(res)
+        self.assertIsNotNone(res)
         res = mcr.issue_command_and_read_all('stats\n')
-        self.assertTrue(res)
+        self.assertIsNotNone(res)
         res = mcr.issue_command_and_read_all('stats \n')
-        self.assertTrue(res)
+        self.assertIsNotNone(res)
 
         # Stats with args
         args = ['detailed', 'cmd-error', 'servers', 'suspect_servers', 'count']
@@ -387,6 +387,7 @@ class TestBasicAllSyncAppendPrependTouch(TestBasicAllSyncBase):
 
     def get_mcrouter(self):
         return self.add_mcrouter(self.config, extra_args=self.extra_args)
+
     def test_append_prepend_all_sync(self):
         """
         Tests that append and prepend work with AllSync. We rely on these
@@ -472,6 +473,7 @@ class TestBasicAllFirst(McrouterTestCase):
         self.assertTrue(mcr.set("key", "value"))
         self.assertEqual(mcr.get("key"), "value")
 
+
 class TestBasicAllMajority(McrouterTestCase):
     config = './mcrouter/test/test_basic_all_majority.json'
     extra_args = []
@@ -548,6 +550,7 @@ class TestBasicAllMajority(McrouterTestCase):
         # since it is sorted by awfulness map
         self.assertFalse(mcr.delete("key"))
 
+
 class TestBasicFailover(McrouterTestCase):
     config = './mcrouter/test/test_basic_failover.json'
     extra_args = []
@@ -611,6 +614,7 @@ class TestBasicFailover(McrouterTestCase):
         self.assertTrue(mcr.set("key", "value", exptime=-10))
         self.assertIsNone(mcr.get("key"))
 
+
 class TestBasicFailoverOverride(McrouterTestCase):
     config = './mcrouter/test/test_basic_failover_override.json'
     extra_args = []
@@ -639,6 +643,7 @@ class TestBasicFailoverOverride(McrouterTestCase):
         self.assertTrue(self.mc2.set("key2", "value2"))
         self.assertEqual(mcr.get("key2"), "value2")
         self.assertEqual(mcr.get("key2"), "value2")
+
 
 class TestBasicFailoverLeastFailures(McrouterTestCase):
     """
@@ -674,6 +679,7 @@ class TestBasicFailoverLeastFailures(McrouterTestCase):
 
         # Now 4 has least errors.
         self.assertEqual(mcr.get("key"), "value")
+
 
 class TestMcrouterBasicL1L2(McrouterTestCase):
     config = './mcrouter/test/test_basic_l1_l2.json'

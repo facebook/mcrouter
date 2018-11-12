@@ -65,6 +65,7 @@ class TestMcrouterForwardedErrors(McrouterTestCase):
             mcrouter = self.add_mcrouter(self.config)
             res = mcrouter.issue_command(cmd)
             self.assertEqual(error + '\r\n', res)
+            mcrouter.terminate()
 
     def test_server_replied_server_error_for_get(self):
         cmd = self.get_cmd
@@ -74,6 +75,7 @@ class TestMcrouterForwardedErrors(McrouterTestCase):
             mcrouter = self.add_mcrouter(self.config)
             res = mcrouter.issue_command(cmd)
             self.assertEqual('END\r\n', res)
+            mcrouter.terminate()
 
     def test_server_replied_server_error_for_append(self):
         cmd = self.append_cmd
@@ -83,6 +85,7 @@ class TestMcrouterForwardedErrors(McrouterTestCase):
             mcrouter = self.add_mcrouter(self.config)
             res = mcrouter.issue_command(cmd)
             self.assertEqual(error + '\r\n', res)
+            mcrouter.terminate()
 
     def test_server_replied_server_error_for_prepend(self):
         cmd = self.prepend_cmd
@@ -92,6 +95,7 @@ class TestMcrouterForwardedErrors(McrouterTestCase):
             mcrouter = self.add_mcrouter(self.config)
             res = mcrouter.issue_command(cmd)
             self.assertEqual(error + '\r\n', res)
+            mcrouter.terminate()
 
     def test_server_replied_server_error_for_get_with_no_miss_on_error(self):
         # With --disable-miss-on-get-errors, errors should be forwarded
@@ -104,6 +108,7 @@ class TestMcrouterForwardedErrors(McrouterTestCase):
                     extra_args=['--disable-miss-on-get-errors'])
             res = mcrouter.issue_command(cmd)
             self.assertEqual(error + '\r\n', res)
+            mcrouter.terminate()
 
     def test_server_replied_server_error_for_delete(self):
         cmd = self.delete_cmd
@@ -113,6 +118,7 @@ class TestMcrouterForwardedErrors(McrouterTestCase):
             mcrouter = self.add_mcrouter(self.config)
             res = mcrouter.issue_command(cmd)
             self.assertEqual('NOT_FOUND\r\n', res)
+            mcrouter.terminate()
 
     def test_server_replied_server_error_for_touch(self):
         cmd = self.touch_cmd
@@ -122,6 +128,7 @@ class TestMcrouterForwardedErrors(McrouterTestCase):
             mcrouter = self.add_mcrouter(self.config)
             res = mcrouter.issue_command(cmd)
             self.assertEqual(error + '\r\n', res)
+            mcrouter.terminate()
 
     def test_server_replied_server_error_for_delete_with_no_asynclog(self):
         # With --asynclog-disable, errors should be forwarded to client
@@ -133,6 +140,7 @@ class TestMcrouterForwardedErrors(McrouterTestCase):
                     extra_args=['--asynclog-disable'])
             res = mcrouter.issue_command(cmd)
             self.assertEqual(error + '\r\n', res)
+            mcrouter.terminate()
 
     # server returned: CLIENT_ERROR
     def test_server_replied_client_error_for_set(self):
@@ -143,6 +151,7 @@ class TestMcrouterForwardedErrors(McrouterTestCase):
             mcrouter = self.add_mcrouter(self.config)
             res = mcrouter.issue_command(cmd)
             self.assertEqual(error + '\r\n', res)
+            mcrouter.terminate()
 
     def test_server_replied_client_error_for_get(self):
         cmd = self.get_cmd
@@ -152,6 +161,7 @@ class TestMcrouterForwardedErrors(McrouterTestCase):
             mcrouter = self.add_mcrouter(self.config)
             res = mcrouter.issue_command(cmd)
             self.assertEqual('END\r\n', res)
+            mcrouter.terminate()
 
     def test_server_replied_client_error_for_get_with_no_miss_on_error(self):
         # With --disable-miss-on-get-errors, errors should be forwarded
@@ -164,6 +174,7 @@ class TestMcrouterForwardedErrors(McrouterTestCase):
                     extra_args=['--disable-miss-on-get-errors'])
             res = mcrouter.issue_command(cmd)
             self.assertEqual(error + '\r\n', res)
+            mcrouter.terminate()
 
     def test_server_replied_client_error_for_delete(self):
         cmd = self.delete_cmd
@@ -173,6 +184,7 @@ class TestMcrouterForwardedErrors(McrouterTestCase):
             mcrouter = self.add_mcrouter(self.config)
             res = mcrouter.issue_command(cmd)
             self.assertEqual(error + '\r\n', res)
+            mcrouter.terminate()
 
     def test_early_server_reply(self):
         value_len = 1024 * 1024 * 4
@@ -222,7 +234,13 @@ class TestMcrouterGeneratedErrors(McrouterTestCase):
     def test_connection_error_set(self):
         mcrouter = self.getMcrouter(ConnectionErrorServer())
         res = mcrouter.issue_command(self.set_cmd)
-        self.assertTrue(re.match('SERVER_ERROR (connection|remote) error', res))
+        print(res)
+        self.assertTrue(
+            re.match(
+                'SERVER_ERROR (connection error|remote error|Failed to read)',
+                res
+            )
+        )
 
     def test_connection_error_get(self):
         mcrouter = self.getMcrouter(ConnectionErrorServer())

@@ -12,6 +12,6 @@
     "from": "PoolRoute|wildcard-old",
     "to": "PoolRoute|wildcard-new",
     "start_time": START_TIME,
-    "interval": 2
+    "interval": 4
   }
 }

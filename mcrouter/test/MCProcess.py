@@ -485,7 +485,7 @@ class MCProcess(ProcessBase):
 
         s = {}
         line = None
-        fds = select.select([self.fd], [], [], 5.0)
+        fds = select.select([self.fd], [], [], 10.0)
         if len(fds[0]) == 0:
             return None
         while line != 'END':
@@ -506,7 +506,7 @@ class MCProcess(ProcessBase):
 
         s = []
         line = None
-        fds = select.select([self.fd], [], [], 5.0)
+        fds = select.select([self.fd], [], [], 10.0)
         if len(fds[0]) == 0:
             return None
         while line != 'END':
@@ -522,7 +522,7 @@ class MCProcess(ProcessBase):
         self._sendall(command)
 
         # Handle no response
-        fds = select.select([self.fd], [], [], 2.0)
+        fds = select.select([self.fd], [], [], 5.0)
         if len(fds[0]) == 0:
             return None
 
