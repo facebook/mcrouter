@@ -54,7 +54,6 @@ bool CaretSerializedMessage::prepare(
     size_t reqId,
     const CodecIdRange& supportedCodecs,
     const CompressionCodecMap* compressionCodecMap,
-    double dropProbability,
     ServerLoad serverLoad,
     const struct iovec*& iovOut,
     size_t& niovOut) noexcept {
@@ -65,7 +64,6 @@ bool CaretSerializedMessage::prepare(
       detail::getReplyTraceId(reply),
       supportedCodecs,
       compressionCodecMap,
-      dropProbability,
       serverLoad,
       iovOut,
       niovOut);
@@ -93,8 +91,7 @@ bool CaretSerializedMessage::fill(
     info.supportedCodecsFirstId = supportedCodecs.firstId;
     info.supportedCodecsSize = supportedCodecs.size;
   }
-  fillImpl(
-      info, reqId, typeId, traceId, 0.0, ServerLoad::zero(), iovOut, niovOut);
+  fillImpl(info, reqId, typeId, traceId, ServerLoad::zero(), iovOut, niovOut);
   return true;
 }
 
@@ -106,7 +103,6 @@ bool CaretSerializedMessage::fill(
     std::pair<uint64_t, uint64_t> traceId,
     const CodecIdRange& supportedCodecs,
     const CompressionCodecMap* compressionCodecMap,
-    double dropProbability,
     ServerLoad serverLoad,
     const struct iovec*& iovOut,
     size_t& niovOut) {
@@ -131,15 +127,7 @@ bool CaretSerializedMessage::fill(
     info.uncompressedBodySize = uncompressedSize;
   }
 
-  fillImpl(
-      info,
-      reqId,
-      typeId,
-      traceId,
-      dropProbability,
-      serverLoad,
-      iovOut,
-      niovOut);
+  fillImpl(info, reqId, typeId, traceId, serverLoad, iovOut, niovOut);
   return true;
 }
 
@@ -177,7 +165,6 @@ inline void CaretSerializedMessage::fillImpl(
     uint32_t reqId,
     size_t typeId,
     std::pair<uint64_t, uint64_t> traceId,
-    double dropProbability,
     ServerLoad serverLoad,
     const struct iovec*& iovOut,
     size_t& niovOut) {
@@ -186,8 +173,6 @@ inline void CaretSerializedMessage::fillImpl(
   info.reqId = reqId;
   info.version = UmbrellaVersion::TYPED_MESSAGE;
   info.traceId = traceId;
-  info.dropProbability =
-      static_cast<uint64_t>(dropProbability * kDropProbabilityNormalizer);
   info.serverLoad = serverLoad;
 
   size_t headerSize = caretPrepareHeader(
@@ -199,5 +184,5 @@ inline void CaretSerializedMessage::fillImpl(
   niovOut = iovs.second;
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

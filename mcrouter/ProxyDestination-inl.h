@@ -31,22 +31,6 @@ ReplyT<Request> ProxyDestination::send(
   return reply;
 }
 
-template <class Request>
-bool ProxyDestination::shouldDrop() const {
-  if (!client_) {
-    return false;
-  }
-
-  auto dropProbability = client_->getDropProbability<Request>();
-
-  if (dropProbability == 0.0) {
-    return false;
-  }
-
-  return std::generate_canonical<double, std::numeric_limits<double>::digits>(
-             proxy.randomGenerator()) < dropProbability;
-}
-
 } // namespace mcrouter
 } // namespace memcache
 } // namespace facebook

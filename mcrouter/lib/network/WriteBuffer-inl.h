@@ -10,7 +10,6 @@
 #include "mcrouter/lib/network/CaretSerializedMessage.h"
 #include "mcrouter/lib/network/CpuController.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
-#include "mcrouter/lib/network/MemoryController.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook {
@@ -55,7 +54,6 @@ WriteBuffer::prepareTyped(
           ctx_->reqid_,
           codecIdRange,
           compressionCodecMap,
-          ctx_->getDropProbability(),
           ctx_->getServerLoad(),
           iovsBegin_,
           iovsCount_);
@@ -95,7 +93,6 @@ WriteBuffer::prepareTyped(
       ctx_->reqid_,
       codecIdRange,
       compressionCodecMap,
-      ctx_->getDropProbability(),
       ctx_->getServerLoad(),
       iovsBegin_,
       iovsCount_);

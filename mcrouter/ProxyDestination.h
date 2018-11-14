@@ -94,10 +94,6 @@ class ProxyDestination {
   // returns true if okay to send req using this client
   bool maySend(mc_res_t& tkoReason) const;
 
-  // Returns true if the current request should be dropped
-  template <class Request>
-  bool shouldDrop() const;
-
   /**
    * @return stats for ProxyDestination
    */

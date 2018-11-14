@@ -124,8 +124,6 @@ bool runServer(
   if (standaloneOpts.server_load_interval_ms > 0) {
     opts.cpuControllerOpts.dataCollectionInterval =
         std::chrono::milliseconds(standaloneOpts.server_load_interval_ms);
-    opts.cpuControllerOpts.enableServerLoad = true;
-    opts.cpuControllerOpts.target = 0; // Disable drop probability.
   }
 
   /* Default to one read per event to help latency-sensitive workloads.

@@ -383,7 +383,6 @@ void MessagePrinter::printRawReply(
               msgId,
               CodecIdRange::Empty,
               nullptr, /* codec map */
-              0.0, /* drop probability */
               ServerLoad::zero(),
               iovsBegin,
               iovsCount)) {

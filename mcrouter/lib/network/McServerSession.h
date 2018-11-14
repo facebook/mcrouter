@@ -214,10 +214,6 @@ class McServerSession
     return options_.cpuController;
   }
 
-  std::shared_ptr<MemoryController> getMemController() const noexcept {
-    return options_.memController;
-  }
-
   const folly::AsyncTransportWrapper* getTransport() const noexcept {
     return transport_.get();
   }

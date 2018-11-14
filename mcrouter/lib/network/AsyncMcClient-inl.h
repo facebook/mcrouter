@@ -68,10 +68,5 @@ inline const folly::AsyncTransportWrapper* AsyncMcClient::getTransport() {
 inline double AsyncMcClient::getRetransmissionInfo() {
   return base_->getRetransmissionInfo();
 }
-
-template <class Request>
-double AsyncMcClient::getDropProbability() const {
-  return base_->getDropProbability<Request>();
-}
 } // memcache
 } // facebook

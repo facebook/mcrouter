@@ -19,7 +19,7 @@
 #include <wangle/ssl/TLSTicketKeySeeds.h>
 
 #include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
-#include "mcrouter/lib/network/CongestionController.h"
+#include "mcrouter/lib/network/CpuController.h"
 
 namespace folly {
 class EventBase;
@@ -128,12 +128,7 @@ class AsyncMcServer {
     /**
      * CPU-based congestion controller.
      */
-    CongestionControllerOptions cpuControllerOpts;
-
-    /**
-     * Memory-based congestion controller.
-     */
-    CongestionControllerOptions memoryControllerOpts;
+    CpuControllerOptions cpuControllerOpts;
 
     /**
      * Sets the maximum number of connections allowed.

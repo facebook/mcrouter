@@ -114,8 +114,6 @@ class McParser {
    */
   bool readDataAvailable(size_t len);
 
-  double getDropProbability() const;
-
   void reset();
 
  private:

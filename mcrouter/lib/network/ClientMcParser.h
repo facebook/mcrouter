@@ -69,8 +69,6 @@ class ClientMcParser : private McParser::ParserCallback {
     parser_.setProtocol(protocol);
   }
 
-  double getDropProbability() const;
-
  private:
   McParser parser_;
   McClientAsciiParser asciiParser_;

@@ -93,9 +93,6 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
 
   double getRetransmissionInfo();
 
-  template <class Request>
-  double getDropProbability() const;
-
   void setFlushList(FlushList* flushList) {
     flushList_ = flushList;
   }

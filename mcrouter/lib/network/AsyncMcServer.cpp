@@ -534,21 +534,12 @@ size_t AsyncMcServer::Options::setMaxConnections(
 }
 
 AsyncMcServer::AsyncMcServer(Options opts) : opts_(std::move(opts)) {
-  if (opts_.cpuControllerOpts.shouldEnable() ||
-      opts_.memoryControllerOpts.shouldEnable()) {
+  if (opts_.cpuControllerOpts.shouldEnable()) {
     auxiliaryEvbThread_ = std::make_unique<folly::ScopedEventBaseThread>();
 
-    if (opts_.cpuControllerOpts.shouldEnable()) {
-      opts_.worker.cpuController = std::make_shared<CpuController>(
-          opts_.cpuControllerOpts, *auxiliaryEvbThread_->getEventBase());
-      opts_.worker.cpuController->start();
-    }
-
-    if (opts_.memoryControllerOpts.shouldEnable()) {
-      opts_.worker.memController = std::make_shared<MemoryController>(
-          opts_.memoryControllerOpts, *auxiliaryEvbThread_->getEventBase());
-      opts_.worker.memController->start();
-    }
+    opts_.worker.cpuController = std::make_shared<CpuController>(
+        opts_.cpuControllerOpts, *auxiliaryEvbThread_->getEventBase());
+    opts_.worker.cpuController->start();
   }
 
   if (!opts_.tlsTicketKeySeedPath.empty()) {
@@ -607,9 +598,6 @@ AsyncMcServer::~AsyncMcServer() {
      translation unit that knows about McServerThread */
   if (opts_.worker.cpuController) {
     opts_.worker.cpuController->stop();
-  }
-  if (opts_.worker.memController) {
-    opts_.worker.memController->stop();
   }
 
   /* In case some signal handlers are still registered */

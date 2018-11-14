@@ -235,10 +235,5 @@ bool McParser::readDataAvailable(size_t len) {
   return readUmbrellaOrCaretData();
 }
 
-double McParser::getDropProbability() const {
-  return static_cast<double>(umMsgInfo_.dropProbability) /
-      kDropProbabilityNormalizer;
-}
-
 } // memcache
 } // facebook

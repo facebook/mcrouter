@@ -134,10 +134,6 @@ class DestinationRoute {
               "Server unavailable. Reason: ", mc_res_to_string(tkoReason)));
     }
 
-    if (destination_->shouldDrop<Request>()) {
-      return constructAndLog(req, *ctx, BusyReply);
-    }
-
     if (poolStatIndex_ >= 0) {
       ctx->setPoolStatsIndex(poolStatIndex_);
     }

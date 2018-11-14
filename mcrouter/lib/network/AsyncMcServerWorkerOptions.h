@@ -94,11 +94,6 @@ struct AsyncMcServerWorkerOptions {
   std::shared_ptr<CpuController> cpuController;
 
   /**
-   * The congestion controller for memory utilization at the server.
-   */
-  std::shared_ptr<MemoryController> memController;
-
-  /**
    * Payloads >= tcpZeroCopyThresholdBytes will undergo copy avoidance and
    * the kernel will queue a completion notification once transmission is
    * complete.

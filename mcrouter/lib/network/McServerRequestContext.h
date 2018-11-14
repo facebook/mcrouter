@@ -57,8 +57,6 @@ class McServerRequestContext {
    */
   McServerSession& session();
 
-  double getDropProbability() const;
-
   ServerLoad getServerLoad() const noexcept;
 
  private:

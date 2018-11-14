@@ -146,8 +146,6 @@ libmcrouter_a_SOURCES = \
   network/CaretSerializedMessage.h \
   network/ClientMcParser-inl.h \
   network/ClientMcParser.h \
-  network/CongestionController.cpp \
-  network/CongestionController.h \
   network/ConnectionOptions.h \
   network/ConnectionTracker.cpp \
   network/ConnectionTracker.h \
@@ -180,8 +178,6 @@ libmcrouter_a_SOURCES = \
   network/McSSLUtil.cpp \
   network/McSSLUtil.h \
   network/MemcacheMessageHelpers.h \
-  network/MemoryController.cpp \
-  network/MemoryController.h \
   network/MultiOpParent.cpp \
   network/MultiOpParent.h \
   network/SecurityOptions.cpp \

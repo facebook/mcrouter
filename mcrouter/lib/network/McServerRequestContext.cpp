@@ -82,25 +82,6 @@ bool McServerRequestContext::isParentError() const {
   return parent().error();
 }
 
-double McServerRequestContext::getDropProbability() const {
-  if (session_ == nullptr) {
-    return 0.0;
-  }
-
-  double dropProbability = 0.0;
-
-  if (session_->getCpuController()) {
-    dropProbability = session_->getCpuController()->getDropProbability();
-  }
-
-  if (session_->getMemController()) {
-    dropProbability = std::max(
-        dropProbability, session_->getMemController()->getDropProbability());
-  }
-
-  return dropProbability;
-}
-
 ServerLoad McServerRequestContext::getServerLoad() const noexcept {
   if (session_) {
     if (const auto& cpuController = session_->getCpuController()) {

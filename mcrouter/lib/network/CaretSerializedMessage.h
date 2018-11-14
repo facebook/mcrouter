@@ -67,7 +67,6 @@ class CaretSerializedMessage {
    * @param reqId                 Request id.
    * @param supportedCodecs       Range of supported codecs.
    * @param compressionCodecMap   Map of available codecs.
-   * @param dropProbability       Probability to drop subsequent request.
    * @param serverLoad            Represents load on the server.
    * @param iovOut                Will be set to the beginning of
    *                              array of iovecs
@@ -81,7 +80,6 @@ class CaretSerializedMessage {
       size_t reqId,
       const CodecIdRange& supportedCodecs,
       const CompressionCodecMap* compressionCodecMap,
-      double dropProbability,
       ServerLoad serverLoad,
       const struct iovec*& iovOut,
       size_t& niovOut) noexcept;
@@ -124,7 +122,6 @@ class CaretSerializedMessage {
       std::pair<uint64_t, uint64_t> traceId,
       const CodecIdRange& supportedCodecs,
       const CompressionCodecMap* compressionCodecMap,
-      double dropProbability,
       ServerLoad serverLoad,
       const struct iovec*& iovOut,
       size_t& niovOut);
@@ -134,7 +131,6 @@ class CaretSerializedMessage {
       uint32_t reqId,
       size_t typeId,
       std::pair<uint64_t, uint64_t> traceId,
-      double dropProbability,
       ServerLoad serverLoad,
       const struct iovec*& iovOut,
       size_t& niovOut);

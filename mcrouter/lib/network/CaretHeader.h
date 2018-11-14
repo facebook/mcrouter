@@ -24,9 +24,6 @@ constexpr size_t kMaxHeaderLength = 1 /* magic byte */ +
     2 * kMaxAdditionalFields * folly::kMaxVarintLength64; /* key and value for
                                                           additional fields */
 
-// Normalize the dropProbability to the accuracy of 10^-6.
-constexpr uint32_t kDropProbabilityNormalizer = 1000000;
-
 constexpr uint32_t kCaretConnectionControlReqId = 0;
 
 enum class UmbrellaVersion : uint8_t {
@@ -47,7 +44,7 @@ struct UmbrellaMessageInfo {
   uint64_t supportedCodecsSize{0};
   uint64_t usedCodecId{0};
   uint64_t uncompressedBodySize{0};
-  uint64_t dropProbability{0}; // Use uint64_t to store a double.
+  uint64_t dropProbability{0}; // Deprecated in version 37
   ServerLoad serverLoad{0};
 };
 
@@ -65,6 +62,7 @@ enum class CaretAdditionalFieldType {
   UNCOMPRESSED_BODY_SIZE = 4,
 
   // Drop Probability of each request.
+  // Deprecated in version 37
   DROP_PROBABILITY = 5,
 
   // Node ID for trace

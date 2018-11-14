@@ -162,12 +162,6 @@ class AsyncMcClient {
   double getRetransmissionInfo();
 
   /**
-   * Get the drop probability
-   */
-  template <class Request>
-  double getDropProbability() const;
-
-  /**
    * Set external queue for managing flush callbacks. By default we'll use
    * EventBase as a manager of these callbacks.
    */
