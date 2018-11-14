@@ -35,7 +35,6 @@ libmcrouter_a_SOURCES = \
   MessageQueue.h \
   McOpList.h \
   McOperation.h \
-  McOperationTraits.h \
   McResUtil.h \
   Operation.h \
   OperationTraits.h \
