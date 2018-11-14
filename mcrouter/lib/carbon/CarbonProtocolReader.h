@@ -22,9 +22,9 @@
 
 #include "mcrouter/lib/carbon/CarbonProtocolCommon.h"
 #include "mcrouter/lib/carbon/CarbonProtocolWriter.h"
+#include "mcrouter/lib/carbon/CommonSerializationTraits.h"
 #include "mcrouter/lib/carbon/Fields.h"
 #include "mcrouter/lib/carbon/Result.h"
-#include "mcrouter/lib/carbon/SerializationTraits.h"
 #include "mcrouter/lib/carbon/Util.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 
@@ -325,4 +325,4 @@ class CarbonProtocolReader {
   FieldType boolFieldType_;
 };
 
-} // carbon
+} // namespace carbon

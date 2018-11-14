@@ -17,6 +17,14 @@ namespace carbon {
 namespace test2 {
 namespace util {
 
+template <class Writer>
+void SimpleStruct::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, member1());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void SimpleStruct::visitFields(V&& v) {
   if (!v.visitField(1, "member1", member1_)) {
@@ -29,6 +37,29 @@ void SimpleStruct::visitFields(V&& v) const {
   if (!v.visitField(1, "member1", member1_)) {
     return;
   }
+}
+
+template <class Writer>
+void SimpleUnion::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  switch (_which_) {
+    case 1: {
+      writer.writeFieldAlways(1 /* field id */, umember1());
+      break;
+    }
+    case 2: {
+      writer.writeFieldAlways(2 /* field id */, umember2());
+      break;
+    }
+    case 3: {
+      writer.writeFieldAlways(3 /* field id */, umember3());
+      break;
+    }
+    default:
+      break;
+  }
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>
@@ -101,6 +132,14 @@ void SimpleUnion::foreachMember(V&& v) const {
   }
 }
 
+template <class Writer>
+void YetAnotherRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void YetAnotherRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
@@ -113,6 +152,14 @@ void YetAnotherRequest::visitFields(V&& v) const {
   if (!v.visitField(1, "key", key_)) {
     return;
   }
+}
+
+template <class Writer>
+void YetAnotherReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>

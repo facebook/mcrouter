@@ -12,6 +12,7 @@
 #include "mcrouter/lib/carbon/CommonSerializationTraits.h"
 #include "mcrouter/lib/carbon/Fields.h"
 #include "mcrouter/lib/carbon/Keys.h"
+#include "mcrouter/lib/carbon/Result.h"
 #include "mcrouter/lib/mc/msg.h"
 
 namespace carbon {

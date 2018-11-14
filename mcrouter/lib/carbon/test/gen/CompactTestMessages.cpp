@@ -12,11 +12,10 @@
  *
  *  @generated
  */
-#include "BMessages.h"
+#include "CompactTestMessages.h"
 
 namespace carbon {
-namespace test2 {
-namespace util {
+namespace test {
 
 std::string enumSimpleEnumToString(SimpleEnum val) {
   switch (val) {
@@ -32,67 +31,9 @@ std::string enumSimpleEnumToString(SimpleEnum val) {
   return "<INVALID_OPTION>";
 }
 
-void SimpleStruct::deserialize(carbon::CarbonProtocolReader& reader) {
-  reader.readStructBegin();
-  while (true) {
-    const auto pr = reader.readFieldHeader();
-    const auto fieldType = pr.first;
-    const auto fieldId = pr.second;
+constexpr const char* const TestCompactRequest::name;
 
-    if (fieldType == carbon::FieldType::Stop) {
-      break;
-    }
-
-    switch (fieldId) {
-      case 1: {
-        reader.readField(member1(), fieldType);
-        break;
-      }
-      default: {
-        reader.skip(fieldType);
-        break;
-      }
-    }
-  }
-  reader.readStructEnd();
-}
-
-void SimpleUnion::deserialize(carbon::CarbonProtocolReader& reader) {
-  reader.readStructBegin();
-  while (true) {
-    const auto pr = reader.readFieldHeader();
-    const auto fieldType = pr.first;
-    const auto fieldId = pr.second;
-
-    if (fieldType == carbon::FieldType::Stop) {
-      break;
-    }
-
-    switch (fieldId) {
-      case 1: {
-        reader.readRawInto(emplace<1>());
-        break;
-      }
-      case 2: {
-        reader.readRawInto(emplace<2>());
-        break;
-      }
-      case 3: {
-        reader.readRawInto(emplace<3>());
-        break;
-      }
-      default: {
-        reader.skip(fieldType);
-        break;
-      }
-    }
-  }
-  reader.readStructEnd();
-}
-
-constexpr const char* const YetAnotherRequest::name;
-
-void YetAnotherRequest::deserialize(carbon::CarbonProtocolReader& reader) {
+void TestCompactRequest::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructBegin();
   while (true) {
     const auto pr = reader.readFieldHeader();
@@ -108,6 +49,62 @@ void YetAnotherRequest::deserialize(carbon::CarbonProtocolReader& reader) {
         reader.readField(key(), fieldType);
         break;
       }
+      case 2: {
+        reader.readField(testEnum(), fieldType);
+        break;
+      }
+      case 3: {
+        reader.readField(testBool(), fieldType);
+        break;
+      }
+      case 4: {
+        reader.readField(testChar(), fieldType);
+        break;
+      }
+      case 5: {
+        reader.readField(testInt8(), fieldType);
+        break;
+      }
+      case 6: {
+        reader.readField(testInt16(), fieldType);
+        break;
+      }
+      case 7: {
+        reader.readField(testInt32(), fieldType);
+        break;
+      }
+      case 8: {
+        reader.readField(testInt64(), fieldType);
+        break;
+      }
+      case 9: {
+        reader.readField(testUInt8(), fieldType);
+        break;
+      }
+      case 10: {
+        reader.readField(testUInt16(), fieldType);
+        break;
+      }
+      case 11: {
+        reader.readField(testUInt32(), fieldType);
+        break;
+      }
+      case 12: {
+        reader.readField(testUInt64(), fieldType);
+        break;
+      }
+      case 13: {
+        reader.readField(testShortString(), fieldType);
+        break;
+      }
+      case 14: {
+        reader.readField(testLongString(), fieldType);
+        break;
+      }
+      case 15: {
+        reader.readField(testIobuf(), fieldType);
+        break;
+      }
       default: {
         reader.skip(fieldType);
         break;
@@ -117,7 +114,7 @@ void YetAnotherRequest::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
-void YetAnotherReply::deserialize(carbon::CarbonProtocolReader& reader) {
+void TestCompactReply::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructBegin();
   while (true) {
     const auto pr = reader.readFieldHeader();
@@ -133,6 +130,14 @@ void YetAnotherReply::deserialize(carbon::CarbonProtocolReader& reader) {
         reader.readField(result(), fieldType);
         break;
       }
+      case 2: {
+        reader.readField(valInt32(), fieldType);
+        break;
+      }
+      case 3: {
+        reader.readField(valInt64(), fieldType);
+        break;
+      }
       default: {
         reader.skip(fieldType);
         break;
@@ -141,6 +146,5 @@ void YetAnotherReply::deserialize(carbon::CarbonProtocolReader& reader) {
   }
   reader.readStructEnd();
 }
-} // namespace util
-} // namespace test2
+} // namespace test
 } // namespace carbon

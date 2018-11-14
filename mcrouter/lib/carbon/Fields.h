@@ -36,7 +36,10 @@ enum class FieldType : uint8_t {
 template <class T>
 class IsCarbonStruct {
   template <class C>
-  static constexpr decltype(&C::serialize, std::true_type()) check(int);
+  static constexpr decltype(
+      std::declval<C>().serialize(std::declval<CarbonProtocolWriter&>()),
+      std::true_type())
+  check(int);
 
   template <class C>
   static constexpr std::false_type check(...);
@@ -79,8 +82,10 @@ template <class T>
 class IsUserReadWriteDefined {
   template <class C>
   static constexpr decltype(
-      SerializationTraits<C>::read,
-      SerializationTraits<C>::write,
+      SerializationTraits<C>::read(std::declval<CarbonProtocolReader&>()),
+      SerializationTraits<C>::write(
+          std::declval<C&>(),
+          std::declval<CarbonProtocolWriter&>()),
       std::true_type())
   check(int);
 
@@ -202,5 +207,5 @@ struct TypeToField<
   static constexpr FieldType fieldType{SerializationTraits<T>::kWireType};
 };
 
-} // detail
-} // carbon
+} // namespace detail
+} // namespace carbon

@@ -21,11 +21,8 @@
 #include <folly/container/F14Set.h>
 #include <folly/io/IOBuf.h>
 
-#include "mcrouter/lib/carbon/CarbonProtocolReader.h"
-#include "mcrouter/lib/carbon/CarbonProtocolWriter.h"
 #include "mcrouter/lib/carbon/Fields.h"
 #include "mcrouter/lib/carbon/Keys.h"
-#include "mcrouter/lib/carbon/SerializationTraits.h"
 
 namespace carbon {
 
@@ -39,13 +36,13 @@ struct SerializationTraits<Keys<Storage>> {
 
   static constexpr carbon::FieldType kWireType = carbon::FieldType::Binary;
 
-  static Keys<Storage> read(carbon::CarbonProtocolReader& reader) {
-    return Keys<Storage>(reader.readRaw<Storage>());
+  template <class Reader>
+  static Keys<Storage> read(Reader&& reader) {
+    return Keys<Storage>(reader.template readRaw<Storage>());
   }
 
-  static void write(
-      const Keys<Storage>& key,
-      carbon::CarbonProtocolWriter& writer) {
+  template <class Writer>
+  static void write(const Keys<Storage>& key, Writer&& writer) {
     writer.writeRaw(key.raw());
   }
 
@@ -60,7 +57,8 @@ struct SerializationTraits<folly::Optional<T>> {
 
   using value_type = typename folly::Optional<T>::value_type;
 
-  static folly::Optional<T> read(carbon::CarbonProtocolReader& reader) {
+  template <class Reader>
+  static folly::Optional<T> read(Reader&& reader) {
     folly::Optional<T> opt;
     reader.readStructBegin();
     while (true) {
@@ -87,9 +85,8 @@ struct SerializationTraits<folly::Optional<T>> {
     return opt;
   }
 
-  static void write(
-      const folly::Optional<T>& opt,
-      carbon::CarbonProtocolWriter& writer) {
+  template <class Writer>
+  static void write(const folly::Optional<T>& opt, Writer&& writer) {
     writer.writeStructBegin();
     writer.writeField(1 /* field id */, opt);
     writer.writeFieldStop();
@@ -108,11 +105,13 @@ struct SerializationTraits<
         folly::IsOneOf<T, std::string, folly::IOBuf>::value>::type> {
   static constexpr carbon::FieldType kWireType = carbon::FieldType::Binary;
 
-  static T read(carbon::CarbonProtocolReader& reader) {
-    return reader.readRaw<T>();
+  template <class Reader>
+  static T read(Reader&& reader) {
+    return reader.template readRaw<T>();
   }
 
-  static void write(const T& t, carbon::CarbonProtocolWriter& writer) {
+  template <class Writer>
+  static void write(const T& t, Writer&& writer) {
     writer.writeRaw(t);
   }
 

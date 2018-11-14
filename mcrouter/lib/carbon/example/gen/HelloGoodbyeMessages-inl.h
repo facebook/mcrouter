@@ -15,6 +15,15 @@
 
 namespace hellogoodbye {
 
+template <class Writer>
+void HelloRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeField(2 /* field id */, shardId());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void HelloRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
@@ -35,6 +44,14 @@ void HelloRequest::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void HelloReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void HelloReply::visitFields(V&& v) {
   if (!v.visitField(1, "result", result_)) {
@@ -47,6 +64,15 @@ void HelloReply::visitFields(V&& v) const {
   if (!v.visitField(1, "result", result_)) {
     return;
   }
+}
+
+template <class Writer>
+void GoodbyeRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeField(2 /* field id */, shardId());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>
@@ -67,6 +93,15 @@ void GoodbyeRequest::visitFields(V&& v) const {
   if (!v.visitField(2, "shardId", shardId_)) {
     return;
   }
+}
+
+template <class Writer>
+void GoodbyeReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, message());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>

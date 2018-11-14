@@ -21,6 +21,7 @@ namespace test {
 
 class SimpleStruct;
 class TestRequest;
+class TestCompactRequest;
 
 namespace util {
 
@@ -39,9 +40,15 @@ constexpr folly::StringPiece kShortString = "aaaaaaaaaa";
 std::string longString();
 void expectEqSimpleStruct(const SimpleStruct& a, const SimpleStruct& b);
 void expectEqTestRequest(const TestRequest& a, const TestRequest& b);
+void expectEqTestCompactRequest(
+    const TestCompactRequest& a,
+    const TestCompactRequest& b);
 
 template <class T, class Out = T>
 Out serializeAndDeserialize(const T&);
+
+template <class T, class Out = T>
+Out serializeAndDeserializeCompact(const T&);
 
 template <class T, class Out = T>
 Out serializeAndDeserialize(const T&, size_t& bytesWritten);

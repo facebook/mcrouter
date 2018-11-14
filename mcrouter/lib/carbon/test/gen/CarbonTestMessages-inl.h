@@ -16,6 +16,55 @@
 namespace carbon {
 namespace test {
 
+template <class Writer>
+void TestRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, asBase());
+  writer.writeField(1 /* field id */, key());
+  writer.writeField(2 /* field id */, testEnum());
+  writer.writeField(3 /* field id */, testBool());
+  writer.writeField(4 /* field id */, testChar());
+  writer.writeField(5 /* field id */, testInt8());
+  writer.writeField(6 /* field id */, testInt16());
+  writer.writeField(7 /* field id */, testInt32());
+  writer.writeField(8 /* field id */, testInt64());
+  writer.writeField(9 /* field id */, testUInt8());
+  writer.writeField(10 /* field id */, testUInt16());
+  writer.writeField(11 /* field id */, testUInt32());
+  writer.writeField(12 /* field id */, testUInt64());
+  writer.writeField(13 /* field id */, testFloat());
+  writer.writeField(14 /* field id */, testDouble());
+  writer.writeField(15 /* field id */, testShortString());
+  writer.writeField(16 /* field id */, testLongString());
+  writer.writeField(17 /* field id */, testIobuf());
+  writer.writeField(18 /* field id */, testStruct());
+  writer.writeField(19 /* field id */, testList());
+  writer.writeField(20 /* field id */, testOptionalString());
+  writer.writeField(21 /* field id */, testOptionalIobuf());
+  writer.writeField(22 /* field id */, testEnumVec());
+  writer.writeField(23 /* field id */, testUnion());
+  writer.writeField(24 /* field id */, testNestedVec());
+  writer.writeField(25 /* field id */, testUMap());
+  writer.writeField(26 /* field id */, testMap());
+  writer.writeField(27 /* field id */, testComplexMap());
+  writer.writeField(28 /* field id */, testUSet());
+  writer.writeField(29 /* field id */, testSet());
+  writer.writeField(30 /* field id */, testOptionalBool());
+  writer.writeField(31 /* field id */, testOptionalVec());
+  writer.writeField(32 /* field id */, testIOBufList());
+  writer.writeField(33 /* field id */, testF14FastMap());
+  writer.writeField(34 /* field id */, testF14NodeMap());
+  writer.writeField(35 /* field id */, testF14ValueMap());
+  writer.writeField(36 /* field id */, testF14VectorMap());
+  writer.writeField(37 /* field id */, testF14FastSet());
+  writer.writeField(38 /* field id */, testF14NodeSet());
+  writer.writeField(39 /* field id */, testF14ValueSet());
+  writer.writeField(40 /* field id */, testF14VectorSet());
+  writer.writeField(100 /* field id */, testType());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void TestRequest::visitFields(V&& v) {
   if (v.enterMixin(1, "Base", _carbon_simplestruct_)) {
@@ -282,6 +331,16 @@ void TestRequest::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void TestReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, valInt32());
+  writer.writeField(3 /* field id */, valInt64());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void TestReply::visitFields(V&& v) {
   if (!v.visitField(1, "result", result_)) {
@@ -308,6 +367,14 @@ void TestReply::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void TestRequestStringKey::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void TestRequestStringKey::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
@@ -320,6 +387,14 @@ void TestRequestStringKey::visitFields(V&& v) const {
   if (!v.visitField(1, "key", key_)) {
     return;
   }
+}
+
+template <class Writer>
+void TestReplyStringKey::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>
@@ -336,6 +411,14 @@ void TestReplyStringKey::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void TestOptionalBool::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, optionalBool());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void TestOptionalBool::visitFields(V&& v) {
   if (!v.visitField(1, "optionalBool", optionalBool_)) {
@@ -348,6 +431,29 @@ void TestOptionalBool::visitFields(V&& v) const {
   if (!v.visitField(1, "optionalBool", optionalBool_)) {
     return;
   }
+}
+
+template <class Writer>
+void TestOptionalUnion::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  switch (_which_) {
+    case 1: {
+      writer.writeFieldAlways(1 /* field id */, umember1());
+      break;
+    }
+    case 2: {
+      writer.writeFieldAlways(2 /* field id */, umember2());
+      break;
+    }
+    case 3: {
+      writer.writeFieldAlways(3 /* field id */, umember3());
+      break;
+    }
+    default:
+      break;
+  }
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>
@@ -426,6 +532,21 @@ void TestOptionalUnion::foreachMember(V&& v) const {
   }
 }
 
+template <class Writer>
+void TestF14Containers::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, fastMap());
+  writer.writeField(2 /* field id */, nodeMap());
+  writer.writeField(3 /* field id */, valueMap());
+  writer.writeField(4 /* field id */, vectorMap());
+  writer.writeField(5 /* field id */, fastSet());
+  writer.writeField(6 /* field id */, nodeSet());
+  writer.writeField(7 /* field id */, valueSet());
+  writer.writeField(8 /* field id */, vectorSet());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void TestF14Containers::visitFields(V&& v) {
   if (!v.visitField(1, "fastMap", fastMap_)) {
@@ -480,6 +601,21 @@ void TestF14Containers::visitFields(V&& v) const {
   if (!v.visitField(8, "vectorSet", vectorSet_)) {
     return;
   }
+}
+
+template <class Writer>
+void TestStdContainers::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, fastMap());
+  writer.writeField(2 /* field id */, nodeMap());
+  writer.writeField(3 /* field id */, valueMap());
+  writer.writeField(4 /* field id */, vectorMap());
+  writer.writeField(5 /* field id */, fastSet());
+  writer.writeField(6 /* field id */, nodeSet());
+  writer.writeField(7 /* field id */, valueSet());
+  writer.writeField(8 /* field id */, vectorSet());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>

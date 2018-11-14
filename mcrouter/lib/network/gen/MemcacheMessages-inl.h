@@ -16,6 +16,15 @@
 namespace facebook {
 namespace memcache {
 
+template <class Writer>
+void McGetRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeField(2 /* field id */, flags());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McGetRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
@@ -34,6 +43,18 @@ void McGetRequest::visitFields(V&& v) const {
   if (!v.visitField(2, "flags", flags_)) {
     return;
   }
+}
+
+template <class Writer>
+void McGetReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, value());
+  writer.writeField(3 /* field id */, flags());
+  writer.writeField(4 /* field id */, message());
+  writer.writeField(5 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>
@@ -74,6 +95,17 @@ void McGetReply::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void McSetRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeField(2 /* field id */, exptime());
+  writer.writeField(3 /* field id */, flags());
+  writer.writeField(4 /* field id */, value());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McSetRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
@@ -104,6 +136,18 @@ void McSetRequest::visitFields(V&& v) const {
   if (!v.visitField(4, "value", value_)) {
     return;
   }
+}
+
+template <class Writer>
+void McSetReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, flags());
+  writer.writeField(3 /* field id */, value());
+  writer.writeField(4 /* field id */, message());
+  writer.writeField(5 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>
@@ -144,6 +188,17 @@ void McSetReply::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void McDeleteRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeField(2 /* field id */, flags());
+  writer.writeField(3 /* field id */, exptime());
+  writer.writeField(4 /* field id */, value());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McDeleteRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
@@ -174,6 +229,18 @@ void McDeleteRequest::visitFields(V&& v) const {
   if (!v.visitField(4, "value", value_)) {
     return;
   }
+}
+
+template <class Writer>
+void McDeleteReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, flags());
+  writer.writeField(3 /* field id */, value());
+  writer.writeField(4 /* field id */, message());
+  writer.writeField(5 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>
@@ -214,6 +281,15 @@ void McDeleteReply::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void McLeaseGetRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeField(2 /* field id */, flags());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McLeaseGetRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
@@ -232,6 +308,19 @@ void McLeaseGetRequest::visitFields(V&& v) const {
   if (!v.visitField(2, "flags", flags_)) {
     return;
   }
+}
+
+template <class Writer>
+void McLeaseGetReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, leaseToken());
+  writer.writeField(3 /* field id */, value());
+  writer.writeField(4 /* field id */, flags());
+  writer.writeField(5 /* field id */, message());
+  writer.writeField(6 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>
@@ -278,6 +367,18 @@ void McLeaseGetReply::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void McLeaseSetRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeField(2 /* field id */, exptime());
+  writer.writeField(3 /* field id */, flags());
+  writer.writeField(4 /* field id */, value());
+  writer.writeField(5 /* field id */, leaseToken());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McLeaseSetRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
@@ -316,6 +417,16 @@ void McLeaseSetRequest::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void McLeaseSetReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, message());
+  writer.writeField(3 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McLeaseSetReply::visitFields(V&& v) {
   if (!v.visitField(1, "result", result_)) {
@@ -340,6 +451,17 @@ void McLeaseSetReply::visitFields(V&& v) const {
   if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
     return;
   }
+}
+
+template <class Writer>
+void McAddRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeField(2 /* field id */, exptime());
+  writer.writeField(3 /* field id */, flags());
+  writer.writeField(4 /* field id */, value());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>
@@ -374,6 +496,16 @@ void McAddRequest::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void McAddReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, message());
+  writer.writeField(3 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McAddReply::visitFields(V&& v) {
   if (!v.visitField(1, "result", result_)) {
@@ -398,6 +530,17 @@ void McAddReply::visitFields(V&& v) const {
   if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
     return;
   }
+}
+
+template <class Writer>
+void McReplaceRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeField(2 /* field id */, exptime());
+  writer.writeField(3 /* field id */, flags());
+  writer.writeField(4 /* field id */, value());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>
@@ -432,6 +575,16 @@ void McReplaceRequest::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void McReplaceReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, message());
+  writer.writeField(3 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McReplaceReply::visitFields(V&& v) {
   if (!v.visitField(1, "result", result_)) {
@@ -458,6 +611,14 @@ void McReplaceReply::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void McGetsRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McGetsRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
@@ -470,6 +631,19 @@ void McGetsRequest::visitFields(V&& v) const {
   if (!v.visitField(1, "key", key_)) {
     return;
   }
+}
+
+template <class Writer>
+void McGetsReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, casToken());
+  writer.writeField(3 /* field id */, value());
+  writer.writeField(4 /* field id */, flags());
+  writer.writeField(5 /* field id */, message());
+  writer.writeField(6 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>
@@ -516,6 +690,18 @@ void McGetsReply::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void McCasRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeField(2 /* field id */, exptime());
+  writer.writeField(3 /* field id */, flags());
+  writer.writeField(4 /* field id */, value());
+  writer.writeField(5 /* field id */, casToken());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McCasRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
@@ -554,6 +740,16 @@ void McCasRequest::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void McCasReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, message());
+  writer.writeField(3 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McCasReply::visitFields(V&& v) {
   if (!v.visitField(1, "result", result_)) {
@@ -580,6 +776,15 @@ void McCasReply::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void McIncrRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeField(2 /* field id */, delta());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McIncrRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
@@ -598,6 +803,17 @@ void McIncrRequest::visitFields(V&& v) const {
   if (!v.visitField(2, "delta", delta_)) {
     return;
   }
+}
+
+template <class Writer>
+void McIncrReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, delta());
+  writer.writeField(3 /* field id */, message());
+  writer.writeField(4 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>
@@ -632,6 +848,15 @@ void McIncrReply::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void McDecrRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeField(2 /* field id */, delta());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McDecrRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
@@ -650,6 +875,17 @@ void McDecrRequest::visitFields(V&& v) const {
   if (!v.visitField(2, "delta", delta_)) {
     return;
   }
+}
+
+template <class Writer>
+void McDecrReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, delta());
+  writer.writeField(3 /* field id */, message());
+  writer.writeField(4 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>
@@ -684,6 +920,14 @@ void McDecrReply::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void McMetagetRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McMetagetRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
@@ -696,6 +940,20 @@ void McMetagetRequest::visitFields(V&& v) const {
   if (!v.visitField(1, "key", key_)) {
     return;
   }
+}
+
+template <class Writer>
+void McMetagetReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, age());
+  writer.writeField(3 /* field id */, exptime());
+  writer.writeField(4 /* field id */, ipv());
+  writer.writeField(5 /* field id */, ipAddress());
+  writer.writeField(6 /* field id */, message());
+  writer.writeField(7 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>
@@ -748,6 +1006,17 @@ void McMetagetReply::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void McAppendRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeField(2 /* field id */, exptime());
+  writer.writeField(3 /* field id */, flags());
+  writer.writeField(4 /* field id */, value());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McAppendRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
@@ -780,6 +1049,16 @@ void McAppendRequest::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void McAppendReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, message());
+  writer.writeField(3 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McAppendReply::visitFields(V&& v) {
   if (!v.visitField(1, "result", result_)) {
@@ -804,6 +1083,17 @@ void McAppendReply::visitFields(V&& v) const {
   if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
     return;
   }
+}
+
+template <class Writer>
+void McPrependRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeField(2 /* field id */, exptime());
+  writer.writeField(3 /* field id */, flags());
+  writer.writeField(4 /* field id */, value());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>
@@ -838,6 +1128,16 @@ void McPrependRequest::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void McPrependReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, message());
+  writer.writeField(3 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McPrependReply::visitFields(V&& v) {
   if (!v.visitField(1, "result", result_)) {
@@ -864,6 +1164,15 @@ void McPrependReply::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void McTouchRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeField(2 /* field id */, exptime());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McTouchRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
@@ -882,6 +1191,16 @@ void McTouchRequest::visitFields(V&& v) const {
   if (!v.visitField(2, "exptime", exptime_)) {
     return;
   }
+}
+
+template <class Writer>
+void McTouchReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, message());
+  writer.writeField(3 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>
@@ -910,6 +1229,14 @@ void McTouchReply::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void McFlushReRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McFlushReRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
@@ -922,6 +1249,16 @@ void McFlushReRequest::visitFields(V&& v) const {
   if (!v.visitField(1, "key", key_)) {
     return;
   }
+}
+
+template <class Writer>
+void McFlushReReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, message());
+  writer.writeField(3 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>
@@ -950,6 +1287,15 @@ void McFlushReReply::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void McFlushAllRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeField(2 /* field id */, delay());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McFlushAllRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
@@ -968,6 +1314,16 @@ void McFlushAllRequest::visitFields(V&& v) const {
   if (!v.visitField(2, "delay", delay_)) {
     return;
   }
+}
+
+template <class Writer>
+void McFlushAllReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, message());
+  writer.writeField(3 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>

@@ -1,0 +1,203 @@
+/*
+ *  Copyright (c) 2017-present, Facebook, Inc.
+ *
+ *  This source code is licensed under the MIT license found in the LICENSE
+ *  file in the root directory of this source tree.
+ *
+ */
+#pragma once
+
+#include <stdint.h>
+#include <limits>
+#include <string>
+#include <type_traits>
+#include <utility>
+
+#include <folly/io/IOBuf.h>
+#include <folly/io/IOBufQueue.h>
+#include <thrift/lib/cpp2/protocol/CompactProtocol.h>
+
+#include "mcrouter/lib/carbon/CarbonProtocolCommon.h"
+#include "mcrouter/lib/carbon/CarbonQueueAppender.h"
+#include "mcrouter/lib/carbon/Fields.h"
+#include "mcrouter/lib/carbon/Keys.h"
+#include "mcrouter/lib/carbon/Result.h"
+#include "mcrouter/lib/carbon/SerializationTraits.h"
+#include "mcrouter/lib/carbon/Util.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
+
+namespace carbon {
+
+class CarbonWriter {
+ public:
+  CarbonWriter()
+      : writer_(apache::thrift::CompactProtocolWriter(
+            apache::thrift::SHARE_EXTERNAL_BUFFER)) {}
+
+  template <class T>
+  typename std::enable_if<
+      folly::IsOneOf<
+          T,
+          bool,
+          char,
+          int8_t,
+          int16_t,
+          int32_t,
+          int64_t,
+          uint8_t,
+          uint16_t,
+          uint32_t,
+          uint64_t>::value,
+      void>::type
+  writeField(const int16_t id, const T t) {
+    if (!t) {
+      return;
+    }
+    writeFieldAlways(id, t);
+  }
+
+  template <class T>
+  typename std::enable_if<std::is_enum<T>::value, void>::type writeField(
+      const int16_t id,
+      const T e) {
+    using UnderlyingType = typename std::underlying_type<T>::type;
+    writeField(id, static_cast<UnderlyingType>(e));
+  }
+
+  template <class T>
+  void writeField(const int16_t id, const Keys<T>& key) {
+    if (!SerializationTraits<Keys<T>>::isEmpty(key)) {
+      writeFieldAlways(id, key);
+    }
+  }
+
+  template <class T>
+  void writeFieldAlways(const int16_t id, const Keys<T>& key) {
+    writer_.writeFieldBegin("", apache::thrift::protocol::T_STRING, id);
+    // TODO: Support serialization traits read write for CarbonWriter
+    writeRaw(key.raw());
+  }
+
+  void writeRaw(const bool b) {
+    writer_.writeBool(b);
+  }
+
+  void writeFieldAlways(const int16_t id, const bool b) {
+    writer_.writeFieldBegin("", apache::thrift::protocol::T_BOOL, id);
+    writeRaw(b);
+  }
+
+  template <class T>
+  typename std::
+      enable_if<folly::IsOneOf<T, char, int8_t, uint8_t>::value, void>::type
+      writeRaw(const T value) {
+    writer_.writeByte(value);
+  }
+
+  template <class T>
+  typename std::
+      enable_if<folly::IsOneOf<T, char, int8_t, uint8_t>::value, void>::type
+      writeFieldAlways(const int16_t id, const T t) {
+    writer_.writeFieldBegin("", apache::thrift::protocol::T_I08, id);
+    writeRaw(t);
+  }
+
+  template <class T>
+  typename std::enable_if<folly::IsOneOf<T, int16_t, uint16_t>::value, void>::
+      type
+      writeRaw(const T value) {
+    writer_.writeI16(value);
+  }
+
+  template <class T>
+  typename std::enable_if<folly::IsOneOf<T, int16_t, uint16_t>::value, void>::
+      type
+      writeFieldAlways(const int16_t id, const T t) {
+    writer_.writeFieldBegin("", apache::thrift::protocol::T_I16, id);
+    writeRaw(t);
+  }
+
+  template <class T>
+  typename std::enable_if<folly::IsOneOf<T, int32_t, uint32_t>::value, void>::
+      type
+      writeRaw(const T value) {
+    writer_.writeI32(value);
+  }
+
+  template <class T>
+  typename std::enable_if<folly::IsOneOf<T, int32_t, uint32_t>::value, void>::
+      type
+      writeFieldAlways(const int16_t id, const T t) {
+    writer_.writeFieldBegin("", apache::thrift::protocol::T_I32, id);
+    writeRaw(t);
+  }
+
+  template <class T>
+  typename std::enable_if<folly::IsOneOf<T, int64_t, uint64_t>::value, void>::
+      type
+      writeRaw(const T value) {
+    writer_.writeI64(value);
+  }
+
+  template <class T>
+  typename std::enable_if<folly::IsOneOf<T, int64_t, uint64_t>::value, void>::
+      type
+      writeFieldAlways(const int16_t id, const T t) {
+    writer_.writeFieldBegin("", apache::thrift::protocol::T_I64, id);
+    writeRaw(t);
+  }
+
+  template <class T>
+  typename std::
+      enable_if<folly::IsOneOf<T, folly::IOBuf, std::string>::value, void>::type
+      writeField(const int16_t id, const T& data) {
+    if (!apache::thrift::StringTraits<T>::isEmpty(data)) {
+      writeFieldAlways(id, data);
+    }
+  }
+
+  template <class T>
+  typename std::
+      enable_if<folly::IsOneOf<T, folly::IOBuf, std::string>::value, void>::type
+      writeFieldAlways(const int16_t id, const T& data) {
+    writer_.writeFieldBegin("", apache::thrift::protocol::T_STRING, id);
+    writeRaw(data);
+  }
+
+  void writeRaw(const std::string& data) {
+    writer_.writeString(data);
+  }
+
+  void writeRaw(const folly::IOBuf& data) {
+    writer_.writeBinary(data);
+  }
+
+  void writeField(const int16_t id, const Result res) {
+    static_assert(
+        sizeof(Result) == sizeof(mc_res_t),
+        "Carbon currently assumes sizeof(Result) == sizeof(mc_res_t)");
+    // Note that this actually narrows mc_res_t from int to int16_t
+    writeField(id, static_cast<int16_t>(res));
+  }
+
+  void writeStructBegin() {
+    writer_.writeStructBegin("");
+  }
+
+  void writeStructEnd() {
+    writer_.writeStructEnd();
+  }
+
+  void writeFieldStop() {
+    writer_.writeFieldStop();
+  }
+
+  void setOutput(folly::IOBufQueue* storage) {
+    writer_.setOutput(storage);
+  }
+
+ private:
+  apache::thrift::CompactProtocolWriter writer_;
+};
+
+} // namespace carbon

@@ -21,7 +21,6 @@
 #include <folly/Optional.h>
 #include <folly/io/IOBuf.h>
 #include <mcrouter/lib/carbon/CarbonProtocolReader.h>
-#include <mcrouter/lib/carbon/CarbonProtocolWriter.h>
 #include <mcrouter/lib/carbon/CommonSerializationTraits.h>
 #include <mcrouter/lib/carbon/Keys.h>
 #include <mcrouter/lib/carbon/ReplyCommon.h>
@@ -77,7 +76,8 @@ class HelloRequest : public carbon::RequestCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -119,7 +119,8 @@ class HelloReply : public carbon::ReplyCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -174,7 +175,8 @@ class GoodbyeRequest : public carbon::RequestCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -222,7 +224,8 @@ class GoodbyeReply : public carbon::ReplyCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 

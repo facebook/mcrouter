@@ -21,7 +21,6 @@
 #include <folly/Optional.h>
 #include <folly/io/IOBuf.h>
 #include <mcrouter/lib/carbon/CarbonProtocolReader.h>
-#include <mcrouter/lib/carbon/CarbonProtocolWriter.h>
 #include <mcrouter/lib/carbon/CommonSerializationTraits.h>
 #include <mcrouter/lib/carbon/Keys.h>
 #include <mcrouter/lib/carbon/ReplyCommon.h>
@@ -75,7 +74,8 @@ class McGetRequest : public carbon::RequestCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -138,7 +138,8 @@ class McGetReply : public carbon::ReplyCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -204,7 +205,8 @@ class McSetRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return value_;
   }
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -269,7 +271,8 @@ class McSetReply : public carbon::ReplyCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -335,7 +338,8 @@ class McDeleteRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return value_;
   }
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -400,7 +404,8 @@ class McDeleteReply : public carbon::ReplyCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -456,7 +461,8 @@ class McLeaseGetRequest : public carbon::RequestCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -526,7 +532,8 @@ class McLeaseGetReply : public carbon::ReplyCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -600,7 +607,8 @@ class McLeaseSetRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return leaseToken_;
   }
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -658,7 +666,8 @@ class McLeaseSetReply : public carbon::ReplyCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -722,7 +731,8 @@ class McAddRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return value_;
   }
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -778,7 +788,8 @@ class McAddReply : public carbon::ReplyCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -842,7 +853,8 @@ class McReplaceRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return value_;
   }
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -899,7 +911,8 @@ class McReplaceReply : public carbon::ReplyCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -949,7 +962,8 @@ class McGetsRequest : public carbon::RequestCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -1017,7 +1031,8 @@ class McGetsReply : public carbon::ReplyCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -1091,7 +1106,8 @@ class McCasRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return casToken_;
   }
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -1148,7 +1164,8 @@ class McCasReply : public carbon::ReplyCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -1205,7 +1222,8 @@ class McIncrRequest : public carbon::RequestCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -1265,7 +1283,8 @@ class McIncrReply : public carbon::ReplyCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -1323,7 +1342,8 @@ class McDecrRequest : public carbon::RequestCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -1383,7 +1403,8 @@ class McDecrReply : public carbon::ReplyCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -1434,7 +1455,8 @@ class McMetagetRequest : public carbon::RequestCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -1509,7 +1531,8 @@ class McMetagetReply : public carbon::ReplyCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -1577,7 +1600,8 @@ class McAppendRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return value_;
   }
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -1633,7 +1657,8 @@ class McAppendReply : public carbon::ReplyCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -1697,7 +1722,8 @@ class McPrependRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return value_;
   }
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -1754,7 +1780,8 @@ class McPrependReply : public carbon::ReplyCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -1808,7 +1835,8 @@ class McTouchRequest : public carbon::RequestCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -1862,7 +1890,8 @@ class McTouchReply : public carbon::ReplyCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -1912,7 +1941,8 @@ class McFlushReRequest : public carbon::RequestCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -1966,7 +1996,8 @@ class McFlushReReply : public carbon::ReplyCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -2023,7 +2054,8 @@ class McFlushAllRequest : public carbon::RequestCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -2078,7 +2110,8 @@ class McFlushAllReply : public carbon::ReplyCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 

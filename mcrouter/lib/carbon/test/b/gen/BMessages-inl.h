@@ -16,6 +16,14 @@
 namespace carbon {
 namespace test {
 
+template <class Writer>
+void BaseStruct::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, baseInt64Member());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void BaseStruct::visitFields(V&& v) {
   if (!v.visitField(1, "baseInt64Member", baseInt64Member_)) {
@@ -28,6 +36,18 @@ void BaseStruct::visitFields(V&& v) const {
   if (!v.visitField(1, "baseInt64Member", baseInt64Member_)) {
     return;
   }
+}
+
+template <class Writer>
+void SimpleStruct::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, asBaseStruct());
+  writer.writeField(1 /* field id */, int32Member());
+  writer.writeField(2 /* field id */, stringMember());
+  writer.writeField(3 /* field id */, enumMember());
+  writer.writeField(4 /* field id */, vectorMember());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>
