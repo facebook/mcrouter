@@ -19,10 +19,10 @@
 
 #include "mcrouter/lib/carbon/CarbonProtocolCommon.h"
 #include "mcrouter/lib/carbon/CarbonQueueAppender.h"
+#include "mcrouter/lib/carbon/CommonSerializationTraits.h"
 #include "mcrouter/lib/carbon/Fields.h"
 #include "mcrouter/lib/carbon/Keys.h"
 #include "mcrouter/lib/carbon/Result.h"
-#include "mcrouter/lib/carbon/SerializationTraits.h"
 #include "mcrouter/lib/carbon/Util.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 
@@ -74,8 +74,7 @@ class CarbonWriter {
   template <class T>
   void writeFieldAlways(const int16_t id, const Keys<T>& key) {
     writer_.writeFieldBegin("", apache::thrift::protocol::T_STRING, id);
-    // TODO: Support serialization traits read write for CarbonWriter
-    writeRaw(key.raw());
+    SerializationTraits<Keys<T>>::write(key, *this);
   }
 
   void writeRaw(const bool b) {
