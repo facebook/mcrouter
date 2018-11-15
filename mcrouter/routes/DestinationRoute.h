@@ -256,7 +256,7 @@ class DestinationRoute {
           key,
           asynclogName);
     } else {
-      /* Don't reply to the user until we safely logged the request to disk */
+      // Don't reply to the user until we safely logged the request to disk
       b.wait();
       proxy->stats().increment(asynclog_requests_stat);
     }

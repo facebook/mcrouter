@@ -464,7 +464,6 @@ void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
   stats[time_stat].data.uint64 = now;
 
   uint64_t start_time = router.startTime();
-  stats[start_time_stat].data.uint64 = start_time;
   stats[uptime_stat].data.uint64 = now - start_time;
 
   stats[config_age_stat].data.uint64 = now - config_last_success;
@@ -578,7 +577,7 @@ static stat_group_t stat_parse_group_str(folly::StringPiece str) {
   } else if (str == "count") {
     return count_stats;
   } else if (str.empty()) {
-    return mcproxy_stats;
+    return basic_stats;
   } else {
     return unknown_stats;
   }
@@ -624,7 +623,7 @@ McStatsReply stats_reply(ProxyBase* proxy, folly::StringPiece group_str) {
   }
   append_pool_stats(proxy->router(), stats);
 
-  if (groups & (mcproxy_stats | all_stats | detailed_stats | ods_stats)) {
+  if (groups & (basic_stats | all_stats | detailed_stats | ods_stats)) {
     folly::dynamic requestStats(folly::dynamic::object());
     const auto& router = proxy->router();
     for (size_t i = 0; i < router.opts().num_proxies; ++i) {

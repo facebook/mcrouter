@@ -48,13 +48,12 @@ void serverLoop(
       standaloneOpts.retain_source_ip,
       standaloneOpts.enable_pass_through_mode));
   worker.setOnConnectionAccepted([proxy](McServerSession&) {
-    proxy->stats().increment(successful_client_connections_stat);
-    proxy->stats().increment(num_clients_stat);
+    proxy->stats().increment(num_client_connections_stat);
   });
   worker.setOnConnectionCloseFinish(
       [proxy](McServerSession&, bool onAcceptedCalled) {
         if (onAcceptedCalled) {
-          proxy->stats().decrement(num_clients_stat);
+          proxy->stats().decrement(num_client_connections_stat);
         }
       });
 

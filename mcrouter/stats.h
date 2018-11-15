@@ -61,7 +61,7 @@ enum stat_type_t {
 };
 
 enum stat_group_t {
-  mcproxy_stats = 0x1,
+  basic_stats = 0x1,
   detailed_stats = 0x2,
   cmd_error_stats = 0x20,
   ods_stats = 0x40,
