@@ -18,6 +18,7 @@
 #include "mcrouter/lib/CompressionCodecManager.h"
 #include "mcrouter/lib/debug/ConnectionFifo.h"
 #include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
+#include "mcrouter/lib/network/SecurityOptions.h"
 #include "mcrouter/lib/network/ServerMcParser.h"
 #include "mcrouter/lib/network/WriteBuffer.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
@@ -51,9 +52,10 @@ class McServerSession
   class StateCallback {
    public:
     virtual ~StateCallback() {}
+    virtual void onAccepted(McServerSession& session) = 0;
     virtual void onWriteQuiescence(McServerSession&) = 0;
     virtual void onCloseStart(McServerSession&) = 0;
-    virtual void onCloseFinish(McServerSession&) = 0;
+    virtual void onCloseFinish(McServerSession&, bool onAcceptedCalled) = 0;
     virtual void onShutdown() = 0;
   };
 
@@ -104,14 +106,15 @@ class McServerSession
   };
 
   /**
-   * Returns true if this object is a part of an intrusive list
+   * Returns true if this object is a part of an intrusive list.
    */
   bool isLinked() const noexcept {
     return hook_.is_linked();
   }
 
   /**
-   * Creates a new session.  Sessions manage their own lifetime.
+   * Creates a new session.
+   * Sessions manage their own lifetime.
    * A session will self-destruct right after an onCloseFinish() callback
    * call, by which point all of the following must have occured:
    *   1) All outstanding requests have been replied and pending
@@ -136,11 +139,14 @@ class McServerSession
    * The onWriteQuiescence() callback is invoked when all pending writes are
    * done, rather than invoking it for each write.
    *
-   * @param transport  Connected transport; transfers ownership inside
-   *                   this session.
+   * @param transport Connected transport; transfers ownership inside
+   *                  this session.
    *
-   * @throw            std::runtime_error if we fail to create McServerSession
-   *                   object
+   * @param queue     If a queue is provided, the session will be linked to it.
+   *                  Otherwise (if queue is nullptr), it will remain unlinked.
+   *
+   * @throw           std::runtime_error if we fail to create McServerSession
+   *                  object
    */
   static McServerSession& create(
       folly::AsyncTransportWrapper::UniquePtr transport,
@@ -148,6 +154,7 @@ class McServerSession
       StateCallback& stateCb,
       const AsyncMcServerWorkerOptions& options,
       void* userCtxt,
+      McServerSession::Queue* queue,
       const CompressionCodecMap* codecMap = nullptr);
 
   /**
@@ -231,6 +238,11 @@ class McServerSession
     return options_.tcpZeroCopyThresholdBytes > 0;
   }
 
+  /**
+   * The security mechanism being used in thos connection.
+   */
+  SecurityMech securityMech() const noexcept;
+
  private:
   const AsyncMcServerWorkerOptions& options_;
 
@@ -242,6 +254,8 @@ class McServerSession
   // Debug fifo fields
   ConnectionFifo debugFifo_;
   bool hasPendingMultiOp_{false};
+
+  bool onAcceptedCalled_{false};
 
   enum State {
     STREAMING, /* close() was not called */
@@ -463,6 +477,12 @@ class McServerSession
 
   McServerSession(const McServerSession&) = delete;
   McServerSession& operator=(const McServerSession&) = delete;
+
+  // wrappers around the onState_ callbacks.
+  void onAccepted();
+  void onCloseStart();
+  void onCloseFinish();
+  void onWriteQuiescence();
 
   friend class McServerRequestContext;
   friend class ServerMcParser<McServerSession>;

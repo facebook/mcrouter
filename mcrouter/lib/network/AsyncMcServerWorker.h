@@ -111,10 +111,19 @@ class AsyncMcServerWorker {
 
   /**
    * Will be called once for every new accepted connection.
+   *
+   * For secure connections, this callback is only going to be called iff
+   * the handshake finishes successfully.
+   *
+   * It is safe to close the connection from this callback (by calling
+   * session.close() or other methods that closes the session).
+   * For example, this is a good place to add per-connection acl checks, and
+   * close the connection if it doesn't have the right permissions.
+   *
    * Can be nullptr for no action.
    */
   void setOnConnectionAccepted(std::function<void(McServerSession&)> cb) {
-    onAccepted_ = std::move(cb);
+    tracker_.setOnConnectionAccepted(std::move(cb));
   }
 
   /**
@@ -137,6 +146,7 @@ class AsyncMcServerWorker {
    * callback.
    *
    * Note: this callback will be applied even to already open connections.
+   *
    * Can be nullptr for no action.
    */
   void setOnConnectionCloseStart(std::function<void(McServerSession&)> cb) {
@@ -150,9 +160,11 @@ class AsyncMcServerWorker {
    * the callback.
    *
    * Note: this callback will be applied even to already open connections.
+   *
    * Can be nullptr for no action.
    */
-  void setOnConnectionCloseFinish(std::function<void(McServerSession&)> cb) {
+  void setOnConnectionCloseFinish(
+      std::function<void(McServerSession&, bool onAcceptedCalled)> cb) {
     tracker_.setOnConnectionCloseFinish(std::move(cb));
   }
 
@@ -199,7 +211,6 @@ class AsyncMcServerWorker {
   folly::EventBase& eventBase_;
 
   std::shared_ptr<McServerOnRequest> onRequest_;
-  std::function<void(McServerSession&)> onAccepted_;
 
   const CompressionCodecMap* compressionCodecMap_{nullptr};
 

@@ -9,6 +9,7 @@
 
 #include <memory>
 
+#include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/small_vector.h>
 
 #include "mcrouter/lib/debug/FifoManager.h"
@@ -47,6 +48,7 @@ McServerSession& McServerSession::create(
     StateCallback& stateCb,
     const AsyncMcServerWorkerOptions& options,
     void* userCtxt,
+    McServerSession::Queue* queue,
     const CompressionCodecMap* codecMap) {
   auto ptr = new McServerSession(
       std::move(transport),
@@ -62,6 +64,16 @@ McServerSession& McServerSession::create(
   if (ptr->state_ != STREAMING) {
     throw std::runtime_error(
         "Failed to create McServerSession: setReadCB failed");
+  }
+
+  if (queue) {
+    queue->push_front(*ptr);
+  }
+
+  // For secure connections, we need to delay calling the onAccepted client
+  // callback until the handshake is complete.
+  if (ptr->securityMech() == SecurityMech::NONE) {
+    ptr->onAccepted();
   }
 
   return *ptr;
@@ -99,10 +111,25 @@ McServerSession::McServerSession(
     LOG(WARNING) << "Failed to get socket address: " << e.what();
   }
 
-  auto socket = transport_->getUnderlyingTransport<McFizzServer>();
-  if (socket != nullptr) {
+  if (auto socket = transport_->getUnderlyingTransport<McFizzServer>()) {
     socket->accept(this);
   }
+}
+
+SecurityMech McServerSession::securityMech() const noexcept {
+  if (!transport_) {
+    return SecurityMech::NONE;
+  }
+  if (transport_->getUnderlyingTransport<McFizzServer>()) {
+    return SecurityMech::TLS13_FIZZ;
+  }
+  if (transport_->getUnderlyingTransport<folly::AsyncSSLSocket>()) {
+    return SecurityMech::TLS;
+  }
+  if (transport_->getSecurityProtocol() == McSSLUtil::kTlsToPlainProtocolName) {
+    return SecurityMech::TLS_TO_PLAINTEXT;
+  }
+  return SecurityMech::NONE;
 }
 
 void McServerSession::pause(PauseReason reason) {
@@ -145,7 +172,7 @@ void McServerSession::checkClosed() {
         transport_->setReadCB(nullptr);
         transport_.reset();
       }
-      stateCb_.onCloseFinish(*this);
+      onCloseFinish();
       destroy();
     }
   }
@@ -227,7 +254,7 @@ void McServerSession::close() {
 
   if (state_ == STREAMING) {
     state_ = CLOSING;
-    stateCb_.onCloseStart(*this);
+    onCloseStart();
   }
 
   checkClosed();
@@ -551,7 +578,7 @@ void McServerSession::writeSuccess() noexcept {
   completeWrite();
 
   if (writeBufs_.empty() && state_ == STREAMING) {
-    stateCb_.onWriteQuiescence(*this);
+    onWriteQuiescence();
     /* No-op if not paused */
     resume(PAUSE_WRITE);
   }
@@ -573,11 +600,8 @@ bool McServerSession::handshakeVer(
 }
 
 void McServerSession::handshakeSuc(folly::AsyncSSLSocket* sock) noexcept {
-  // sock is currently wrapped by transport_, but underlying socket may
-  // change by end of this function.
-  SCOPE_EXIT {
-    transport_->setReadCB(this);
-  };
+  DestructorGuard dg(this);
+
   auto cert = sock->getPeerCert();
   if (cert != nullptr) {
     auto sub = X509_get_subject_name(cert.get());
@@ -591,11 +615,18 @@ void McServerSession::handshakeSuc(folly::AsyncSSLSocket* sock) noexcept {
     }
   }
   McSSLUtil::finalizeServerSSL(transport_.get());
+
   if (McSSLUtil::negotiatedPlaintextFallback(*sock)) {
     auto fallback = McSSLUtil::moveToPlaintext(*sock);
     DCHECK(fallback);
     transport_.reset(fallback.release());
   }
+
+  // sock is currently wrapped by transport_, but underlying socket may
+  // change by end of this function (mainly due to negotiatedPlaintextFallback).
+  transport_->setReadCB(this);
+
+  onAccepted();
 }
 
 void McServerSession::handshakeErr(
@@ -609,6 +640,7 @@ void McServerSession::fizzHandshakeSuccess(
     fizz::server::AsyncFizzServer* transport) noexcept {
   auto cert = transport->getPeerCert();
   if (cert == nullptr) {
+    onAccepted();
     return;
   }
   auto sub = X509_get_subject_name(cert.get());
@@ -621,6 +653,7 @@ void McServerSession::fizzHandshakeSuccess(
     }
   }
   McSSLUtil::finalizeServerSSL(transport);
+  onAccepted();
 }
 
 void McServerSession::fizzHandshakeError(
@@ -654,5 +687,24 @@ void McServerSession::fizzHandshakeAttemptFallback(
 
   transport_.reset(sslSocket.release());
 }
+
+void McServerSession::onAccepted() {
+  DCHECK(!onAcceptedCalled_);
+  onAcceptedCalled_ = true;
+  stateCb_.onAccepted(*this);
+}
+
+void McServerSession::onCloseStart() {
+  stateCb_.onCloseStart(*this);
+}
+
+void McServerSession::onCloseFinish() {
+  stateCb_.onCloseFinish(*this, onAcceptedCalled_);
+}
+
+void McServerSession::onWriteQuiescence() {
+  stateCb_.onWriteQuiescence(*this);
+}
+
 } // namespace memcache
 } // namespace facebook

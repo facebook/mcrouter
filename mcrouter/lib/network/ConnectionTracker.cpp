@@ -28,9 +28,8 @@ McServerSession& ConnectionTracker::add(
       *this,
       options,
       userCtxt,
+      &sessions_,
       compressionCodecMap);
-
-  sessions_.push_front(session);
 
   return session;
 }
@@ -74,6 +73,12 @@ void ConnectionTracker::evict() {
   session.close();
 }
 
+void ConnectionTracker::onAccepted(McServerSession& session) {
+  if (onAccepted_) {
+    onAccepted_(session);
+  }
+}
+
 void ConnectionTracker::onWriteQuiescence(McServerSession& session) {
   touch(session);
   if (onWriteQuiescence_) {
@@ -87,9 +92,11 @@ void ConnectionTracker::onCloseStart(McServerSession& session) {
   }
 }
 
-void ConnectionTracker::onCloseFinish(McServerSession& session) {
+void ConnectionTracker::onCloseFinish(
+    McServerSession& session,
+    bool onAcceptedCalled) {
   if (onCloseFinish_) {
-    onCloseFinish_(session);
+    onCloseFinish_(session, onAcceptedCalled);
   }
   if (session.isLinked()) {
     sessions_.erase(sessions_.iterator_to(session));

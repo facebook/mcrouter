@@ -200,7 +200,8 @@ class TestClient {
       std::string serviceIdentity = "",
       const CompressionCodecMap* compressionCodecMap = nullptr,
       bool enableTfo = false,
-      bool offloadHandshakes = false);
+      bool offloadHandshakes = false,
+      bool sessionCachingEnabled = true);
 
   void setThrottle(size_t maxInflight, size_t maxOutstanding) {
     client_->setThrottle(maxInflight, maxOutstanding);

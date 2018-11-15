@@ -10,6 +10,7 @@
 #include <folly/SharedMutex.h>
 #include <folly/io/async/AsyncTransportCertificate.h>
 #include <folly/io/async/ssl/OpenSSLUtils.h>
+
 #include "mcrouter/lib/network/SecurityOptions.h"
 
 namespace facebook {
@@ -90,10 +91,12 @@ class PlaintextWithCerts : public folly::AsyncSocket {
   }
 
   std::string getSecurityProtocol() const override {
-    return "mc_plaintext";
+    return McSSLUtil::kTlsToPlainProtocolName;
   }
 };
 } // namespace
+
+const std::string McSSLUtil::kTlsToPlainProtocolName = "mc_plaintext";
 
 bool McSSLUtil::verifySSLWithDefaultBehavior(
     folly::AsyncSSLSocket*,

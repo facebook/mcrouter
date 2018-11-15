@@ -66,16 +66,12 @@ McServerSession* AsyncMcServerWorker::addClientTransport(
   transport->setSendTimeout(opts_.sendTimeout.count());
 
   try {
-    auto& session = tracker_.add(
+    return std::addressof(tracker_.add(
         std::move(transport),
         onRequest_,
         opts_,
         userCtxt,
-        compressionCodecMap_);
-    if (onAccepted_) {
-      onAccepted_(session);
-    }
-    return std::addressof(session);
+        compressionCodecMap_));
   } catch (const std::exception& ex) {
     LOG(ERROR) << "Error creating new session: " << ex.what();
     return nullptr;

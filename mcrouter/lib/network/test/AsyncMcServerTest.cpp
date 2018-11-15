@@ -7,6 +7,8 @@
  */
 #include <gtest/gtest.h>
 
+#include <folly/io/async/ssl/OpenSSLUtils.h>
+
 #include "mcrouter/lib/network/McSSLUtil.h"
 #include "mcrouter/lib/network/test/TestClientServerUtil.h"
 
@@ -79,7 +81,7 @@ TEST(AsyncMcServer, sslCertCommonName) {
   LOG(INFO) << "Joining...";
   server->shutdown();
   server->join();
-  EXPECT_EQ(2, server->getAcceptedConns());
+  EXPECT_EQ(1, server->getAcceptedConns());
 }
 
 TEST(AsyncMcServer, sslVerify) {
@@ -100,7 +102,7 @@ TEST(AsyncMcServer, sslVerify) {
 
   server->shutdown();
   server->join();
-  EXPECT_EQ(1, server->getAcceptedConns());
+  EXPECT_EQ(0, server->getAcceptedConns());
 }
 
 TEST(AsyncMcServer, rejectAllConnections) {
@@ -208,4 +210,276 @@ TEST(AsyncMcServer, tcpZeroCopySSLEnabled) {
       validClientSsl());
   sadClient.sendGet("empty", mc_res_connect_error);
   sadClient.waitForReplies();
+}
+
+TEST(AsyncMcServer, onAccepted_PlainText) {
+  TestServer::Config config;
+  config.useSsl = false;
+  bool onAcceptedCalled = false;
+  config.onConnectionAcceptedAdditionalCb = [&](McServerSession& session) {
+    onAcceptedCalled = true;
+    EXPECT_EQ(SecurityMech::NONE, session.securityMech());
+  };
+  auto server = TestServer::create(std::move(config));
+
+  TestClient client(
+      "localhost", server->getListenPort(), 200, mc_caret_protocol);
+  client.sendGet("empty", mc_res_found);
+  client.waitForReplies();
+
+  LOG(INFO) << "Joining...";
+  server->shutdown();
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
+  EXPECT_TRUE(onAcceptedCalled);
+}
+
+TEST(AsyncMcServer, onAccepted_Tls) {
+  TestServer::Config config;
+  bool onAcceptedCalled = false;
+  config.onConnectionAcceptedAdditionalCb = [&](McServerSession& session) {
+    onAcceptedCalled = true;
+    EXPECT_EQ(SecurityMech::TLS, session.securityMech());
+  };
+  auto server = TestServer::create(std::move(config));
+
+  TestClient client(
+      "localhost",
+      server->getListenPort(),
+      200,
+      mc_caret_protocol,
+      validClientSsl());
+  client.sendGet("empty", mc_res_found);
+  client.waitForReplies();
+
+  LOG(INFO) << "Joining...";
+  server->shutdown();
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
+  EXPECT_TRUE(onAcceptedCalled);
+}
+
+TEST(AsyncMcServer, onAccepted_Tls13Fizz) {
+  TestServer::Config config;
+  bool onAcceptedCalled = false;
+  config.onConnectionAcceptedAdditionalCb = [&](McServerSession& session) {
+    onAcceptedCalled = true;
+    EXPECT_EQ(SecurityMech::TLS13_FIZZ, session.securityMech());
+  };
+  auto server = TestServer::create(std::move(config));
+
+  auto sslOpts = validClientSsl();
+  sslOpts.mech = SecurityMech::TLS13_FIZZ;
+
+  TestClient client(
+      "localhost", server->getListenPort(), 200, mc_caret_protocol, sslOpts);
+  client.sendGet("empty", mc_res_found);
+  client.waitForReplies();
+
+  LOG(INFO) << "Joining...";
+  server->shutdown();
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
+  EXPECT_TRUE(onAcceptedCalled);
+}
+
+TEST(AsyncMcServer, onAccepted_TlsToPlainText) {
+  TestServer::Config config;
+  bool onAcceptedCalled = false;
+  config.onConnectionAcceptedAdditionalCb = [&](McServerSession& session) {
+    onAcceptedCalled = true;
+    EXPECT_EQ(SecurityMech::TLS_TO_PLAINTEXT, session.securityMech());
+  };
+  auto server = TestServer::create(std::move(config));
+
+  auto sslOpts = validClientSsl();
+  sslOpts.mech = SecurityMech::TLS_TO_PLAINTEXT;
+
+  TestClient client(
+      "localhost", server->getListenPort(), 200, mc_caret_protocol, sslOpts);
+  client.sendGet("empty", mc_res_found);
+  client.waitForReplies();
+
+  LOG(INFO) << "Joining...";
+  server->shutdown();
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
+  EXPECT_TRUE(onAcceptedCalled);
+}
+
+TEST(AsyncMcServer, onAccepted_RejectTlsToPlainText) {
+  TestServer::Config config;
+  config.onConnectionAcceptedAdditionalCb = [](McServerSession& session) {
+    // we don't like TLS_TO_PLAINTEXT connections!
+    if (session.securityMech() == SecurityMech::TLS_TO_PLAINTEXT) {
+      session.close();
+    }
+  };
+  auto server = TestServer::create(std::move(config));
+
+  auto sslOpts = validClientSsl();
+
+  // tls-to-plaintext should be rejected.
+  sslOpts.mech = SecurityMech::TLS_TO_PLAINTEXT;
+  TestClient badClient(
+      "localhost", server->getListenPort(), 200, mc_caret_protocol, sslOpts);
+  badClient.sendGet("empty", mc_res_remote_error);
+  badClient.waitForReplies();
+
+  // tls is fine.
+  sslOpts.mech = SecurityMech::TLS;
+  TestClient goodClient(
+      "localhost", server->getListenPort(), 200, mc_caret_protocol, sslOpts);
+  goodClient.sendGet("empty", mc_res_found);
+  goodClient.waitForReplies();
+
+  LOG(INFO) << "Joining...";
+  server->shutdown();
+  server->join();
+  EXPECT_EQ(2, server->getAcceptedConns());
+}
+
+TEST(AsyncMcServer, onAccepted_RejectSecure) {
+  TestServer::Config config;
+  config.onConnectionAcceptedAdditionalCb = [](McServerSession& session) {
+    // we don't like connections at all!
+    session.close();
+  };
+  auto server = TestServer::create(std::move(config));
+
+  auto sslOpts = validClientSsl();
+
+  sslOpts.mech = SecurityMech::TLS_TO_PLAINTEXT;
+  TestClient client1(
+      "localhost", server->getListenPort(), 200, mc_caret_protocol, sslOpts);
+  client1.sendGet("empty", mc_res_remote_error);
+  client1.waitForReplies();
+
+  sslOpts.mech = SecurityMech::TLS;
+  TestClient client2(
+      "localhost", server->getListenPort(), 200, mc_caret_protocol, sslOpts);
+  client2.sendGet("empty", mc_res_remote_error);
+  client2.waitForReplies();
+
+  sslOpts.mech = SecurityMech::TLS13_FIZZ;
+  TestClient client3(
+      "localhost", server->getListenPort(), 200, mc_caret_protocol, sslOpts);
+  client3.sendGet("empty", mc_res_remote_error);
+  client3.waitForReplies();
+
+  LOG(INFO) << "Joining...";
+  server->shutdown();
+  server->join();
+  EXPECT_EQ(3, server->getAcceptedConns());
+}
+
+TEST(AsyncMcServer, onAccepted_RejectPlainText) {
+  TestServer::Config config;
+  config.useSsl = false;
+  config.onConnectionAcceptedAdditionalCb = [](McServerSession& session) {
+    // we don't like connections at all!
+    session.close();
+  };
+  auto server = TestServer::create(std::move(config));
+
+  TestClient client(
+      "localhost", server->getListenPort(), 200, mc_caret_protocol);
+  client.sendGet("empty", mc_res_remote_error);
+  client.waitForReplies();
+
+  LOG(INFO) << "Joining...";
+  server->shutdown();
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
+}
+
+TEST(AsyncMcServer, onAccepted_RejectBasedOnCert) {
+  TestServer::Config config;
+  config.requirePeerCerts = false;
+  config.onConnectionAcceptedAdditionalCb = [](McServerSession& session) {
+    EXPECT_EQ(SecurityMech::TLS_TO_PLAINTEXT, session.securityMech());
+    auto peerCert = session.getTransport()->getPeerCert();
+    EXPECT_TRUE(peerCert);
+
+    // we just trust certs from the "The Cool Company"
+    auto certName = folly::ssl::OpenSSLUtils::getCommonName(peerCert.get());
+    LOG(INFO) << "Cert common name: " << certName;
+    if (!folly::StringPiece(certName).contains("The Cool Company")) {
+      session.close();
+    }
+  };
+  auto server = TestServer::create(std::move(config));
+
+  auto sslOpts = validClientSsl();
+  sslOpts.mech = SecurityMech::TLS_TO_PLAINTEXT;
+  TestClient client(
+      "localhost", server->getListenPort(), 200, mc_caret_protocol, sslOpts);
+  client.sendGet("empty", mc_res_remote_error);
+  client.waitForReplies();
+
+  LOG(INFO) << "Joining...";
+  server->shutdown();
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
+}
+
+TEST(AsyncMcServer, onAccepted_RejectEmptyCert) {
+  TestServer::Config config;
+  config.requirePeerCerts = false;
+  config.onConnectionAcceptedAdditionalCb = [](McServerSession& session) {
+    auto peerCert = session.getTransport()->getPeerCert();
+    if (!peerCert) {
+      // we don't like missing certs.
+      session.close();
+    }
+  };
+  auto server = TestServer::create(std::move(config));
+
+  TestClient client(
+      "localhost",
+      server->getListenPort(),
+      200,
+      mc_caret_protocol,
+      noCertClientSsl());
+  client.sendGet("empty", mc_res_remote_error);
+  client.waitForReplies();
+
+  TestClient goodClient(
+      "localhost",
+      server->getListenPort(),
+      200,
+      mc_caret_protocol,
+      validClientSsl(),
+      0 /* qosClass */,
+      0 /* qosPath */,
+      "" /* serviceIdentity */,
+      nullptr /* compressionMap */,
+      false /* enableTfo */,
+      false /* offloadHandshakes */,
+      false /* sessionCachingEnabled */);
+  goodClient.sendGet("empty", mc_res_found);
+  goodClient.waitForReplies();
+
+  auto sslOpts = validClientSsl();
+  sslOpts.mech = SecurityMech::TLS_TO_PLAINTEXT;
+  TestClient goodClient2(
+      "localhost",
+      server->getListenPort(),
+      200,
+      mc_caret_protocol,
+      sslOpts,
+      0 /* qosClass */,
+      0 /* qosPath */,
+      "" /* serviceIdentity */,
+      nullptr /* compressionMap */,
+      false /* enableTfo */,
+      false /* offloadHandshakes */,
+      false /* sessionCachingEnabled */);
+  goodClient2.sendGet("empty", mc_res_found);
+  goodClient2.waitForReplies();
+
+  LOG(INFO) << "Joining...";
+  server->shutdown();
+  server->join();
+  EXPECT_EQ(3, server->getAcceptedConns());
 }

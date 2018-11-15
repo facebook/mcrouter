@@ -7,6 +7,8 @@
  */
 #pragma once
 
+#include <string>
+
 #include <folly/Function.h>
 #include <folly/io/async/AsyncSSLSocket.h>
 
@@ -24,6 +26,8 @@ class McSSLUtil {
                           const noexcept>;
   using SSLFinalizeFunction =
       folly::Function<void(folly::AsyncTransportWrapper*) const noexcept>;
+
+  static const std::string kTlsToPlainProtocolName;
 
   static bool verifySSLWithDefaultBehavior(
       folly::AsyncSSLSocket*,

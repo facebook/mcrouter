@@ -105,5 +105,6 @@ inline void McServerSession::umbrellaRequestReadyImpl(
   McServerRequestContext::reply(std::move(ctx), McShutdownReply(mc_res_ok));
   stateCb_.onShutdown();
 }
-}
-} // facebook::memcache
+
+} // namespace memcache
+} // namespace facebook

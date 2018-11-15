@@ -51,9 +51,12 @@ void serverLoop(
     proxy->stats().increment(successful_client_connections_stat);
     proxy->stats().increment(num_clients_stat);
   });
-  worker.setOnConnectionCloseFinish([proxy](McServerSession&) {
-    proxy->stats().decrement(num_clients_stat);
-  });
+  worker.setOnConnectionCloseFinish(
+      [proxy](McServerSession&, bool onAcceptedCalled) {
+        if (onAcceptedCalled) {
+          proxy->stats().decrement(num_clients_stat);
+        }
+      });
 
   // Setup compression on each worker.
   if (standaloneOpts.enable_server_compression) {

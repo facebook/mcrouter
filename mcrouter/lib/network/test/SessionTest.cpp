@@ -128,11 +128,12 @@ TEST(Session, quit) {
 TEST(Session, closeBeforeReply) {
   struct Callbacks : public McServerSession::StateCallback {
    public:
+    void onAccepted(McServerSession&) final {}
     void onWriteQuiescence(McServerSession&) final {
       EXPECT_EQ(state_, ACTIVE);
     }
     void onCloseStart(McServerSession&) final {}
-    void onCloseFinish(McServerSession&) final {
+    void onCloseFinish(McServerSession&, bool) final {
       EXPECT_EQ(state_, ACTIVE);
       state_ = CLOSED;
     }
@@ -172,7 +173,7 @@ TEST(Session, invalidSocketAdd) {
   worker.setOnRequest(MemcacheRequestHandler<NoOpOnRequest>());
   worker.setOnWriteQuiescence([](McServerSession&) {});
   worker.setOnConnectionCloseStart([](McServerSession&) {});
-  worker.setOnConnectionCloseFinish([](McServerSession&) {});
+  worker.setOnConnectionCloseFinish([](McServerSession&, bool) {});
 
   worker.addClientSocket(invalidFd);
 }

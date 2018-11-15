@@ -31,9 +31,10 @@ class SessionTestHarness {
  private:
   class NoopCallback : public McServerSession::StateCallback {
    public:
+    void onAccepted(McServerSession&) final {}
     void onWriteQuiescence(McServerSession&) final {}
     void onCloseStart(McServerSession&) final {}
-    void onCloseFinish(McServerSession&) final {}
+    void onCloseFinish(McServerSession&, bool) final {}
     void onShutdown() final {}
   };
   static NoopCallback noopCb;

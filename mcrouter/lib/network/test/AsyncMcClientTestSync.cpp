@@ -280,13 +280,13 @@ TEST(AsyncMcClient, invalidCerts) {
 }
 
 TEST(AsyncMcClient, brokenCerts) {
-  testCerts("test-brokenCerts", brokenClientSsl(), 2);
+  testCerts("test-brokenCerts", brokenClientSsl(), 1);
 }
 
 TEST(AsyncMcClient, noCerts) {
   // we expect the no cert case to fail by default since the test server will
   // require peer certs by default
-  testCerts("test-nocerts", noCertClientSsl(), 2);
+  testCerts("test-nocerts", noCertClientSsl(), 1);
 }
 
 TEST(AsyncMcClient, testClientFinalize) {
@@ -1068,7 +1068,7 @@ TEST_P(AsyncMcClientSSLOffloadTest, connectErrors) {
 
   server->shutdown();
   server->join();
-  EXPECT_EQ(1, server->getAcceptedConns());
+  EXPECT_EQ(0, server->getAcceptedConns());
   EXPECT_TRUE(verifyCalled);
 }
 

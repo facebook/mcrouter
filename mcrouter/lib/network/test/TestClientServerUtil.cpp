@@ -237,7 +237,8 @@ TestClient::TestClient(
     std::string serviceIdentity,
     const CompressionCodecMap* compressionCodecMap,
     bool enableTfo,
-    bool offloadHandshakes)
+    bool offloadHandshakes,
+    bool sessionCachingEnabled)
     : fm_(std::make_unique<folly::fibers::EventBaseLoopController>()) {
   dynamic_cast<folly::fibers::EventBaseLoopController&>(fm_.loopController())
       .attachEventBase(eventBase_);
@@ -250,7 +251,7 @@ TestClient::TestClient(
     opts.securityOpts.sslPemCertPath = ssl->sslCertPath;
     opts.securityOpts.sslPemKeyPath = ssl->sslKeyPath;
     opts.securityOpts.sslPemCaPath = ssl->sslCaPath;
-    opts.securityOpts.sessionCachingEnabled = true;
+    opts.securityOpts.sessionCachingEnabled = sessionCachingEnabled;
     opts.securityOpts.sslServiceIdentity = serviceIdentity;
     opts.securityOpts.tfoEnabledForSsl = enableTfo;
     opts.securityOpts.sslHandshakeOffload = offloadHandshakes;
