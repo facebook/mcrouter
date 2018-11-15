@@ -120,6 +120,11 @@ struct ConnectionOptions {
    * If nullptr, compression will be disabled.
    */
   const CompressionCodecMap* compressionCodecMap{nullptr};
+
+  /**
+   * Use CompactProtocol for serialization
+   */
+  bool useCompactSerialization{false};
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

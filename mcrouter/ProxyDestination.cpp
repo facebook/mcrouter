@@ -81,29 +81,28 @@ void ProxyDestination::scheduleNextProbe() {
 
 void ProxyDestination::startSendingProbes() {
   probe_delay_next_ms = proxy.router().opts().probe_delay_initial_ms;
-  probeTimer_ =
-      folly::AsyncTimeout::make(proxy.eventBase(), [this]() noexcept {
-        // Note that the previous probe might still be in flight
-        if (!probeInflight_) {
-          probeInflight_ = true;
-          ++stats_.probesSent;
-          proxy.fiberManager().addTask([selfPtr = selfPtr_]() mutable {
-            auto pdstn = selfPtr.lock();
-            if (pdstn == nullptr) {
-              return;
-            }
-            pdstn->proxy.destinationMap()->markAsActive(*pdstn);
-            // Will reconnect if connection was closed
-            // Version commands shouldn't take much longer than stablishing a
-            // connection, so just using shortestConnectTimeout_ here.
-            auto reply = pdstn->getAsyncMcClient().sendSync(
-                McVersionRequest(), pdstn->shortestConnectTimeout_);
-            pdstn->handleTko(reply.result(), /* is_probe_req */ true);
-            pdstn->probeInflight_ = false;
-          });
+  probeTimer_ = folly::AsyncTimeout::make(proxy.eventBase(), [this]() noexcept {
+    // Note that the previous probe might still be in flight
+    if (!probeInflight_) {
+      probeInflight_ = true;
+      ++stats_.probesSent;
+      proxy.fiberManager().addTask([selfPtr = selfPtr_]() mutable {
+        auto pdstn = selfPtr.lock();
+        if (pdstn == nullptr) {
+          return;
         }
-        scheduleNextProbe();
+        pdstn->proxy.destinationMap()->markAsActive(*pdstn);
+        // Will reconnect if connection was closed
+        // Version commands shouldn't take much longer than stablishing a
+        // connection, so just using shortestConnectTimeout_ here.
+        auto reply = pdstn->getAsyncMcClient().sendSync(
+            McVersionRequest(), pdstn->shortestConnectTimeout_);
+        pdstn->handleTko(reply.result(), /* is_probe_req */ true);
+        pdstn->probeInflight_ = false;
       });
+    }
+    scheduleNextProbe();
+  });
   scheduleNextProbe();
 }
 
@@ -378,6 +377,7 @@ void ProxyDestination::initializeAsyncMcClient() {
   options.connectTimeout = shortestConnectTimeout_;
   options.writeTimeout = shortestWriteTimeout_;
   options.routerInfoName = routerInfoName_;
+  options.useCompactSerialization = opts.use_compact_serialization;
   if (!opts.debug_fifo_root.empty()) {
     options.debugFifoPath = getClientDebugFifoFullPath(opts);
   }

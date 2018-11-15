@@ -311,14 +311,14 @@ MCROUTER_OPTION_INTEGER(
 
 MCROUTER_OPTION_STRING(
     pem_cert_path,
-    "",  // this may get overwritten by finalizeOptions
+    "", // this may get overwritten by finalizeOptions
     "pem-cert-path",
     no_short,
     "Path of pem-style client certificate for ssl.")
 
 MCROUTER_OPTION_STRING(
     pem_key_path,
-    "",  // this may get overwritten by finalizeOptions
+    "", // this may get overwritten by finalizeOptions
     "pem-key-path",
     no_short,
     "Path of pem-style client key for ssl.")
@@ -411,6 +411,13 @@ MCROUTER_OPTION_TOGGLE(
     "disable-reload-configs",
     no_short,
     "")
+
+MCROUTER_OPTION_TOGGLE(
+    use_compact_serialization,
+    false,
+    "use-compact-serialization",
+    no_short,
+    "Use compact protocol for serialization")
 
 MCROUTER_OPTION_STRING(
     config,
