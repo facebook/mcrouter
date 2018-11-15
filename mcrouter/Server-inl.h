@@ -81,8 +81,8 @@ void serverLoop(
 
 template <class RouterInfo, template <class> class RequestHandler>
 bool runServer(
-    const McrouterStandaloneOptions& standaloneOpts,
-    const McrouterOptions& mcrouterOpts) {
+    const McrouterOptions& mcrouterOpts,
+    const McrouterStandaloneOptions& standaloneOpts) {
   AsyncMcServer::Options opts;
 
   if (standaloneOpts.listen_sock_fd >= 0) {

@@ -199,6 +199,8 @@ mcrouter_SOURCES = \
   Server-inl.h \
   Server.h \
   ServerOnRequest.h \
+  StandaloneUtils.cpp \
+  StandaloneUtils.h \
   standalone_options.h \
   standalone_options_list.h
 

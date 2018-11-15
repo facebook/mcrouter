@@ -23,8 +23,8 @@ class McrouterStandaloneOptions;
  */
 template <class RouterInfo, template <class> class RequestHandler>
 bool runServer(
-    const McrouterStandaloneOptions& standaloneOpts,
-    const McrouterOptions& mcrouterOpts);
+    const McrouterOptions& mcrouterOpts,
+    const McrouterStandaloneOptions& standaloneOpts);
 
 } // mcrouter
 } // memcache
