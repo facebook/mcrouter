@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -81,7 +81,8 @@ void serverLoop(
 template <class RouterInfo, template <class> class RequestHandler>
 bool runServer(
     const McrouterOptions& mcrouterOpts,
-    const McrouterStandaloneOptions& standaloneOpts) {
+    const McrouterStandaloneOptions& standaloneOpts,
+    StandalonePreRunCb preRunCb) {
   AsyncMcServer::Options opts;
 
   if (standaloneOpts.listen_sock_fd >= 0) {
@@ -164,13 +165,13 @@ bool runServer(
 
     router->addStartupOpts(standaloneOpts.toDict());
 
-    if (standaloneOpts.postprocess_logging_route) {
-      router->setPostprocessCallback(getLogPostprocessFunc<void>());
-    }
-
     if (standaloneOpts.enable_server_compression &&
         !mcrouterOpts.enable_compression) {
       initCompression(*router);
+    }
+
+    if (preRunCb) {
+      preRunCb(*router);
     }
 
     folly::Baton<> shutdownBaton;

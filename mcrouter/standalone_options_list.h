@@ -144,14 +144,6 @@ MCROUTER_OPTION_TOGGLE(
     " routing logic.")
 
 MCROUTER_OPTION_TOGGLE(
-    postprocess_logging_route,
-    false,
-    "postprocess-logging-route",
-    no_short,
-    "For all hits logged by LoggingRoute, pass the request & reply pair to "
-    "implementation-specific postprocessing logic.")
-
-MCROUTER_OPTION_TOGGLE(
     enable_server_compression,
     false,
     "enable-server-compression",

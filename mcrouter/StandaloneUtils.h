@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2018-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "mcrouter/Server.h"
 #include "mcrouter/options.h"
 #include "mcrouter/standalone_options.h"
 
@@ -138,11 +139,13 @@ void setupStandaloneMcrouter(
  * @param cmdLineOpts         The result of parseCmdLineOptions() funciton.
  * @param libmcrouterOptions  The final libmcrouter options object.
  * @param standaloneOptions   The final standalone mcrouter options object.
+ * @param preRunCb            Callback called before starting the server.
  */
 void runStandaloneMcrouter(
     const CmdLineOptions& cmdLineOpts,
     const McrouterOptions& libmcrouterOptions,
-    const McrouterStandaloneOptions& standaloneOptions);
+    const McrouterStandaloneOptions& standaloneOptions,
+    StandalonePreRunCb preRunCb = nullptr);
 
 } // namespace mcrouter
 } // namespace memcache

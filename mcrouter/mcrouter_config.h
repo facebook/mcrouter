@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -44,17 +44,6 @@ namespace memcache {
 
 class McrouterOptions;
 struct MemcacheRouterInfo;
-
-using LogPostprocessCallbackFunc = std::function<void(
-    const folly::dynamic&, // Serialized request
-    const folly::dynamic&, // Serialized reply
-    const char* const, // Name of operation (e.g. 'get')
-    const folly::StringPiece)>; // User ip
-
-template <class T>
-inline LogPostprocessCallbackFunc getLogPostprocessFunc() {
-  return nullptr;
-}
 
 namespace mcrouter {
 

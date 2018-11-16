@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2018-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -181,10 +181,11 @@ void validateConfigAndExit(const McrouterOptions& libmcrouterOptions) {
 template <class RouterInfo, template <class> class RequestHandler>
 void run(
     const McrouterOptions& libmcrouterOptions,
-    const McrouterStandaloneOptions& standaloneOptions) {
+    const McrouterStandaloneOptions& standaloneOptions,
+    StandalonePreRunCb preRunCb) {
   LOG(INFO) << "Starting " << RouterInfo::name << " router";
   if (!runServer<RouterInfo, RequestHandler>(
-          libmcrouterOptions, standaloneOptions)) {
+          libmcrouterOptions, standaloneOptions, std::move(preRunCb))) {
     exit(kExitStatusTransientError);
   }
 }
@@ -468,7 +469,8 @@ void setupStandaloneMcrouter(
 void runStandaloneMcrouter(
     const CmdLineOptions& cmdLineOpts,
     const McrouterOptions& libmcrouterOptions,
-    const McrouterStandaloneOptions& standaloneOptions) {
+    const McrouterStandaloneOptions& standaloneOptions,
+    StandalonePreRunCb preRunCb) {
   try {
     if (cmdLineOpts.validateConfigMode == ValidateConfigMode::Exit) {
       CALL_BY_ROUTER_NAME(
@@ -481,7 +483,8 @@ void runStandaloneMcrouter(
         standaloneOptions.carbon_router_name,
         run,
         libmcrouterOptions,
-        standaloneOptions);
+        standaloneOptions,
+        std::move(preRunCb));
   } catch (const std::invalid_argument& ia) {
     LOG(ERROR) << "Error starting mcrouter: " << ia.what();
     exit(EXIT_FAILURE);
