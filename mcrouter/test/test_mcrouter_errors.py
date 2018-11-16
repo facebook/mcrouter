@@ -237,7 +237,8 @@ class TestMcrouterGeneratedErrors(McrouterTestCase):
         print(res)
         self.assertTrue(
             re.match(
-                'SERVER_ERROR (connection error|remote error|Failed to read)',
+                'SERVER_ERROR (connection error|remote error'
+                '|Failed to read|AsyncSocketException)',
                 res
             )
         )
