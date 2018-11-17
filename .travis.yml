@@ -1,12 +1,12 @@
 sudo: required
-dist: trusty
+dist: xenial
 
 language: cpp
 
 compiler:
   - gcc
 
-script: ./mcrouter/scripts/install_ubuntu_14.04.sh "$(pwd)"/mcrouter-install
+script: ./mcrouter/scripts/install_ubuntu_16.04.sh "$(pwd)"/mcrouter-install
 
 notifications:
   email:
