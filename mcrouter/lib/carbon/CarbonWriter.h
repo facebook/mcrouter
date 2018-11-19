@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -177,6 +177,59 @@ class CarbonWriter {
         "Carbon currently assumes sizeof(Result) == sizeof(mc_res_t)");
     // Note that this actually narrows mc_res_t from int to int16_t
     writeField(id, static_cast<int16_t>(res));
+  }
+
+  template <class T>
+  typename std::enable_if<
+      (detail::IsLinearContainer<T>::value || detail::IsKVContainer<T>::value ||
+       detail::IsUserReadWriteDefined<T>::value || IsCarbonStruct<T>::value ||
+       folly::IsOneOf<T, double, float>::value) &&
+          (!folly::IsOneOf<T, folly::IOBuf, std::string>::value),
+      void>::type
+  writeField(const int16_t /* id */, const T& /* t */) {
+    facebook::memcache::checkLogic(
+        false, "Unsupported type with CarbonWriter!");
+  }
+
+  template <class T>
+  typename std::enable_if<
+      (detail::IsLinearContainer<T>::value || detail::IsKVContainer<T>::value ||
+       detail::IsUserReadWriteDefined<T>::value || IsCarbonStruct<T>::value ||
+       folly::IsOneOf<T, double, float>::value) &&
+          (!folly::IsOneOf<T, folly::IOBuf, std::string>::value),
+      void>::type
+  writeFieldAlways(const int16_t /* id */, const T& /* t */) {
+    facebook::memcache::checkLogic(
+        false, "Unsupported type with CarbonWriter!");
+  }
+
+  template <class T>
+  typename std::enable_if<
+      detail::IsLinearContainer<T>::value || detail::IsKVContainer<T>::value ||
+          detail::IsUserReadWriteDefined<T>::value ||
+          IsCarbonStruct<T>::value || folly::IsOneOf<T, double, float>::value,
+      void>::type
+  writeRaw(const T& /* data */) {
+    facebook::memcache::checkLogic(
+        false, "Unsupported type with CarbonWriter!");
+  }
+
+  template <class T>
+  void writeField(const int16_t /* id */, folly::Optional<T>& /* t */) {
+    facebook::memcache::checkLogic(
+        false, "Unsupported type with CarbonWriter!");
+  }
+
+  template <class T>
+  void writeFieldAlways(const int16_t /* id */, folly::Optional<T>& /* t */) {
+    facebook::memcache::checkLogic(
+        false, "Unsupported type with CarbonWriter!");
+  }
+
+  template <class T>
+  void writeRaw(const folly::Optional<T>& /* data */) {
+    facebook::memcache::checkLogic(
+        false, "Unsupported type with CarbonWriter!");
   }
 
   void writeStructBegin() {

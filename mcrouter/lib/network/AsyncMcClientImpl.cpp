@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -50,8 +50,10 @@ struct GoAwayContext : public folly::AsyncTransportWrapper::WriteCallback {
   McSerializedRequest data;
   std::unique_ptr<GoAwayContext> selfPtr;
 
-  explicit GoAwayContext(const CodecIdRange& supportedCodecs)
-      : data(message, 0, mc_caret_protocol, supportedCodecs) {}
+  explicit GoAwayContext(
+      const CodecIdRange& supportedCodecs,
+      PayloadFormat payloadFormat)
+      : data(message, 0, mc_caret_protocol, supportedCodecs, payloadFormat) {}
 
   void writeSuccess() noexcept final {
     auto self = std::move(selfPtr);
@@ -78,7 +80,7 @@ std::string getServiceIdentity(const ConnectionOptions& opts) {
   return svcIdentity.empty() ? opts.accessPoint->toHostPortString()
                              : svcIdentity;
 }
-} // anonymous
+} // namespace
 
 void AsyncMcClientImpl::WriterLoop::runLoopCallback() noexcept {
   // Delay this write until the end of current loop (e.g. after
@@ -325,7 +327,8 @@ void AsyncMcClientImpl::pushMessages() {
 }
 
 void AsyncMcClientImpl::sendGoAwayReply() {
-  auto ctxPtr = std::make_unique<GoAwayContext>(supportedCompressionCodecs_);
+  auto ctxPtr = std::make_unique<GoAwayContext>(
+      supportedCompressionCodecs_, connectionOptions_.payloadFormat);
   auto& ctx = *ctxPtr;
   switch (ctx.data.serializationResult()) {
     case McSerializedRequest::Result::OK: {
@@ -775,7 +778,7 @@ void AsyncMcClientImpl::processShutdown(folly::StringPiece errorMessage) {
       // We can safely close connection, it will stop all writes.
       socket_->close();
 
-    /* fallthrough */
+      /* fallthrough */
 
     case ConnectionState::ERROR:
       queue_.failAllSent(
@@ -1024,5 +1027,5 @@ int64_t AsyncMcClientImpl::getNumConnectRetries() noexcept {
       numConnectTimeoutRetriesLeft_;
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

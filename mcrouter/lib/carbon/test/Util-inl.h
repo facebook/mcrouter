@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -19,14 +19,9 @@
 namespace carbon {
 namespace test {
 namespace util {
-
-template <class T, class Out>
-Out serializeAndDeserialize(const T& toSerialize, size_t& bytesWritten) {
-  // Serialize the request
-  CarbonQueueAppenderStorage storage;
-  CarbonProtocolWriter writer(storage);
-  toSerialize.serialize(writer);
-
+namespace detail {
+template <class Out>
+Out deserialize(CarbonQueueAppenderStorage& storage, size_t& bytesWritten) {
   // Fill the serialized data into an IOBuf
   folly::IOBuf buf(folly::IOBuf::CREATE, 2048);
   auto* curBuf = &buf;
@@ -64,6 +59,17 @@ Out serializeAndDeserialize(const T& toSerialize, size_t& bytesWritten) {
 
   return deserialized;
 }
+} // namespace detail
+
+template <class T, class Out>
+Out serializeAndDeserialize(const T& toSerialize, size_t& bytesWritten) {
+  // Serialize the request
+  CarbonQueueAppenderStorage storage;
+  CarbonProtocolWriter writer(storage);
+  toSerialize.serialize(writer);
+
+  return detail::deserialize<Out>(storage, bytesWritten);
+}
 
 template <class T, class Out>
 Out serializeAndDeserialize(const T& toSerialize) {
@@ -72,19 +78,16 @@ Out serializeAndDeserialize(const T& toSerialize) {
 }
 
 template <class T, class Out>
-Out serializeAndDeserializeCompact(const T& toSerialize) {
+Out serializeCarbonAndDeserializeCompactCompatibility(const T& toSerialize) {
   folly::IOBufQueue queue;
   CarbonWriter writer;
   writer.setOutput(&queue);
   toSerialize.serialize(writer);
-  auto buf = *queue.move();
+  CarbonQueueAppenderStorage storage;
+  storage.append(*queue.move());
 
-  // Deserialize the serialized data
-  Out deserialized;
-  CarbonProtocolReader reader{carbon::CarbonCursor(&buf)};
-  deserialized.deserialize(reader);
-
-  return deserialized;
+  size_t tmp;
+  return detail::deserialize<Out>(storage, tmp);
 }
 } // namespace util
 } // namespace test

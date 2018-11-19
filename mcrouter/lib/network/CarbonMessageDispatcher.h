@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -13,8 +13,10 @@
 #include "mcrouter/lib/carbon/CarbonProtocolReader.h"
 #include "mcrouter/lib/carbon/CarbonProtocolWriter.h"
 #include "mcrouter/lib/carbon/CarbonQueueAppender.h"
+#include "mcrouter/lib/carbon/CarbonWriter.h"
 #include "mcrouter/lib/carbon/RequestReplyUtil.h"
 #include "mcrouter/lib/network/CaretHeader.h"
+#include "mcrouter/lib/network/ConnectionOptions.h"
 #include "mcrouter/lib/network/TypedMsg.h"
 
 namespace facebook {
@@ -35,17 +37,31 @@ void serializeCarbonStruct(
   msg.serialize(writer);
 }
 
+template <class Message>
+void compactSerializeCarbonStruct(
+    const Message& msg,
+    carbon::CarbonQueueAppenderStorage& storage) {
+  folly::IOBufQueue queue;
+  carbon::CarbonWriter writer;
+  writer.setOutput(&queue);
+  msg.serialize(writer);
+  storage.append(*queue.move());
+}
+
 template <class Request>
 void serializeCarbonRequest(
     const Request& req,
-    carbon::CarbonQueueAppenderStorage& storage) {
+    carbon::CarbonQueueAppenderStorage& storage,
+    PayloadFormat payloadFormat) {
   if (!req.isBufferDirty()) {
     const auto& buf = *req.serializedBuffer();
     if (LIKELY(storage.setFullBuffer(buf))) {
       return;
     }
   }
-  serializeCarbonStruct(req, storage);
+  payloadFormat == PayloadFormat::CompactProtocolCompatibility
+      ? compactSerializeCarbonStruct(req, storage)
+      : serializeCarbonStruct(req, storage);
 }
 
 /**

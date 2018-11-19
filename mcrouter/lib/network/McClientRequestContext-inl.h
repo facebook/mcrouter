@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -48,8 +48,9 @@ McClientRequestContextBase::McClientRequestContextBase(
     McClientRequestContextQueue& queue,
     InitializerFuncPtr initializer,
     const std::function<void(int pendingDiff, int inflightDiff)>& onStateChange,
-    const CodecIdRange& supportedCodecs)
-    : reqContext(request, reqid, protocol, supportedCodecs),
+    const CodecIdRange& supportedCodecs,
+    PayloadFormat payloadFormat)
+    : reqContext(request, reqid, protocol, supportedCodecs, payloadFormat),
       id(reqid),
       queue_(queue),
       replyType_(typeid(ReplyT<Request>)),
@@ -117,7 +118,8 @@ McClientRequestContext<Request>::McClientRequestContext(
     McClientRequestContextQueue& queue,
     McClientRequestContextBase::InitializerFuncPtr func,
     const std::function<void(int pendingDiff, int inflightDiff)>& onStateChange,
-    const CodecIdRange& supportedCodecs)
+    const CodecIdRange& supportedCodecs,
+    PayloadFormat payloadFormat)
     : McClientRequestContextBase(
           request,
           reqid,
@@ -126,7 +128,8 @@ McClientRequestContext<Request>::McClientRequestContext(
           queue,
           std::move(func),
           onStateChange,
-          supportedCodecs),
+          supportedCodecs,
+          payloadFormat),
       requestTraceContext_(request.traceContext())
 #ifndef LIBMC_FBTRACE_DISABLE
       ,

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -48,7 +48,7 @@ template <class T, class Out = T>
 Out serializeAndDeserialize(const T&);
 
 template <class T, class Out = T>
-Out serializeAndDeserializeCompact(const T&);
+Out serializeCarbonAndDeserializeCompactCompatibility(const T&);
 
 template <class T, class Out = T>
 Out serializeAndDeserialize(const T&, size_t& bytesWritten);

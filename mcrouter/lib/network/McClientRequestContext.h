@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -98,7 +98,8 @@ class McClientRequestContextBase
       InitializerFuncPtr initializer,
       const std::function<void(int pendingDiff, int inflightDiff)>&
           onStateChange,
-      const CodecIdRange& supportedCodecs);
+      const CodecIdRange& supportedCodecs,
+      PayloadFormat payloadFormat);
 
   virtual void sendTraceOnReply() = 0;
 
@@ -187,7 +188,8 @@ class McClientRequestContext : public McClientRequestContextBase {
       McClientRequestContextBase::InitializerFuncPtr,
       const std::function<void(int pendingDiff, int inflightDiff)>&
           onStateChange,
-      const CodecIdRange& supportedCodecs);
+      const CodecIdRange& supportedCodecs,
+      PayloadFormat payloadFormat);
 
   std::string getContextTypeStr() const final;
 

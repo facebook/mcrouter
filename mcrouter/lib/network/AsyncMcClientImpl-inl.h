@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -41,7 +41,8 @@ ReplyT<Request> AsyncMcClientImpl::sendSync(
       queue_,
       [](ParserT& parser) { parser.expectNext<Request>(); },
       requestStatusCallbacks_.onStateChange,
-      supportedCompressionCodecs_);
+      supportedCompressionCodecs_,
+      connectionOptions_.payloadFormat);
   sendCommon(ctx);
 
   // Wait for the reply.

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -415,7 +415,8 @@ TEST(CarbonTest, serializeDeserializeCompact) {
   outRequest.testLongString() = longString();
   outRequest.testIobuf() =
       folly::IOBuf(folly::IOBuf::COPY_BUFFER, kShortString);
-  const auto inRequest = serializeAndDeserializeCompact(outRequest);
+  const auto inRequest =
+      serializeCarbonAndDeserializeCompactCompatibility(outRequest);
   expectEqTestCompactRequest(outRequest, inRequest);
 }
 
@@ -533,7 +534,8 @@ TEST(CarbonTest, veryLongStringCompact) {
 
   carbon::test::TestCompactRequest outRequest(longString());
   outRequest.testLongString() = std::move(veryLongString);
-  const auto inRequest = serializeAndDeserializeCompact(outRequest);
+  const auto inRequest =
+      serializeCarbonAndDeserializeCompactCompatibility(outRequest);
   expectEqTestCompactRequest(outRequest, inRequest);
   EXPECT_EQ(kVeryLongStringSize, inRequest.testLongString().length());
 }
@@ -546,7 +548,8 @@ TEST(CarbonTest, veryLongIobufCompact) {
 
   carbon::test::TestCompactRequest outRequest(longString());
   outRequest.testIobuf() = std::move(veryLongIobuf);
-  const auto inRequest = serializeAndDeserializeCompact(outRequest);
+  const auto inRequest =
+      serializeCarbonAndDeserializeCompactCompatibility(outRequest);
   expectEqTestCompactRequest(outRequest, inRequest);
   EXPECT_EQ(kVeryLongIobufSize, inRequest.testIobuf().length());
 }

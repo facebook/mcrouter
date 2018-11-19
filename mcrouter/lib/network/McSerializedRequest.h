@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -42,7 +42,8 @@ class McSerializedRequest {
       const Request& req,
       size_t reqId,
       mc_protocol_t protocol,
-      const CodecIdRange& supportedCodecs);
+      const CodecIdRange& supportedCodecs,
+      PayloadFormat payloadFormat = PayloadFormat::Carbon);
 
   ~McSerializedRequest();
 
@@ -82,7 +83,7 @@ class McSerializedRequest {
   Result result_{Result::OK};
   uint32_t typeId_{0};
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook
 
 #include "McSerializedRequest-inl.h"

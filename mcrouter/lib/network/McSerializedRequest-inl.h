@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -51,14 +51,15 @@ prepareUmbrella(
   return McSerializedRequest::Result::ERROR;
 }
 
-} // detail
+} // namespace detail
 
 template <class Request>
 McSerializedRequest::McSerializedRequest(
     const Request& req,
     size_t reqId,
     mc_protocol_t protocol,
-    const CodecIdRange& compressionCodecs)
+    const CodecIdRange& compressionCodecs,
+    PayloadFormat payloadFormat)
     : protocol_(protocol), typeId_(Request::typeId) {
   switch (protocol_) {
     case mc_ascii_protocol:
@@ -77,7 +78,12 @@ McSerializedRequest::McSerializedRequest(
         return;
       }
       if (!caretRequest_.prepare(
-              req, reqId, compressionCodecs, iovsBegin_, iovsCount_)) {
+              req,
+              reqId,
+              compressionCodecs,
+              iovsBegin_,
+              iovsCount_,
+              payloadFormat)) {
         result_ = Result::ERROR;
       }
       break;
@@ -99,5 +105,5 @@ McSerializedRequest::McSerializedRequest(
   }
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

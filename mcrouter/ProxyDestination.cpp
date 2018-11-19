@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -377,7 +377,9 @@ void ProxyDestination::initializeAsyncMcClient() {
   options.connectTimeout = shortestConnectTimeout_;
   options.writeTimeout = shortestWriteTimeout_;
   options.routerInfoName = routerInfoName_;
-  options.useCompactSerialization = opts.use_compact_serialization;
+  options.payloadFormat = opts.use_compact_serialization
+      ? PayloadFormat::CompactProtocolCompatibility
+      : PayloadFormat::Carbon;
   if (!opts.debug_fifo_root.empty()) {
     options.debugFifoPath = getClientDebugFifoFullPath(opts);
   }

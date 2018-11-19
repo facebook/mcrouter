@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -15,6 +15,7 @@
 #include "mcrouter/lib/Compression.h"
 #include "mcrouter/lib/CompressionCodecManager.h"
 #include "mcrouter/lib/carbon/CarbonQueueAppender.h"
+#include "mcrouter/lib/network/ConnectionOptions.h"
 #include "mcrouter/lib/network/ServerLoad.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
@@ -58,7 +59,8 @@ class CaretSerializedMessage {
       size_t reqId,
       const CodecIdRange& supportedCodecs,
       const struct iovec*& iovOut,
-      size_t& niovOut) noexcept;
+      size_t& niovOut,
+      PayloadFormat payloadFormat = PayloadFormat::Carbon) noexcept;
 
   /**
    * Prepare replies for serialization
@@ -112,7 +114,8 @@ class CaretSerializedMessage {
       std::pair<uint64_t, uint64_t> traceId,
       const CodecIdRange& supportedCodecs,
       const struct iovec*& iovOut,
-      size_t& niovOut);
+      size_t& niovOut,
+      PayloadFormat payloadFormat);
 
   template <class Reply>
   bool fill(

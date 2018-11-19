@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -37,7 +37,8 @@ bool CaretSerializedMessage::prepare(
     size_t reqId,
     const CodecIdRange& supportedCodecs,
     const struct iovec*& iovOut,
-    size_t& niovOut) noexcept {
+    size_t& niovOut,
+    PayloadFormat payloadFormat) noexcept {
   return fill(
       req,
       reqId,
@@ -45,7 +46,8 @@ bool CaretSerializedMessage::prepare(
       detail::getRequestTraceId(req),
       supportedCodecs,
       iovOut,
-      niovOut);
+      niovOut,
+      payloadFormat);
 }
 
 template <class Reply>
@@ -77,10 +79,11 @@ bool CaretSerializedMessage::fill(
     std::pair<uint64_t, uint64_t> traceId,
     const CodecIdRange& supportedCodecs,
     const struct iovec*& iovOut,
-    size_t& niovOut) {
+    size_t& niovOut,
+    PayloadFormat payloadFormat) {
   // Serialize body into storage_. Note we must defer serialization of header.
   try {
-    serializeCarbonRequest(message, storage_);
+    serializeCarbonRequest(message, storage_, payloadFormat);
   } catch (const std::exception& e) {
     LOG(ERROR) << "Failed to serialize: " << e.what();
     return false;
