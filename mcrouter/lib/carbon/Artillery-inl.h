@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2018-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -18,57 +18,32 @@ namespace tracing {
 
 #ifdef LIBMC_FBTRACE_DISABLE
 
-template <class Request>
-std::pair<uint64_t, uint64_t> sendingRequest(const Request&) {
+inline std::pair<uint64_t, uint64_t> serializeTraceContext(
+    const std::string& traceContext) {
   return {0, 0};
 }
 
-inline std::string getReplyTraceContext(std::pair<uint64_t, uint64_t>) {
+inline std::string deserializeTraceContext(
+    std::pair<uint64_t, uint64_t> serializedTraceId) {
   return "";
-}
-
-template <class Reply>
-void replyReceived(const std::string&, const Reply&) {}
-
-template <class Reply>
-std::pair<uint64_t, uint64_t> sendingReply(const Reply&) {
-  return {0, 0};
 }
 
 #else
 
-template <class Request>
-std::pair<uint64_t, uint64_t> sendingRequest(const Request& request) {
-  if (!request.traceContext().empty()) {
-    auto newContext = sendingRequestInternal(
-        request.traceContext(), Request::name, carbon::getFullKey(request));
-    return serializeTraceContext(newContext);
+inline std::pair<uint64_t, uint64_t> serializeTraceContext(
+    const std::string& traceContext) {
+  if (!traceContext.empty()) {
+    return serializeTraceContextInternal(traceContext);
   }
   return {0, 0};
 }
 
-inline std::string getReplyTraceContext(
+inline std::string deserializeTraceContext(
     std::pair<uint64_t, uint64_t> serializedTraceId) {
-  if (serializedTraceId.first == 0 && serializedTraceId.second == 0) {
-    return "";
+  if (serializedTraceId.first != 0 || serializedTraceId.second != 0) {
+    return deserializeTraceContextInternal(serializedTraceId);
   }
-  return deserializeTraceContext(serializedTraceId);
-}
-
-template <class Reply>
-void replyReceived(const std::string& requestTraceContext, const Reply& reply) {
-  if (!requestTraceContext.empty() && !reply.traceContext().empty()) {
-    receivedReplyInternal(
-        requestTraceContext, reply.traceContext(), reply.result());
-  }
-}
-
-template <class Reply>
-std::pair<uint64_t, uint64_t> sendingReply(const Reply& reply) {
-  if (!reply.traceContext().empty()) {
-    return serializeTraceContext(reply.traceContext());
-  }
-  return {0, 0};
+  return "";
 }
 
 #endif

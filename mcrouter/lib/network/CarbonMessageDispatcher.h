@@ -10,6 +10,7 @@
 #include <folly/io/Cursor.h>
 #include <folly/io/IOBuf.h>
 
+#include "mcrouter/lib/carbon/Artillery.h"
 #include "mcrouter/lib/carbon/CarbonProtocolReader.h"
 #include "mcrouter/lib/carbon/CarbonProtocolWriter.h"
 #include "mcrouter/lib/carbon/CarbonQueueAppender.h"
@@ -129,7 +130,13 @@ class CarbonMessageDispatcher {
     cur += headerInfo.headerSize;
     carbon::CarbonProtocolReader reader(cur);
     M req;
+
+    // set both traceId and traceContext, as there's no way of knowing which
+    // one we are using at this point.
     req.setTraceId(headerInfo.traceId);
+    req.setTraceContext(
+        carbon::tracing::deserializeTraceContext(headerInfo.traceId));
+
     req.deserialize(reader);
     static_cast<Proc&>(me).onTypedMessage(
         headerInfo, reqBuf, std::move(req), std::forward<Args>(args)...);

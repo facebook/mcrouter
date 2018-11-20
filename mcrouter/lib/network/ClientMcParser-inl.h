@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -146,7 +146,7 @@ void ClientMcParser<Callback>::forwardCaretReply(
   carbon::CarbonProtocolReader reader(cur);
   reply.deserialize(reader);
   reply.setTraceContext(
-      carbon::tracing::getReplyTraceContext(headerInfo.traceId));
+      carbon::tracing::deserializeTraceContext(headerInfo.traceId));
 
   callback_.replyReady(std::move(reply), reqId, getReplyStats(headerInfo));
 }

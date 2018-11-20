@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -69,9 +69,6 @@ class RequestCommon : public MessageCommon {
       return;
     }
 
-    // if using the old fbtrace api, remove tracing context.
-    setTraceContext("");
-
     auto traceInfo = McFbtraceRef::moveRef(new_mc_fbtrace_info(0));
     if (!traceInfo.get() ||
         fbtrace_encode(traceId.first, traceInfo->metadata) != 0 ||
@@ -92,8 +89,6 @@ class RequestCommon : public MessageCommon {
    * Note: will not incref info, it's up to the caller.
    */
   void setFbtraceInfo(mc_fbtrace_info_s* carbonFbtraceInfo) {
-    // if using the old fbtrace api, remove tracing context.
-    setTraceContext("");
     fbtraceInfo_ = McFbtraceRef::moveRef(carbonFbtraceInfo);
   }
 #endif
