@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -136,6 +136,20 @@ inline bool isLocalErrorResult(const mc_res_t result) {
 }
 
 /**
+ * Was there some client-side issue? Invalid request, bad client, etc?
+ */
+inline bool isClientErrorResult(const mc_res_t result) {
+  return result == mc_res_client_error;
+}
+
+/**
+ * Was there some problem with the remote server?
+ */
+inline bool isRemoteErrorResult(const mc_res_t result) {
+  return result == mc_res_remote_error;
+}
+
+/**
  * Was the connection attempt refused?
  */
 inline bool isConnectErrorResult(const mc_res_t result) {
@@ -198,5 +212,5 @@ inline bool isStoredResult(const mc_res_t result) {
 inline bool worseThan(mc_res_t first, mc_res_t second) {
   return resultSeverity(first) > resultSeverity(second);
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook
