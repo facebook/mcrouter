@@ -31,6 +31,8 @@ mcpiper_SOURCES = \
 
 mcpiper_LDADD = \
 	$(top_srcdir)/lib/libmcrouter.a \
+	-lprotocol \
+	-lthriftprotocol \
 	-lfolly
 
 mcpiper_CPPFLAGS = -I$(top_srcdir)/..

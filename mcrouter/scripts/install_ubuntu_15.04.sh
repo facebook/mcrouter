@@ -21,6 +21,7 @@ sudo apt-get install -y \
     libgflags-dev \
     libgoogle-glog-dev \
     libjemalloc-dev \
+    libmstch-dev \
     libsodium-dev \
     libssl-dev \
     libtool \
