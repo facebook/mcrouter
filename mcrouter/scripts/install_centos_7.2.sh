@@ -27,7 +27,6 @@ sudo yum install -y \
     jemalloc-devel \
     libtool \
     libevent-devel \
-    libmstch-dev \
     make \
     openssl-devel \
     python-devel \

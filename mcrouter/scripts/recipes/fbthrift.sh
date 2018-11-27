@@ -14,8 +14,28 @@ if [[ ! -d "$PKG_DIR/fbthrift" ]]; then
   fi
 fi
 
+if [ ! -d "$PKG_DIR/mstch" ]; then
+  cd "$PKG_DIR" || die "cd fail"
+  git clone https://github.com/no1msd/mstch
+
+  cd "$PKG_DIR/mstch" || die "cd fail"
+
+  cmake -DBUILD_SHARED_LIBS=ON -DCMAKE_CXX_FLAGS="-fPIC" .
+  make $MAKE_ARGS && make install $MAKE_ARGS
+fi
+
+if [ ! -d "$PKG_DIR/zstd" ]; then
+  cd "$PKG_DIR" || die "cd fail"
+  git clone https://github.com/facebook/zstd
+
+  cd "$PKG_DIR/zstd" || die "cd fail"
+
+  cmake build/cmake/
+  make $MAKE_ARGS && make install $MAKE_ARGS
+fi
+
 cd "$PKG_DIR/fbthrift/thrift" || die "cd fbthrift failed"
 
 CXXFLAGS="$CXXFLAGS -fPIC" \
-cmake .. -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" -DCMAKE_INSTALL_PREFIX="$LEGO_DIR"
-make "$MAKE_ARGS" && make install "$MAKE_ARGS"
+cmake .. -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR"
+make $MAKE_ARGS && make install $MAKE_ARGS
