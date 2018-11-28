@@ -20,7 +20,7 @@ if [ ! -d "$PKG_DIR/mstch" ]; then
 
   cd "$PKG_DIR/mstch" || die "cd fail"
 
-  cmake -DBUILD_SHARED_LIBS=ON -DCMAKE_CXX_FLAGS="-fPIC" .
+  cmake -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" -DBUILD_SHARED_LIBS=ON -DCMAKE_CXX_FLAGS="-fPIC" .
   make $MAKE_ARGS && make install $MAKE_ARGS
 fi
 
@@ -30,7 +30,7 @@ if [ ! -d "$PKG_DIR/zstd" ]; then
 
   cd "$PKG_DIR/zstd" || die "cd fail"
 
-  cmake build/cmake/
+  cmake -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" build/cmake/
   make $MAKE_ARGS && make install $MAKE_ARGS
 fi
 
