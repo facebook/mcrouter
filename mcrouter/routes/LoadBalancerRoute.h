@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2017-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -250,13 +249,13 @@ class LoadBalancerRoute {
       folly::StringPiece salt) const {
     size_t n = 0;
     if (salt.empty()) {
-      n = weightedCh3Hash(req.key().routingKey(), weights);
+      n = WeightedCh3HashFunc::hash(req.key().routingKey(), weights);
     } else {
       n = hashWithSalt(
           req.key().routingKey(),
           salt,
           [&weights](const folly::StringPiece sp) {
-            return weightedCh3Hash(sp, weights);
+            return WeightedCh3HashFunc::hash(sp, weights);
           });
     }
     if (UNLIKELY(n >= children_.size())) {

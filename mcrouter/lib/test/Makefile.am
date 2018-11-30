@@ -14,6 +14,7 @@ mcrouter_lib_test_SOURCES = \
   RendezvousHashTest.cpp \
   RouteHandleTest.cpp \
   WeightedCh3HashFuncTest.cpp \
+  WeightedCh4HashFuncTest.cpp \
   WeightedRendezvousHashTest.cpp
 
 mcrouter_lib_test_CPPFLAGS = \

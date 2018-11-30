@@ -48,6 +48,10 @@ libmcrouter_a_SOURCES = \
   StatsReply.h \
   WeightedCh3HashFunc.cpp \
   WeightedCh3HashFunc.h \
+  WeightedCh4HashFunc.cpp \
+  WeightedCh4HashFunc.h \
+  WeightedChHashFuncBase.cpp \
+  WeightedChHashFuncBase.h \
   WeightedRendezvousHashFunc.cpp \
   WeightedRendezvousHashFunc.h \
   ZstdCompressionCodec.cpp \

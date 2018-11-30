@@ -12,22 +12,16 @@ namespace facebook {
 namespace memcache {
 
 /**
- * A weighted CH3 hash function.
+ * A weighted CH4 hash function.
  *
  * Each server is assigned a weight between 0.0 and 1.0 inclusive.
- * The algorithm:
+ * Unlike WeightedCh3HashFunc, this hashing function calls the new
+ * weightedFurcHash with the provided weights, so there is no need to handle
+ * the weight filtering in this level. This way, we save the computation of two
+ * different hashes (furc + spooky), and we don't do retries with key variations
+ * like in WeightedCh3Func.
  *
- *   Try retryCount times:
- *     index = CH3(key + next_salt(), n)
- *     probability = SpookyHashV2_uint32(key)
- *     if (probability < server_weight[index] * uint32_max):
- *       return index
- *   return index
- *
- * Where next_salt() initially returns an empty string, and subsequently
- * distinct salt strings.
- * (the actual salts used are strings "0", "1", ..., "9", "01", "11", "21",
- *  i.e. reversed decimal representations of an increasing counter).
+ * NOTES BELOW ARE COPIED FROM WeightedCh3HashFunc, ALSO APPLY HERE:
  *
  * Note that if all weights are 1.0, the algorithm returns the same indices
  * as simply CH3(key, n).
@@ -51,13 +45,13 @@ namespace memcache {
  * retries to bring the chances of failure below 1%.
  */
 
-class WeightedCh3HashFunc : public WeightedChHashFuncBase {
+class WeightedCh4HashFunc : public WeightedChHashFuncBase {
  public:
   /**
    * @param weights  A list of server weights.
    *                 Pool size is taken to be weights.size()
    */
-  explicit WeightedCh3HashFunc(std::vector<double> weights)
+  explicit WeightedCh4HashFunc(std::vector<double> weights)
       : WeightedChHashFuncBase(std::move(weights)) {}
 
   /**
@@ -67,7 +61,7 @@ class WeightedCh3HashFunc : public WeightedChHashFuncBase {
    *              }
    * @param n     Number of servers in the config.
    */
-  WeightedCh3HashFunc(const folly::dynamic& json, size_t n)
+  WeightedCh4HashFunc(const folly::dynamic& json, size_t n)
       : WeightedChHashFuncBase(json, n) {}
 
   size_t operator()(folly::StringPiece key) const {
@@ -75,9 +69,10 @@ class WeightedCh3HashFunc : public WeightedChHashFuncBase {
   }
 
   static const char* type() {
-    return "WeightedCh3";
+    return "WeightedCh4";
   }
 
+ private:
   static size_t hash(
       folly::StringPiece key,
       folly::Range<const double*> weights,

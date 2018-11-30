@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -45,7 +44,8 @@ std::vector<std::shared_ptr<RouteHandleIf>> getTargets(
     hashKey = folly::Hash()(hashKey, salt);
   }
   for (size_t i = 0; i < failoverCount; ++i) {
-    auto id = weightedCh3Hash(folly::to<std::string>(hashKey), weights);
+    auto id =
+        WeightedCh3HashFunc::hash(folly::to<std::string>(hashKey), weights);
     failovers.push_back(std::move(targets[id]));
     std::swap(targets[id], targets.back());
     targets.pop_back();
@@ -133,7 +133,7 @@ typename RouterInfo::RouteHandlePtr createLatestRoute(
   if (!json.isObject() || !json.count("weights")) {
     weights.resize(targets.size(), 1.0);
   } else {
-    weights = ch3wParseWeights(json, targets.size());
+    weights = WeightedCh3HashFunc::parseWeights(json, targets.size());
   }
 
   return createLatestRoute<RouterInfo>(
