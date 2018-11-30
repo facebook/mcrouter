@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <sys/time.h>
 
@@ -11,6 +10,7 @@
 
 #include <gtest/gtest.h>
 
+#include "mcrouter/lib/fbi/WeightedFurcHash.h"
 #include "mcrouter/lib/fbi/hash.h"
 
 #define MAX_KEY_LENGTH 249
@@ -127,6 +127,8 @@ TEST(ch3, verify_correctness) {
   std::vector<uint64_t> pools[NUM_POOLS];
   uint32_t sizes[NUM_POOLS];
   size_t num_pools;
+  auto weights = std::make_unique<std::array<double, 1U << 23U>>();
+  weights->fill(1.0);
 
   srand(time(nullptr));
 
@@ -163,6 +165,15 @@ TEST(ch3, verify_correctness) {
     for (j = 0; j < num_pools; ++j) {
       size_t num = furc_hash(key, len, sizes[j]);
       EXPECT_LT(num, sizes[j]);
+
+      // Verify that the weighted furc yields identical result with weights at 1
+      assert(sizes[j] <= weights->size());
+      folly::Range<const double*> weightRange(
+          weights->cbegin(), weights->cbegin() + sizes[j]);
+      size_t weighted = facebook::mcrouter::weightedFurcHash(
+          folly::StringPiece(key, len), weightRange);
+      EXPECT_EQ(num, weighted);
+
       ++pools[j][num];
 
       // make sure that this key either hashes the same server,
@@ -276,4 +287,51 @@ TEST(ch3, timing) {
       "Lookup:\t\t\t%zdus total\t%0.3fus/query\n",
       (end - start),
       ((float)(end - start)) / NUM_LOOKUPS);
+}
+
+TEST(ch3, weighted_furc_hash_all_one) {
+  char key[MAX_KEY_LENGTH + 1];
+  int len;
+  srand(12345);
+  std::array<double, 1000> weights;
+  weights.fill(1.0);
+
+  for (uint32_t size = 1; size <= 1000; ++size) {
+    make_random_key(key, MAX_KEY_LENGTH);
+    len = strlen(key);
+    size_t classic = furc_hash(key, len, size);
+    EXPECT_LT(classic, size);
+    folly::Range<const double*> weightRange(
+        weights.cbegin(), weights.cbegin() + size);
+    size_t weighted = facebook::mcrouter::weightedFurcHash(
+        folly::StringPiece(key, len), weightRange);
+    EXPECT_EQ(classic, weighted);
+  }
+}
+
+TEST(ch3, weighted_furc_hash_all_75pct) {
+  char key[MAX_KEY_LENGTH + 1];
+  int len;
+  srand(1234567);
+  auto weights = std::make_unique<std::array<double, 10000>>();
+  weights->fill(0.75);
+
+  size_t sameCount = 0;
+  for (uint32_t size = 5000; size <= 10000; ++size) {
+    make_random_key(key, MAX_KEY_LENGTH);
+    len = strlen(key);
+    size_t classic = furc_hash(key, len, size);
+    EXPECT_LT(classic, size);
+    folly::Range<const double*> weightRange(
+        weights->cbegin(), weights->cbegin() + size);
+    size_t weighted = facebook::mcrouter::weightedFurcHash(
+        folly::StringPiece(key, len), weightRange);
+    EXPECT_LT(weighted, size);
+    if (classic == weighted) {
+      sameCount++;
+    }
+  }
+  // Empirically for the seed, it's 3723, which is roughly 75% of 5000, as
+  // expected.
+  EXPECT_EQ(3723, sameCount);
 }

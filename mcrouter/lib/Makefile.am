@@ -108,6 +108,8 @@ libmcrouter_a_SOURCES = \
   fbi/cpp/util.cpp \
   fbi/cpp/util.h \
   fbi/decls.h \
+  fbi/WeightedFurcHash.cpp \
+  fbi/WeightedFurcHash.h \
   fbi/hash.c \
   fbi/hash.h \
   fbi/network.c \
