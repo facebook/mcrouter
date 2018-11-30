@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -638,6 +638,8 @@ void McServerSession::handshakeErr(
 
 void McServerSession::fizzHandshakeSuccess(
     fizz::server::AsyncFizzServer* transport) noexcept {
+  DestructorGuard dg(this);
+
   auto cert = transport->getPeerCert();
   if (cert == nullptr) {
     onAccepted();
@@ -680,12 +682,18 @@ void McServerSession::fizzHandshakeAttemptFallback(
   sslSocket->setPreReceivedData(std::move(clientHello));
   sslSocket->enableClientHelloParsing();
   sslSocket->forceCacheAddrOnFailure(true);
-  sslSocket->sslAccept(this);
 
-  debugFifo_ =
-      getDebugFifo(options_.debugFifoPath, sslSocket.get(), onRequest_->name());
-
+  // We need to reset the transport before calling sslAccept(). The reason is
+  // that sslAccept() may call some callbacks inline (e.g. handshakeSuc()) that
+  // may need to see the actual transport_.
   transport_.reset(sslSocket.release());
+  auto underlyingSslSocket =
+      transport_->getUnderlyingTransport<folly::AsyncSSLSocket>();
+  DCHECK(underlyingSslSocket) << "Underlying socket should be AsyncSSLSocket";
+  underlyingSslSocket->sslAccept(this);
+
+  debugFifo_ = getDebugFifo(
+      options_.debugFifoPath, transport_.get(), onRequest_->name());
 }
 
 void McServerSession::onAccepted() {

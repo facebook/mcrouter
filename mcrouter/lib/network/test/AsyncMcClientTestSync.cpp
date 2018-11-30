@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -118,6 +118,23 @@ TEST_P(AsyncMcClientSimpleTest, umbrellaTimeout) {
       200,
       mc_umbrella_protocol_DONOTUSE,
       ssl);
+  client.sendGet("nohold1", mc_res_found);
+  client.sendGet("hold", mc_res_timeout);
+  client.sendGet("nohold2", mc_res_found);
+  client.waitForReplies();
+  client.sendGet("shutdown", mc_res_notfound);
+  client.waitForReplies();
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
+}
+
+TEST_P(AsyncMcClientSimpleTest, caretTimeout) {
+  auto ssl = GetParam();
+  TestServer::Config config;
+  config.useSsl = ssl.hasValue();
+  auto server = TestServer::create(std::move(config));
+  TestClient client(
+      "localhost", server->getListenPort(), 200, mc_caret_protocol, ssl);
   client.sendGet("nohold1", mc_res_found);
   client.sendGet("hold", mc_res_timeout);
   client.sendGet("nohold2", mc_res_found);
