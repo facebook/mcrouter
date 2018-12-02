@@ -221,6 +221,7 @@ class SSLTicketCache
 folly::LeakySingleton<SSLTicketCache> ticketCache([] {
   // create cache layer of max size 100;
   auto cacheLayer = std::make_shared<TicketCacheLayer>(100);
+  cacheLayer->init();
   return new SSLTicketCache(std::move(cacheLayer));
 });
 
