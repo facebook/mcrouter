@@ -34,6 +34,7 @@ void TestCompactRequest::serialize(Writer&& writer) const {
   writer.writeField(13 /* field id */, testShortString());
   writer.writeField(14 /* field id */, testLongString());
   writer.writeField(15 /* field id */, testIobuf());
+  writer.writeField(16 /* field id */, testList());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
@@ -85,6 +86,9 @@ void TestCompactRequest::visitFields(V&& v) {
   if (!v.visitField(15, "testIobuf", testIobuf_)) {
     return;
   }
+  if (!v.visitField(16, "testList", testList_)) {
+    return;
+  }
 }
 
 template <class V>
@@ -132,6 +136,9 @@ void TestCompactRequest::visitFields(V&& v) const {
     return;
   }
   if (!v.visitField(15, "testIobuf", testIobuf_)) {
+    return;
+  }
+  if (!v.visitField(16, "testList", testList_)) {
     return;
   }
 }

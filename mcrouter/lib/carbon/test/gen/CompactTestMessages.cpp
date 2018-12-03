@@ -105,6 +105,10 @@ void TestCompactRequest::deserialize(carbon::CarbonProtocolReader& reader) {
         reader.readField(testIobuf(), fieldType);
         break;
       }
+      case 16: {
+        reader.readField(testList(), fieldType);
+        break;
+      }
       default: {
         reader.skip(fieldType);
         break;

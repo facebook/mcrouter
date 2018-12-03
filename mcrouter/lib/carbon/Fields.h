@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -11,6 +10,7 @@
 #include <vector>
 
 #include <folly/Traits.h>
+#include <thrift/lib/cpp/protocol/TType.h>
 
 #include "mcrouter/lib/carbon/SerializationTraits.h"
 
@@ -135,9 +135,31 @@ struct IsLinearContainer {
 };
 
 template <class T>
+struct IsSet {
+  static constexpr bool value = IsOfTraitFieldType<T, FieldType::Set>::value;
+};
+
+template <class T>
 struct IsKVContainer {
   static constexpr bool value = IsOfTraitFieldType<T, FieldType::Map>::value;
 };
+
+using namespace apache::thrift::protocol;
+
+constexpr TType CarbonToThriftFields[14] = {TType::T_STOP,
+                                            TType::T_BOOL,
+                                            TType::T_BOOL,
+                                            TType::T_I08,
+                                            TType::T_I16,
+                                            TType::T_I32,
+                                            TType::T_I64,
+                                            TType::T_DOUBLE,
+                                            TType::T_STRING,
+                                            TType::T_LIST,
+                                            TType::T_SET,
+                                            TType::T_MAP,
+                                            TType::T_STRUCT,
+                                            TType::T_FLOAT};
 
 template <class T, class Enable = void>
 struct TypeToField {};
@@ -187,6 +209,7 @@ struct TypeToField<
     typename std::enable_if<
         folly::IsOneOf<T, int64_t, uint64_t>::value>::type> {
   static constexpr FieldType fieldType{FieldType::Int64};
+  static constexpr TType thriftFieldType{TType::T_I64};
 };
 
 template <class T>

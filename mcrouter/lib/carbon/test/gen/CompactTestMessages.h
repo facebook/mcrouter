@@ -169,6 +169,13 @@ class TestCompactRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return testIobuf_;
   }
+  const std::vector<std::string>& testList() const {
+    return testList_;
+  }
+  std::vector<std::string>& testList() {
+    markBufferAsDirty();
+    return testList_;
+  }
   uint64_t flags() const {
     return 0;
   }
@@ -194,6 +201,7 @@ class TestCompactRequest : public carbon::RequestCommon {
   std::string testShortString_;
   std::string testLongString_;
   folly::IOBuf testIobuf_;
+  std::vector<std::string> testList_;
   int32_t testInt32_{0};
   uint32_t testUInt32_{0};
   int16_t testInt16_{0};

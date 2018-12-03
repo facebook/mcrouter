@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -180,8 +179,38 @@ class CarbonWriter {
   }
 
   template <class T>
+  void writeField(const int16_t id, const std::vector<T>& vec) {
+    if (!vec.empty()) {
+      writeFieldAlways(id, vec);
+    }
+  }
+
+  template <class T>
+  void writeFieldAlways(const int16_t id, const std::vector<T>& vec) {
+    writer_.writeFieldBegin("", apache::thrift::protocol::T_LIST, id);
+    writeRaw(vec);
+  }
+
+  template <class T>
+  typename std::enable_if<std::is_enum<T>::value, void>::type writeRaw(
+      const T e) {
+    using UnderlyingType = typename std::underlying_type<T>::type;
+    writeRaw(static_cast<UnderlyingType>(e));
+  }
+
+  template <class T>
+  void writeRaw(const std::vector<T>& vec) {
+    auto index = detail::TypeToField<T>::fieldType;
+    writer_.writeListBegin(
+        detail::CarbonToThriftFields[static_cast<uint8_t>(index)], vec.size());
+    for (auto const& elem : vec) {
+      writeRaw(elem);
+    }
+  }
+
+  template <class T>
   typename std::enable_if<
-      (detail::IsLinearContainer<T>::value || detail::IsKVContainer<T>::value ||
+      (detail::IsSet<T>::value || detail::IsKVContainer<T>::value ||
        detail::IsUserReadWriteDefined<T>::value || IsCarbonStruct<T>::value ||
        folly::IsOneOf<T, double, float>::value) &&
           (!folly::IsOneOf<T, folly::IOBuf, std::string>::value),
@@ -193,7 +222,7 @@ class CarbonWriter {
 
   template <class T>
   typename std::enable_if<
-      (detail::IsLinearContainer<T>::value || detail::IsKVContainer<T>::value ||
+      (detail::IsSet<T>::value || detail::IsKVContainer<T>::value ||
        detail::IsUserReadWriteDefined<T>::value || IsCarbonStruct<T>::value ||
        folly::IsOneOf<T, double, float>::value) &&
           (!folly::IsOneOf<T, folly::IOBuf, std::string>::value),
@@ -205,7 +234,7 @@ class CarbonWriter {
 
   template <class T>
   typename std::enable_if<
-      detail::IsLinearContainer<T>::value || detail::IsKVContainer<T>::value ||
+      detail::IsSet<T>::value || detail::IsKVContainer<T>::value ||
           detail::IsUserReadWriteDefined<T>::value ||
           IsCarbonStruct<T>::value || folly::IsOneOf<T, double, float>::value,
       void>::type

@@ -27,6 +27,7 @@ request TestCompactRequest {
   13: std::string testShortString;
   14: std::string testLongString;
   15: folly::IOBuf testIobuf;
+  16: std::vector<std::string> testList;
   };
 
 reply TestCompactReply {
