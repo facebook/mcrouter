@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "ProxyDestination.h"
 
@@ -417,7 +416,7 @@ void ProxyDestination::initializeAsyncMcClient() {
   client_->setFlushList(&proxy.flushList());
 
   client_->setRequestStatusCallbacks(
-      [this](int pending, int inflight) {
+      [this](int pending, int inflight) { // onStateChange
         if (pending != 0) {
           proxy.stats().increment(destination_pending_reqs_stat, pending);
           proxy.stats().setValue(
@@ -435,9 +434,13 @@ void ProxyDestination::initializeAsyncMcClient() {
                   proxy.stats().getValue(destination_inflight_reqs_stat)));
         }
       },
-      [this](size_t numToSend) {
+      [this](size_t numToSend) { // onWrite
+        proxy.stats().increment(num_socket_writes_stat);
         proxy.stats().increment(destination_batches_sum_stat);
         proxy.stats().increment(destination_requests_sum_stat, numToSend);
+      },
+      [this]() { // onPartialWrite
+        proxy.stats().increment(num_socket_partial_writes_stat);
       });
 
   client_->setStatusCallbacks(

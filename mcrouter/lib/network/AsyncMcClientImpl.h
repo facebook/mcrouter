@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -37,7 +36,8 @@ namespace memcache {
 class AsyncMcClientImpl : public folly::DelayedDestruction,
                           private folly::AsyncSocket::ConnectCallback,
                           private folly::AsyncTransportWrapper::ReadCallback,
-                          private folly::AsyncTransportWrapper::WriteCallback {
+                          private folly::AsyncTransportWrapper::WriteCallback,
+                          private folly::AsyncTransport::BufferCallback {
  public:
   enum class ConnectionDownReason {
     ERROR,
@@ -67,7 +67,8 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
 
   void setRequestStatusCallbacks(
       std::function<void(int pendingDiff, int inflightDiff)> onStateChange,
-      std::function<void(int numToSend)> onWrite);
+      std::function<void(size_t numToSend)> onWrite,
+      std::function<void()> onPartialWrite);
 
   template <class Request>
   ReplyT<Request> sendSync(
@@ -117,6 +118,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   struct RequestStatusCallbacks {
     std::function<void(int pendingDiff, int inflightDiff)> onStateChange;
     std::function<void(size_t numToSend)> onWrite;
+    std::function<void()> onPartialWrite;
   };
 
   folly::EventBase& eventBase_;
@@ -220,6 +222,10 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   void writeErr(
       size_t bytesWritten,
       const folly::AsyncSocketException& ex) noexcept final;
+
+  // AsyncTransport::BufferCallback overrides
+  void onEgressBuffered() override final;
+  void onEgressBufferCleared() override final;
 
   int64_t getNumConnectRetries() noexcept;
 

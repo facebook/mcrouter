@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 namespace facebook {
 namespace memcache {
@@ -30,9 +29,10 @@ inline void AsyncMcClient::setStatusCallbacks(
 
 inline void AsyncMcClient::setRequestStatusCallbacks(
     std::function<void(int pendingDiff, int inflightDiff)> onStateChange,
-    std::function<void(int numToSend)> onWrite) {
+    std::function<void(size_t numToSend)> onWrite,
+    std::function<void()> onPartialWrite) {
   base_->setRequestStatusCallbacks(
-      std::move(onStateChange), std::move(onWrite));
+      std::move(onStateChange), std::move(onWrite), std::move(onPartialWrite));
 }
 
 template <class Request>

@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -78,14 +77,19 @@ class AsyncMcClient {
    *                        pendingDiff and inflightDiff will hold the
    *                        difference in the number of pending and inflight
    *                        requests, respectively.
-   * @param onWrite           Will be called everytime AsyncMcClient is about to
-   *                          write data to network. The numToSend argument
-   *                          holds the number of requests that will be sent in
-   *                          a single batch.
+   * @param onWrite         Will be called everytime AsyncMcClient is about to
+   *                        write data to network. The numToSend argument
+   *                        holds the number of requests that will be sent in
+   *                        a single batch.
+   * @param onPartialWrite  Will be called everytime a partial write happened.
+   *                        This means we would block when performing the full
+   *                        write, so we buffered some data to try again when
+   *                        the transport becomes ready to be written to again.
    */
   void setRequestStatusCallbacks(
       std::function<void(int pendingDiff, int inflightDiff)> onStateChange,
-      std::function<void(int numToSend)> onWrite);
+      std::function<void(size_t numToSend)> onWrite,
+      std::function<void()> onPartialWrite);
 
   /**
    * Send request synchronously (i.e. blocking call).

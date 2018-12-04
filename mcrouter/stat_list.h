@@ -251,10 +251,16 @@ STUI(destination_max_inflight_reqs, 0, 1)
 STUI(redirected_lease_set_count, 0, 1)
 #undef GROUP
 #define GROUP ods_stats | detailed_stats | rate_stats
-STUIR(replies_compressed, 0, 1)
-STUIR(replies_not_compressed, 0, 1)
+// This is the total number of times we called write to a socket.
+STUIR(num_socket_writes, 0, 1)
+// This is the number of times we couldn't complete a full write.
+// Note: this can be larger than num_socket_writes. E.g. if we called write
+// on a huge buffer, we would partially write it many times.
+STUIR(num_socket_partial_writes, 0, 1)
 #undef GROUP
 #define GROUP detailed_stats | rate_stats
+STUIR(replies_compressed, 0, 1)
+STUIR(replies_not_compressed, 0, 1)
 STUIR(reply_traffic_before_compression, 0, 1)
 STUIR(reply_traffic_after_compression, 0, 1)
 #undef GROUP

@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "AsyncMcClientImpl.h"
 
@@ -150,11 +149,12 @@ void AsyncMcClientImpl::setStatusCallbacks(
 
 void AsyncMcClientImpl::setRequestStatusCallbacks(
     std::function<void(int pendingDiff, int inflightDiff)> onStateChange,
-    std::function<void(int numToSend)> onWrite) {
+    std::function<void(size_t numToSend)> onWrite,
+    std::function<void()> onPartialWrite) {
   DestructorGuard dg(this);
 
-  requestStatusCallbacks_ =
-      RequestStatusCallbacks{std::move(onStateChange), std::move(onWrite)};
+  requestStatusCallbacks_ = RequestStatusCallbacks{
+      std::move(onStateChange), std::move(onWrite), std::move(onPartialWrite)};
 }
 
 AsyncMcClientImpl::~AsyncMcClientImpl() {
@@ -891,6 +891,14 @@ void AsyncMcClientImpl::writeErr(
 
   processShutdown(errorMessage);
 }
+
+void AsyncMcClientImpl::onEgressBuffered() {
+  if (requestStatusCallbacks_.onPartialWrite) {
+    requestStatusCallbacks_.onPartialWrite();
+  }
+}
+
+void AsyncMcClientImpl::onEgressBufferCleared() {}
 
 folly::StringPiece AsyncMcClientImpl::clientStateToStr() const {
   switch (connectionState_) {
