@@ -91,14 +91,6 @@ void McGetReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
 constexpr const char* const McGatRequest::name;
 
-void McGatRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, exptime());
-  writer.writeField(2 /* field id */, key());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
-}
-
 void McGatRequest::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructBegin();
   while (true) {
@@ -126,17 +118,6 @@ void McGatRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
   }
   reader.readStructEnd();
-}
-
-void McGatReply::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, value());
-  writer.writeField(3 /* field id */, flags());
-  writer.writeField(4 /* field id */, message());
-  writer.writeField(5 /* field id */, appSpecificErrorCode());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
 }
 
 void McGatReply::deserialize(carbon::CarbonProtocolReader& reader) {
@@ -182,14 +163,6 @@ void McGatReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
 constexpr const char* const McGatsRequest::name;
 
-void McGatsRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, exptime());
-  writer.writeField(2 /* field id */, key());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
-}
-
 void McGatsRequest::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructBegin();
   while (true) {
@@ -217,18 +190,6 @@ void McGatsRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
   }
   reader.readStructEnd();
-}
-
-void McGatsReply::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, casToken());
-  writer.writeField(3 /* field id */, value());
-  writer.writeField(4 /* field id */, flags());
-  writer.writeField(5 /* field id */, message());
-  writer.writeField(6 /* field id */, appSpecificErrorCode());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
 }
 
 void McGatsReply::deserialize(carbon::CarbonProtocolReader& reader) {

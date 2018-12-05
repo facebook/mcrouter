@@ -1352,6 +1352,15 @@ void McFlushAllReply::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void McGatRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, exptime());
+  writer.writeField(2 /* field id */, key());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McGatRequest::visitFields(V&& v) {
   if (!v.visitField(1, "exptime", exptime_)) {
@@ -1370,6 +1379,18 @@ void McGatRequest::visitFields(V&& v) const {
   if (!v.visitField(2, "key", key_)) {
     return;
   }
+}
+
+template <class Writer>
+void McGatReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, value());
+  writer.writeField(3 /* field id */, flags());
+  writer.writeField(4 /* field id */, message());
+  writer.writeField(5 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>
@@ -1410,6 +1431,15 @@ void McGatReply::visitFields(V&& v) const {
   }
 }
 
+template <class Writer>
+void McGatsRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, exptime());
+  writer.writeField(2 /* field id */, key());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McGatsRequest::visitFields(V&& v) {
   if (!v.visitField(1, "exptime", exptime_)) {
@@ -1428,6 +1458,19 @@ void McGatsRequest::visitFields(V&& v) const {
   if (!v.visitField(2, "key", key_)) {
     return;
   }
+}
+
+template <class Writer>
+void McGatsReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, casToken());
+  writer.writeField(3 /* field id */, value());
+  writer.writeField(4 /* field id */, flags());
+  writer.writeField(5 /* field id */, message());
+  writer.writeField(6 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>
