@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2015-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -77,7 +76,7 @@ class LoggingRoute {
 
     auto& callback = ctx->proxy().router().postprocessCallback();
     if (callback) {
-      if (isHitResult(reply.result())) {
+      if (isHitResult(reply.result()) || isStoredResult(reply.result())) {
         callback(
             carbon::convertToFollyDynamic(req),
             carbon::convertToFollyDynamic(reply),
