@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2017-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -131,7 +130,9 @@ typename RouterInfo::RouteHandlePtr makeErrorRoute(
       result = mc_res_from_string(jReplyResult->getString().c_str());
       checkLogic(
           mc_res_is_err(result),
-          "ErrorRoute: result is not a valid error result");
+          "ErrorRoute: result {} (code {}) is not a valid error result.",
+          jReplyResult->getString(),
+          static_cast<int>(result));
     }
   }
   return createErrorRoute<RouterInfo>(

@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "msg.h"
 
@@ -78,19 +77,20 @@ const char* mc_res_to_response_string(const mc_res_t result) {
   return "SERVER_ERROR unknown result\r\n";
 }
 
-mc_res_t mc_res_from_string(const char* result) {
-  static const auto kStringToMcRes = [] {
-    std::unordered_map<std::string, mc_res_t> stringToMcRes;
-    for (size_t i = 0; i < mc_nres; ++i) {
-      auto mcRes = static_cast<mc_res_t>(i);
-      stringToMcRes[mc_res_to_string(mcRes)] = mcRes;
-    }
-    return stringToMcRes;
-  }();
-  static const auto kNoMatch = kStringToMcRes.cend();
+static std::unordered_map<std::string, mc_res_t> makeStringToMcRes() {
+  std::unordered_map<std::string, mc_res_t> resMap;
+  for (mc_res_t i = mc_res_unknown; i < mc_nres; i = mc_res_t(i + 1)) {
+    resMap[mc_res_to_string(i)] = i;
+  }
+  return resMap;
+}
 
-  const auto it = kStringToMcRes.find(result);
-  if (it != kNoMatch) {
+const static std::unordered_map<std::string, mc_res_t> kStringToMcRes =
+    makeStringToMcRes();
+
+mc_res_t mc_res_from_string(const char* result) {
+  auto it = kStringToMcRes.find(result);
+  if (it != kStringToMcRes.cend()) {
     return it->second;
   }
   return mc_res_unknown;
