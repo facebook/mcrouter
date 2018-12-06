@@ -49,6 +49,11 @@ namespace mcrouter {
  *     request to "warm".
  * set/delete/incr/decr/etc.: send to the "cold" route, do not modify "warm".
  *     Client is responsible for "warm" consistency.
+ * gat/gats: send the request to "cold" route handle and in case of a miss,
+ *     fetch data from the "warm" route handle with simple 'get' request.
+ *     If "warm" returns a hit, synchronously try to add value to "cold"
+ *     using 'add' operation and send original 'gat' or 'gats' request
+ *     to "cold" one more time.
  *
  * Expiration time (TTL) for automatic warm -> cold update requests is
  * configured with "exptime" field. If the field is not present and
@@ -170,16 +175,17 @@ class WarmUpRoute {
       return coldReply;
     }
 
-    /* else */
-    auto warmReply = warm_->route(req);
-    uint32_t exptime = 0;
-    if (isHitResult(warmReply.result()) && getExptimeForCold(req, exptime)) {
-      folly::fibers::addTask([
-        cold = cold_,
-        addReq = coldUpdateFromWarm<McAddRequest>(req, warmReply, exptime)
-      ]() { cold->route(addReq); });
+    // miss: send simple get to warm route
+    McGetRequest reqGet(req.key().fullKey());
+    auto warmReply = warm_->route(reqGet);
+    if (isHitResult(warmReply.result())) {
+      // update cold route if we have the value
+      auto addReq = createRequestFromReply<McAddRequest>(
+          req.key().fullKey(), warmReply, req.exptime());
+      cold_->route(addReq);
+      return cold_->route(req);
     }
-    return warmReply;
+    return coldReply;
   }
 
   ////////////////////////////////gats////////////////////////////////////
@@ -189,13 +195,13 @@ class WarmUpRoute {
       return coldReply;
     }
 
-    // miss: send simple gat to warm route
-    McGatRequest reqGet(req.key().fullKey());
+    // miss: send simple get to warm route
+    McGetRequest reqGet(req.key().fullKey());
     auto warmReply = warm_->route(reqGet);
-    uint32_t exptime = 0;
-    if (isHitResult(warmReply.result()) && getExptimeForCold(req, exptime)) {
+    if (isHitResult(warmReply.result())) {
       // update cold route if we have the value
-      auto addReq = coldUpdateFromWarm<McAddRequest>(req, warmReply, exptime);
+      auto addReq = createRequestFromReply<McAddRequest>(
+          req.key().fullKey(), warmReply, req.exptime());
       cold_->route(addReq);
       // and grab cas token again
       return cold_->route(req);
