@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "AsyncMcServer.h"
 
@@ -45,7 +44,7 @@ facebook::memcache::AsyncMcServer* gServer;
 class ShutdownPipe : public folly::EventHandler {
  public:
   ShutdownPipe(AsyncMcServer& server, folly::EventBase& evb)
-      : folly::EventHandler(&evb), server_(server) {
+      : folly::EventHandler(&evb), evb_(evb), server_(server) {
     fd_ = eventfd(0, 0);
     if (UNLIKELY(fd_ == -1)) {
       throw std::runtime_error(
@@ -67,12 +66,15 @@ class ShutdownPipe : public folly::EventHandler {
   }
 
  private:
+  folly::EventBase& evb_;
   AsyncMcServer& server_;
   int fd_;
 
   void handlerReady(uint16_t /* events */) noexcept final {
-    LOG(INFO) << "Shutting down on signal";
-    server_.shutdown();
+    std::thread t([&] {
+      evb_.runInEventBaseThread([&, s = &server_] { s->shutdown(); });
+    });
+    t.join();
   }
 };
 
