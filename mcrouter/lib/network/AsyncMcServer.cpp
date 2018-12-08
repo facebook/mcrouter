@@ -71,10 +71,8 @@ class ShutdownPipe : public folly::EventHandler {
   int fd_;
 
   void handlerReady(uint16_t /* events */) noexcept final {
-    std::thread t([&] {
-      evb_.runInEventBaseThread([&, s = &server_] { s->shutdown(); });
-    });
-    t.join();
+    evb_.runInEventBaseThreadAlwaysEnqueue(
+        [&, s = &server_] { s->shutdown(); });
   }
 };
 
