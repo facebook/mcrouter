@@ -67,14 +67,14 @@ MCROUTER_OPTION_TOGGLE(
 
 MCROUTER_OPTION_STRING(
     server_pem_cert_path,
-    "",
+    "", // this may get overwritten by finalizeOptions
     "server-pem-cert-path",
     no_short,
     "Path of pem-style server certificate for ssl.")
 
 MCROUTER_OPTION_STRING(
     server_pem_key_path,
-    "",
+    "", // this may get overwritten by finalizeOptions
     "server-pem-key-path",
     no_short,
     "Path of pem-style server key for ssl.")
@@ -194,6 +194,27 @@ MCROUTER_OPTION_INTEGER(
     "TCP packets with payload >= tcp-zero-copy-threshold bytes will use"
     "use the zero copy optimization on TX."
     "If 0, the tcp zero copy optimization will not be applied.")
+
+MCROUTER_OPTION_TOGGLE(
+    acl_checker_enable,
+    false,
+    "acl-checker-enable",
+    no_short,
+    "If true, incoming requests are checked against the ACL.")
+
+MCROUTER_OPTION_TOGGLE(
+    acl_checker_enforce,
+    false,
+    "acl-checker-enforce",
+    no_short,
+    "If true, enforces the result of the ACL check.")
+
+MCROUTER_OPTION_STRING(
+    server_ssl_service_identity,
+    "memcache",
+    "server-ssl-service-identity",
+    no_short,
+    "If true, enforces the result of the ACL check.")
 
 #ifdef ADDITIONAL_STANDALONE_OPTIONS_FILE
 #include ADDITIONAL_STANDALONE_OPTIONS_FILE

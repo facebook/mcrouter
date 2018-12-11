@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -50,7 +49,6 @@ namespace mcrouter {
 class CarbonRouterInstanceBase;
 class ConfigApi;
 class McrouterLogger;
-class McrouterStandaloneOptions;
 struct FailoverContext;
 class ProxyBase;
 struct RequestLoggerContext;
@@ -107,13 +105,6 @@ std::unique_ptr<ConfigApi> createConfigApi(const McrouterOptions& opts);
 
 std::string performOptionSubstitution(std::string str);
 
-inline void standalonePreInitFromCommandLineOpts(
-    const std::unordered_map<std::string, std::string>& st_option_dict) {}
-
-inline void standaloneInit(
-    const McrouterOptions& opts,
-    const McrouterStandaloneOptions& standaloneOpts) {}
-
 std::unique_ptr<McrouterLogger> createMcrouterLogger(
     CarbonRouterInstanceBase& router);
 
@@ -152,8 +143,6 @@ void insertCustomStartupOpts(folly::dynamic& options);
 std::string getBinPath(folly::StringPiece name);
 
 void finalizeOptions(McrouterOptions& options);
-
-void initStandaloneSSL();
 
 /**
  * Reads a static json file. Do not monitor for changes.

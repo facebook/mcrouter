@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "StandaloneUtils.h"
 
@@ -24,6 +23,7 @@
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/RouterRegistry.h"
 #include "mcrouter/Server.h"
+#include "mcrouter/StandaloneConfig.h"
 #include "mcrouter/config.h"
 #include "mcrouter/options.h"
 #include "mcrouter/standalone_options.h"
@@ -429,6 +429,9 @@ void setupStandaloneMcrouter(
         "Unrecognized option: {}",
         option);
   }
+
+  // finialize standalone options
+  finalizeStandaloneOptions(standaloneOptions);
 
   // init a few things.
   initStandaloneSSL();

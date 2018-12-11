@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <signal.h>
 
@@ -16,6 +15,7 @@
 #include "mcrouter/Proxy.h"
 #include "mcrouter/ProxyThread.h"
 #include "mcrouter/ServerOnRequest.h"
+#include "mcrouter/StandaloneConfig.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
@@ -26,6 +26,26 @@ namespace memcache {
 namespace mcrouter {
 
 namespace detail {
+
+inline std::function<void(McServerSession&)> getAclChecker(
+    const McrouterOptions& opts,
+    const McrouterStandaloneOptions& standaloneOpts) {
+  if (standaloneOpts.acl_checker_enable) {
+    try {
+      return getConnectionAclChecker(
+          standaloneOpts.server_ssl_service_identity,
+          standaloneOpts.acl_checker_enforce);
+    } catch (const std::exception& ex) {
+      MC_LOG_FAILURE(
+          opts,
+          failure::Category::kSystemError,
+          "Error creating acl checker: {}",
+          ex.what());
+      LOG(WARNING) << "Disabling acl checker on all threads.";
+    }
+  }
+  return [](McServerSession&) {};
+}
 
 template <class RouterInfo, template <class> class RequestHandler>
 void serverLoop(
@@ -47,9 +67,24 @@ void serverLoop(
       *routerClient,
       standaloneOpts.retain_source_ip,
       standaloneOpts.enable_pass_through_mode));
-  worker.setOnConnectionAccepted([proxy](McServerSession&) {
-    proxy->stats().increment(num_client_connections_stat);
-  });
+
+  worker.setOnConnectionAccepted(
+      [proxy,
+       aclChecker = getAclChecker(proxy->router().opts(), standaloneOpts)](
+          McServerSession& session) mutable {
+        proxy->stats().increment(num_client_connections_stat);
+        try {
+          aclChecker(session);
+        } catch (const std::exception& ex) {
+          MC_LOG_FAILURE(
+              proxy->router().opts(),
+              failure::Category::kSystemError,
+              "Error running acl checker: {}",
+              ex.what());
+          LOG(WARNING) << "Disabling acl checker on this thread.";
+          aclChecker = [](McServerSession&) {};
+        }
+      });
   worker.setOnConnectionCloseFinish(
       [proxy](McServerSession&, bool onAcceptedCalled) {
         if (onAcceptedCalled) {
