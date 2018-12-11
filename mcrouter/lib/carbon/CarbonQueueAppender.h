@@ -51,7 +51,8 @@ class CarbonQueueAppenderStorage {
     assert(nIovsUsed_ < kMaxIovecs);
 
     struct iovec* nextIov = iovs_ + nIovsUsed_;
-    const auto nFilled = buf.fillIov(nextIov, kMaxIovecs - nIovsUsed_);
+    const auto nFilled =
+        buf.fillIov(nextIov, kMaxIovecs - nIovsUsed_).numIovecs;
 
     if (tcpZeroCopyThreshold_ && !applyZeroCopy_ &&
         buf.capacity() >= tcpZeroCopyThreshold_) {
@@ -109,7 +110,8 @@ class CarbonQueueAppenderStorage {
 
   bool setFullBuffer(const folly::IOBuf& buf) {
     struct iovec* nextIov = iovs_ + nIovsUsed_;
-    const auto nFilled = buf.fillIov(nextIov, kMaxIovecs - nIovsUsed_);
+    const auto nFilled =
+        buf.fillIov(nextIov, kMaxIovecs - nIovsUsed_).numIovecs;
 
     if (nFilled > 0) {
       nIovsUsed_ += nFilled;
@@ -215,7 +217,8 @@ class CarbonQueueAppenderStorage {
     struct iovec* nextIov = iovs_ + nIovsUsed_;
     auto bufCopy = buf;
     bufCopy.coalesce();
-    const auto nFilledRetry = bufCopy.fillIov(nextIov, kMaxIovecs - nIovsUsed_);
+    const auto nFilledRetry =
+        bufCopy.fillIov(nextIov, kMaxIovecs - nIovsUsed_).numIovecs;
     assert(nFilledRetry == 1);
     (void)nFilledRetry;
     ++nIovsUsed_;
