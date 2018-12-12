@@ -176,7 +176,8 @@ class MessageQueue {
    * Must be called from the event base thread.
    */
   void attachEventBase(folly::VirtualEventBase& evb) {
-    handler_.initHandler(&evb.getEventBase(), efd_);
+    handler_.initHandler(
+        &evb.getEventBase(), folly::NetworkSocket::fromFd(efd_));
     handler_.registerHandler(
         folly::EventHandler::READ | folly::EventHandler::PERSIST);
 
