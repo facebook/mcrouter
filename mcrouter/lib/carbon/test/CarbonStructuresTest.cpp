@@ -361,7 +361,7 @@ TEST(CarbonTest, serializeDeserialize) {
   // Other optional field gets a value of zero length
   outRequest.testOptionalIobuf() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "");
   // Union
-  outRequest.testUnion().emplace<3>("abc");
+  outRequest.testUnion().emplace<2>(true);
 
   outRequest.testEnumVec().push_back(carbon::test2::util::SimpleEnum::Twenty);
 

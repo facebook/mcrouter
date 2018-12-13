@@ -74,7 +74,7 @@ void SimpleUnion::deserialize(carbon::CarbonProtocolReader& reader) {
         break;
       }
       case 2: {
-        reader.readRawInto(emplace<2>());
+        reader.readRawInto(emplace<2>(), fieldType);
         break;
       }
       case 3: {

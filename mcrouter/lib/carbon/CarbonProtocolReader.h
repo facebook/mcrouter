@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -45,9 +44,7 @@ class CarbonProtocolReader {
   }
 
   void readField(bool& b, FieldType fieldType) {
-    DCHECK(fieldType == FieldType::True || fieldType == FieldType::False)
-        << "Invalid fieldType: " << static_cast<uint8_t>(fieldType);
-    b = fieldType == FieldType::True;
+    readRawInto(b, fieldType);
   }
 
   void readField(folly::Optional<bool>& data, FieldType fieldType) {
@@ -62,6 +59,12 @@ class CarbonProtocolReader {
   template <class T>
   void readField(T& t, FieldType /* fieldType */) {
     readRawInto(t);
+  }
+
+  void readRawInto(bool& b, FieldType fieldType) {
+    DCHECK(fieldType == FieldType::True || fieldType == FieldType::False)
+        << "Invalid fieldType: " << static_cast<uint8_t>(fieldType);
+    b = fieldType == FieldType::True;
   }
 
   template <class T>
