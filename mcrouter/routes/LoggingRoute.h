@@ -83,13 +83,6 @@ class LoggingRoute {
             Request::name,
             userIp);
       }
-    } else {
-      const auto replyLength = carbon::valuePtrUnsafe(reply)
-          ? carbon::valuePtrUnsafe(reply)->computeChainDataLength()
-          : 0;
-      LOG(INFO) << "request key: " << req.key().fullKey()
-                << " response: " << mc_res_to_string(reply.result())
-                << " responseLength: " << replyLength << " user ip: " << userIp;
     }
     return reply;
   }
