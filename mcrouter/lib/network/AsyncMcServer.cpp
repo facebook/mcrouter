@@ -50,7 +50,7 @@ class ShutdownPipe : public folly::EventHandler {
       throw std::runtime_error(
           "Unexpected file descriptor (-1) in ShutdownPipe");
     }
-    changeHandlerFD(fd_);
+    changeHandlerFD(folly::NetworkSocket::fromFd(fd_));
     registerHandler(EV_READ);
   }
 
