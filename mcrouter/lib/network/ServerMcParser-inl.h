@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2015-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <folly/lang/Bits.h>
 
@@ -17,17 +16,14 @@ template <class Callback>
 ServerMcParser<Callback>::ServerMcParser(
     Callback& cb,
     size_t minBufferSize,
-    size_t maxBufferSize,
-    ConnectionFifo* debugFifo)
+    size_t maxBufferSize)
     : parser_(
           *this,
           minBufferSize,
           maxBufferSize,
-          /* useJemallocNodumpAllocator */ false,
-          debugFifo),
+          /* useJemallocNodumpAllocator */ false),
       asciiParser_(*this),
-      callback_(cb),
-      debugFifo_(debugFifo) {}
+      callback_(cb) {}
 
 template <class Callback>
 ServerMcParser<Callback>::~ServerMcParser() {}

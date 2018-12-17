@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "McServerSession.h"
 
@@ -91,17 +90,9 @@ McServerSession::McServerSession(
       eventBase_(*transport_->getEventBase()),
       onRequest_(std::move(cb)),
       stateCb_(stateCb),
-      debugFifo_(getDebugFifo(
-          options_.debugFifoPath,
-          transport_.get(),
-          onRequest_->name())),
       sendWritesCallback_(*this),
       compressionCodecMap_(codecMap),
-      parser_(
-          *this,
-          options_.minBufferSize,
-          options_.maxBufferSize,
-          &debugFifo_),
+      parser_(*this, options_.minBufferSize, options_.maxBufferSize),
       userCtxt_(userCtxt),
       zeroCopySessionCB_(*this) {
   try {
@@ -691,13 +682,14 @@ void McServerSession::fizzHandshakeAttemptFallback(
       transport_->getUnderlyingTransport<folly::AsyncSSLSocket>();
   DCHECK(underlyingSslSocket) << "Underlying socket should be AsyncSSLSocket";
   underlyingSslSocket->sslAccept(this);
-
-  debugFifo_ = getDebugFifo(
-      options_.debugFifoPath, transport_.get(), onRequest_->name());
 }
 
 void McServerSession::onAccepted() {
   DCHECK(!onAcceptedCalled_);
+  DCHECK(transport_);
+  debugFifo_ = getDebugFifo(
+      options_.debugFifoPath, transport_.get(), onRequest_->name());
+  parser_.setDebugFifo(&debugFifo_);
   onAcceptedCalled_ = true;
   stateCb_.onAccepted(*this);
 }
