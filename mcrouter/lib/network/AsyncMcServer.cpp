@@ -355,10 +355,12 @@ class McServerThread {
             "if at least one of them set");
 
         sslSocket_.reset(new folly::AsyncServerSocket());
-        sslSocket_->useExistingSocket(opts.existingSocketFd);
+        sslSocket_->useExistingSocket(
+            folly::NetworkSocket::fromFd(opts.existingSocketFd));
       } else {
         socket_.reset(new folly::AsyncServerSocket());
-        socket_->useExistingSocket(opts.existingSocketFd);
+        socket_->useExistingSocket(
+            folly::NetworkSocket::fromFd(opts.existingSocketFd));
       }
     } else if (!opts.unixDomainSockPath.empty()) {
       checkLogic(
