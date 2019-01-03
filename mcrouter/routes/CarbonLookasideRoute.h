@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2018-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -19,6 +18,7 @@
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/config.h"
 #include "mcrouter/flavor.h"
+#include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"
@@ -59,12 +59,24 @@ LeaseSettings parseLeaseSettings(const folly::dynamic& json);
  *
  *    std::string name();
  *
+ *    // Tells whether or not we should consider the given request for caching.
  *    template <typename Request>
  *    bool cacheCandidate(const Request& req);
  *
+ *   // Constructs a key for a Request.
+ *   // Note: Just called for cache candidates.
  *   template <typename Request>
  *   std::string buildKey(const Request& req);
  *
+ *    // Whether or not we should cache the reply we received.
+ *    // Note:
+ *    //  - Just called for cache candidates.
+ *    //  - Just called if non-error. Errors are not considered for caching.
+ *    template <typename Reply>
+ *    bool shouldCacheReply(const Reply& reply);
+ *
+ *   // Method to do any post processing necessary to replies retrieved
+ *   // from cache.
  *   template <typename Reply>
  *   void postProcessCachedReply(Reply& reply);
  * };
@@ -156,7 +168,8 @@ class CarbonLookasideRoute {
 
     auto reply = child_->route(req);
 
-    if (cacheCandidate) {
+    if (cacheCandidate && !isErrorResult(reply.result()) &&
+        carbonLookasideHelper_.shouldCacheReply(reply)) {
       carbonLookasideSet(key, reply, leaseToken);
     }
     return reply;

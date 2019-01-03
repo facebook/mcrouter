@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "McRouteHandleProvider.h"
 
@@ -63,7 +62,7 @@ class MemcacheCarbonLookasideHelper {
   }
 
   template <typename Request>
-  bool cacheCandidate(const Request& /* unused */) {
+  bool cacheCandidate(const Request& /* unused */) const {
     if (Request::hasKey) {
       return true;
     }
@@ -71,11 +70,16 @@ class MemcacheCarbonLookasideHelper {
   }
 
   template <typename Request>
-  std::string buildKey(const Request& req) {
+  std::string buildKey(const Request& req) const {
     if (Request::hasKey) {
       return req.key().fullKey().str();
     }
     return std::string();
+  }
+
+  template <typename Reply>
+  bool shouldCacheReply(const Reply& /* unused */) const {
+    return true;
   }
 
   template <typename Reply>
