@@ -29,7 +29,11 @@ std::vector<double> WeightedChHashFuncBase::parseWeights(
   for (size_t i = 0; i < std::min(n, jWeights.size()); ++i) {
     const auto& weight = jWeights[i];
     checkLogic(weight.isNumber(), "WeightedChHashFunc: weight is not number");
-    weights.push_back(weight.asDouble());
+    const auto weightNum = weight.asDouble();
+    checkLogic(
+        0 <= weightNum && weightNum <= 1.0,
+        "WeightedChHashFunc: weight must be in range [0, 1.0]");
+    weights.push_back(weightNum);
   }
   weights.resize(n, 0.5);
   return weights;
