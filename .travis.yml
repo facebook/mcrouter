@@ -6,7 +6,12 @@ language: cpp
 compiler:
   - gcc
 
-script: ./mcrouter/scripts/install_ubuntu_16.04.sh "$(pwd)"/mcrouter-install
+services:
+  - docker
+
+script:
+  - ./mcrouter/scripts/install_ubuntu_16.04.sh "$(pwd)"/mcrouter-install
+  - docker build -t facebook/mcrouter .
 
 notifications:
   email:
