@@ -658,7 +658,8 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
     socket_->getPeerAddress(&address);
     auto asyncSock = socket_->getUnderlyingTransport<folly::AsyncSocket>();
     if (asyncSock) {
-      checkWhetherQoSIsApplied(address, asyncSock->getFd(), connectionOptions_);
+      checkWhetherQoSIsApplied(
+          address, asyncSock->getNetworkSocket().toFd(), connectionOptions_);
     }
   }
 
