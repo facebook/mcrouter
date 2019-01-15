@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <gtest/gtest.h>
 
@@ -127,9 +126,14 @@ TEST(CarbonMessageConversionUtils, toFollyDynamic_Complex) {
       "testIOBufList", folly::dynamic::array("", ""));
 
   auto dynamic = carbon::convertToFollyDynamic(r);
+
   auto set = dynamic.at("testUSet");
   std::sort(set.begin(), set.end());
   dynamic.at("testUSet") = set;
+
+  auto fastset = dynamic.at("testF14FastSet");
+  std::sort(fastset.begin(), fastset.end());
+  dynamic.at("testF14FastSet") = fastset;
 
   EXPECT_EQ(expected, dynamic);
 }
