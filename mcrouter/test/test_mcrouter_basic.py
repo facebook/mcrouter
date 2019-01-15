@@ -142,7 +142,7 @@ class TestMcrouterBasic(TestMcrouterBasicBase):
         time.sleep(1)
         mcr2 = Mcrouter(self.null_route_config, port=mcr1.port)
 
-        time.sleep(2)
+        time.sleep(4)
         self.assertTrue(mcr1.is_alive())
         self.assertFalse(mcr2.is_alive())
 
@@ -280,7 +280,8 @@ class TestMcrouterBasic2(McrouterTestCase):
 
         # next set to a remote cluster
         mcr.set("/b/b/cluster2_key_router", "cluster2_router")
-        self.assertEqual(self.mc2.get("cluster2_key_router"), "cluster2_router")
+        self.assertEqual(
+            self.mc2.get("cluster2_key_router"), "cluster2_router")
 
         # try fetching a value from a remote cluster
         self.mc2.set("cluster2_key", "cluster2")
