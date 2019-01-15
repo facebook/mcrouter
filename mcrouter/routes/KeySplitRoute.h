@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2018-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -39,8 +38,12 @@ namespace mcrouter {
 class KeySplitRoute {
  public:
   std::string routeName() const {
+    uint64_t replicaId = getReplicaId();
     return folly::sformat(
-        "keysplit|replicas={}|all-sync={}", replicas_, allSync_);
+        "keysplit|replicas={}|all-sync={}|replicaId={}",
+        replicas_,
+        allSync_,
+        replicaId);
   }
 
   static constexpr size_t kMinReplicaCount = 2;
@@ -50,7 +53,12 @@ class KeySplitRoute {
   void traverse(
       const Request& req,
       const RouteHandleTraverser<MemcacheRouteHandleIf>& t) const {
-    t(*child_, req);
+    uint64_t replicaId = getReplicaId();
+    if (shouldAugmentRequest(replicaId)) {
+      t(*child_, copyAndAugment(req, replicaId));
+    } else {
+      t(*child_, req);
+    }
   }
 
   KeySplitRoute(
