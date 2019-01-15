@@ -42,7 +42,7 @@ class TestDevNull(McrouterTestCase):
         self.assertEqual(mcwild_val, "should_be_set_wild")
 
         self.assertEqual(mcr.delete("null:key2"), None)
-        self.assertEqual(int(mcr.stats('ods')['dev_null_requests']), 2)
+        self.assertEqual(int(mcr.stats('all')['dev_null_requests']), 2)
 
 
 class TestMigratedPools(McrouterTestCase):
