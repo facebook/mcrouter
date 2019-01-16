@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2015-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "AsciiSerialized.h"
 
@@ -67,6 +66,24 @@ void AsciiSerializedRequest::prepareImpl(const McMetagetRequest& request) {
 
 void AsciiSerializedRequest::prepareImpl(const McLeaseGetRequest& request) {
   addStrings("lease-get ", request.key().fullKey(), "\r\n");
+}
+
+void AsciiSerializedRequest::prepareImpl(const McGatRequest& request) {
+  auto len = snprintf(printBuffer_, kMaxBufferLength, "%d ", request.exptime());
+  addStrings(
+      "gat ",
+      folly::StringPiece(printBuffer_, static_cast<size_t>(len)),
+      request.key().fullKey(),
+      "\r\n");
+}
+
+void AsciiSerializedRequest::prepareImpl(const McGatsRequest& request) {
+  auto len = snprintf(printBuffer_, kMaxBufferLength, "%d ", request.exptime());
+  addStrings(
+      "gats ",
+      folly::StringPiece(printBuffer_, static_cast<size_t>(len)),
+      request.key().fullKey(),
+      "\r\n");
 }
 
 // Update-like ops.
@@ -434,6 +451,83 @@ void AsciiSerializedReply::prepareImpl(
   } else {
     LOG(ERROR) << "Got unexpected reply result " << reply.result();
     handleUnexpected(reply.result(), "lease-get");
+  }
+}
+
+void AsciiSerializedReply::prepareImpl(
+    McGatReply&& reply,
+    folly::StringPiece key) {
+  if (isHitResult(reply.result())) {
+    if (key.empty()) {
+      // Multi-op hack: if key is empty, this is the END context
+      if (isErrorResult(reply.result())) {
+        handleError(
+            reply.result(),
+            reply.appSpecificErrorCode(),
+            std::move(reply.message()));
+      }
+      addString("END\r\n");
+    } else {
+      const auto valueStr = coalesceAndGetRange(reply.value());
+
+      const auto len = snprintf(
+          printBuffer_,
+          kMaxBufferLength,
+          " %lu %zu\r\n",
+          reply.flags(),
+          valueStr.size());
+      assert(len > 0);
+      assert(static_cast<size_t>(len) < kMaxBufferLength);
+
+      addStrings(
+          "VALUE ",
+          key,
+          folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
+      assert(!iobuf_.hasValue());
+      // value was coalesced in coalesceAndGetRange()
+      iobuf_ = std::move(reply.value());
+      addStrings(valueStr, "\r\n");
+    }
+  } else if (isErrorResult(reply.result())) {
+    handleError(
+        reply.result(),
+        reply.appSpecificErrorCode(),
+        std::move(reply.message()));
+  } else {
+    handleUnexpected(reply.result(), "gat");
+  }
+}
+
+void AsciiSerializedReply::prepareImpl(
+    McGatsReply&& reply,
+    folly::StringPiece key) {
+  if (isHitResult(reply.result())) {
+    const auto valueStr = coalesceAndGetRange(reply.value());
+    const auto len = snprintf(
+        printBuffer_,
+        kMaxBufferLength,
+        " %lu %zu %lu\r\n",
+        reply.flags(),
+        valueStr.size(),
+        reply.casToken());
+    assert(len > 0);
+    assert(static_cast<size_t>(len) < kMaxBufferLength);
+
+    addStrings(
+        "VALUE ",
+        key,
+        folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
+    assert(!iobuf_.hasValue());
+    // value was coalesced in coalescedAndGetRange()
+    iobuf_ = std::move(reply.value());
+    addStrings(valueStr, "\r\n");
+  } else if (isErrorResult(reply.result())) {
+    handleError(
+        reply.result(),
+        reply.appSpecificErrorCode(),
+        std::move(reply.message()));
+  } else {
+    handleUnexpected(reply.result(), "gats");
   }
 }
 

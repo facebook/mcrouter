@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2015-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -77,6 +76,8 @@ class AsciiSerializedRequest {
   void prepareImpl(const McGetsRequest& request);
   void prepareImpl(const McMetagetRequest& request);
   void prepareImpl(const McLeaseGetRequest& request);
+  void prepareImpl(const McGatRequest& request);
+  void prepareImpl(const McGatsRequest& request);
   // Update-like ops.
   void prepareImpl(const McSetRequest& request);
   void prepareImpl(const McAddRequest& request);
@@ -182,6 +183,8 @@ class AsciiSerializedReply {
   void prepareImpl(McGetsReply&& reply, folly::StringPiece key);
   void prepareImpl(McMetagetReply&& reply, folly::StringPiece key);
   void prepareImpl(McLeaseGetReply&& reply, folly::StringPiece key);
+  void prepareImpl(McGatReply&& reply, folly::StringPiece key);
+  void prepareImpl(McGatsReply&& reply, folly::StringPiece key);
   // Update-like ops
   void prepareUpdateLike(
       mc_res_t result,

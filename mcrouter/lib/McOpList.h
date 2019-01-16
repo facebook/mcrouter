@@ -35,6 +35,8 @@ MC_OP(McOperation<mc_op_exec>)
 MC_OP(McOperation<mc_op_gets>)
 MC_OP(McOperation<mc_op_get_service_info>)
 MC_OP(McOperation<mc_op_touch>)
+MC_OP(McOperation<mc_op_gat>)
+MC_OP(McOperation<mc_op_gats>)
 
 #undef MC_OP
 
@@ -68,5 +70,7 @@ THRIFT_OP(McOperation<mc_op_metaget>)
 THRIFT_OP(McOperation<mc_op_exec>)
 THRIFT_OP(McOperation<mc_op_gets>)
 THRIFT_OP(McOperation<mc_op_touch>)
+THRIFT_OP(McOperation<mc_op_gat>)
+THRIFT_OP(McOperation<mc_op_gats>)
 
 #undef THRIFT_OP

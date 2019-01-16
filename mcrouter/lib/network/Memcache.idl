@@ -290,6 +290,41 @@ reply McFlushAllReply {
   3: int16_t appSpecificErrorCode;
 };
 
+request McGatRequest {
+  id: 23;
+  name: "gat";
+  reply: McGatReply;
+
+  1: int32_t exptime;
+  2: carbon::Keys<folly::IOBuf> key;
+};
+
+reply McGatReply {
+  1: Result result;
+  2: folly::Optional<folly::IOBuf> value;
+  3: uint64_t flags;
+  4: std::string message;
+  5: int16_t appSpecificErrorCode;
+};
+
+request McGatsRequest {
+  id: 24;
+  name: "gats";
+  reply: McGatsReply;
+
+  1: int32_t exptime;
+  2: carbon::Keys<folly::IOBuf> key;
+};
+
+reply McGatsReply {
+  1: Result result;
+  2: uint64_t casToken;
+  3: folly::Optional<folly::IOBuf> value;
+  4: uint64_t flags;
+  5: std::string message;
+  6: int16_t appSpecificErrorCode;
+};
+
 service {
   additional_requests: [];
   on_reply_logger: facebook::memcache::mcrouter::AdditionalProxyRequestLogger;
@@ -310,6 +345,8 @@ service {
     McFlushReRequest,
     McFlushAllRequest,
     McTouchRequest,
+    McGatRequest,
+    McGatsRequest,
     # For backwards compatibility in stats names
     lease_get: [
       McLeaseGetRequest
@@ -323,7 +360,9 @@ service {
       McGetRequest,
       McGetsRequest,
       McMetagetRequest,
-      McLeaseGetRequest
+      McLeaseGetRequest,
+      McGatRequest,
+      McGatsRequest
     ],
     update: [
       McSetRequest,

@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "UmbrellaProtocol.h"
 
@@ -23,11 +22,11 @@
 #endif
 
 static_assert(
-    mc_nops == 28,
+    mc_nops == 30,
     "If you add a new mc_op, make sure to update lib/mc/umbrella_conv.h");
 
 static_assert(
-    UM_NOPS == 29,
+    UM_NOPS == 31,
     "If you add a new mc_op, make sure to update lib/mc/umbrella_conv.h");
 
 static_assert(

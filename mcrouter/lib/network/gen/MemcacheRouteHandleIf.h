@@ -46,6 +46,8 @@ class MemcacheRouteHandleIf {
   virtual McDeleteReply route(const McDeleteRequest&) = 0;
   virtual McFlushAllReply route(const McFlushAllRequest&) = 0;
   virtual McFlushReReply route(const McFlushReRequest&) = 0;
+  virtual McGatReply route(const McGatRequest&) = 0;
+  virtual McGatsReply route(const McGatsRequest&) = 0;
   virtual McGetReply route(const McGetRequest&) = 0;
   virtual McGetsReply route(const McGetsRequest&) = 0;
   virtual McIncrReply route(const McIncrRequest&) = 0;
@@ -77,6 +79,12 @@ class MemcacheRouteHandleIf {
       const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
   virtual void traverse(
       const McFlushReRequest&,
+      const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
+  virtual void traverse(
+      const McGatRequest&,
+      const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
+  virtual void traverse(
+      const McGatsRequest&,
       const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
   virtual void traverse(
       const McGetRequest&,
@@ -139,6 +147,12 @@ class MemcacheRouteHandle : public MemcacheRouteHandleIf {
     return route_.route(request);
   }
   McFlushReReply route(const McFlushReRequest& request) override final {
+    return route_.route(request);
+  }
+  McGatReply route(const McGatRequest& request) override final {
+    return route_.route(request);
+  }
+  McGatsReply route(const McGatsRequest& request) override final {
     return route_.route(request);
   }
   McGetReply route(const McGetRequest& request) override final {
@@ -210,6 +224,18 @@ class MemcacheRouteHandle : public MemcacheRouteHandleIf {
   }
   void traverse(
       const McFlushReRequest& request,
+      const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
+      const override final {
+    route_.traverse(request, traverser);
+  }
+  void traverse(
+      const McGatRequest& request,
+      const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
+      const override final {
+    route_.traverse(request, traverser);
+  }
+  void traverse(
+      const McGatsRequest& request,
       const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
       const override final {
     route_.traverse(request, traverser);

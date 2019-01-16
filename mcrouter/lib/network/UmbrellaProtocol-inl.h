@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2015-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <arpa/inet.h>
 
@@ -92,6 +91,26 @@ struct TagSet<McOperation<mc_op_lease_get>, McLeaseGetReply> {
 template <>
 struct TagSet<McOperation<mc_op_lease_get>, McLeaseGetRequest> {
   using Tags = List<KeyTag>;
+};
+
+template <>
+struct TagSet<McOperation<mc_op_gat>, McGatReply> {
+  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
+};
+
+template <>
+struct TagSet<McOperation<mc_op_gat>, McGatRequest> {
+  using Tags = List<ExptimeTag, KeyTag>;
+};
+
+template <>
+struct TagSet<McOperation<mc_op_gats>, McGatsReply> {
+  using Tags = List<CasTag, ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
+};
+
+template <>
+struct TagSet<McOperation<mc_op_gats>, McGatsRequest> {
+  using Tags = List<ExptimeTag, KeyTag>;
 };
 
 // Update-like ops

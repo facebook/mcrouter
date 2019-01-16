@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -85,7 +84,7 @@ typedef enum msg_field_e {
   // with this scheme.
 } msg_field_t;
 
-#define UM_NOPS 29
+#define UM_NOPS 31
 
 extern uint32_t const umbrella_op_from_mc[UM_NOPS];
 extern uint32_t const umbrella_op_to_mc[UM_NOPS];

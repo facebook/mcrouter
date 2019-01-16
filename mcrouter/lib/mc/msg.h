@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -50,6 +49,8 @@ typedef enum mc_op_e {
   mc_op_gets,
   mc_op_get_service_info, ///< Queries various service state
   mc_op_touch,
+  mc_op_gat,
+  mc_op_gats,
   mc_nops // placeholder
 } mc_op_t;
 
@@ -112,6 +113,10 @@ static inline const char* mc_op_to_string(const mc_op_t op) {
       return "gets";
     case mc_op_get_service_info:
       return "get-service-info";
+    case mc_op_gat:
+      return "gat";
+    case mc_op_gats:
+      return "gats";
     case mc_nops:
       return "unknown";
   };
@@ -363,6 +368,8 @@ static inline int mc_op_has_key(mc_op_t op) {
     case mc_op_decr:
     case mc_op_metaget:
     case mc_op_gets:
+    case mc_op_gat:
+    case mc_op_gats:
       return 1;
 
     default:

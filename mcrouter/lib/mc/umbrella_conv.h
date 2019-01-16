@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #ifndef UM_OP
 #define UM_OP(mc, um)
@@ -47,6 +46,8 @@ UM_OP(mc_op_exec, 25)
 UM_OP(mc_op_gets, 26)
 UM_OP(mc_op_get_service_info, 27)
 UM_OP(mc_op_touch, 28)
+UM_OP(mc_op_gat, 29)
+UM_OP(mc_op_gats, 30)
 
 UM_RES(mc_res_unknown, 0)
 UM_RES(mc_res_deleted, 1)

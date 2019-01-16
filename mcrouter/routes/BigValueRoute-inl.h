@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -98,7 +97,12 @@ void BigValueRoute::traverse(
 
 template <class Request>
 typename std::enable_if<
-    folly::IsOneOf<Request, McGetRequest, McGetsRequest>::value,
+    folly::IsOneOf<
+        Request,
+        McGetRequest,
+        McGetsRequest,
+        McGatRequest,
+        McGatsRequest>::value,
     ReplyT<Request>>::type
 BigValueRoute::route(const Request& req) const {
   auto initialReply = ch_->route(req);

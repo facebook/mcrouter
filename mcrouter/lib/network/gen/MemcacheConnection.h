@@ -58,6 +58,12 @@ class MemcacheConnection {
       const McFlushReRequest&,
       carbon::RequestCb<McFlushReRequest>) = 0;
   virtual void sendRequestOne(
+      const McGatRequest&,
+      carbon::RequestCb<McGatRequest>) = 0;
+  virtual void sendRequestOne(
+      const McGatsRequest&,
+      carbon::RequestCb<McGatsRequest>) = 0;
+  virtual void sendRequestOne(
       const McGetRequest&,
       carbon::RequestCb<McGetRequest>) = 0;
   virtual void sendRequestOne(
@@ -109,6 +115,12 @@ class MemcacheConnection {
   virtual void sendRequestMulti(
       std::vector<std::reference_wrapper<const McFlushReRequest>>&&,
       carbon::RequestCb<McFlushReRequest>) = 0;
+  virtual void sendRequestMulti(
+      std::vector<std::reference_wrapper<const McGatRequest>>&&,
+      carbon::RequestCb<McGatRequest>) = 0;
+  virtual void sendRequestMulti(
+      std::vector<std::reference_wrapper<const McGatsRequest>>&&,
+      carbon::RequestCb<McGatsRequest>) = 0;
   virtual void sendRequestMulti(
       std::vector<std::reference_wrapper<const McGetRequest>>&&,
       carbon::RequestCb<McGetRequest>) = 0;
@@ -208,6 +220,16 @@ class MemcacheConnectionImpl : public MemcacheConnection {
     return impl_.sendRequestOne(req, std::move(cb));
   }
   void sendRequestOne(
+      const McGatRequest& req,
+      carbon::RequestCb<McGatRequest> cb) {
+    return impl_.sendRequestOne(req, std::move(cb));
+  }
+  void sendRequestOne(
+      const McGatsRequest& req,
+      carbon::RequestCb<McGatsRequest> cb) {
+    return impl_.sendRequestOne(req, std::move(cb));
+  }
+  void sendRequestOne(
       const McGetRequest& req,
       carbon::RequestCb<McGetRequest> cb) {
     return impl_.sendRequestOne(req, std::move(cb));
@@ -291,6 +313,16 @@ class MemcacheConnectionImpl : public MemcacheConnection {
   void sendRequestMulti(
       std::vector<std::reference_wrapper<const McFlushReRequest>>&& reqs,
       carbon::RequestCb<McFlushReRequest> cb) {
+    return impl_.sendRequestMulti(std::move(reqs), std::move(cb));
+  }
+  void sendRequestMulti(
+      std::vector<std::reference_wrapper<const McGatRequest>>&& reqs,
+      carbon::RequestCb<McGatRequest> cb) {
+    return impl_.sendRequestMulti(std::move(reqs), std::move(cb));
+  }
+  void sendRequestMulti(
+      std::vector<std::reference_wrapper<const McGatsRequest>>&& reqs,
+      carbon::RequestCb<McGatsRequest> cb) {
     return impl_.sendRequestMulti(std::move(reqs), std::move(cb));
   }
   void sendRequestMulti(

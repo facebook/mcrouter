@@ -62,6 +62,8 @@ using MemcacheRoutableRequests = carbon::List<
     McDeleteRequest,
     McFlushAllRequest,
     McFlushReRequest,
+    McGatRequest,
+    McGatsRequest,
     McGetRequest,
     McGetsRequest,
     McIncrRequest,

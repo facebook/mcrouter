@@ -237,6 +237,46 @@ void McClientAsciiParser::consumeMessage<McGetsRequest>(folly::IOBuf& buffer) {
   }%%
 }
 
+// McGat reply.
+%%{
+machine mc_ascii_gat_reply;
+include mc_ascii_common;
+
+gat = hit? >{ message.result() = mc_res_notfound; } 'END';
+gat_reply := (gat | error) msg_end;
+write data;
+}%%
+
+template <>
+void McClientAsciiParser::consumeMessage<McGatRequest>(folly::IOBuf& buffer) {
+  auto& message = currentMessage_.get<McGatReply>();
+  %%{
+    machine mc_ascii_gat_reply;
+    write init nocs;
+    write exec;
+  }%%
+}
+
+// McGats reply.
+%%{
+machine mc_ascii_gats_reply;
+include mc_ascii_common;
+
+gats = gets_hit? >{ message.result() = mc_res_notfound; } 'END';
+gats_reply := (gats | error) msg_end;
+write data;
+}%%
+
+template <>
+void McClientAsciiParser::consumeMessage<McGatsRequest>(folly::IOBuf& buffer) {
+  auto& message = currentMessage_.get<McGatsReply>();
+  %%{
+    machine mc_ascii_gats_reply;
+    write init nocs;
+    write exec;
+  }%%
+}
+
 // McLeaseGet reply.
 %%{
 machine mc_ascii_lease_get_reply;
@@ -468,6 +508,22 @@ void McClientAsciiParser::initializeReplyParser<McGetsRequest>() {
 }
 
 template <>
+void McClientAsciiParser::initializeReplyParser<McGatRequest>() {
+  initializeCommon<McGatReply>();
+  savedCs_ = mc_ascii_gat_reply_en_gat_reply;
+  errorCs_ = mc_ascii_gat_reply_error;
+  consumer_ = &McClientAsciiParser::consumeMessage<McGatRequest>;
+}
+
+template <>
+void McClientAsciiParser::initializeReplyParser<McGatsRequest>() {
+  initializeCommon<McGatsReply>();
+  savedCs_ = mc_ascii_gats_reply_en_gats_reply;
+  errorCs_ = mc_ascii_gats_reply_error;
+  consumer_ = &McClientAsciiParser::consumeMessage<McGatsRequest>;
+}
+
+template <>
 void McClientAsciiParser::initializeReplyParser<McLeaseGetRequest>() {
   initializeCommon<McLeaseGetReply>();
   savedCs_ = mc_ascii_lease_get_reply_en_lease_get_reply;
@@ -623,6 +679,40 @@ void McServerAsciiParser::initGetLike() {
   state_ = State::PARTIAL;
   currentMessage_.emplace<Request>();
   consumer_ = &McServerAsciiParser::consumeGetLike<Request>;
+}
+
+// Gat-like requests (gat, gats).
+
+%%{
+machine mc_ascii_gat_like_req_body;
+include mc_ascii_common;
+
+action on_full_key {
+  callback_->onRequest(std::move(message));
+}
+
+req_body := ' '* exptime_req ' '+ key % on_full_key (' '+ key % on_full_key)* ' '* multi_op_end;
+
+write data;
+}%%
+
+template <class Request>
+void McServerAsciiParser::consumeGatLike(folly::IOBuf& buffer) {
+  auto& message = currentMessage_.get<Request>();
+  %%{
+    machine mc_ascii_gat_like_req_body;
+    write init nocs;
+    write exec;
+  }%%
+}
+
+template <class Request>
+void McServerAsciiParser::initGatLike() {
+  savedCs_ = mc_ascii_gat_like_req_body_en_req_body;
+  errorCs_ = mc_ascii_gat_like_req_body_error;
+  state_ = State::PARTIAL;
+  currentMessage_.emplace<Request>();
+  consumer_ = &McServerAsciiParser::consumeGatLike<Request>;
 }
 
 // Set-like requests (set, add, replace, append, prepend).
@@ -954,6 +1044,16 @@ metaget = 'metaget ' @{
   fbreak;
 };
 
+gat = 'gat ' @{
+  initGatLike<McGatRequest>();
+  fbreak;
+};
+
+gats = 'gats ' @{
+  initGatLike<McGatsRequest>();
+  fbreak;
+};
+
 set = 'set ' @{
   initSetLike<McSetRequest>();
   fbreak;
@@ -1085,7 +1185,7 @@ flush_all = 'flush_all' @{
 
 command := get | gets | lease_get | metaget | set | add | replace | append |
            prepend | cas | lease_set | delete | shutdown | incr | decr |
-           version | quit | stats | exec | flush_re | flush_all | touch;
+           version | quit | stats | exec | flush_re | flush_all | touch | gat | gats;
 
 write data;
 }%%

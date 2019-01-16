@@ -1351,5 +1351,170 @@ void McFlushAllReply::visitFields(V&& v) const {
     return;
   }
 }
+
+template <class Writer>
+void McGatRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, exptime());
+  writer.writeField(2 /* field id */, key());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void McGatRequest::visitFields(V&& v) {
+  if (!v.visitField(1, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(2, "key", key_)) {
+    return;
+  }
+}
+
+template <class V>
+void McGatRequest::visitFields(V&& v) const {
+  if (!v.visitField(1, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(2, "key", key_)) {
+    return;
+  }
+}
+
+template <class Writer>
+void McGatReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, value());
+  writer.writeField(3 /* field id */, flags());
+  writer.writeField(4 /* field id */, message());
+  writer.writeField(5 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void McGatReply::visitFields(V&& v) {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "value", value_)) {
+    return;
+  }
+  if (!v.visitField(3, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(4, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(5, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
+template <class V>
+void McGatReply::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "value", value_)) {
+    return;
+  }
+  if (!v.visitField(3, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(4, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(5, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
+template <class Writer>
+void McGatsRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, exptime());
+  writer.writeField(2 /* field id */, key());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void McGatsRequest::visitFields(V&& v) {
+  if (!v.visitField(1, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(2, "key", key_)) {
+    return;
+  }
+}
+
+template <class V>
+void McGatsRequest::visitFields(V&& v) const {
+  if (!v.visitField(1, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(2, "key", key_)) {
+    return;
+  }
+}
+
+template <class Writer>
+void McGatsReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, casToken());
+  writer.writeField(3 /* field id */, value());
+  writer.writeField(4 /* field id */, flags());
+  writer.writeField(5 /* field id */, message());
+  writer.writeField(6 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void McGatsReply::visitFields(V&& v) {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "casToken", casToken_)) {
+    return;
+  }
+  if (!v.visitField(3, "value", value_)) {
+    return;
+  }
+  if (!v.visitField(4, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(5, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(6, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
+template <class V>
+void McGatsReply::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "casToken", casToken_)) {
+    return;
+  }
+  if (!v.visitField(3, "value", value_)) {
+    return;
+  }
+  if (!v.visitField(4, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(5, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(6, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
 } // namespace memcache
 } // namespace facebook

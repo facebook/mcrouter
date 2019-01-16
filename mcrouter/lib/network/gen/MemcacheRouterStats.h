@@ -23,7 +23,7 @@ namespace facebook {
 namespace memcache {
 
 struct MemcacheRouterStatsConfig {
-  static constexpr size_t kNumRequestGroups = 17;
+  static constexpr size_t kNumRequestGroups = 19;
   static constexpr std::array<folly::StringPiece, 1 * kNumRequestGroups>
       sumStatNames{{folly::StringPiece("cmd_add_count"),
                     folly::StringPiece("cmd_append_count"),
@@ -32,6 +32,8 @@ struct MemcacheRouterStatsConfig {
                     folly::StringPiece("cmd_delete_count"),
                     folly::StringPiece("cmd_flushall_count"),
                     folly::StringPiece("cmd_flushre_count"),
+                    folly::StringPiece("cmd_gat_count"),
+                    folly::StringPiece("cmd_gats_count"),
                     folly::StringPiece("cmd_get_count"),
                     folly::StringPiece("cmd_gets_count"),
                     folly::StringPiece("cmd_incr_count"),
@@ -50,6 +52,8 @@ struct MemcacheRouterStatsConfig {
                      folly::StringPiece("cmd_delete"),
                      folly::StringPiece("cmd_flushall"),
                      folly::StringPiece("cmd_flushre"),
+                     folly::StringPiece("cmd_gat"),
+                     folly::StringPiece("cmd_gats"),
                      folly::StringPiece("cmd_get"),
                      folly::StringPiece("cmd_gets"),
                      folly::StringPiece("cmd_incr"),
@@ -67,6 +71,8 @@ struct MemcacheRouterStatsConfig {
                      folly::StringPiece("cmd_delete_out"),
                      folly::StringPiece("cmd_flushall_out"),
                      folly::StringPiece("cmd_flushre_out"),
+                     folly::StringPiece("cmd_gat_out"),
+                     folly::StringPiece("cmd_gats_out"),
                      folly::StringPiece("cmd_get_out"),
                      folly::StringPiece("cmd_gets_out"),
                      folly::StringPiece("cmd_incr_out"),
@@ -84,6 +90,8 @@ struct MemcacheRouterStatsConfig {
                      folly::StringPiece("cmd_delete_out_all"),
                      folly::StringPiece("cmd_flushall_out_all"),
                      folly::StringPiece("cmd_flushre_out_all"),
+                     folly::StringPiece("cmd_gat_out_all"),
+                     folly::StringPiece("cmd_gats_out_all"),
                      folly::StringPiece("cmd_get_out_all"),
                      folly::StringPiece("cmd_gets_out_all"),
                      folly::StringPiece("cmd_incr_out_all"),
@@ -143,62 +151,74 @@ MemcacheRouterStatsConfig::getStatGroup<McFlushReRequest>() {
 
 template <>
 inline constexpr size_t
+MemcacheRouterStatsConfig::getStatGroup<McGatRequest>() {
+  return 7; // stat group 'gat'
+}
+
+template <>
+inline constexpr size_t
+MemcacheRouterStatsConfig::getStatGroup<McGatsRequest>() {
+  return 8; // stat group 'gats'
+}
+
+template <>
+inline constexpr size_t
 MemcacheRouterStatsConfig::getStatGroup<McGetRequest>() {
-  return 7; // stat group 'get'
+  return 9; // stat group 'get'
 }
 
 template <>
 inline constexpr size_t
 MemcacheRouterStatsConfig::getStatGroup<McGetsRequest>() {
-  return 8; // stat group 'gets'
+  return 10; // stat group 'gets'
 }
 
 template <>
 inline constexpr size_t
 MemcacheRouterStatsConfig::getStatGroup<McIncrRequest>() {
-  return 9; // stat group 'incr'
+  return 11; // stat group 'incr'
 }
 
 template <>
 inline constexpr size_t
 MemcacheRouterStatsConfig::getStatGroup<McLeaseGetRequest>() {
-  return 10; // stat group 'lease_get'
+  return 12; // stat group 'lease_get'
 }
 
 template <>
 inline constexpr size_t
 MemcacheRouterStatsConfig::getStatGroup<McLeaseSetRequest>() {
-  return 11; // stat group 'lease_set'
+  return 13; // stat group 'lease_set'
 }
 
 template <>
 inline constexpr size_t
 MemcacheRouterStatsConfig::getStatGroup<McMetagetRequest>() {
-  return 12; // stat group 'metaget'
+  return 14; // stat group 'metaget'
 }
 
 template <>
 inline constexpr size_t
 MemcacheRouterStatsConfig::getStatGroup<McPrependRequest>() {
-  return 13; // stat group 'prepend'
+  return 15; // stat group 'prepend'
 }
 
 template <>
 inline constexpr size_t
 MemcacheRouterStatsConfig::getStatGroup<McReplaceRequest>() {
-  return 14; // stat group 'replace'
+  return 16; // stat group 'replace'
 }
 
 template <>
 inline constexpr size_t
 MemcacheRouterStatsConfig::getStatGroup<McSetRequest>() {
-  return 15; // stat group 'set'
+  return 17; // stat group 'set'
 }
 
 template <>
 inline constexpr size_t
 MemcacheRouterStatsConfig::getStatGroup<McTouchRequest>() {
-  return 16; // stat group 'touch'
+  return 18; // stat group 'touch'
 }
 } // namespace memcache
 } // namespace facebook

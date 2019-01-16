@@ -1236,5 +1236,153 @@ void McFlushAllReply::deserialize(carbon::CarbonProtocolReader& reader) {
   }
   reader.readStructEnd();
 }
+
+constexpr const char* const McGatRequest::name;
+
+void McGatRequest::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readField(exptime(), fieldType);
+        break;
+      }
+      case 2: {
+        reader.readField(key(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+void McGatReply::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readField(result(), fieldType);
+        break;
+      }
+      case 2: {
+        reader.readField(value(), fieldType);
+        break;
+      }
+      case 3: {
+        reader.readField(flags(), fieldType);
+        break;
+      }
+      case 4: {
+        reader.readField(message(), fieldType);
+        break;
+      }
+      case 5: {
+        reader.readField(appSpecificErrorCode(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+constexpr const char* const McGatsRequest::name;
+
+void McGatsRequest::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readField(exptime(), fieldType);
+        break;
+      }
+      case 2: {
+        reader.readField(key(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+void McGatsReply::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readField(result(), fieldType);
+        break;
+      }
+      case 2: {
+        reader.readField(casToken(), fieldType);
+        break;
+      }
+      case 3: {
+        reader.readField(value(), fieldType);
+        break;
+      }
+      case 4: {
+        reader.readField(flags(), fieldType);
+        break;
+      }
+      case 5: {
+        reader.readField(message(), fieldType);
+        break;
+      }
+      case 6: {
+        reader.readField(appSpecificErrorCode(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
 } // namespace memcache
 } // namespace facebook

@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -49,6 +48,11 @@ namespace mcrouter {
  *     request to "warm".
  * set/delete/incr/decr/etc.: send to the "cold" route, do not modify "warm".
  *     Client is responsible for "warm" consistency.
+ * gat/gats: send the request to "cold" route handle and in case of a miss,
+ *     fetch data from the "warm" route handle with simple 'get' request.
+ *     If "warm" returns a hit, synchronously try to add value to "cold"
+ *     using 'add' operation and send original 'gat' or 'gats' request
+ *     to "cold" one more time.
  *
  * Expiration time (TTL) for automatic warm -> cold update requests is
  * configured with "exptime" field. If the field is not present and
@@ -156,6 +160,47 @@ class WarmUpRoute {
       // update cold route if we have the value
       auto addReq = createRequestFromReply<McAddRequest>(
           req.key().fullKey(), warmReply, exptime);
+      cold_->route(addReq);
+      // and grab cas token again
+      return cold_->route(req);
+    }
+    return coldReply;
+  }
+
+  //////////////////////////////// gat /////////////////////////////////////
+  McGatReply route(const McGatRequest& req) {
+    auto coldReply = cold_->route(req);
+    if (isHitResult(coldReply.result())) {
+      return coldReply;
+    }
+
+    // miss: send simple get to warm route
+    McGetRequest reqGet(req.key().fullKey());
+    auto warmReply = warm_->route(reqGet);
+    if (isHitResult(warmReply.result())) {
+      // update cold route if we have the value
+      auto addReq = createRequestFromReply<McAddRequest>(
+          req.key().fullKey(), warmReply, req.exptime());
+      cold_->route(addReq);
+      return cold_->route(req);
+    }
+    return coldReply;
+  }
+
+  ////////////////////////////////gats////////////////////////////////////
+  McGatsReply route(const McGatsRequest& req) {
+    auto coldReply = cold_->route(req);
+    if (isHitResult(coldReply.result())) {
+      return coldReply;
+    }
+
+    // miss: send simple get to warm route
+    McGetRequest reqGet(req.key().fullKey());
+    auto warmReply = warm_->route(reqGet);
+    if (isHitResult(warmReply.result())) {
+      // update cold route if we have the value
+      auto addReq = createRequestFromReply<McAddRequest>(
+          req.key().fullKey(), warmReply, req.exptime());
       cold_->route(addReq);
       // and grab cas token again
       return cold_->route(req);
