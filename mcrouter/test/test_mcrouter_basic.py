@@ -201,23 +201,37 @@ class TestMcrouterBasicTouch(TestMcrouterBasicBase):
 
 class TestMcrouterBasicGat(TestMcrouterBasicBase):
     def __init__(self, *args, **kwargs):
-        super(TestMcrouterBasicGat, self).__init__(*args, **kwargs)
-        self.use_mock_mc = True
+        super(TestMcrouterBasicBase, self).__init__(*args, **kwargs)
 
     def test_basic_gat(self):
         mcr = self.get_mcrouter()
-        self.assertTrue(mcr.set('key', 'value', exptime=2000000000))
-        self.assertEqual(mcr.metaget('key')['exptime'], '2000000000')
-        self.assertEqual(mcr.gat(2000000001, 'key'), 'value')
-        self.assertEqual(mcr.metaget('key')['exptime'], '2000000001')
-        self.assertTrue(mcr.gats(2000000002, 'key')['value'], 'value')
-        self.assertEqual(mcr.metaget('key')['exptime'], '2000000002')
+
+        # set ttl to 3 seconds.
+        self.assertTrue(mcr.set('key', 'value', exptime=3))
+
+        # bump ttl to 10 seconds from now.
         self.assertEqual(mcr.gat(10, 'key'), 'value')
-        self.assertEqual(mcr.gats(10, 'key')['value'], 'value')
-        # Retrieve the item but set it to expire
-        self.assertEqual(mcr.gat(-1, 'key'), 'value')
-        # Retrieving expired item should fail
-        self.assertIsNone(mcr.gats(10, 'key'))
+
+        # sleep for 4 seconds: the item shouldn't have expired
+        time.sleep(4)
+        self.assertEqual(mcr.get('key'), 'value')
+
+    def test_basic_gats(self):
+        mcr = self.get_mcrouter()
+
+        # set ttl to 3 seconds.
+        self.assertTrue(mcr.set('key', 'value', exptime=3))
+
+        # bump ttl to 10 seconds from now.
+        ret = mcr.gats(10, 'key')
+        self.assertEqual(ret['value'], 'value')
+        self.assertTrue(ret['cas'])
+
+        # sleep for 4 seconds: the item shouldn't have expired,
+        # and the cas should succeed
+        time.sleep(4)
+        self.assertEqual(mcr.get('key'), 'value')
+        self.assertTrue(mcr.cas('key', 'value2', ret['cas']))
 
 
 class TestMcrouterInvalidRouteBase(McrouterTestCase):
