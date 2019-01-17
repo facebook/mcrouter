@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "ThreadLocalSSLContextProvider.h"
 
@@ -14,6 +13,7 @@
 #include <folly/io/async/SSLContext.h>
 #include <folly/io/async/SSLOptions.h>
 #include <folly/portability/OpenSSL.h>
+#include <folly/ssl/Init.h>
 #include <wangle/client/persistence/SharedMutexCacheLockGuard.h>
 #include <wangle/client/ssl/SSLSessionCacheData.h>
 #include <wangle/client/ssl/SSLSessionPersistentCache.h>
@@ -33,7 +33,6 @@ namespace facebook {
 namespace memcache {
 
 namespace {
-
 /* Sessions are valid for upto 24 hours */
 constexpr size_t kSessionLifeTime = 86400;
 
@@ -406,6 +405,18 @@ ServerContextInfo& getServerContextInfo(
 }
 
 } // namespace
+
+bool sslContextsAreThreadSafe() {
+  static folly::once_flag flag;
+  static bool ctxLockDisabled = false;
+  folly::call_once(flag, [&] {
+    folly::ssl::init();
+#ifdef CRYPTO_LOCK_SSL_CTX
+    ctxLockDisabled = folly::ssl::isLockDisabled(CRYPTO_LOCK_SSL_CTX);
+#endif
+  });
+  return !ctxLockDisabled;
+}
 
 FizzContextAndVerifier getFizzClientConfig(const SecurityOptions& opts) {
   auto& info = getClientContextInfo(opts, SecurityMech::TLS13_FIZZ);

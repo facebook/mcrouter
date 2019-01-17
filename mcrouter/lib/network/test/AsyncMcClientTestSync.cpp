@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <string>
 
@@ -16,6 +15,7 @@
 #include <folly/fibers/FiberManager.h>
 #include <folly/io/async/EventBase.h>
 #include <folly/portability/GFlags.h>
+#include <folly/ssl/Init.h>
 
 #include "mcrouter/lib/network/McSSLUtil.h"
 #include "mcrouter/lib/network/SecurityOptions.h"
@@ -809,7 +809,7 @@ TEST_P(AsyncMcClientSessionTest, SessionResumption) {
         ssl,
         0,
         0,
-        "test");
+        folly::to<std::string>("test_", (int)GetParam()));
     sendAndCheckRequest(client, i);
   }
 
@@ -1146,3 +1146,20 @@ TEST_P(AsyncMcClientSSLOffloadTest, clientReset) {
 }
 
 INSTANTIATE_TEST_CASE_P(AsyncMcClientTest, AsyncMcClientSSLOffloadTest, Bool());
+
+// SSL Context thread safety tests
+TEST(AsyncMcClient, contextsSafeByDefault) {
+  // ensure test is in a clean state lock wise
+  folly::ssl::cleanup();
+  folly::ssl::setLockTypes({});
+  EXPECT_TRUE(sslContextsAreThreadSafe());
+}
+
+#ifdef CRYPTO_LOCK_SSL_CTX
+TEST(AsyncMcClient, contextsUnsafe) {
+  // ensure test is in a clean state lock wise
+  folly::ssl::cleanup();
+  folly::ssl::setLockTypes({{CRYPTO_LOCK_SSL_CTX, folly::ssl::LockType::NONE}});
+  EXPECT_FALSE(sslContextsAreThreadSafe());
+}
+#endif

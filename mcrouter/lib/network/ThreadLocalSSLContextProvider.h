@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -46,6 +45,13 @@ class ClientSSLContext : public folly::SSLContext {
   // In our usage, cache_ is a LeakySingleton so the raw reference is safe.
   wangle::SSLSessionCallbacks& cache_;
 };
+
+/**
+ * Determine if SSL Contexts are thread safe.  Depending on the OpenSSL version,
+ * certain locks may be disabled that prevent usage of contexts across threads.
+ * This can happen if handshakes are being offloaded to a different thread pool.
+ */
+bool sslContextsAreThreadSafe();
 
 /**
  * The following methods return thread local managed SSL Contexts.  Contexts are

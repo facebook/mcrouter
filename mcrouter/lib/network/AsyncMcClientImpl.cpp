@@ -593,7 +593,9 @@ void AsyncMcClientImpl::attemptConnection() {
 
     socket_->setSendTimeout(connectionOptions_.writeTimeout.count());
     if ((mech == SecurityMech::TLS || mech == SecurityMech::TLS_TO_PLAINTEXT) &&
-        connectionOptions_.securityOpts.sslHandshakeOffload) {
+        connectionOptions_.securityOpts.sslHandshakeOffload &&
+        // we must make sure that contexts are threadsafe before doing this!
+        sslContextsAreThreadSafe()) {
       // we keep ourself alive during connection.
       auto self = selfPtr_.lock();
       auto sslSocket = socket_->getUnderlyingTransport<folly::AsyncSSLSocket>();
