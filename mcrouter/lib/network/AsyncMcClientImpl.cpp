@@ -699,6 +699,9 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
       } else {
         // replace socket with this
         socket_.reset(fallback.release());
+        // we need to set timeout options here.  things like tcp opts and
+        // qos are sock opts and don't change on the FD.
+        socket_->setSendTimeout(connectionOptions_.writeTimeout.count());
       }
     }
   }

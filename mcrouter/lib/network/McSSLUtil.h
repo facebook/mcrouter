@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2017-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -87,7 +86,8 @@ class McSSLUtil {
    * Move the existing ssl socket to plaintext if "mc_tls_to_pt" was
    * successfully negotiated.  Return value of nullptr means unable to
    * move.  If non null, the returned transport should be used and sock
-   * has been detached.
+   * has been detached.  The underlying FD will not change.
+   * The returned wrapper will wrap a transport inheriting AsyncSocket.
    */
   static folly::AsyncTransportWrapper::UniquePtr moveToPlaintext(
       folly::AsyncSSLSocket& sock) noexcept;

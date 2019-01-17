@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "AsyncMcServerWorker.h"
 
@@ -48,11 +47,7 @@ bool AsyncMcServerWorker::addClientSocket(
     void* userCtxt) {
   auto socket = transport->getUnderlyingTransport<folly::AsyncSocket>();
   CHECK(socket) << "Underlying transport expected to be AsyncSocket";
-  socket->setMaxReadsPerEvent(opts_.maxReadsPerEvent);
-  socket->setNoDelay(true);
-  if (isZeroCopyEnabled()) {
-    socket->setZeroCopy(true);
-  }
+  McServerSession::applySocketOptions(*socket, opts_);
   return addClientTransport(std::move(transport), userCtxt);
 }
 
@@ -62,8 +57,6 @@ McServerSession* AsyncMcServerWorker::addClientTransport(
   if (!onRequest_) {
     throw std::logic_error("can't add a transport without onRequest callback");
   }
-
-  transport->setSendTimeout(opts_.sendTimeout.count());
 
   try {
     return std::addressof(tracker_.add(

@@ -78,6 +78,17 @@ McServerSession& McServerSession::create(
   return *ptr;
 }
 
+void McServerSession::applySocketOptions(
+    folly::AsyncSocket& socket,
+    const AsyncMcServerWorkerOptions& opts) {
+  socket.setMaxReadsPerEvent(opts.maxReadsPerEvent);
+  socket.setNoDelay(true);
+  if (opts.tcpZeroCopyThresholdBytes > 0) {
+    socket.setZeroCopy(true);
+  }
+  socket.setSendTimeout(opts.sendTimeout.count());
+}
+
 McServerSession::McServerSession(
     folly::AsyncTransportWrapper::UniquePtr transport,
     std::shared_ptr<McServerOnRequest> cb,
@@ -609,7 +620,10 @@ void McServerSession::handshakeSuc(folly::AsyncSSLSocket* sock) noexcept {
 
   if (McSSLUtil::negotiatedPlaintextFallback(*sock)) {
     auto fallback = McSSLUtil::moveToPlaintext(*sock);
-    DCHECK(fallback);
+    CHECK(fallback);
+    auto asyncSock = fallback->getUnderlyingTransport<folly::AsyncSocket>();
+    CHECK(asyncSock);
+    applySocketOptions(*asyncSock, options_);
     transport_.reset(fallback.release());
   }
 
@@ -673,6 +687,8 @@ void McServerSession::fizzHandshakeAttemptFallback(
   sslSocket->setPreReceivedData(std::move(clientHello));
   sslSocket->enableClientHelloParsing();
   sslSocket->forceCacheAddrOnFailure(true);
+  // need to re apply the socket options
+  applySocketOptions(*sslSocket, options_);
 
   // We need to reset the transport before calling sslAccept(). The reason is
   // that sslAccept() may call some callbacks inline (e.g. handshakeSuc()) that
