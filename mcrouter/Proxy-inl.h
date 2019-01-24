@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2015-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <folly/Range.h>
 #include <folly/fibers/EventBaseLoopController.h>
@@ -237,11 +236,10 @@ Proxy<RouterInfo>* Proxy<RouterInfo>::createProxy(
   });
 
   // We want proxy life-time to be tied to VirtualEventBase.
-  eventBase.runOnDestruction(new folly::EventBase::FunctionLoopCallback(
-      [proxy = std::move(proxy)]() mutable {
-        /* make sure proxy is deleted on the proxy thread */
-        proxy.reset();
-      }));
+  eventBase.runOnDestruction([proxy = std::move(proxy)]() mutable {
+    /* make sure proxy is deleted on the proxy thread */
+    proxy.reset();
+  });
 
   return proxyPtr;
 }

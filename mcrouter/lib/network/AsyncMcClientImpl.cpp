@@ -31,12 +31,13 @@ constexpr size_t kStackIovecs = 128;
 constexpr size_t kMaxBatchSize = 24576 /* 24KB */;
 
 namespace {
-class OnEventBaseDestructionCallback : public folly::EventBase::LoopCallback {
+class OnEventBaseDestructionCallback
+    : public folly::EventBase::OnDestructionCallback {
  public:
   explicit OnEventBaseDestructionCallback(AsyncMcClientImpl& client)
       : client_(client) {}
-  ~OnEventBaseDestructionCallback() override {}
-  void runLoopCallback() noexcept final {
+  ~OnEventBaseDestructionCallback() final = default;
+  void onEventBaseDestruction() noexcept final {
     client_.closeNow();
   }
 
@@ -105,7 +106,7 @@ AsyncMcClientImpl::AsyncMcClientImpl(
       connectionOptions_(std::move(options)),
       eventBaseDestructionCallback_(
           std::make_unique<OnEventBaseDestructionCallback>(*this)) {
-  eventBase.runOnDestruction(eventBaseDestructionCallback_.get());
+  eventBase.runOnDestruction(*eventBaseDestructionCallback_);
   if (connectionOptions_.compressionCodecMap) {
     supportedCompressionCodecs_ =
         connectionOptions_.compressionCodecMap->getIdRange();
@@ -165,7 +166,7 @@ AsyncMcClientImpl::~AsyncMcClientImpl() {
     // readEOF and connectError, before we exit destructor.
     socket_->closeNow();
   }
-  eventBaseDestructionCallback_.reset();
+  eventBaseDestructionCallback_->cancel();
 }
 
 size_t AsyncMcClientImpl::getPendingRequestCount() const {

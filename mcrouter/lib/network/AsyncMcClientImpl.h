@@ -172,7 +172,8 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
 
   ConnectionOptions connectionOptions_;
 
-  std::unique_ptr<folly::EventBase::LoopCallback> eventBaseDestructionCallback_;
+  std::unique_ptr<folly::EventBase::OnDestructionCallback>
+      eventBaseDestructionCallback_;
 
   // We need to be able to get shared_ptr to ourself and shared_from_this()
   // doesn't work correctly with DelayedDestruction.
@@ -242,7 +243,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
 
   static void incMsgId(uint32_t& msgId);
 };
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
 
 #include "AsyncMcClientImpl-inl.h"
