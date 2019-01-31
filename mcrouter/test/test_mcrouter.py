@@ -400,9 +400,14 @@ class TestMetaGetFailover(McrouterTestCase):
         mcr = self.get_mcrouter()
 
         get_res = {}
-        self.assertTrue(mcr.set('testkey', 'bizbang'))
+
+        key_set_time = int(time.time())
+        self.assertTrue(mcr.set('testkey', 'bizbang', exptime=100))
+        key_after_set_time = int(time.time())
+
         get_res = mcr.metaget('testkey')
-        self.assertEqual(0, int(get_res['exptime']))
+        self.assertIn(int(get_res['exptime']),
+                      range(key_set_time + 100, key_after_set_time + 101))
 
         self.wildcard.terminate()
 
