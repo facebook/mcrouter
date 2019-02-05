@@ -813,7 +813,6 @@ class Memcached(MCProcess):
                 '-t', '1',
                 '--enable-hash-alias',
                 '--enable-unchecked-l1-sentinel-reads',
-                '--use-asmcs',
                 '--reaper_throttle=100',
                 '--ini-hashpower=16',
             ])
