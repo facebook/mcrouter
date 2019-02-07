@@ -1,10 +1,11 @@
-/*
- *  Copyright (c) Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
+#pragma once
+
 namespace facebook {
 namespace memcache {
 
@@ -20,35 +21,6 @@ template <class Request>
 typename std::enable_if<!Request::hasKey, uint64_t>::type getKeySize(
     const Request&) {
   return 0;
-}
-
-template <class Request>
-typename std::enable_if<
-    ListContains<McRequestList, Request>::value,
-    McSerializedRequest::Result>::type
-prepareUmbrella(
-    const Request& req,
-    UmbrellaSerializedMessage& serialized,
-    size_t reqId,
-    const struct iovec*& iovOut,
-    size_t& niovOut) {
-  return serialized.prepare(req, reqId, iovOut, niovOut)
-      ? McSerializedRequest::Result::OK
-      : McSerializedRequest::Result::ERROR;
-}
-
-template <class Request>
-typename std::enable_if<
-    !ListContains<McRequestList, Request>::value,
-    McSerializedRequest::Result>::type
-prepareUmbrella(
-    const Request&,
-    UmbrellaSerializedMessage&,
-    size_t,
-    const struct iovec*&,
-    size_t&) {
-  // Error out umbrella serialization of non-umbrella requests.
-  return McSerializedRequest::Result::ERROR;
 }
 
 } // namespace detail
@@ -87,18 +59,7 @@ McSerializedRequest::McSerializedRequest(
         result_ = Result::ERROR;
       }
       break;
-    case mc_umbrella_protocol_DONOTUSE:
-      new (&umbrellaMessage_) UmbrellaSerializedMessage;
-      if (detail::getKeySize(req) > MC_KEY_MAX_LEN_UMBRELLA) {
-        return;
-      }
-
-      result_ = detail::prepareUmbrella(
-          req, umbrellaMessage_, reqId, iovsBegin_, iovsCount_);
-      break;
-    case mc_unknown_protocol:
-    case mc_binary_protocol:
-    case mc_nprotocols:
+    default:
       checkLogic(false, "Used unsupported protocol! Value: {}", (int)protocol_);
       result_ = Result::ERROR;
       iovsCount_ = 0;

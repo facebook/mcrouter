@@ -1,16 +1,14 @@
-/*
- *  Copyright (c) 2015-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
 #include "mcrouter/lib/network/CaretSerializedMessage.h"
 #include "mcrouter/lib/network/CpuController.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
-#include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook {
 namespace memcache {
@@ -42,10 +40,6 @@ WriteBuffer::prepareTyped(
     case mc_ascii_protocol:
       return asciiReply_.prepare(
           std::move(reply), ctx_->asciiKey(), iovsBegin_, iovsCount_);
-
-    case mc_umbrella_protocol_DONOTUSE:
-      return umbrellaReply_.prepare(
-          std::move(reply), ctx_->reqid_, iovsBegin_, iovsCount_);
 
     case mc_caret_protocol:
       caretReply_.setTCPZeroCopyThreshold(tcpZeroCopyThreshold);
