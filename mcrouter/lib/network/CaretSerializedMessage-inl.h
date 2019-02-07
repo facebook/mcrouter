@@ -173,7 +173,6 @@ inline void CaretSerializedMessage::fillImpl(
   info.bodySize = storage_.computeBodySize();
   info.typeId = typeId;
   info.reqId = reqId;
-  info.version = UmbrellaVersion::TYPED_MESSAGE;
   info.traceId = traceId;
   info.serverLoad = serverLoad;
 

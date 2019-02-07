@@ -11,7 +11,7 @@
 #include <folly/Range.h>
 #include <folly/io/IOBuf.h>
 
-#include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/network/CarbonMessageDispatcher.h"
 #include "mcrouter/lib/network/ClientMcParser.h"
 #include "mcrouter/lib/network/McParser.h"
@@ -99,11 +99,6 @@ class ClientServerMcParser {
     template <class Request>
     void onRequest(Request&& req, bool /* noreply */) {
       callback_.requestReady(0, std::move(req));
-    }
-
-    template <class Request>
-    void umbrellaRequestReady(Request&& req, uint64_t msgId) {
-      callback_.requestReady(msgId, std::move(req));
     }
 
     void caretRequestReady(

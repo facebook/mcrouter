@@ -14,7 +14,6 @@
 
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McResUtil.h"
-#include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/fbi/cpp/util.h"

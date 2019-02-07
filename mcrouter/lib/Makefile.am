@@ -33,7 +33,6 @@ libmcrouter_a_SOURCES = \
   Lz4ImmutableCompressionCodec.h \
   MessageQueue.cpp \
   MessageQueue.h \
-  McOpList.h \
   McOperation.h \
   McResUtil.h \
   Operation.h \
@@ -72,6 +71,7 @@ libmcrouter_a_SOURCES = \
   carbon/RequestCommon.h \
   carbon/RequestReplyUtil.h \
   carbon/Result.h \
+  carbon/RoutingGroups.h \
   carbon/SerializationTraits.h \
   carbon/Stats.h \
   carbon/TypeList-inl.h \
@@ -126,9 +126,6 @@ libmcrouter_a_SOURCES = \
   mc/msg.cpp \
   mc/msg.h \
   mc/protocol.h \
-  mc/umbrella.c \
-  mc/umbrella.h \
-  mc/umbrella_conv.h \
   network/AccessPoint.cpp \
   network/AccessPoint.h \
   network/AsciiSerialized-inl.h \
@@ -199,8 +196,6 @@ libmcrouter_a_SOURCES = \
   network/SocketConnector.h \
   network/ThreadLocalSSLContextProvider.cpp \
   network/ThreadLocalSSLContextProvider.h \
-  network/UmbrellaProtocol.cpp \
-  network/UmbrellaProtocol.h \
   network/UniqueIntrusiveList.h \
   network/WriteBuffer.cpp \
   network/WriteBuffer.h \

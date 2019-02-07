@@ -18,7 +18,7 @@
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/HashUtil.h"
-#include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/lib/routes/NullRoute.h"

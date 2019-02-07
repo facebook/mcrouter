@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -51,59 +50,6 @@ void McServerSession::asciiRequestReady(
       McServerRequestContext::reply(std::move(ctx), Reply(mc_res_remote_error));
     }
   }
-}
-
-template <class Request>
-void McServerSession::umbrellaRequestReady(Request&& req, uint64_t reqid) {
-  DestructorGuard dg(this);
-
-  assert(parser_.protocol() == mc_umbrella_protocol_DONOTUSE);
-  assert(parser_.outOfOrder());
-
-  if (state_ != STREAMING) {
-    return;
-  }
-
-  McServerRequestContext ctx(*this, reqid);
-
-  umbrellaRequestReadyImpl(std::move(ctx), std::move(req));
-}
-
-template <class Request>
-void McServerSession::umbrellaRequestReadyImpl(
-    McServerRequestContext&& ctx,
-    Request&& req) {
-  onRequest_->requestReady(std::move(ctx), std::move(req));
-}
-
-template <>
-inline void McServerSession::umbrellaRequestReadyImpl(
-    McServerRequestContext&& ctx,
-    McVersionRequest&& req) {
-  if (options_.defaultVersionHandler) {
-    McVersionReply versionReply(mc_res_ok);
-    versionReply.value() =
-        folly::IOBuf(folly::IOBuf::COPY_BUFFER, options_.versionString);
-    McServerRequestContext::reply(std::move(ctx), std::move(versionReply));
-  } else {
-    onRequest_->requestReady(std::move(ctx), std::move(req));
-  }
-}
-
-template <>
-inline void McServerSession::umbrellaRequestReadyImpl(
-    McServerRequestContext&& ctx,
-    McQuitRequest&& /* req */) {
-  McServerRequestContext::reply(std::move(ctx), McQuitReply(mc_res_ok));
-  close();
-}
-
-template <>
-inline void McServerSession::umbrellaRequestReadyImpl(
-    McServerRequestContext&& ctx,
-    McShutdownRequest&& /* req */) {
-  McServerRequestContext::reply(std::move(ctx), McShutdownReply(mc_res_ok));
-  stateCb_.onShutdown();
 }
 
 } // namespace memcache

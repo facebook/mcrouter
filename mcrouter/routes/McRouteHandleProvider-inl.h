@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <memory>
 
@@ -159,8 +158,6 @@ McRouteHandleProvider<RouterInfo>::makePool(
         protocol = mc_ascii_protocol;
       } else if (equalStr("caret", str, folly::AsciiCaseInsensitive())) {
         protocol = mc_caret_protocol;
-      } else if (equalStr("umbrella", str, folly::AsciiCaseInsensitive())) {
-        protocol = mc_umbrella_protocol_DONOTUSE;
       } else {
         throwLogic("Unknown protocol '{}'", str);
       }

@@ -18,7 +18,6 @@
 #include "mcrouter/lib/AuxiliaryCPUThreadPool.h"
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/McResUtil.h"
-#include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/Reply.h"
 
 namespace facebook {

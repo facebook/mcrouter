@@ -12,7 +12,7 @@
 
 #include "mcrouter/lib/McKey.h"
 #include "mcrouter/lib/McResUtil.h"
-#include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/fbi/cpp/FuncGenerator.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"

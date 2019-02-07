@@ -9,6 +9,7 @@
 #include <folly/GroupVarint.h>
 #include <folly/io/IOBuf.h>
 
+#include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/fbi/cpp/TypeList.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
@@ -17,7 +18,6 @@
 #include "mcrouter/lib/network/CaretProtocol.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/TypedMsg.h"
-#include "mcrouter/lib/network/UmbrellaProtocol.h"
 #include "mcrouter/lib/network/test/ClientSocket.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
 #include "mcrouter/lib/network/test/MockMc.h"

@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -14,8 +13,8 @@
 __BEGIN_DECLS
 
 #define MC_KEY_MAX_LEN_ASCII (250)
-#define MC_KEY_MAX_LEN_UMBRELLA (2 * 1024)
-#define MC_KEY_MAX_LEN (MC_KEY_MAX_LEN_UMBRELLA)
+#define MC_KEY_MAX_LEN_CARET (2 * 1024)
+#define MC_KEY_MAX_LEN (MC_KEY_MAX_LEN_CARET)
 
 typedef enum mc_protocol_e {
   mc_unknown_protocol = 0,

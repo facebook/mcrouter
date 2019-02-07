@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -11,13 +10,15 @@
 #include <utility>
 
 #include "mcrouter/lib/McResUtil.h"
-#include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/carbon/RoutingGroups.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 
 namespace facebook {
 namespace memcache {
+
+template <typename Request>
+using ReplyT = typename Request::reply_type;
 
 /**
  * Type tags for Reply constructors.
@@ -78,5 +79,6 @@ template <class Request>
 ReplyT<Request> createReply(BusyReplyT) {
   return ReplyT<Request>(mc_res_busy);
 }
-}
-} // facebook::memcache
+
+} // namespace memcache
+} // namespace facebook

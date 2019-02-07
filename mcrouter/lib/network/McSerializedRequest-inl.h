@@ -46,7 +46,7 @@ McSerializedRequest::McSerializedRequest(
       break;
     case mc_caret_protocol:
       new (&caretRequest_) CaretSerializedMessage;
-      if (detail::getKeySize(req) > MC_KEY_MAX_LEN_UMBRELLA) {
+      if (detail::getKeySize(req) > MC_KEY_MAX_LEN_CARET) {
         return;
       }
       if (!caretRequest_.prepare(

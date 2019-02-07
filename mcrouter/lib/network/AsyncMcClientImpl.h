@@ -17,7 +17,7 @@
 #include <folly/io/async/VirtualEventBase.h>
 
 #include "mcrouter/lib/CompressionCodecManager.h"
-#include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/debug/ConnectionFifo.h"
 #include "mcrouter/lib/fbi/cpp/ObjectPool.h"
 #include "mcrouter/lib/network/ClientMcParser.h"

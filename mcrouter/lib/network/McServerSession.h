@@ -398,11 +398,6 @@ class McServerSession
   template <class Request>
   void asciiRequestReady(Request&& req, mc_res_t result, bool noreply);
 
-  template <class Request>
-  void umbrellaRequestReady(Request&& req, uint64_t reqid);
-  template <class Request>
-  void umbrellaRequestReadyImpl(McServerRequestContext&& ctx, Request&& req);
-
   void caretRequestReady(
       const CaretMessageInfo& headerInfo,
       const folly::IOBuf& reqBody);

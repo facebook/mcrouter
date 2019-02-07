@@ -10,7 +10,7 @@
 #include <functional>
 #include <utility>
 
-#include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/network/AsyncMcClientImpl.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
 

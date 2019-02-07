@@ -25,15 +25,9 @@ constexpr size_t kMaxHeaderLength = 1 /* magic byte */ +
 
 constexpr uint32_t kCaretConnectionControlReqId = 0;
 
-enum class UmbrellaVersion : uint8_t {
-  BASIC = 0,
-  TYPED_MESSAGE = 1,
-};
-
 struct CaretMessageInfo {
   uint32_t headerSize;
   uint32_t bodySize;
-  UmbrellaVersion version;
   uint32_t typeId;
   uint32_t reqId;
 

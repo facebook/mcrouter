@@ -180,11 +180,6 @@ class TestRunner {
       FAIL() << "caretRequestReady should never be called for ASCII";
     }
 
-    template <class Request>
-    void umbrellaRequestReady(Request&&, uint64_t) {
-      FAIL() << "umbrellaRequestReady should never be called for ASCII";
-    }
-
     void parseError(mc_res_t, folly::StringPiece reason) {
       ASSERT_NE(nullptr, parser_)
           << "Test framework bug, didn't provide parser to callback!";

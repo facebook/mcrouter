@@ -25,7 +25,7 @@ static_assert(false, "mcrouter: invalid build");
 #include <folly/experimental/observer/Observer.h>
 #include <folly/io/async/EventBase.h>
 
-#include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/carbon/NoopAdditionalLogger.h"
 
 #define MCROUTER_RUNTIME_VARS_DEFAULT ""
