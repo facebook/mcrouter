@@ -52,7 +52,6 @@ TESTS += \
   test_slow_warmup.py \
   test_tko_inactive.py \
   test_tko_reconfigure.py \
-  test_umbrella_server.py \
   test_validate_config.py \
   test_warmup.py \
   test_wch3.py

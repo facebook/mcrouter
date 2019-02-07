@@ -107,27 +107,6 @@ TEST_P(AsyncMcClientSimpleTest, asciiTimeout) {
   EXPECT_EQ(1, server->getAcceptedConns());
 }
 
-TEST_P(AsyncMcClientSimpleTest, umbrellaTimeout) {
-  auto ssl = GetParam();
-  TestServer::Config config;
-  config.useSsl = ssl.hasValue();
-  auto server = TestServer::create(std::move(config));
-  TestClient client(
-      "localhost",
-      server->getListenPort(),
-      200,
-      mc_umbrella_protocol_DONOTUSE,
-      ssl);
-  client.sendGet("nohold1", mc_res_found);
-  client.sendGet("hold", mc_res_timeout);
-  client.sendGet("nohold2", mc_res_found);
-  client.waitForReplies();
-  client.sendGet("shutdown", mc_res_notfound);
-  client.waitForReplies();
-  server->join();
-  EXPECT_EQ(1, server->getAcceptedConns());
-}
-
 TEST_P(AsyncMcClientSimpleTest, caretTimeout) {
   auto ssl = GetParam();
   TestServer::Config config;
@@ -270,16 +249,12 @@ void testCerts(
   };
   auto server = TestServer::create();
   TestClient brokenClient(
-      "localhost",
-      server->getListenPort(),
-      200,
-      mc_umbrella_protocol_DONOTUSE,
-      ssl);
+      "localhost", server->getListenPort(), 200, mc_caret_protocol, ssl);
   TestClient client(
       "localhost",
       server->getListenPort(),
       200,
-      mc_umbrella_protocol_DONOTUSE,
+      mc_caret_protocol,
       validClientSsl());
   brokenClient.sendGet("test", mc_res_connect_error);
   brokenClient.waitForReplies();
@@ -403,7 +378,6 @@ INSTANTIATE_TEST_CASE_P(
     Combine(
         Values(
             mc_ascii_protocol,
-            mc_umbrella_protocol_DONOTUSE,
             mc_caret_protocol),
         Values(folly::none, validClientSsl(), getTlsToPtSSL(), getFizzSSL())));
 
@@ -417,7 +391,7 @@ void reconnectTest(mc_protocol_t protocol) {
   auto bigValue = genBigValue();
 
   TestServer::Config config;
-  config.outOfOrder = (protocol == mc_umbrella_protocol_DONOTUSE);
+  config.outOfOrder = (protocol == mc_caret_protocol);
   config.useSsl = false;
   auto server = TestServer::create(std::move(config));
 
@@ -443,15 +417,15 @@ TEST(AsyncMcClient, reconnectAscii) {
   reconnectTest(mc_ascii_protocol);
 }
 
-TEST(AsyncMcClient, reconnectUmbrella) {
-  reconnectTest(mc_umbrella_protocol_DONOTUSE);
+TEST(AsyncMcClient, reconnectCaret) {
+  reconnectTest(mc_caret_protocol);
 }
 
 void reconnectImmediatelyTest(mc_protocol_t protocol) {
   auto bigValue = genBigValue();
 
   TestServer::Config config;
-  config.outOfOrder = (protocol == mc_umbrella_protocol_DONOTUSE);
+  config.outOfOrder = (protocol == mc_caret_protocol);
   config.useSsl = false;
   auto server = TestServer::create(std::move(config));
   TestClient client("localhost", server->getListenPort(), 100, protocol);
@@ -480,13 +454,13 @@ TEST(AsyncMcClient, reconnectImmediatelyAscii) {
   reconnectImmediatelyTest(mc_ascii_protocol);
 }
 
-TEST(AsyncMcClient, reconnectImmediatelyUmbrella) {
-  reconnectImmediatelyTest(mc_umbrella_protocol_DONOTUSE);
+TEST(AsyncMcClient, reconnectImmediatelyCaret) {
+  reconnectImmediatelyTest(mc_caret_protocol);
 }
 
 void bigKeyTest(mc_protocol_t protocol) {
   TestServer::Config config;
-  config.outOfOrder = (protocol == mc_umbrella_protocol_DONOTUSE);
+  config.outOfOrder = (protocol == mc_caret_protocol);
   config.useSsl = false;
   auto server = TestServer::create(std::move(config));
   TestClient client("localhost", server->getListenPort(), 200, protocol);
@@ -633,12 +607,12 @@ TEST(AsyncMcClient, asciiSendingTimeouts) {
   EXPECT_EQ(1, server->getAcceptedConns());
 }
 
-TEST(AsyncMcClient, oooUmbrellaTimeouts) {
+TEST(AsyncMcClient, oooCaretTimeouts) {
   TestServer::Config config;
   config.useSsl = false;
   auto server = TestServer::create(std::move(config));
   TestClient client(
-      "localhost", server->getListenPort(), 200, mc_umbrella_protocol_DONOTUSE);
+      "localhost", server->getListenPort(), 200, mc_caret_protocol);
   // Allow only up to two requests in flight.
   client.setThrottle(2, 0);
   client.sendGet("sleep", mc_res_timeout, 500);
@@ -703,7 +677,7 @@ TEST(AsyncMcClient, tonsOfConnections) {
   server->join();
 }
 
-void umbrellaBinaryReply(std::string data, mc_res_t expectedResult) {
+void caretBinaryReply(std::string data, mc_res_t expectedResult) {
   ListenSocket sock;
 
   std::thread serverThread([&sock, &data] {
@@ -713,37 +687,10 @@ void umbrellaBinaryReply(std::string data, mc_res_t expectedResult) {
     CHECK(n == data.size());
   });
 
-  TestClient client(
-      "localhost", sock.getPort(), 200, mc_umbrella_protocol_DONOTUSE);
+  TestClient client("localhost", sock.getPort(), 200, mc_caret_protocol);
   client.sendGet("test", expectedResult);
   client.waitForReplies();
   serverThread.join();
-}
-
-TEST(AsyncMcClient, binaryUmbrellaReply) {
-  // This is a serialized umbrella reply for get operation with
-  // mc_res_notfound result and reqid = 1.
-  std::string data{
-      '}',    '\000', '\000', '\003', '\000', '\000', '\000', ',',    '\000',
-      '\001', '\000', '\001', '\000', '\000', '\000', '\000', '\000', '\000',
-      '\000', '\005', '\000', '\004', '\000', '\004', '\000', '\000', '\000',
-      '\000', '\000', '\000', '\000', '\001', '\000', '\001', '\000', '\002',
-      '\000', '\000', '\000', '\000', '\000', '\000', '\000', '\003'};
-
-  umbrellaBinaryReply(data, mc_res_notfound);
-}
-
-TEST(AsyncMcClient, curruptedUmbrellaReply) {
-  // This is a serialized umbrella reply for get operation with
-  // reqid = 1, it contains invalid result code (771).
-  std::string data{
-      '}',    '\000', '\000', '\003', '\000', '\000', '\000', ',',    '\000',
-      '\001', '\000', '\001', '\000', '\000', '\000', '\000', '\000', '\000',
-      '\000', '\005', '\000', '\004', '\000', '\004', '\000', '\000', '\000',
-      '\000', '\000', '\000', '\000', '\001', '\000', '\001', '\000', '\002',
-      '\000', '\000', '\000', '\000', '\000', '\000', '\003', '\003'};
-
-  umbrellaBinaryReply(data, mc_res_remote_error);
 }
 
 class AsyncMcClientSessionTest : public TestWithParam<SecurityMech> {};
@@ -790,11 +737,7 @@ TEST_P(AsyncMcClientSessionTest, SessionResumption) {
 
   for (int i = 0; i < nConnAttempts; i++) {
     TestClient client(
-        "::1",
-        server->getListenPort(),
-        200,
-        mc_umbrella_protocol_DONOTUSE,
-        ssl);
+        "::1", server->getListenPort(), 200, mc_caret_protocol, ssl);
     sendAndCheckRequest(client, i);
   }
 
@@ -805,7 +748,7 @@ TEST_P(AsyncMcClientSessionTest, SessionResumption) {
         "::1",
         server->getListenPort(),
         200,
-        mc_umbrella_protocol_DONOTUSE,
+        mc_caret_protocol,
         ssl,
         0,
         0,
@@ -815,7 +758,7 @@ TEST_P(AsyncMcClientSessionTest, SessionResumption) {
 
   // shutdown the server
   TestClient client(
-      "::1", server->getListenPort(), 200, mc_umbrella_protocol_DONOTUSE, ssl);
+      "::1", server->getListenPort(), 200, mc_caret_protocol, ssl);
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
 
@@ -851,14 +794,6 @@ TEST(AsyncMcClient, asciiVersionDefault) {
 
 TEST(AsyncMcClient, asciiVersionUserSpecified) {
   versionTest(mc_ascii_protocol, false);
-}
-
-TEST(AsyncMcClient, umbrellaVersionDefault) {
-  versionTest(mc_umbrella_protocol_DONOTUSE, true);
-}
-
-TEST(AsyncMcClient, umbrellaVersionUserSpecified) {
-  versionTest(mc_umbrella_protocol_DONOTUSE, false);
 }
 
 TEST(AsyncMcClient, caretVersionDefault) {

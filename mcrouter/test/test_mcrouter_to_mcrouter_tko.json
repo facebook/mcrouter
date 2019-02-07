@@ -1,7 +1,7 @@
 {
   "pools": {
     "foo": {
-      "protocol": "umbrella",
+      "protocol": "caret",
       "servers": [ "localhost:12345" ]
     }
   },

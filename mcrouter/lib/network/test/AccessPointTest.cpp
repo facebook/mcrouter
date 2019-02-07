@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <gtest/gtest.h>
 
@@ -53,11 +52,6 @@ TEST(AccessPoint, host_port_proto) {
   EXPECT_EQ("127.0.0.1", ap->getHost());
   EXPECT_EQ(12345, ap->getPort());
   EXPECT_EQ(mc_ascii_protocol, ap->getProtocol());
-  ap = AccessPoint::create("127.0.0.1:1:umbrella", proto);
-  EXPECT_TRUE(ap != nullptr);
-  EXPECT_EQ("127.0.0.1", ap->getHost());
-  EXPECT_EQ(1, ap->getPort());
-  EXPECT_EQ(mc_umbrella_protocol_DONOTUSE, ap->getProtocol());
   ap = AccessPoint::create("127.0.0.1:1:caret", proto);
   EXPECT_TRUE(ap != nullptr);
   EXPECT_EQ("127.0.0.1", ap->getHost());
@@ -87,12 +81,6 @@ TEST(AccessPoint, host_port_proto_ssl) {
   EXPECT_EQ(mc_ascii_protocol, ap->getProtocol());
   EXPECT_TRUE(ap->useSsl());
   EXPECT_EQ(ap->getSecurityMech(), SecurityMech::TLS);
-  ap = AccessPoint::create("127.0.0.1:1:umbrella:plain", proto);
-  EXPECT_TRUE(ap != nullptr);
-  EXPECT_EQ("127.0.0.1", ap->getHost());
-  EXPECT_EQ(1, ap->getPort());
-  EXPECT_EQ(mc_umbrella_protocol_DONOTUSE, ap->getProtocol());
-  EXPECT_FALSE(ap->useSsl());
   ap = AccessPoint::create("127.0.0.1:1:caret:plain", proto);
   EXPECT_TRUE(ap != nullptr);
   EXPECT_EQ("127.0.0.1", ap->getHost());

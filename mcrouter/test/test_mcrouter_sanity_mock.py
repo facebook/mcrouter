@@ -15,12 +15,14 @@ from mcrouter.test.McrouterTestCase import McrouterTestCase
 from mcrouter.test.mock_servers import DeadServer
 from mcrouter.test.mock_servers import SleepServer
 
+
 def randstring(n):
     s = "0123456789abcdef"
     ans = ""
-    for i in range(n):
+    for _ in range(n):
         ans += random.choice(s)
     return ans
+
 
 class TestMcrouterSanityMock(McrouterTestCase):
     config = './mcrouter/test/test_ascii.json'
@@ -79,15 +81,6 @@ class TestMcrouterSanityMock(McrouterTestCase):
         self.assertEqual(self.mcrouter.metaget("key")['age'], "123")
         self.mcrouter.set("unknown_age", "value")
         self.assertEqual(self.mcrouter.metaget("unknown_age")['age'], "unknown")
-
-class TestMcrouterSanityOverUmbrellaMock(TestMcrouterSanityMock):
-    config = './mcrouter/test/test_umbrella.json'
-
-    def test_server_error_message(self):
-        # This test does not work with Umbrella since ASCII stores error
-        # message in 'message' field of TypedThriftReply while Umbrella
-        # stores error message in 'value' field.
-        pass
 
 
 class TestCaretSanityMock(TestMcrouterSanityMock):

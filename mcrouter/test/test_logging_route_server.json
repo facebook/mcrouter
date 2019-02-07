@@ -1,11 +1,11 @@
 {
   "pools": {
     "mc": {
-      "protocol": "umbrella",
+      "protocol": "caret",
       "servers": [ "localhost:11000" ]
     },
     "mcr": {
-      "protocol": "umbrella",
+      "protocol": "caret",
       "servers": [ "localhost:11001" ]
     }
   },

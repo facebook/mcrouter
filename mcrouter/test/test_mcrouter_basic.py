@@ -332,18 +332,6 @@ class TestMcrouterBasic2(McrouterTestCase):
         self.assertTrue(mcr.set('hello', 'world'))
         self.assertEqual(mcr.get('hello'), 'world')
 
-    def test_malformed_umbrella_length(self):
-        mcr = self.get_mcrouter()
-
-        # Send an umbrella request with a malformed length, and check that we
-        # get something back from the server (i.e. that it doesn't crash)
-        mcr.socket.settimeout(10)
-        mcr.socket.send('}}\x00\x01\x00\x00\x00\x00')
-        data = mcr.socket.recv(1024)
-        self.assertTrue(data)
-
-        # else hang
-
     def test_use_big_value(self):
         mcr = self.get_mcrouter(['--big-value-split-threshold=100'])
 
@@ -499,6 +487,7 @@ class TestBasicAllSyncAppendPrependTouch(TestBasicAllSyncBase):
         self.assertFalse(mcr.gats(0, "key"))
         self.assertFalse(mcr.gat(0, "key"))
         self.assertFalse(mcr.gats(0, "key"))
+
 
 class TestBasicAllFirst(McrouterTestCase):
     config = './mcrouter/test/test_basic_all_first.json'
@@ -866,6 +855,7 @@ class TestMcrouterBasicL1L2(McrouterTestCase):
 
         self.assertEqual(mcr.gat(0, "key1"), "value1")
         self.assertEqual(self.l1.gat(0, "key1"), "value1")
+
 
 class TestMcrouterBasicL1L2SizeSplit(McrouterTestCase):
     config = './mcrouter/test/test_basic_l1_l2_sizesplit.json'
