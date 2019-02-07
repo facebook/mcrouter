@@ -404,10 +404,10 @@ class McServerSession
   void umbrellaRequestReadyImpl(McServerRequestContext&& ctx, Request&& req);
 
   void caretRequestReady(
-      const UmbrellaMessageInfo& headerInfo,
+      const CaretMessageInfo& headerInfo,
       const folly::IOBuf& reqBody);
 
-  void processConnectionControlMessage(const UmbrellaMessageInfo& headerInfo);
+  void processConnectionControlMessage(const CaretMessageInfo& headerInfo);
 
   void parseError(mc_res_t result, folly::StringPiece reason);
 
@@ -471,7 +471,7 @@ class McServerSession
    * replied assuming this newly updated range.
    */
   void updateCompressionCodecIdRange(
-      const UmbrellaMessageInfo& headerInfo) noexcept;
+      const CaretMessageInfo& headerInfo) noexcept;
 
   McServerSession(
       folly::AsyncTransportWrapper::UniquePtr transport,

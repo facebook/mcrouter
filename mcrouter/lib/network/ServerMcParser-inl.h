@@ -57,7 +57,7 @@ void ServerMcParser<Callback>::requestReadyHelper(
 
 template <class Callback>
 bool ServerMcParser<Callback>::umMessageReady(
-    const UmbrellaMessageInfo& info,
+    const CaretMessageInfo& info,
     const folly::IOBuf& buffer) {
   try {
     uint64_t reqid;
@@ -99,7 +99,7 @@ bool ServerMcParser<Callback>::umMessageReady(
 
 template <class Callback>
 bool ServerMcParser<Callback>::caretMessageReady(
-    const UmbrellaMessageInfo& headerInfo,
+    const CaretMessageInfo& headerInfo,
     const folly::IOBuf& buffer) {
   try {
     // Caret header and body are assumed to be in one coalesced IOBuf

@@ -74,11 +74,10 @@ class ServerMcParser : private McParser::ParserCallback {
   void requestReadyHelper(Request&& req, uint64_t reqid);
 
   /* McParser callbacks */
-  bool umMessageReady(
-      const UmbrellaMessageInfo& info,
-      const folly::IOBuf& buffer) final;
+  bool umMessageReady(const CaretMessageInfo& info, const folly::IOBuf& buffer)
+      final;
   bool caretMessageReady(
-      const UmbrellaMessageInfo& headerInfo,
+      const CaretMessageInfo& headerInfo,
       const folly::IOBuf& buffer) final;
   void handleAscii(folly::IOBuf& readBuffer) final;
   void parseError(mc_res_t result, folly::StringPiece reason) final;

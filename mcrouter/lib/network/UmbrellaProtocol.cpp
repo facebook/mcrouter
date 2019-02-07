@@ -69,7 +69,7 @@ bool umbrellaGetTagValue(
   return false;
 }
 
-void resetAdditionalFields(UmbrellaMessageInfo& info) {
+void resetAdditionalFields(CaretMessageInfo& info) {
   info.traceId = {0, 0};
   info.supportedCodecsFirstId = 0;
   info.supportedCodecsSize = 0;
@@ -79,7 +79,7 @@ void resetAdditionalFields(UmbrellaMessageInfo& info) {
   info.serverLoad = ServerLoad::zero();
 }
 
-size_t getNumAdditionalFields(const UmbrellaMessageInfo& info) {
+size_t getNumAdditionalFields(const CaretMessageInfo& info) {
   size_t nAdditionalFields = 0;
   if (info.traceId.first != 0) {
     ++nAdditionalFields;
@@ -126,7 +126,7 @@ size_t serializeAdditionalFieldIfNonZero(
 
 size_t serializeAdditionalFields(
     uint8_t* destination,
-    const UmbrellaMessageInfo& info) {
+    const CaretMessageInfo& info) {
   uint8_t* buf = destination;
 
   buf += serializeAdditionalFieldIfNonZero(
@@ -160,7 +160,7 @@ size_t serializeAdditionalFields(
 UmbrellaParseStatus umbrellaParseHeader(
     const uint8_t* buf,
     size_t nbuf,
-    UmbrellaMessageInfo& infoOut) {
+    CaretMessageInfo& infoOut) {
   if (nbuf == 0) {
     return UmbrellaParseStatus::NOT_ENOUGH_DATA;
   }
@@ -198,7 +198,7 @@ UmbrellaParseStatus umbrellaParseHeader(
 UmbrellaParseStatus caretParseHeader(
     const uint8_t* buff,
     size_t nbuf,
-    UmbrellaMessageInfo& headerInfo) {
+    CaretMessageInfo& headerInfo) {
   /* we need the magic byte and the first byte of encoded header
      to determine if we have enough data in the buffer to get the
      entire header */
@@ -284,7 +284,7 @@ UmbrellaParseStatus caretParseHeader(
   return UmbrellaParseStatus::OK;
 }
 
-size_t caretPrepareHeader(const UmbrellaMessageInfo& info, char* headerBuf) {
+size_t caretPrepareHeader(const CaretMessageInfo& info, char* headerBuf) {
   // Header is at most kMaxHeaderLength without extra fields.
 
   uint32_t bodySize = info.bodySize;

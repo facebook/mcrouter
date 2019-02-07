@@ -936,7 +936,7 @@ void AsyncMcClientImpl::logErrorWithContext(folly::StringPiece reason) {
 }
 
 void AsyncMcClientImpl::handleConnectionControlMessage(
-    const UmbrellaMessageInfo& headerInfo) {
+    const CaretMessageInfo& headerInfo) {
   DestructorGuard dg(this);
   // Handle go away request.
   switch (headerInfo.typeId) {

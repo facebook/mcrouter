@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2015-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -53,7 +52,7 @@ class ServerOnRequest {
   void onRequest(
       McServerRequestContext&& ctx,
       Request&& req,
-      const UmbrellaMessageInfo* headerInfo,
+      const CaretMessageInfo* headerInfo,
       const folly::IOBuf* reqBuffer) {
     using Reply = ReplyT<Request>;
     send(
@@ -90,7 +89,7 @@ class ServerOnRequest {
       McServerRequestContext&& ctx,
       Request&& req,
       ReplyFunction<Request> replyFn,
-      const UmbrellaMessageInfo* headerInfo = nullptr,
+      const CaretMessageInfo* headerInfo = nullptr,
       const folly::IOBuf* reqBuffer = nullptr) {
     // We just reuse buffers iff:
     //  1) enablePassThroughMode_ is true.

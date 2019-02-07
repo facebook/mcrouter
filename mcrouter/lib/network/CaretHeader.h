@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -31,7 +30,7 @@ enum class UmbrellaVersion : uint8_t {
   TYPED_MESSAGE = 1,
 };
 
-struct UmbrellaMessageInfo {
+struct CaretMessageInfo {
   uint32_t headerSize;
   uint32_t bodySize;
   UmbrellaVersion version;

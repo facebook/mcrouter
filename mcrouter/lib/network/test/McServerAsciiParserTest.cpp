@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2015-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <gtest/gtest.h>
 
@@ -14,7 +13,7 @@ using namespace facebook::memcache;
 
 namespace facebook {
 namespace memcache {
-struct UmbrellaMessageInfo;
+struct CaretMessageInfo;
 }
 }
 
@@ -177,7 +176,7 @@ class TestRunner {
     bool failed_{false};
 
     // ServerMcParser callbacks.
-    void caretRequestReady(const UmbrellaMessageInfo&, const folly::IOBuf&) {
+    void caretRequestReady(const CaretMessageInfo&, const folly::IOBuf&) {
       FAIL() << "caretRequestReady should never be called for ASCII";
     }
 

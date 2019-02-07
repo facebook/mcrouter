@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2015-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -74,7 +73,7 @@ class ClientMcParser : private McParser::ParserCallback {
   McClientAsciiParser asciiParser_;
   void (ClientMcParser<Callback>::*replyForwarder_)(){nullptr};
   void (ClientMcParser<Callback>::*umbrellaOrCaretForwarder_)(
-      const UmbrellaMessageInfo&,
+      const CaretMessageInfo&,
       const folly::IOBuf&,
       uint64_t){nullptr};
 
@@ -89,33 +88,32 @@ class ClientMcParser : private McParser::ParserCallback {
 
   template <class Request>
   void forwardUmbrellaReply(
-      const UmbrellaMessageInfo& info,
+      const CaretMessageInfo& info,
       const folly::IOBuf& buffer,
       uint64_t reqId);
 
   template <class Request>
   void forwardCaretReply(
-      const UmbrellaMessageInfo& headerInfo,
+      const CaretMessageInfo& headerInfo,
       const folly::IOBuf& buffer,
       uint64_t reqId);
 
   std::unique_ptr<folly::IOBuf> decompress(
-      const UmbrellaMessageInfo& headerInfo,
+      const CaretMessageInfo& headerInfo,
       const folly::IOBuf& buffer);
 
   // McParser callbacks
-  bool umMessageReady(
-      const UmbrellaMessageInfo& info,
-      const folly::IOBuf& buffer) final;
+  bool umMessageReady(const CaretMessageInfo& info, const folly::IOBuf& buffer)
+      final;
   bool caretMessageReady(
-      const UmbrellaMessageInfo& headerInfo,
+      const CaretMessageInfo& headerInfo,
       const folly::IOBuf& buffer) final;
   void handleAscii(folly::IOBuf& readBuffer) final;
   void parseError(mc_res_t result, folly::StringPiece reason) final;
 
   bool shouldReadToAsciiBuffer() const;
 
-  RpcStatsContext getReplyStats(const UmbrellaMessageInfo& headerInfo) const;
+  RpcStatsContext getReplyStats(const CaretMessageInfo& headerInfo) const;
 };
 }
 } // facebook::memcache

@@ -45,7 +45,7 @@ class McParser {
      * @return            False on any parse errors.
      */
     virtual bool umMessageReady(
-        const UmbrellaMessageInfo& info,
+        const CaretMessageInfo& info,
         const folly::IOBuf& buffer) = 0;
 
     /**
@@ -58,7 +58,7 @@ class McParser {
      * @return            False on any parse errors.
      */
     virtual bool caretMessageReady(
-        const UmbrellaMessageInfo& headerInfo,
+        const CaretMessageInfo& headerInfo,
         const folly::IOBuf& buffer) = 0;
 
     /**
@@ -138,7 +138,7 @@ class McParser {
   /**
    * If we've read an umbrella header, this will contain header/body sizes.
    */
-  UmbrellaMessageInfo umMsgInfo_;
+  CaretMessageInfo umMsgInfo_;
 
   /**
    * Custom allocator states and method

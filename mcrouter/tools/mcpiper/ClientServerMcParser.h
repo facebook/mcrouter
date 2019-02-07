@@ -77,7 +77,7 @@ class ClientServerMcParser {
     void parseError(mc_res_t, folly::StringPiece) {}
 
     void handleConnectionControlMessage(
-        const UmbrellaMessageInfo& /* headerInfo */) {}
+        const CaretMessageInfo& /* headerInfo */) {}
 
    private:
     Callback& callback_;
@@ -88,7 +88,7 @@ class ClientServerMcParser {
    public:
     template <class M>
     void onTypedMessage(
-        const UmbrellaMessageInfo& headerInfo,
+        const CaretMessageInfo& headerInfo,
         const folly::IOBuf& /* reqBuffer */,
         M&& req) {
       callback_.requestReady(headerInfo.reqId, std::move(req));
@@ -107,7 +107,7 @@ class ClientServerMcParser {
     }
 
     void caretRequestReady(
-        const UmbrellaMessageInfo& headerInfo,
+        const CaretMessageInfo& headerInfo,
         const folly::IOBuf& buffer) {
       this->dispatchTypedRequest(headerInfo, buffer);
     }

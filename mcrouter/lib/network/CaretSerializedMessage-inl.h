@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -89,7 +88,7 @@ bool CaretSerializedMessage::fill(
     return false;
   }
 
-  UmbrellaMessageInfo info;
+  CaretMessageInfo info;
   if (!supportedCodecs.isEmpty()) {
     info.supportedCodecsFirstId = supportedCodecs.firstId;
     info.supportedCodecsSize = supportedCodecs.size;
@@ -117,7 +116,7 @@ bool CaretSerializedMessage::fill(
     return false;
   }
 
-  UmbrellaMessageInfo info;
+  CaretMessageInfo info;
 
   // Maybe compress.
   auto uncompressedSize = storage_.computeBodySize();
@@ -164,7 +163,7 @@ inline bool CaretSerializedMessage::maybeCompress(
 }
 
 inline void CaretSerializedMessage::fillImpl(
-    UmbrellaMessageInfo& info,
+    CaretMessageInfo& info,
     uint32_t reqId,
     size_t typeId,
     std::pair<uint64_t, uint64_t> traceId,

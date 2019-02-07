@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -75,14 +74,14 @@ void serializeCarbonRequest(
  *                     All Ms in the list must be Carbon struct types.
  * @param Proc         Derived processor class, may provide
  *                       void onTypedMessage(
- *                          const UmbrellaMessageInfo& headerInfo,
+ *                          const CaretMessageInfo& headerInfo,
  *                          const folly::IOBuf& reqBuffer,
  *                          M&& msg,
  *                          args...).
  *                     If not provided, default implementation that forwards to
  *                       void onRequest(McServerRequestContext&& context,
  *                                      M&& req,
- *                                      const UmbrellaMessageInfo& headerInfo,
+ *                                      const CaretMessageInfo& headerInfo,
  *                                      const folly::IOBuf& reqBuffer);
  *                     will be used.
  *                     Overloaded for every Carbon struct in MessageList.
@@ -98,7 +97,7 @@ class CarbonMessageDispatcher {
    * @return true iff headerInfo.typeId corresponds to a message in MessageList
    */
   bool dispatchTypedRequest(
-      const UmbrellaMessageInfo& headerInfo,
+      const CaretMessageInfo& headerInfo,
       const folly::IOBuf& buffer,
       Args&&... args) {
     return dispatcher_.dispatch(
@@ -112,7 +111,7 @@ class CarbonMessageDispatcher {
   // Default onTypedMessage() implementation
   template <class M>
   void onTypedMessage(
-      const UmbrellaMessageInfo& headerInfo,
+      const CaretMessageInfo& headerInfo,
       const folly::IOBuf& reqBuffer,
       M&& req,
       McServerRequestContext&& ctx) {
@@ -123,7 +122,7 @@ class CarbonMessageDispatcher {
   template <class M>
   static void processMsg(
       CarbonMessageDispatcher& me,
-      const UmbrellaMessageInfo& headerInfo,
+      const CaretMessageInfo& headerInfo,
       const folly::IOBuf& reqBuf,
       Args&&... args) {
     folly::io::Cursor cur(&reqBuf);
@@ -146,7 +145,7 @@ class CarbonMessageDispatcher {
   CallDispatcher<
       MessageList,
       CarbonMessageDispatcher,
-      const UmbrellaMessageInfo&,
+      const CaretMessageInfo&,
       const folly::IOBuf&,
       Args...>
       dispatcher_;

@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <sys/uio.h>
 
@@ -34,7 +33,7 @@ TEST(CarbonQueueAppenderTest, longString) {
   carbon::CarbonProtocolWriter writer(storage);
   reply.serialize(writer);
 
-  UmbrellaMessageInfo info;
+  CaretMessageInfo info;
   info.bodySize = storage.computeBodySize();
   info.typeId = 123;
   info.reqId = 456;
@@ -53,7 +52,7 @@ TEST(CarbonQueueAppenderTest, longString) {
   }
 
   // Read the serialized data back in and check that it's what we wrote.
-  UmbrellaMessageInfo inputHeader;
+  CaretMessageInfo inputHeader;
   caretParseHeader((uint8_t*)input.data(), input.length(), inputHeader);
   EXPECT_EQ(123, inputHeader.typeId);
   EXPECT_EQ(456, inputHeader.reqId);
@@ -132,7 +131,7 @@ TEST(CarbonQueueAppender, manyFields) {
   // This will trigger CarbonQueueAppenderStorage::coalesce() logic
   manyFields.serialize(writer);
 
-  UmbrellaMessageInfo info;
+  CaretMessageInfo info;
   info.bodySize = storage.computeBodySize();
   info.typeId = 123;
   info.reqId = 456;
@@ -151,7 +150,7 @@ TEST(CarbonQueueAppender, manyFields) {
   }
 
   // Read the serialized data back in and check that it's what we wrote.
-  UmbrellaMessageInfo inputHeader;
+  CaretMessageInfo inputHeader;
   caretParseHeader((uint8_t*)input.data(), input.length(), inputHeader);
   EXPECT_EQ(123, inputHeader.typeId);
   EXPECT_EQ(456, inputHeader.reqId);

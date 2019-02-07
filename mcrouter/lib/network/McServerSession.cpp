@@ -335,7 +335,7 @@ void McServerSession::onRequest(McQuitRequest&&, bool) {
 }
 
 void McServerSession::caretRequestReady(
-    const UmbrellaMessageInfo& headerInfo,
+    const CaretMessageInfo& headerInfo,
     const folly::IOBuf& reqBody) {
   DestructorGuard dg(this);
 
@@ -374,7 +374,7 @@ void McServerSession::caretRequestReady(
 }
 
 void McServerSession::processConnectionControlMessage(
-    const UmbrellaMessageInfo& headerInfo) {
+    const CaretMessageInfo& headerInfo) {
   DestructorGuard dg(this);
   switch (headerInfo.typeId) {
     case GoAwayAcknowledgement::typeId: {
@@ -390,7 +390,7 @@ void McServerSession::processConnectionControlMessage(
 }
 
 void McServerSession::updateCompressionCodecIdRange(
-    const UmbrellaMessageInfo& headerInfo) noexcept {
+    const CaretMessageInfo& headerInfo) noexcept {
   if (headerInfo.supportedCodecsSize == 0 || !compressionCodecMap_) {
     codecIdRange_ = CodecIdRange::Empty;
   } else {

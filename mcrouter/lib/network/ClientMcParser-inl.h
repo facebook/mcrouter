@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -106,7 +105,7 @@ void ClientMcParser<Callback>::forwardAsciiReply() {
 template <class Callback>
 template <class Request>
 void ClientMcParser<Callback>::forwardUmbrellaReply(
-    const UmbrellaMessageInfo& info,
+    const CaretMessageInfo& info,
     const folly::IOBuf& buffer,
     uint64_t reqId) {
   auto reply = umbrellaParseReply<Request>(
@@ -126,7 +125,7 @@ void ClientMcParser<Callback>::forwardUmbrellaReply(
 template <class Callback>
 template <class Request>
 void ClientMcParser<Callback>::forwardCaretReply(
-    const UmbrellaMessageInfo& headerInfo,
+    const CaretMessageInfo& headerInfo,
     const folly::IOBuf& buffer,
     uint64_t reqId) {
   const folly::IOBuf* finalBuffer = &buffer;
@@ -153,7 +152,7 @@ void ClientMcParser<Callback>::forwardCaretReply(
 
 template <class Callback>
 std::unique_ptr<folly::IOBuf> ClientMcParser<Callback>::decompress(
-    const UmbrellaMessageInfo& headerInfo,
+    const CaretMessageInfo& headerInfo,
     const folly::IOBuf& buffer) {
   assert(!buffer.isChained());
   auto* codec = compressionCodecMap_
@@ -172,7 +171,7 @@ std::unique_ptr<folly::IOBuf> ClientMcParser<Callback>::decompress(
 
 template <class Callback>
 bool ClientMcParser<Callback>::umMessageReady(
-    const UmbrellaMessageInfo& info,
+    const CaretMessageInfo& info,
     const folly::IOBuf& buffer) {
   if (UNLIKELY(parser_.protocol() != mc_umbrella_protocol_DONOTUSE)) {
     std::string reason = folly::sformat(
@@ -200,7 +199,7 @@ bool ClientMcParser<Callback>::umMessageReady(
 
 template <class Callback>
 bool ClientMcParser<Callback>::caretMessageReady(
-    const UmbrellaMessageInfo& headerInfo,
+    const CaretMessageInfo& headerInfo,
     const folly::IOBuf& buffer) {
   if (UNLIKELY(parser_.protocol() != mc_caret_protocol)) {
     const auto reason = folly::sformat(
@@ -295,7 +294,7 @@ bool ClientMcParser<Callback>::shouldReadToAsciiBuffer() const {
 
 template <class Callback>
 RpcStatsContext ClientMcParser<Callback>::getReplyStats(
-    const UmbrellaMessageInfo& headerInfo) const {
+    const CaretMessageInfo& headerInfo) const {
   RpcStatsContext rpcStatsContext;
   if (headerInfo.usedCodecId > 0) {
     // We need to remove compression additional fields to calculate the

@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -130,7 +129,7 @@ class CaretSerializedMessage {
       size_t& niovOut);
 
   void fillImpl(
-      UmbrellaMessageInfo& info,
+      CaretMessageInfo& info,
       uint32_t reqId,
       size_t typeId,
       std::pair<uint64_t, uint64_t> traceId,

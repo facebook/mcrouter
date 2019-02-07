@@ -32,19 +32,17 @@ enum class UmbrellaParseStatus {
   NOT_ENOUGH_DATA,
 };
 
-UmbrellaParseStatus umbrellaParseHeader(
-    const uint8_t* buf,
-    size_t nbuf,
-    UmbrellaMessageInfo& infoOut);
+UmbrellaParseStatus
+umbrellaParseHeader(const uint8_t* buf, size_t nbuf, CaretMessageInfo& infoOut);
 
 /**
  * Parses caret message header
- * and fills up the UmbrellaMessageInfo
+ * and fills up the CaretMessageInfo
  * @param pointer to buffer and length
  * @return parsed status
  */
 UmbrellaParseStatus
-caretParseHeader(const uint8_t* buf, size_t nbuf, UmbrellaMessageInfo& info);
+caretParseHeader(const uint8_t* buf, size_t nbuf, CaretMessageInfo& info);
 
 /**
  * Prepares the caret message header.
@@ -53,7 +51,7 @@ caretParseHeader(const uint8_t* buf, size_t nbuf, UmbrellaMessageInfo& info);
  *                      hold header and extra fields.
  * @return              Number of bytes written to buffer.
  */
-size_t caretPrepareHeader(const UmbrellaMessageInfo& info, char* headerBuffer);
+size_t caretPrepareHeader(const CaretMessageInfo& info, char* headerBuffer);
 
 uint64_t umbrellaDetermineReqId(const uint8_t* header, size_t nheader);
 

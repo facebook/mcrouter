@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2015-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <gtest/gtest.h>
 
@@ -97,7 +96,7 @@ TEST(CarbonMockMc, basic) {
   carbon::CarbonProtocolWriter writer(storage);
   getReq.serialize(writer);
 
-  UmbrellaMessageInfo requestInfo;
+  CaretMessageInfo requestInfo;
   requestInfo.bodySize = storage.computeBodySize();
   requestInfo.typeId = 1;
   requestInfo.reqId = 100;
@@ -119,7 +118,7 @@ TEST(CarbonMockMc, basic) {
   auto reply = clientSock.sendRequest(dataSp, 16);
   EXPECT_EQ('^', reply[0]);
 
-  UmbrellaMessageInfo replyInfo;
+  CaretMessageInfo replyInfo;
   caretParseHeader((uint8_t*)reply.data(), reply.size(), replyInfo);
   EXPECT_EQ(100, replyInfo.reqId);
   EXPECT_EQ(2, replyInfo.typeId);

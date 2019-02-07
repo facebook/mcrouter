@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -43,7 +42,7 @@ class CarbonRequestHandler : public facebook::memcache::CarbonMessageDispatcher<
   void onRequest(
       facebook::memcache::McServerRequestContext&& ctx,
       Request&& req,
-      const facebook::memcache::UmbrellaMessageInfo& headerInfo,
+      const facebook::memcache::CaretMessageInfo& headerInfo,
       const folly::IOBuf& reqBuf) {
     onRequestImpl(
         std::move(ctx),
@@ -60,7 +59,7 @@ class CarbonRequestHandler : public facebook::memcache::CarbonMessageDispatcher<
   void onRequestImpl(
       facebook::memcache::McServerRequestContext&& ctx,
       Request&& req,
-      const facebook::memcache::UmbrellaMessageInfo* headerInfo,
+      const facebook::memcache::CaretMessageInfo* headerInfo,
       const folly::IOBuf* reqBuf,
       std::true_type) {
     if (UNLIKELY(
@@ -83,7 +82,7 @@ class CarbonRequestHandler : public facebook::memcache::CarbonMessageDispatcher<
   void onRequestImpl(
       facebook::memcache::McServerRequestContext&&,
       Request&&,
-      const facebook::memcache::UmbrellaMessageInfo*,
+      const facebook::memcache::CaretMessageInfo*,
       const folly::IOBuf*,
       std::false_type) {
     facebook::memcache::throwRuntime(
@@ -94,7 +93,7 @@ class CarbonRequestHandler : public facebook::memcache::CarbonMessageDispatcher<
   FOLLY_NOINLINE void onRequestImplWithTracingEnabled(
       facebook::memcache::McServerRequestContext&& ctx,
       Request&& req,
-      const facebook::memcache::UmbrellaMessageInfo* headerInfo,
+      const facebook::memcache::CaretMessageInfo* headerInfo,
       const folly::IOBuf* reqBuf) {
     folly::RequestContextScopeGuard requestContextGuard;
     const auto commId =
@@ -113,7 +112,7 @@ class CarbonRequestHandler : public facebook::memcache::CarbonMessageDispatcher<
   void callOnRequest(
       facebook::memcache::McServerRequestContext&& ctx,
       Request&& req,
-      const facebook::memcache::UmbrellaMessageInfo* headerInfo,
+      const facebook::memcache::CaretMessageInfo* headerInfo,
       const folly::IOBuf* reqBuf,
       std::true_type) {
     onRequest_.onRequest(std::move(ctx), std::move(req), headerInfo, reqBuf);
@@ -123,7 +122,7 @@ class CarbonRequestHandler : public facebook::memcache::CarbonMessageDispatcher<
   void callOnRequest(
       facebook::memcache::McServerRequestContext&& ctx,
       Request&& req,
-      const facebook::memcache::UmbrellaMessageInfo*,
+      const facebook::memcache::CaretMessageInfo*,
       const folly::IOBuf*,
       std::false_type) {
     onRequest_.onRequest(std::move(ctx), std::move(req));
