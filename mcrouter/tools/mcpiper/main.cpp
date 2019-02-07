@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <signal.h>
 
@@ -107,7 +106,7 @@ Settings parseOptions(int argc, char** argv) {
       "protocol",
       po::value<std::string>(&settings.protocol),
       "Show only data transmitted in the provided protocol; "
-      "ARG is \"ascii\", \"umbrella\" or \"caret\".")(
+      "ARG is \"ascii\" or \"caret\".")(
       "verbose",
       po::value<size_t>(&settings.verboseLevel),
       "Set verbose level")(

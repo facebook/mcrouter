@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -73,35 +72,6 @@ constexpr typename std::
     enable_if<!carbon::IsRequestTrait<M>::value, const char*>::type
     getName() {
   return MatchingRequest<M>::name();
-}
-
-template <class Reply>
-typename std::enable_if_t<
-    !std::is_same<RequestFromReplyType<Reply, RequestReplyPairs>, void>::value,
-    bool>
-prepareUmbrellaRawReply(
-    UmbrellaSerializedMessage& umbrellaSerializedMessage,
-    Reply&& reply,
-    uint64_t reqid,
-    const struct iovec*& iovOut,
-    size_t& niovOut) {
-  return umbrellaSerializedMessage.prepare(
-      std::move(reply), reqid, iovOut, niovOut);
-}
-
-template <class Reply>
-typename std::enable_if_t<
-    std::is_same<RequestFromReplyType<Reply, RequestReplyPairs>, void>::value,
-    bool>
-prepareUmbrellaRawReply(
-    UmbrellaSerializedMessage&,
-    Reply&&,
-    uint64_t /* reqid */,
-    const struct iovec*& /* iovOut */,
-    size_t& /* niovOut */) {
-  LOG(ERROR) << "Umbrella Protocol does not support a reply type"
-             << " that is not Memcache compatible!";
-  return false;
 }
 
 } // detail
@@ -360,23 +330,11 @@ void MessagePrinter::printRawReply(
     mc_protocol_t protocol) {
   const struct iovec* iovsBegin = nullptr;
   size_t iovsCount = 0;
-  UmbrellaSerializedMessage umbrellaSerializedMessage;
   CaretSerializedMessage caretSerializedMessage;
   switch (protocol) {
     case mc_ascii_protocol:
       LOG_FIRST_N(INFO, 1) << "ASCII protocol is not supported for raw data";
       return;
-    case mc_umbrella_protocol_DONOTUSE:
-      if (!detail::prepareUmbrellaRawReply(
-              umbrellaSerializedMessage,
-              std::move(reply),
-              msgId,
-              iovsBegin,
-              iovsCount)) {
-        LOG(ERROR) << "Serialization failed for umbrella reply " << msgId;
-        return;
-      }
-      break;
     case mc_caret_protocol:
       if (!caretSerializedMessage.prepare(
               std::move(reply),
@@ -391,7 +349,7 @@ void MessagePrinter::printRawReply(
       }
       break;
     default:
-      CHECK(false);
+      CHECK(false) << "Invalid protocol!";
   }
 
   printRawMessage(iovsBegin, iovsCount);

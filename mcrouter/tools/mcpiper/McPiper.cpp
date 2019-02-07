@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2015-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "McPiper.h"
 
@@ -90,11 +89,10 @@ MessagePrinter::Filter getFilter(const Settings& settings) {
   // Protocol
   if (!settings.protocol.empty()) {
     auto protocol = mc_string_to_protocol(settings.protocol.c_str());
-    if (protocol == mc_ascii_protocol || protocol == mc_caret_protocol ||
-        protocol == mc_umbrella_protocol_DONOTUSE) {
+    if (protocol == mc_ascii_protocol || protocol == mc_caret_protocol) {
       filter.protocol.emplace(protocol);
     } else {
-      LOG(ERROR) << "Invalid protocol. ascii|caret|umbrella expected, got "
+      LOG(ERROR) << "Invalid protocol. ascii|caret expected, got "
                  << settings.protocol
                  << ". Protocol filter will not be applied.";
     }
