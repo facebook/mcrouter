@@ -14,6 +14,7 @@
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/CarbonMessageDispatcher.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
+#include "mcrouter/lib/network/CaretProtocol.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/TypedMsg.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"

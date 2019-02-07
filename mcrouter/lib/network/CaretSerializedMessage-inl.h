@@ -8,7 +8,7 @@
 
 #include "mcrouter/lib/carbon/Artillery.h"
 #include "mcrouter/lib/network/CarbonMessageDispatcher.h"
-#include "mcrouter/lib/network/UmbrellaProtocol.h"
+#include "mcrouter/lib/network/CaretProtocol.h"
 
 namespace facebook {
 namespace memcache {

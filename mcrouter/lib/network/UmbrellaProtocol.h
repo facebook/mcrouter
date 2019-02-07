@@ -18,6 +18,7 @@
 #include "mcrouter/lib/mc/umbrella.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/network/CaretHeader.h"
+#include "mcrouter/lib/network/CaretProtocol.h"
 
 namespace folly {
 class IOBuf;
@@ -26,32 +27,8 @@ class IOBuf;
 namespace facebook {
 namespace memcache {
 
-enum class UmbrellaParseStatus {
-  OK,
-  MESSAGE_PARSE_ERROR,
-  NOT_ENOUGH_DATA,
-};
-
-UmbrellaParseStatus
+ParseStatus
 umbrellaParseHeader(const uint8_t* buf, size_t nbuf, CaretMessageInfo& infoOut);
-
-/**
- * Parses caret message header
- * and fills up the CaretMessageInfo
- * @param pointer to buffer and length
- * @return parsed status
- */
-UmbrellaParseStatus
-caretParseHeader(const uint8_t* buf, size_t nbuf, CaretMessageInfo& info);
-
-/**
- * Prepares the caret message header.
- * @param info          Header info.
- * @param headerBuffer  Pointer to buffer. Buffer must be large enough to
- *                      hold header and extra fields.
- * @return              Number of bytes written to buffer.
- */
-size_t caretPrepareHeader(const CaretMessageInfo& info, char* headerBuffer);
 
 uint64_t umbrellaDetermineReqId(const uint8_t* header, size_t nheader);
 
@@ -270,7 +247,7 @@ class UmbrellaSerializedMessage {
   UmbrellaSerializedMessage(UmbrellaSerializedMessage&&) noexcept = delete;
   UmbrellaSerializedMessage& operator=(UmbrellaSerializedMessage&&) = delete;
 };
-}
+} // namespace memcache
 } // facebook::memcache
 
 #include "UmbrellaProtocol-inl.h"

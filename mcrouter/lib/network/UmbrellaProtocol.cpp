@@ -157,18 +157,18 @@ size_t serializeAdditionalFields(
 
 } // anonymous namespace
 
-UmbrellaParseStatus umbrellaParseHeader(
+ParseStatus umbrellaParseHeader(
     const uint8_t* buf,
     size_t nbuf,
     CaretMessageInfo& infoOut) {
   if (nbuf == 0) {
-    return UmbrellaParseStatus::NOT_ENOUGH_DATA;
+    return ParseStatus::NotEnoughData;
   }
 
   if (buf[0] == ENTRY_LIST_MAGIC_BYTE) {
     infoOut.version = UmbrellaVersion::BASIC;
   } else {
-    return UmbrellaParseStatus::MESSAGE_PARSE_ERROR;
+    return ParseStatus::MessageParseError;
   }
 
   if (infoOut.version == UmbrellaVersion::BASIC) {
@@ -177,7 +177,7 @@ UmbrellaParseStatus umbrellaParseHeader(
        Where N is nentries and S is message size, both big endian */
     entry_list_msg_t* header = (entry_list_msg_t*)buf;
     if (nbuf < sizeof(entry_list_msg_t)) {
-      return UmbrellaParseStatus::NOT_ENOUGH_DATA;
+      return ParseStatus::NotEnoughData;
     }
     size_t messageSize = folly::Endian::big<uint32_t>(header->total_size);
     uint16_t nentries = folly::Endian::big<uint16_t>(header->nentries);
@@ -185,123 +185,14 @@ UmbrellaParseStatus umbrellaParseHeader(
     infoOut.headerSize =
         sizeof(entry_list_msg_t) + sizeof(um_elist_entry_t) * nentries;
     if (infoOut.headerSize > messageSize) {
-      return UmbrellaParseStatus::MESSAGE_PARSE_ERROR;
+      return ParseStatus::MessageParseError;
     }
     infoOut.bodySize = messageSize - infoOut.headerSize;
   } else {
-    return UmbrellaParseStatus::MESSAGE_PARSE_ERROR;
+    return ParseStatus::MessageParseError;
   }
 
-  return UmbrellaParseStatus::OK;
-}
-
-UmbrellaParseStatus caretParseHeader(
-    const uint8_t* buff,
-    size_t nbuf,
-    CaretMessageInfo& headerInfo) {
-  /* we need the magic byte and the first byte of encoded header
-     to determine if we have enough data in the buffer to get the
-     entire header */
-  if (nbuf < 2) {
-    return UmbrellaParseStatus::NOT_ENOUGH_DATA;
-  }
-
-  if (buff[0] != kCaretMagicByte) {
-    return UmbrellaParseStatus::MESSAGE_PARSE_ERROR;
-  }
-
-  const char* buf = reinterpret_cast<const char*>(buff);
-  size_t encodedLength = folly::GroupVarint32::encodedSize(buf + 1);
-
-  if (nbuf < encodedLength + 1) {
-    return UmbrellaParseStatus::NOT_ENOUGH_DATA;
-  }
-
-  uint32_t additionalFields;
-  folly::GroupVarint32::decode_simple(
-      buf + 1,
-      &headerInfo.bodySize,
-      &headerInfo.typeId,
-      &headerInfo.reqId,
-      &additionalFields);
-
-  folly::StringPiece range(buf, nbuf);
-  range.advance(encodedLength + 1);
-
-  // Additional fields are sequence of (key,value) pairs
-  resetAdditionalFields(headerInfo);
-  for (uint32_t i = 0; i < additionalFields; i++) {
-    size_t fieldType;
-    if (auto maybeFieldType = folly::tryDecodeVarint(range)) {
-      fieldType = *maybeFieldType;
-    } else {
-      return UmbrellaParseStatus::NOT_ENOUGH_DATA;
-    }
-
-    size_t fieldValue;
-    if (auto maybeFieldValue = folly::tryDecodeVarint(range)) {
-      fieldValue = *maybeFieldValue;
-    } else {
-      return UmbrellaParseStatus::NOT_ENOUGH_DATA;
-    }
-
-    if (fieldType >
-        static_cast<uint64_t>(CaretAdditionalFieldType::SERVER_LOAD)) {
-      // Additional Field Type not recognized, ignore.
-      continue;
-    }
-
-    switch (static_cast<CaretAdditionalFieldType>(fieldType)) {
-      case CaretAdditionalFieldType::TRACE_ID:
-        headerInfo.traceId.first = fieldValue;
-        break;
-      case CaretAdditionalFieldType::TRACE_NODE_ID:
-        headerInfo.traceId.second = fieldValue;
-        break;
-      case CaretAdditionalFieldType::SUPPORTED_CODECS_FIRST_ID:
-        headerInfo.supportedCodecsFirstId = fieldValue;
-        break;
-      case CaretAdditionalFieldType::SUPPORTED_CODECS_SIZE:
-        headerInfo.supportedCodecsSize = fieldValue;
-        break;
-      case CaretAdditionalFieldType::USED_CODEC_ID:
-        headerInfo.usedCodecId = fieldValue;
-        break;
-      case CaretAdditionalFieldType::UNCOMPRESSED_BODY_SIZE:
-        headerInfo.uncompressedBodySize = fieldValue;
-        break;
-      case CaretAdditionalFieldType::DROP_PROBABILITY:
-        headerInfo.dropProbability = fieldValue;
-        break;
-      case CaretAdditionalFieldType::SERVER_LOAD:
-        headerInfo.serverLoad = ServerLoad(fieldValue);
-        break;
-      }
-  }
-
-  headerInfo.headerSize = range.cbegin() - buf;
-
-  return UmbrellaParseStatus::OK;
-}
-
-size_t caretPrepareHeader(const CaretMessageInfo& info, char* headerBuf) {
-  // Header is at most kMaxHeaderLength without extra fields.
-
-  uint32_t bodySize = info.bodySize;
-  uint32_t typeId = info.typeId;
-  uint32_t reqId = info.reqId;
-
-  headerBuf[0] = kCaretMagicByte;
-
-  // Header
-  char* additionalFields = folly::GroupVarint32::encode(
-      headerBuf + 1, bodySize, typeId, reqId, getNumAdditionalFields(info));
-
-  // Additional fields
-  additionalFields += serializeAdditionalFields(
-      reinterpret_cast<uint8_t*>(additionalFields), info);
-
-  return additionalFields - headerBuf;
+  return ParseStatus::Ok;
 }
 
 uint64_t umbrellaDetermineReqId(const uint8_t* header, size_t nheader) {

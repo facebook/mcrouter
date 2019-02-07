@@ -17,6 +17,7 @@
 #include <folly/lang/Bits.h>
 
 #include "mcrouter/lib/Clocks.h"
+#include "mcrouter/lib/network/CaretProtocol.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook {
@@ -113,7 +114,7 @@ std::pair<void*, size_t> McParser::getReadBuffer() {
 bool McParser::readUmbrellaOrCaretData() {
   while (readBuffer_.length() > 0) {
     // Parse header
-    UmbrellaParseStatus parseStatus;
+    ParseStatus parseStatus;
     if (protocol_ == mc_umbrella_protocol_DONOTUSE) {
       parseStatus = umbrellaParseHeader(
           readBuffer_.data(), readBuffer_.length(), umMsgInfo_);
@@ -122,11 +123,11 @@ bool McParser::readUmbrellaOrCaretData() {
           readBuffer_.data(), readBuffer_.length(), umMsgInfo_);
     }
 
-    if (parseStatus == UmbrellaParseStatus::NOT_ENOUGH_DATA) {
+    if (parseStatus == ParseStatus::NotEnoughData) {
       return true;
     }
 
-    if (parseStatus != UmbrellaParseStatus::OK) {
+    if (parseStatus != ParseStatus::Ok) {
       callback_.parseError(
           mc_res_remote_error,
           folly::sformat(

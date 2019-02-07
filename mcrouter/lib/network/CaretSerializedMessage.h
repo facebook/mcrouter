@@ -16,7 +16,6 @@
 #include "mcrouter/lib/carbon/CarbonQueueAppender.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
 #include "mcrouter/lib/network/ServerLoad.h"
-#include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook {
 namespace memcache {

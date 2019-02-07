@@ -71,5 +71,5 @@ enum class CaretAdditionalFieldType {
   SERVER_LOAD = 7,
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
