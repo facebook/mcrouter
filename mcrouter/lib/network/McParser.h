@@ -9,8 +9,9 @@
 #include <folly/io/IOBufQueue.h>
 
 #include "mcrouter/lib/debug/ConnectionFifo.h"
+#include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
-#include "mcrouter/lib/network/UmbrellaProtocol.h"
+#include "mcrouter/lib/network/CaretHeader.h"
 
 namespace facebook {
 namespace memcache {
@@ -22,8 +23,6 @@ inline mc_protocol_t determineProtocol(uint8_t firstByte) {
   switch (firstByte) {
     case kCaretMagicByte:
       return mc_caret_protocol;
-    case ENTRY_LIST_MAGIC_BYTE:
-      return mc_umbrella_protocol_DONOTUSE;
     default:
       return mc_ascii_protocol;
   }
@@ -34,19 +33,6 @@ class McParser {
   class ParserCallback {
    public:
     virtual ~ParserCallback() = 0;
-
-    /**
-     * We fully parsed an umbrella message and want to call RequestReady or
-     * ReplyReady callback.
-     *
-     * @param info        Message information
-     * @param buffer      Coalesced IOBuf that holds the entire message
-     *                    (header and body)
-     * @return            False on any parse errors.
-     */
-    virtual bool umMessageReady(
-        const CaretMessageInfo& info,
-        const folly::IOBuf& buffer) = 0;
 
     /**
      * caretMessageReady should be called after we have successfully parsed the
@@ -136,18 +122,19 @@ class McParser {
   folly::IOBuf readBuffer_;
 
   /**
-   * If we've read an umbrella header, this will contain header/body sizes.
+   * If we've read a caret header, this will contain header/body sizes.
    */
-  CaretMessageInfo umMsgInfo_;
+  CaretMessageInfo msgInfo_;
 
   /**
    * Custom allocator states and method
    */
   bool useJemallocNodumpAllocator_{false};
 
-  bool readUmbrellaOrCaretData();
+  bool readCaretData();
 };
 
 inline McParser::ParserCallback::~ParserCallback() {}
-}
-} // facebook::memcache
+
+} // namespace memcache
+} // namespace facebook

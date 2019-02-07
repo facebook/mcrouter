@@ -63,17 +63,14 @@ typename std::enable_if<ListContains<McRequestList, Request>::value>::type
 ClientMcParser<Callback>::expectNext() {
   if (parser_.protocol() == mc_ascii_protocol) {
     asciiParser_.initializeReplyParser<Request>();
-    replyForwarder_ = &ClientMcParser<Callback>::forwardAsciiReply<Request>;
+    asciiReplyForwarder_ =
+        &ClientMcParser<Callback>::forwardAsciiReply<Request>;
     if (UNLIKELY(debugFifo_ && debugFifo_->isConnected())) {
       debugFifo_->startMessage(
           MessageDirection::Received, ReplyT<Request>::typeId);
     }
-  } else if (parser_.protocol() == mc_umbrella_protocol_DONOTUSE) {
-    umbrellaOrCaretForwarder_ =
-        &ClientMcParser<Callback>::forwardUmbrellaReply<Request>;
   } else if (parser_.protocol() == mc_caret_protocol) {
-    umbrellaOrCaretForwarder_ =
-        &ClientMcParser<Callback>::forwardCaretReply<Request>;
+    caretForwarder_ = &ClientMcParser<Callback>::forwardCaretReply<Request>;
   }
 }
 
@@ -82,8 +79,7 @@ template <class Request>
 typename std::enable_if<!ListContains<McRequestList, Request>::value>::type
 ClientMcParser<Callback>::expectNext() {
   assert(parser_.protocol() == mc_caret_protocol);
-  umbrellaOrCaretForwarder_ =
-      &ClientMcParser<Callback>::forwardCaretReply<Request>;
+  caretForwarder_ = &ClientMcParser<Callback>::forwardCaretReply<Request>;
 }
 
 template <class Callback>
@@ -99,27 +95,7 @@ void ClientMcParser<Callback>::forwardAsciiReply() {
           replySize /* reply size before compression */,
           replySize /* reply size after compression */,
           ServerLoad::zero()));
-  replyForwarder_ = nullptr;
-}
-
-template <class Callback>
-template <class Request>
-void ClientMcParser<Callback>::forwardUmbrellaReply(
-    const CaretMessageInfo& info,
-    const folly::IOBuf& buffer,
-    uint64_t reqId) {
-  auto reply = umbrellaParseReply<Request>(
-      buffer,
-      buffer.data(),
-      info.headerSize,
-      buffer.data() + info.headerSize,
-      info.bodySize);
-
-  callback_.replyReady(
-      std::move(reply),
-      reqId,
-      RpcStatsContext(
-          0 /* usedCodecId */, info.bodySize, info.bodySize, info.serverLoad));
+  asciiReplyForwarder_ = nullptr;
 }
 
 template <class Callback>
@@ -170,34 +146,6 @@ std::unique_ptr<folly::IOBuf> ClientMcParser<Callback>::decompress(
 }
 
 template <class Callback>
-bool ClientMcParser<Callback>::umMessageReady(
-    const CaretMessageInfo& info,
-    const folly::IOBuf& buffer) {
-  if (UNLIKELY(parser_.protocol() != mc_umbrella_protocol_DONOTUSE)) {
-    std::string reason = folly::sformat(
-        "Expected {} protocol, but received umbrella!",
-        mc_protocol_to_string(parser_.protocol()));
-    callback_.parseError(mc_res_local_error, reason);
-    return false;
-  }
-
-  try {
-    const size_t reqId = umbrellaDetermineReqId(buffer.data(), info.headerSize);
-    if (callback_.nextReplyAvailable(reqId)) {
-      (this->*umbrellaOrCaretForwarder_)(info, buffer, reqId);
-    }
-    // Consume the message, but don't fail.
-    return true;
-  } catch (const std::exception& e) {
-    std::string reason(
-        std::string("Error parsing Umbrella message: ") + e.what());
-    LOG(ERROR) << reason;
-    callback_.parseError(mc_res_local_error, reason);
-    return false;
-  }
-}
-
-template <class Callback>
 bool ClientMcParser<Callback>::caretMessageReady(
     const CaretMessageInfo& headerInfo,
     const folly::IOBuf& buffer) {
@@ -214,7 +162,7 @@ bool ClientMcParser<Callback>::caretMessageReady(
     if (UNLIKELY(reqId == kCaretConnectionControlReqId)) {
       callback_.handleConnectionControlMessage(headerInfo);
     } else if (callback_.nextReplyAvailable(reqId)) {
-      (this->*umbrellaOrCaretForwarder_)(headerInfo, buffer, reqId);
+      (this->*caretForwarder_)(headerInfo, buffer, reqId);
     }
     return true;
   } catch (const std::exception& e) {
@@ -259,7 +207,7 @@ void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
     }
     switch (result) {
       case McAsciiParserBase::State::COMPLETE:
-        (this->*replyForwarder_)();
+        (this->*asciiReplyForwarder_)();
         break;
       case McAsciiParserBase::State::ERROR:
         callback_.parseError(

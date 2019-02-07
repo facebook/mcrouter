@@ -7,7 +7,6 @@
 #include <folly/lang/Bits.h>
 
 #include "mcrouter/lib/debug/ConnectionFifo.h"
-#include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook {
 namespace memcache {
@@ -45,56 +44,6 @@ bool ServerMcParser<Callback>::readDataAvailable(size_t len) {
   } else {
     return parser_.readDataAvailable(len);
   }
-}
-
-template <class Callback>
-template <class Request>
-void ServerMcParser<Callback>::requestReadyHelper(
-    Request&& req,
-    uint64_t reqid) {
-  callback_.umbrellaRequestReady(std::move(req), reqid);
-}
-
-template <class Callback>
-bool ServerMcParser<Callback>::umMessageReady(
-    const CaretMessageInfo& info,
-    const folly::IOBuf& buffer) {
-  try {
-    uint64_t reqid;
-    const mc_op_t op =
-        umbrellaDetermineOperation(buffer.data(), info.headerSize);
-    switch (op) {
-#define THRIFT_OP(MC_OPERATION)                                           \
-  case MC_OPERATION::mc_op: {                                             \
-    using Request =                                                       \
-        typename TypeFromOp<MC_OPERATION::mc_op, RequestOpMapping>::type; \
-    auto req = umbrellaParseRequest<Request>(                             \
-        buffer,                                                           \
-        buffer.data(),                                                    \
-        info.headerSize,                                                  \
-        buffer.data() + info.headerSize,                                  \
-        info.bodySize,                                                    \
-        reqid);                                                           \
-    requestReadyHelper(std::move(req), reqid);                            \
-    break;                                                                \
-  }
-#include "mcrouter/lib/McOpList.h"
-      default:
-        auto reason = folly::sformat(
-            "Error parsing Umbrella message. "
-            "Unexpected Umbrella message of type: {} ({}).",
-            mc_op_to_string(op),
-            int(op));
-        callback_.parseError(mc_res_remote_error, reason);
-        return false;
-    }
-  } catch (const std::exception& e) {
-    std::string reason(
-        std::string("Error parsing Umbrella message: ") + e.what());
-    callback_.parseError(mc_res_remote_error, reason);
-    return false;
-  }
-  return true;
 }
 
 template <class Callback>

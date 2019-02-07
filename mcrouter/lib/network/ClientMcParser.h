@@ -17,7 +17,6 @@
 #include "mcrouter/lib/network/McAsciiParser.h"
 #include "mcrouter/lib/network/McParser.h"
 #include "mcrouter/lib/network/RpcStatsContext.h"
-#include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook {
 namespace memcache {
@@ -71,8 +70,8 @@ class ClientMcParser : private McParser::ParserCallback {
  private:
   McParser parser_;
   McClientAsciiParser asciiParser_;
-  void (ClientMcParser<Callback>::*replyForwarder_)(){nullptr};
-  void (ClientMcParser<Callback>::*umbrellaOrCaretForwarder_)(
+  void (ClientMcParser<Callback>::*asciiReplyForwarder_)(){nullptr};
+  void (ClientMcParser<Callback>::*caretForwarder_)(
       const CaretMessageInfo&,
       const folly::IOBuf&,
       uint64_t){nullptr};
@@ -87,12 +86,6 @@ class ClientMcParser : private McParser::ParserCallback {
   void forwardAsciiReply();
 
   template <class Request>
-  void forwardUmbrellaReply(
-      const CaretMessageInfo& info,
-      const folly::IOBuf& buffer,
-      uint64_t reqId);
-
-  template <class Request>
   void forwardCaretReply(
       const CaretMessageInfo& headerInfo,
       const folly::IOBuf& buffer,
@@ -103,8 +96,6 @@ class ClientMcParser : private McParser::ParserCallback {
       const folly::IOBuf& buffer);
 
   // McParser callbacks
-  bool umMessageReady(const CaretMessageInfo& info, const folly::IOBuf& buffer)
-      final;
   bool caretMessageReady(
       const CaretMessageInfo& headerInfo,
       const folly::IOBuf& buffer) final;

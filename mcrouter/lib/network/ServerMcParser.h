@@ -70,12 +70,7 @@ class ServerMcParser : private McParser::ParserCallback {
   template <class Request>
   FOLLY_NOINLINE void writeToPipe(const Request& req);
 
-  template <class Request>
-  void requestReadyHelper(Request&& req, uint64_t reqid);
-
   /* McParser callbacks */
-  bool umMessageReady(const CaretMessageInfo& info, const folly::IOBuf& buffer)
-      final;
   bool caretMessageReady(
       const CaretMessageInfo& headerInfo,
       const folly::IOBuf& buffer) final;

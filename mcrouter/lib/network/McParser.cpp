@@ -18,7 +18,6 @@
 
 #include "mcrouter/lib/Clocks.h"
 #include "mcrouter/lib/network/CaretProtocol.h"
-#include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook {
 namespace memcache {
@@ -26,21 +25,6 @@ namespace memcache {
 namespace {
 // Adjust buffer size after this many CPU cycles (~2 billion)
 constexpr uint64_t kAdjustBufferSizeCpuCycles = 1UL << 31;
-
-size_t mcOpToRequestTypeId(mc_op_t mc_op) {
-  switch (mc_op) {
-#define THRIFT_OP(MC_OPERATION)                                           \
-  case MC_OPERATION::mc_op: {                                             \
-    using Request =                                                       \
-        typename TypeFromOp<MC_OPERATION::mc_op, RequestOpMapping>::type; \
-    return Request::typeId;                                               \
-  }
-#include "mcrouter/lib/McOpList.h"
-
-    default:
-      return 0;
-  }
-}
 
 #ifdef FOLLY_JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
 
@@ -71,7 +55,7 @@ folly::IOBuf copyToNodumpBuffer(
 
 #endif
 
-} // anonymous
+} // namespace
 
 McParser::McParser(
     ParserCallback& callback,
@@ -111,17 +95,12 @@ std::pair<void*, size_t> McParser::getReadBuffer() {
   return std::make_pair(readBuffer_.writableTail(), readBuffer_.tailroom());
 }
 
-bool McParser::readUmbrellaOrCaretData() {
+bool McParser::readCaretData() {
   while (readBuffer_.length() > 0) {
     // Parse header
     ParseStatus parseStatus;
-    if (protocol_ == mc_umbrella_protocol_DONOTUSE) {
-      parseStatus = umbrellaParseHeader(
-          readBuffer_.data(), readBuffer_.length(), umMsgInfo_);
-    } else {
-      parseStatus = caretParseHeader(
-          readBuffer_.data(), readBuffer_.length(), umMsgInfo_);
-    }
+    parseStatus =
+        caretParseHeader(readBuffer_.data(), readBuffer_.length(), msgInfo_);
 
     if (parseStatus == ParseStatus::NotEnoughData) {
       return true;
@@ -135,33 +114,18 @@ bool McParser::readUmbrellaOrCaretData() {
       return false;
     }
 
-    const auto messageSize = umMsgInfo_.headerSize + umMsgInfo_.bodySize;
+    const auto messageSize = msgInfo_.headerSize + msgInfo_.bodySize;
 
     // Parse message body
     // Case 1: Entire message (and possibly part of next) is in the buffer
     if (readBuffer_.length() >= messageSize) {
       if (UNLIKELY(debugFifo_ && debugFifo_->isConnected())) {
-        if (protocol_ == mc_umbrella_protocol_DONOTUSE) {
-          const auto mc_op = umbrellaDetermineOperation(
-              readBuffer_.data(), umMsgInfo_.headerSize);
-          umMsgInfo_.typeId = mcOpToRequestTypeId(mc_op);
-          if (umMsgInfo_.typeId != 0 &&
-              umbrellaIsReply(readBuffer_.data(), umMsgInfo_.headerSize)) {
-            // We assume reply typeId is always one plus corresponding
-            // request's typeId. We rely on this in ClientServerMcParser.h.
-            ++umMsgInfo_.typeId;
-          }
-        }
-        debugFifo_->startMessage(MessageDirection::Received, umMsgInfo_.typeId);
+        debugFifo_->startMessage(MessageDirection::Received, msgInfo_.typeId);
         debugFifo_->writeData(readBuffer_.writableData(), messageSize);
       }
 
       bool cbStatus;
-      if (protocol_ == mc_umbrella_protocol_DONOTUSE) {
-        cbStatus = callback_.umMessageReady(umMsgInfo_, readBuffer_);
-      } else {
-        cbStatus = callback_.caretMessageReady(umMsgInfo_, readBuffer_);
-      }
+      cbStatus = callback_.caretMessageReady(msgInfo_, readBuffer_);
 
       if (!cbStatus) {
         readBuffer_.clear();
@@ -172,7 +136,7 @@ bool McParser::readUmbrellaOrCaretData() {
     }
 
     // Case 2: We don't have full header, so return to wait for more data
-    if (readBuffer_.length() < umMsgInfo_.headerSize) {
+    if (readBuffer_.length() < msgInfo_.headerSize) {
       return true;
     }
 
@@ -189,7 +153,7 @@ bool McParser::readUmbrellaOrCaretData() {
     }
 #ifdef FOLLY_JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
     if (useJemallocNodumpAllocator_) {
-      readBuffer_ = copyToNodumpBuffer(umMsgInfo_, readBuffer_);
+      readBuffer_ = copyToNodumpBuffer(msgInfo_, readBuffer_);
     }
 #endif
     return true;
@@ -221,9 +185,7 @@ bool McParser::readDataAvailable(size_t len) {
     if (protocol_ == mc_ascii_protocol) {
       outOfOrder_ = false;
     } else {
-      assert(
-          protocol_ == mc_umbrella_protocol_DONOTUSE ||
-          protocol_ == mc_caret_protocol);
+      assert(protocol_ == mc_caret_protocol);
       outOfOrder_ = true;
     }
   }
@@ -232,8 +194,8 @@ bool McParser::readDataAvailable(size_t len) {
     callback_.handleAscii(readBuffer_);
     return true;
   }
-  return readUmbrellaOrCaretData();
+  return readCaretData();
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
