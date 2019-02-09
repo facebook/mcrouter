@@ -1,5 +1,4 @@
 namespace facebook::memcache;
-thrift_namespace facebook.memcache.thrift;
 
 import "mcrouter/lib/network/Common.idl"
 
