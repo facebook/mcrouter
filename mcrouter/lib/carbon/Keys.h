@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -129,11 +128,20 @@ class Keys {
     return key_;
   }
 
+  // Usage of this method requires user to call `update()` manually on change of
+  // the underlying storage.
+  Storage& rawUnsafe() {
+    return key_;
+  }
+  const Storage& rawUnsafe() const {
+    return key_;
+  }
+
+  void update();
+
  private:
   static constexpr bool usingStringStorage =
       std::is_same<Storage, std::string>::value;
-
-  void update();
 
   // Assumes that this->key_ has been set to the desired value that StringPiece
   // members of *this should point into.
