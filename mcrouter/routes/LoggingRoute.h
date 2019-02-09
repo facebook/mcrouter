@@ -12,7 +12,6 @@
 #include "mcrouter/CarbonRouterInstanceBase.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyRequestContext.h"
-#include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/carbon/CarbonMessageConversionUtils.h"
 #include "mcrouter/lib/config/RouteHandleBuilder.h"

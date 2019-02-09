@@ -16,7 +16,6 @@
 #include "mcrouter/ProxyRequestContextTyped.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
-#include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/config/RouteHandleBuilder.h"

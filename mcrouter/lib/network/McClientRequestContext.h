@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -15,7 +14,6 @@
 #include <folly/IntrusiveList.h>
 #include <folly/fibers/Baton.h>
 
-#include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/network/ClientMcParser.h"
 #include "mcrouter/lib/network/FBTrace.h"
 #include "mcrouter/lib/network/McSerializedRequest.h"

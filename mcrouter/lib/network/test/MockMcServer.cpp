@@ -15,7 +15,6 @@
 #include <folly/Singleton.h>
 #include <folly/logging/Init.h>
 
-#include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/CarbonMessageDispatcher.h"

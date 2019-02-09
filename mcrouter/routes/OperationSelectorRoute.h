@@ -26,7 +26,9 @@ class RouteHandleFactory;
 
 namespace mcrouter {
 
-/* RouteHandle that can send to a different target based on McOperation id */
+/**
+ * RouteHandle that can send to a different target based on Request type.
+ */
 template <class RouterInfo>
 class OperationSelectorRoute {
  private:

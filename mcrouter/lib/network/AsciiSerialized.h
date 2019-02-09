@@ -9,7 +9,7 @@
 #include <folly/Optional.h>
 #include <folly/Range.h>
 
-#include "mcrouter/lib/McOperation.h"
+#include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/network/gen/MemcacheRoutingGroups.h"
 

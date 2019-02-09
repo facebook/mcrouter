@@ -33,7 +33,6 @@ libmcrouter_a_SOURCES = \
   Lz4ImmutableCompressionCodec.h \
   MessageQueue.cpp \
   MessageQueue.h \
-  McOperation.h \
   McResUtil.h \
   Operation.h \
   OperationTraits.h \
