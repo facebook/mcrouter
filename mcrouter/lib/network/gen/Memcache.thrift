@@ -264,4 +264,24 @@ struct McGatsReply {
   6: i16 appSpecificErrorCode
 }
 
-
+service Memcache {
+  McGetReply mcGet(1: McGetRequest request) (thread = "eb")
+  McSetReply mcSet(1: McSetRequest request) (thread = "eb")
+  McDeleteReply mcDelete(1: McDeleteRequest request) (thread = "eb")
+  McLeaseGetReply mcLeaseGet(1: McLeaseGetRequest request) (thread = "eb")
+  McLeaseSetReply mcLeaseSet(1: McLeaseSetRequest request) (thread = "eb")
+  McAddReply mcAdd(1: McAddRequest request) (thread = "eb")
+  McReplaceReply mcReplace(1: McReplaceRequest request) (thread = "eb")
+  McGetsReply mcGets(1: McGetsRequest request) (thread = "eb")
+  McCasReply mcCas(1: McCasRequest request) (thread = "eb")
+  McIncrReply mcIncr(1: McIncrRequest request) (thread = "eb")
+  McDecrReply mcDecr(1: McDecrRequest request) (thread = "eb")
+  McMetagetReply mcMetaget(1: McMetagetRequest request) (thread = "eb")
+  McAppendReply mcAppend(1: McAppendRequest request) (thread = "eb")
+  McPrependReply mcPrepend(1: McPrependRequest request) (thread = "eb")
+  McTouchReply mcTouch(1: McTouchRequest request) (thread = "eb")
+  McFlushReReply mcFlushRe(1: McFlushReRequest request) (thread = "eb")
+  McFlushAllReply mcFlushAll(1: McFlushAllRequest request) (thread = "eb")
+  McGatReply mcGat(1: McGatRequest request) (thread = "eb")
+  McGatsReply mcGats(1: McGatsRequest request) (thread = "eb")
+}

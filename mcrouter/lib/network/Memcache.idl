@@ -6,6 +6,7 @@ import "mcrouter/lib/network/Common.idl"
 request McGetRequest {
   id: 1;
   name: "get";
+  thrift_method: mcGet;
   reply: McGetReply;
 
   1: carbon::Keys<folly::IOBuf> key;
@@ -23,6 +24,7 @@ reply McGetReply {
 request McSetRequest {
   id: 2;
   name: "set";
+  thrift_method: mcSet;
   reply: McSetReply;
 
   1: carbon::Keys<folly::IOBuf> key;
@@ -42,6 +44,7 @@ reply McSetReply {
 request McDeleteRequest {
   id: 3;
   name: "delete";
+  thrift_method: mcDelete;
   reply: McDeleteReply;
 
   1: carbon::Keys<folly::IOBuf> key;
@@ -61,6 +64,7 @@ reply McDeleteReply {
 request McLeaseGetRequest {
   id: 4;
   name: "lease-get";
+  thrift_method: mcLeaseGet;
   reply: McLeaseGetReply;
 
   1: carbon::Keys<folly::IOBuf> key;
@@ -79,6 +83,7 @@ reply McLeaseGetReply {
 request McLeaseSetRequest {
   id: 5;
   name: "lease-set";
+  thrift_method: mcLeaseSet;
   reply: McLeaseSetReply;
 
   1: carbon::Keys<folly::IOBuf> key;
@@ -97,6 +102,7 @@ reply McLeaseSetReply {
 request McAddRequest {
   id: 6;
   name: "add";
+  thrift_method: mcAdd;
   reply: McAddReply;
 
   1: carbon::Keys<folly::IOBuf> key;
@@ -114,6 +120,7 @@ reply McAddReply {
 request McReplaceRequest {
   id: 7;
   name: "replace";
+  thrift_method: mcReplace;
   reply: McReplaceReply;
 
   1: carbon::Keys<folly::IOBuf> key;
@@ -131,6 +138,7 @@ reply McReplaceReply {
 request McGetsRequest {
   id: 8;
   name: "gets";
+  thrift_method: mcGets;
   reply: McGetsReply;
 
   1: carbon::Keys<folly::IOBuf> key;
@@ -148,6 +156,7 @@ reply McGetsReply {
 request McCasRequest {
   id: 9;
   name: "cas";
+  thrift_method: mcCas;
   reply: McCasReply;
 
   1: carbon::Keys<folly::IOBuf> key;
@@ -166,6 +175,7 @@ reply McCasReply {
 request McIncrRequest {
   id: 10;
   name: "incr";
+  thrift_method: mcIncr;
   reply: McIncrReply;
 
   1: carbon::Keys<folly::IOBuf> key;
@@ -182,6 +192,7 @@ reply McIncrReply {
 request McDecrRequest {
   id: 11;
   name: "decr";
+  thrift_method: mcDecr;
   reply: McDecrReply;
 
   1: carbon::Keys<folly::IOBuf> key;
@@ -198,6 +209,7 @@ reply McDecrReply {
 request McMetagetRequest {
   id: 12;
   name: "metaget";
+  thrift_method: mcMetaget;
   reply: McMetagetReply;
 
   1: carbon::Keys<folly::IOBuf> key;
@@ -216,6 +228,7 @@ reply McMetagetReply {
 request McAppendRequest {
   id: 14;
   name: "append";
+  thrift_method: mcAppend;
   reply: McAppendReply;
 
   1: carbon::Keys<folly::IOBuf> key;
@@ -233,6 +246,7 @@ reply McAppendReply {
 request McPrependRequest {
   id: 15;
   name: "prepend";
+  thrift_method: mcPrepend;
   reply: McPrependReply;
 
   1: carbon::Keys<folly::IOBuf> key;
@@ -250,6 +264,7 @@ reply McPrependReply {
 request McTouchRequest {
   id: 16;
   name: "touch";
+  thrift_method: mcTouch;
   reply: McTouchReply;
 
   1: carbon::Keys<folly::IOBuf> key;
@@ -265,6 +280,7 @@ reply McTouchReply {
 request McFlushReRequest {
   id: 21;
   name: "flushre";
+  thrift_method: mcFlushRe;
   reply: McFlushReReply;
 
   1: carbon::Keys<folly::IOBuf> key;
@@ -279,6 +295,7 @@ reply McFlushReReply {
 request McFlushAllRequest {
   id: 22;
   name: "flushall";
+  thrift_method: mcFlushAll;
   reply: McFlushAllReply;
 
   1: carbon::Keys<folly::IOBuf> key;
@@ -294,6 +311,7 @@ reply McFlushAllReply {
 request McGatRequest {
   id: 23;
   name: "gat";
+  thrift_method: mcGat;
   reply: McGatReply;
 
   1: int32_t exptime;
@@ -311,6 +329,7 @@ reply McGatReply {
 request McGatsRequest {
   id: 24;
   name: "gats";
+  thrift_method: mcGats;
   reply: McGatsReply;
 
   1: int32_t exptime;

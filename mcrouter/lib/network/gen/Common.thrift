@@ -79,4 +79,3 @@ struct GoAwayRequest {
   2: string reason
 }
 
-
