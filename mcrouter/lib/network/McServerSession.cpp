@@ -679,7 +679,7 @@ void McServerSession::fizzHandshakeAttemptFallback(
   auto evb = transport->getEventBase();
   auto socket = transport->getUnderlyingTransport<folly::AsyncSocket>();
   CHECK(socket) << " socket should not be nullptr";
-  auto fd = socket->detachFd();
+  auto fd = socket->detachNetworkSocket().toFd();
   const auto& ctx = transport->getFallbackContext();
 
   folly::AsyncSSLSocket::UniquePtr sslSocket(

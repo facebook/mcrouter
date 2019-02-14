@@ -196,7 +196,7 @@ folly::AsyncTransportWrapper::UniquePtr McSSLUtil::moveToPlaintext(
   auto peerCert = ClonedCertificate::create(sock.getPeerCertificate());
   auto evb = sock.getEventBase();
   auto zcId = sock.getZeroCopyBufId();
-  auto fd = sock.detachFd();
+  auto fd = sock.detachNetworkSocket().toFd();
   PlaintextWithCerts::UniquePtr res(new PlaintextWithCerts(evb, fd, zcId));
   res->setSelfCertificate(std::move(selfCert));
   res->setPeerCertificate(std::move(peerCert));
