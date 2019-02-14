@@ -48,7 +48,7 @@ folly::Optional<SSLTestPaths> getFizzSSL() {
 class AsyncMcClientSimpleTest
     : public TestWithParam<folly::Optional<SSLTestPaths>> {
  public:
-  virtual ~AsyncMcClientSimpleTest() = default;
+  ~AsyncMcClientSimpleTest() override = default;
 };
 
 TEST_P(AsyncMcClientSimpleTest, serverShutdownTest) {
