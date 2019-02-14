@@ -68,132 +68,132 @@ void TestRequest::serialize(Writer&& writer) const {
 template <class V>
 void TestRequest::visitFields(V&& v) {
   if (v.enterMixin(1, "Base", _carbon_simplestruct_)) {
-    _carbon_simplestruct_.visitFields(std::forward<V>(v));
+    this->_carbon_simplestruct_.visitFields(std::forward<V>(v));
   }
   if (!v.leaveMixin()) {
     return;
   }
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
-  if (!v.visitField(2, "testEnum", testEnum_)) {
+  if (!v.visitField(2, "testEnum", this->testEnum())) {
     return;
   }
-  if (!v.visitField(3, "testBool", testBool_)) {
+  if (!v.visitField(3, "testBool", this->testBool())) {
     return;
   }
-  if (!v.visitField(4, "testChar", testChar_)) {
+  if (!v.visitField(4, "testChar", this->testChar())) {
     return;
   }
-  if (!v.visitField(5, "testInt8", testInt8_)) {
+  if (!v.visitField(5, "testInt8", this->testInt8())) {
     return;
   }
-  if (!v.visitField(6, "testInt16", testInt16_)) {
+  if (!v.visitField(6, "testInt16", this->testInt16())) {
     return;
   }
-  if (!v.visitField(7, "testInt32", testInt32_)) {
+  if (!v.visitField(7, "testInt32", this->testInt32())) {
     return;
   }
-  if (!v.visitField(8, "testInt64", testInt64_)) {
+  if (!v.visitField(8, "testInt64", this->testInt64())) {
     return;
   }
-  if (!v.visitField(9, "testUInt8", testUInt8_)) {
+  if (!v.visitField(9, "testUInt8", this->testUInt8())) {
     return;
   }
-  if (!v.visitField(10, "testUInt16", testUInt16_)) {
+  if (!v.visitField(10, "testUInt16", this->testUInt16())) {
     return;
   }
-  if (!v.visitField(11, "testUInt32", testUInt32_)) {
+  if (!v.visitField(11, "testUInt32", this->testUInt32())) {
     return;
   }
-  if (!v.visitField(12, "testUInt64", testUInt64_)) {
+  if (!v.visitField(12, "testUInt64", this->testUInt64())) {
     return;
   }
-  if (!v.visitField(13, "testFloat", testFloat_)) {
+  if (!v.visitField(13, "testFloat", this->testFloat())) {
     return;
   }
-  if (!v.visitField(14, "testDouble", testDouble_)) {
+  if (!v.visitField(14, "testDouble", this->testDouble())) {
     return;
   }
-  if (!v.visitField(15, "testShortString", testShortString_)) {
+  if (!v.visitField(15, "testShortString", this->testShortString())) {
     return;
   }
-  if (!v.visitField(16, "testLongString", testLongString_)) {
+  if (!v.visitField(16, "testLongString", this->testLongString())) {
     return;
   }
-  if (!v.visitField(17, "testIobuf", testIobuf_)) {
+  if (!v.visitField(17, "testIobuf", this->testIobuf())) {
     return;
   }
-  if (!v.visitField(18, "testStruct", testStruct_)) {
+  if (!v.visitField(18, "testStruct", this->testStruct())) {
     return;
   }
-  if (!v.visitField(19, "testList", testList_)) {
+  if (!v.visitField(19, "testList", this->testList())) {
     return;
   }
-  if (!v.visitField(20, "testOptionalString", testOptionalString_)) {
+  if (!v.visitField(20, "testOptionalString", this->testOptionalString())) {
     return;
   }
-  if (!v.visitField(21, "testOptionalIobuf", testOptionalIobuf_)) {
+  if (!v.visitField(21, "testOptionalIobuf", this->testOptionalIobuf())) {
     return;
   }
-  if (!v.visitField(22, "testEnumVec", testEnumVec_)) {
+  if (!v.visitField(22, "testEnumVec", this->testEnumVec())) {
     return;
   }
-  if (!v.visitField(23, "testUnion", testUnion_)) {
+  if (!v.visitField(23, "testUnion", this->testUnion())) {
     return;
   }
-  if (!v.visitField(24, "testNestedVec", testNestedVec_)) {
+  if (!v.visitField(24, "testNestedVec", this->testNestedVec())) {
     return;
   }
-  if (!v.visitField(25, "testUMap", testUMap_)) {
+  if (!v.visitField(25, "testUMap", this->testUMap())) {
     return;
   }
-  if (!v.visitField(26, "testMap", testMap_)) {
+  if (!v.visitField(26, "testMap", this->testMap())) {
     return;
   }
-  if (!v.visitField(27, "testComplexMap", testComplexMap_)) {
+  if (!v.visitField(27, "testComplexMap", this->testComplexMap())) {
     return;
   }
-  if (!v.visitField(28, "testUSet", testUSet_)) {
+  if (!v.visitField(28, "testUSet", this->testUSet())) {
     return;
   }
-  if (!v.visitField(29, "testSet", testSet_)) {
+  if (!v.visitField(29, "testSet", this->testSet())) {
     return;
   }
-  if (!v.visitField(30, "testOptionalBool", testOptionalBool_)) {
+  if (!v.visitField(30, "testOptionalBool", this->testOptionalBool())) {
     return;
   }
-  if (!v.visitField(31, "testOptionalVec", testOptionalVec_)) {
+  if (!v.visitField(31, "testOptionalVec", this->testOptionalVec())) {
     return;
   }
-  if (!v.visitField(32, "testIOBufList", testIOBufList_)) {
+  if (!v.visitField(32, "testIOBufList", this->testIOBufList())) {
     return;
   }
-  if (!v.visitField(33, "testF14FastMap", testF14FastMap_)) {
+  if (!v.visitField(33, "testF14FastMap", this->testF14FastMap())) {
     return;
   }
-  if (!v.visitField(34, "testF14NodeMap", testF14NodeMap_)) {
+  if (!v.visitField(34, "testF14NodeMap", this->testF14NodeMap())) {
     return;
   }
-  if (!v.visitField(35, "testF14ValueMap", testF14ValueMap_)) {
+  if (!v.visitField(35, "testF14ValueMap", this->testF14ValueMap())) {
     return;
   }
-  if (!v.visitField(36, "testF14VectorMap", testF14VectorMap_)) {
+  if (!v.visitField(36, "testF14VectorMap", this->testF14VectorMap())) {
     return;
   }
-  if (!v.visitField(37, "testF14FastSet", testF14FastSet_)) {
+  if (!v.visitField(37, "testF14FastSet", this->testF14FastSet())) {
     return;
   }
-  if (!v.visitField(38, "testF14NodeSet", testF14NodeSet_)) {
+  if (!v.visitField(38, "testF14NodeSet", this->testF14NodeSet())) {
     return;
   }
-  if (!v.visitField(39, "testF14ValueSet", testF14ValueSet_)) {
+  if (!v.visitField(39, "testF14ValueSet", this->testF14ValueSet())) {
     return;
   }
-  if (!v.visitField(40, "testF14VectorSet", testF14VectorSet_)) {
+  if (!v.visitField(40, "testF14VectorSet", this->testF14VectorSet())) {
     return;
   }
-  if (!v.visitField(100, "testType", testType_)) {
+  if (!v.visitField(100, "testType", this->testType())) {
     return;
   }
 }
@@ -201,132 +201,132 @@ void TestRequest::visitFields(V&& v) {
 template <class V>
 void TestRequest::visitFields(V&& v) const {
   if (v.enterMixin(1, "Base", _carbon_simplestruct_)) {
-    _carbon_simplestruct_.visitFields(std::forward<V>(v));
+    this->_carbon_simplestruct_.visitFields(std::forward<V>(v));
   }
   if (!v.leaveMixin()) {
     return;
   }
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
-  if (!v.visitField(2, "testEnum", testEnum_)) {
+  if (!v.visitField(2, "testEnum", this->testEnum())) {
     return;
   }
-  if (!v.visitField(3, "testBool", testBool_)) {
+  if (!v.visitField(3, "testBool", this->testBool())) {
     return;
   }
-  if (!v.visitField(4, "testChar", testChar_)) {
+  if (!v.visitField(4, "testChar", this->testChar())) {
     return;
   }
-  if (!v.visitField(5, "testInt8", testInt8_)) {
+  if (!v.visitField(5, "testInt8", this->testInt8())) {
     return;
   }
-  if (!v.visitField(6, "testInt16", testInt16_)) {
+  if (!v.visitField(6, "testInt16", this->testInt16())) {
     return;
   }
-  if (!v.visitField(7, "testInt32", testInt32_)) {
+  if (!v.visitField(7, "testInt32", this->testInt32())) {
     return;
   }
-  if (!v.visitField(8, "testInt64", testInt64_)) {
+  if (!v.visitField(8, "testInt64", this->testInt64())) {
     return;
   }
-  if (!v.visitField(9, "testUInt8", testUInt8_)) {
+  if (!v.visitField(9, "testUInt8", this->testUInt8())) {
     return;
   }
-  if (!v.visitField(10, "testUInt16", testUInt16_)) {
+  if (!v.visitField(10, "testUInt16", this->testUInt16())) {
     return;
   }
-  if (!v.visitField(11, "testUInt32", testUInt32_)) {
+  if (!v.visitField(11, "testUInt32", this->testUInt32())) {
     return;
   }
-  if (!v.visitField(12, "testUInt64", testUInt64_)) {
+  if (!v.visitField(12, "testUInt64", this->testUInt64())) {
     return;
   }
-  if (!v.visitField(13, "testFloat", testFloat_)) {
+  if (!v.visitField(13, "testFloat", this->testFloat())) {
     return;
   }
-  if (!v.visitField(14, "testDouble", testDouble_)) {
+  if (!v.visitField(14, "testDouble", this->testDouble())) {
     return;
   }
-  if (!v.visitField(15, "testShortString", testShortString_)) {
+  if (!v.visitField(15, "testShortString", this->testShortString())) {
     return;
   }
-  if (!v.visitField(16, "testLongString", testLongString_)) {
+  if (!v.visitField(16, "testLongString", this->testLongString())) {
     return;
   }
-  if (!v.visitField(17, "testIobuf", testIobuf_)) {
+  if (!v.visitField(17, "testIobuf", this->testIobuf())) {
     return;
   }
-  if (!v.visitField(18, "testStruct", testStruct_)) {
+  if (!v.visitField(18, "testStruct", this->testStruct())) {
     return;
   }
-  if (!v.visitField(19, "testList", testList_)) {
+  if (!v.visitField(19, "testList", this->testList())) {
     return;
   }
-  if (!v.visitField(20, "testOptionalString", testOptionalString_)) {
+  if (!v.visitField(20, "testOptionalString", this->testOptionalString())) {
     return;
   }
-  if (!v.visitField(21, "testOptionalIobuf", testOptionalIobuf_)) {
+  if (!v.visitField(21, "testOptionalIobuf", this->testOptionalIobuf())) {
     return;
   }
-  if (!v.visitField(22, "testEnumVec", testEnumVec_)) {
+  if (!v.visitField(22, "testEnumVec", this->testEnumVec())) {
     return;
   }
-  if (!v.visitField(23, "testUnion", testUnion_)) {
+  if (!v.visitField(23, "testUnion", this->testUnion())) {
     return;
   }
-  if (!v.visitField(24, "testNestedVec", testNestedVec_)) {
+  if (!v.visitField(24, "testNestedVec", this->testNestedVec())) {
     return;
   }
-  if (!v.visitField(25, "testUMap", testUMap_)) {
+  if (!v.visitField(25, "testUMap", this->testUMap())) {
     return;
   }
-  if (!v.visitField(26, "testMap", testMap_)) {
+  if (!v.visitField(26, "testMap", this->testMap())) {
     return;
   }
-  if (!v.visitField(27, "testComplexMap", testComplexMap_)) {
+  if (!v.visitField(27, "testComplexMap", this->testComplexMap())) {
     return;
   }
-  if (!v.visitField(28, "testUSet", testUSet_)) {
+  if (!v.visitField(28, "testUSet", this->testUSet())) {
     return;
   }
-  if (!v.visitField(29, "testSet", testSet_)) {
+  if (!v.visitField(29, "testSet", this->testSet())) {
     return;
   }
-  if (!v.visitField(30, "testOptionalBool", testOptionalBool_)) {
+  if (!v.visitField(30, "testOptionalBool", this->testOptionalBool())) {
     return;
   }
-  if (!v.visitField(31, "testOptionalVec", testOptionalVec_)) {
+  if (!v.visitField(31, "testOptionalVec", this->testOptionalVec())) {
     return;
   }
-  if (!v.visitField(32, "testIOBufList", testIOBufList_)) {
+  if (!v.visitField(32, "testIOBufList", this->testIOBufList())) {
     return;
   }
-  if (!v.visitField(33, "testF14FastMap", testF14FastMap_)) {
+  if (!v.visitField(33, "testF14FastMap", this->testF14FastMap())) {
     return;
   }
-  if (!v.visitField(34, "testF14NodeMap", testF14NodeMap_)) {
+  if (!v.visitField(34, "testF14NodeMap", this->testF14NodeMap())) {
     return;
   }
-  if (!v.visitField(35, "testF14ValueMap", testF14ValueMap_)) {
+  if (!v.visitField(35, "testF14ValueMap", this->testF14ValueMap())) {
     return;
   }
-  if (!v.visitField(36, "testF14VectorMap", testF14VectorMap_)) {
+  if (!v.visitField(36, "testF14VectorMap", this->testF14VectorMap())) {
     return;
   }
-  if (!v.visitField(37, "testF14FastSet", testF14FastSet_)) {
+  if (!v.visitField(37, "testF14FastSet", this->testF14FastSet())) {
     return;
   }
-  if (!v.visitField(38, "testF14NodeSet", testF14NodeSet_)) {
+  if (!v.visitField(38, "testF14NodeSet", this->testF14NodeSet())) {
     return;
   }
-  if (!v.visitField(39, "testF14ValueSet", testF14ValueSet_)) {
+  if (!v.visitField(39, "testF14ValueSet", this->testF14ValueSet())) {
     return;
   }
-  if (!v.visitField(40, "testF14VectorSet", testF14VectorSet_)) {
+  if (!v.visitField(40, "testF14VectorSet", this->testF14VectorSet())) {
     return;
   }
-  if (!v.visitField(100, "testType", testType_)) {
+  if (!v.visitField(100, "testType", this->testType())) {
     return;
   }
 }
@@ -343,26 +343,26 @@ void TestReply::serialize(Writer&& writer) const {
 
 template <class V>
 void TestReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "valInt32", valInt32_)) {
+  if (!v.visitField(2, "valInt32", this->valInt32())) {
     return;
   }
-  if (!v.visitField(3, "valInt64", valInt64_)) {
+  if (!v.visitField(3, "valInt64", this->valInt64())) {
     return;
   }
 }
 
 template <class V>
 void TestReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "valInt32", valInt32_)) {
+  if (!v.visitField(2, "valInt32", this->valInt32())) {
     return;
   }
-  if (!v.visitField(3, "valInt64", valInt64_)) {
+  if (!v.visitField(3, "valInt64", this->valInt64())) {
     return;
   }
 }
@@ -377,14 +377,14 @@ void TestRequestStringKey::serialize(Writer&& writer) const {
 
 template <class V>
 void TestRequestStringKey::visitFields(V&& v) {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
 
 template <class V>
 void TestRequestStringKey::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
@@ -399,14 +399,14 @@ void TestReplyStringKey::serialize(Writer&& writer) const {
 
 template <class V>
 void TestReplyStringKey::visitFields(V&& v) {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
 }
 
 template <class V>
 void TestReplyStringKey::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
 }
@@ -421,14 +421,14 @@ void TestOptionalBool::serialize(Writer&& writer) const {
 
 template <class V>
 void TestOptionalBool::visitFields(V&& v) {
-  if (!v.visitField(1, "optionalBool", optionalBool_)) {
+  if (!v.visitField(1, "optionalBool", this->optionalBool())) {
     return;
   }
 }
 
 template <class V>
 void TestOptionalBool::visitFields(V&& v) const {
-  if (!v.visitField(1, "optionalBool", optionalBool_)) {
+  if (!v.visitField(1, "optionalBool", this->optionalBool())) {
     return;
   }
 }
@@ -549,56 +549,56 @@ void TestF14Containers::serialize(Writer&& writer) const {
 
 template <class V>
 void TestF14Containers::visitFields(V&& v) {
-  if (!v.visitField(1, "fastMap", fastMap_)) {
+  if (!v.visitField(1, "fastMap", this->fastMap())) {
     return;
   }
-  if (!v.visitField(2, "nodeMap", nodeMap_)) {
+  if (!v.visitField(2, "nodeMap", this->nodeMap())) {
     return;
   }
-  if (!v.visitField(3, "valueMap", valueMap_)) {
+  if (!v.visitField(3, "valueMap", this->valueMap())) {
     return;
   }
-  if (!v.visitField(4, "vectorMap", vectorMap_)) {
+  if (!v.visitField(4, "vectorMap", this->vectorMap())) {
     return;
   }
-  if (!v.visitField(5, "fastSet", fastSet_)) {
+  if (!v.visitField(5, "fastSet", this->fastSet())) {
     return;
   }
-  if (!v.visitField(6, "nodeSet", nodeSet_)) {
+  if (!v.visitField(6, "nodeSet", this->nodeSet())) {
     return;
   }
-  if (!v.visitField(7, "valueSet", valueSet_)) {
+  if (!v.visitField(7, "valueSet", this->valueSet())) {
     return;
   }
-  if (!v.visitField(8, "vectorSet", vectorSet_)) {
+  if (!v.visitField(8, "vectorSet", this->vectorSet())) {
     return;
   }
 }
 
 template <class V>
 void TestF14Containers::visitFields(V&& v) const {
-  if (!v.visitField(1, "fastMap", fastMap_)) {
+  if (!v.visitField(1, "fastMap", this->fastMap())) {
     return;
   }
-  if (!v.visitField(2, "nodeMap", nodeMap_)) {
+  if (!v.visitField(2, "nodeMap", this->nodeMap())) {
     return;
   }
-  if (!v.visitField(3, "valueMap", valueMap_)) {
+  if (!v.visitField(3, "valueMap", this->valueMap())) {
     return;
   }
-  if (!v.visitField(4, "vectorMap", vectorMap_)) {
+  if (!v.visitField(4, "vectorMap", this->vectorMap())) {
     return;
   }
-  if (!v.visitField(5, "fastSet", fastSet_)) {
+  if (!v.visitField(5, "fastSet", this->fastSet())) {
     return;
   }
-  if (!v.visitField(6, "nodeSet", nodeSet_)) {
+  if (!v.visitField(6, "nodeSet", this->nodeSet())) {
     return;
   }
-  if (!v.visitField(7, "valueSet", valueSet_)) {
+  if (!v.visitField(7, "valueSet", this->valueSet())) {
     return;
   }
-  if (!v.visitField(8, "vectorSet", vectorSet_)) {
+  if (!v.visitField(8, "vectorSet", this->vectorSet())) {
     return;
   }
 }
@@ -620,56 +620,56 @@ void TestStdContainers::serialize(Writer&& writer) const {
 
 template <class V>
 void TestStdContainers::visitFields(V&& v) {
-  if (!v.visitField(1, "fastMap", fastMap_)) {
+  if (!v.visitField(1, "fastMap", this->fastMap())) {
     return;
   }
-  if (!v.visitField(2, "nodeMap", nodeMap_)) {
+  if (!v.visitField(2, "nodeMap", this->nodeMap())) {
     return;
   }
-  if (!v.visitField(3, "valueMap", valueMap_)) {
+  if (!v.visitField(3, "valueMap", this->valueMap())) {
     return;
   }
-  if (!v.visitField(4, "vectorMap", vectorMap_)) {
+  if (!v.visitField(4, "vectorMap", this->vectorMap())) {
     return;
   }
-  if (!v.visitField(5, "fastSet", fastSet_)) {
+  if (!v.visitField(5, "fastSet", this->fastSet())) {
     return;
   }
-  if (!v.visitField(6, "nodeSet", nodeSet_)) {
+  if (!v.visitField(6, "nodeSet", this->nodeSet())) {
     return;
   }
-  if (!v.visitField(7, "valueSet", valueSet_)) {
+  if (!v.visitField(7, "valueSet", this->valueSet())) {
     return;
   }
-  if (!v.visitField(8, "vectorSet", vectorSet_)) {
+  if (!v.visitField(8, "vectorSet", this->vectorSet())) {
     return;
   }
 }
 
 template <class V>
 void TestStdContainers::visitFields(V&& v) const {
-  if (!v.visitField(1, "fastMap", fastMap_)) {
+  if (!v.visitField(1, "fastMap", this->fastMap())) {
     return;
   }
-  if (!v.visitField(2, "nodeMap", nodeMap_)) {
+  if (!v.visitField(2, "nodeMap", this->nodeMap())) {
     return;
   }
-  if (!v.visitField(3, "valueMap", valueMap_)) {
+  if (!v.visitField(3, "valueMap", this->valueMap())) {
     return;
   }
-  if (!v.visitField(4, "vectorMap", vectorMap_)) {
+  if (!v.visitField(4, "vectorMap", this->vectorMap())) {
     return;
   }
-  if (!v.visitField(5, "fastSet", fastSet_)) {
+  if (!v.visitField(5, "fastSet", this->fastSet())) {
     return;
   }
-  if (!v.visitField(6, "nodeSet", nodeSet_)) {
+  if (!v.visitField(6, "nodeSet", this->nodeSet())) {
     return;
   }
-  if (!v.visitField(7, "valueSet", valueSet_)) {
+  if (!v.visitField(7, "valueSet", this->valueSet())) {
     return;
   }
-  if (!v.visitField(8, "vectorSet", vectorSet_)) {
+  if (!v.visitField(8, "vectorSet", this->vectorSet())) {
     return;
   }
 }

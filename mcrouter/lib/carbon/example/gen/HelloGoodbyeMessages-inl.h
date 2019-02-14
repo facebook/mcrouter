@@ -26,20 +26,20 @@ void HelloRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void HelloRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
-  if (!v.visitField(2, "shardId", shardId_)) {
+  if (!v.visitField(2, "shardId", this->shardId())) {
     return;
   }
 }
 
 template <class V>
 void HelloRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
-  if (!v.visitField(2, "shardId", shardId_)) {
+  if (!v.visitField(2, "shardId", this->shardId())) {
     return;
   }
 }
@@ -54,14 +54,14 @@ void HelloReply::serialize(Writer&& writer) const {
 
 template <class V>
 void HelloReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
 }
 
 template <class V>
 void HelloReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
 }
@@ -77,20 +77,20 @@ void GoodbyeRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void GoodbyeRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
-  if (!v.visitField(2, "shardId", shardId_)) {
+  if (!v.visitField(2, "shardId", this->shardId())) {
     return;
   }
 }
 
 template <class V>
 void GoodbyeRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
-  if (!v.visitField(2, "shardId", shardId_)) {
+  if (!v.visitField(2, "shardId", this->shardId())) {
     return;
   }
 }
@@ -106,20 +106,20 @@ void GoodbyeReply::serialize(Writer&& writer) const {
 
 template <class V>
 void GoodbyeReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "message", message_)) {
+  if (!v.visitField(2, "message", this->message())) {
     return;
   }
 }
 
 template <class V>
 void GoodbyeReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "message", message_)) {
+  if (!v.visitField(2, "message", this->message())) {
     return;
   }
 }

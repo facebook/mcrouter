@@ -41,104 +41,104 @@ void TestCompactRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void TestCompactRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
-  if (!v.visitField(2, "testEnum", testEnum_)) {
+  if (!v.visitField(2, "testEnum", this->testEnum())) {
     return;
   }
-  if (!v.visitField(3, "testBool", testBool_)) {
+  if (!v.visitField(3, "testBool", this->testBool())) {
     return;
   }
-  if (!v.visitField(4, "testChar", testChar_)) {
+  if (!v.visitField(4, "testChar", this->testChar())) {
     return;
   }
-  if (!v.visitField(5, "testInt8", testInt8_)) {
+  if (!v.visitField(5, "testInt8", this->testInt8())) {
     return;
   }
-  if (!v.visitField(6, "testInt16", testInt16_)) {
+  if (!v.visitField(6, "testInt16", this->testInt16())) {
     return;
   }
-  if (!v.visitField(7, "testInt32", testInt32_)) {
+  if (!v.visitField(7, "testInt32", this->testInt32())) {
     return;
   }
-  if (!v.visitField(8, "testInt64", testInt64_)) {
+  if (!v.visitField(8, "testInt64", this->testInt64())) {
     return;
   }
-  if (!v.visitField(9, "testUInt8", testUInt8_)) {
+  if (!v.visitField(9, "testUInt8", this->testUInt8())) {
     return;
   }
-  if (!v.visitField(10, "testUInt16", testUInt16_)) {
+  if (!v.visitField(10, "testUInt16", this->testUInt16())) {
     return;
   }
-  if (!v.visitField(11, "testUInt32", testUInt32_)) {
+  if (!v.visitField(11, "testUInt32", this->testUInt32())) {
     return;
   }
-  if (!v.visitField(12, "testUInt64", testUInt64_)) {
+  if (!v.visitField(12, "testUInt64", this->testUInt64())) {
     return;
   }
-  if (!v.visitField(13, "testShortString", testShortString_)) {
+  if (!v.visitField(13, "testShortString", this->testShortString())) {
     return;
   }
-  if (!v.visitField(14, "testLongString", testLongString_)) {
+  if (!v.visitField(14, "testLongString", this->testLongString())) {
     return;
   }
-  if (!v.visitField(15, "testIobuf", testIobuf_)) {
+  if (!v.visitField(15, "testIobuf", this->testIobuf())) {
     return;
   }
-  if (!v.visitField(16, "testList", testList_)) {
+  if (!v.visitField(16, "testList", this->testList())) {
     return;
   }
 }
 
 template <class V>
 void TestCompactRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
-  if (!v.visitField(2, "testEnum", testEnum_)) {
+  if (!v.visitField(2, "testEnum", this->testEnum())) {
     return;
   }
-  if (!v.visitField(3, "testBool", testBool_)) {
+  if (!v.visitField(3, "testBool", this->testBool())) {
     return;
   }
-  if (!v.visitField(4, "testChar", testChar_)) {
+  if (!v.visitField(4, "testChar", this->testChar())) {
     return;
   }
-  if (!v.visitField(5, "testInt8", testInt8_)) {
+  if (!v.visitField(5, "testInt8", this->testInt8())) {
     return;
   }
-  if (!v.visitField(6, "testInt16", testInt16_)) {
+  if (!v.visitField(6, "testInt16", this->testInt16())) {
     return;
   }
-  if (!v.visitField(7, "testInt32", testInt32_)) {
+  if (!v.visitField(7, "testInt32", this->testInt32())) {
     return;
   }
-  if (!v.visitField(8, "testInt64", testInt64_)) {
+  if (!v.visitField(8, "testInt64", this->testInt64())) {
     return;
   }
-  if (!v.visitField(9, "testUInt8", testUInt8_)) {
+  if (!v.visitField(9, "testUInt8", this->testUInt8())) {
     return;
   }
-  if (!v.visitField(10, "testUInt16", testUInt16_)) {
+  if (!v.visitField(10, "testUInt16", this->testUInt16())) {
     return;
   }
-  if (!v.visitField(11, "testUInt32", testUInt32_)) {
+  if (!v.visitField(11, "testUInt32", this->testUInt32())) {
     return;
   }
-  if (!v.visitField(12, "testUInt64", testUInt64_)) {
+  if (!v.visitField(12, "testUInt64", this->testUInt64())) {
     return;
   }
-  if (!v.visitField(13, "testShortString", testShortString_)) {
+  if (!v.visitField(13, "testShortString", this->testShortString())) {
     return;
   }
-  if (!v.visitField(14, "testLongString", testLongString_)) {
+  if (!v.visitField(14, "testLongString", this->testLongString())) {
     return;
   }
-  if (!v.visitField(15, "testIobuf", testIobuf_)) {
+  if (!v.visitField(15, "testIobuf", this->testIobuf())) {
     return;
   }
-  if (!v.visitField(16, "testList", testList_)) {
+  if (!v.visitField(16, "testList", this->testList())) {
     return;
   }
 }
@@ -155,26 +155,26 @@ void TestCompactReply::serialize(Writer&& writer) const {
 
 template <class V>
 void TestCompactReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "valInt32", valInt32_)) {
+  if (!v.visitField(2, "valInt32", this->valInt32())) {
     return;
   }
-  if (!v.visitField(3, "valInt64", valInt64_)) {
+  if (!v.visitField(3, "valInt64", this->valInt64())) {
     return;
   }
 }
 
 template <class V>
 void TestCompactReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "valInt32", valInt32_)) {
+  if (!v.visitField(2, "valInt32", this->valInt32())) {
     return;
   }
-  if (!v.visitField(3, "valInt64", valInt64_)) {
+  if (!v.visitField(3, "valInt64", this->valInt64())) {
     return;
   }
 }

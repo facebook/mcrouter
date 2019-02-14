@@ -26,14 +26,14 @@ void McVersionRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void McVersionRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
 
 template <class V>
 void McVersionRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
@@ -51,32 +51,32 @@ void McVersionReply::serialize(Writer&& writer) const {
 
 template <class V>
 void McVersionReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "value", value_)) {
+  if (!v.visitField(2, "value", this->value())) {
     return;
   }
-  if (!v.visitField(3, "message", message_)) {
+  if (!v.visitField(3, "message", this->message())) {
     return;
   }
-  if (!v.visitField(4, "appSpecificErrorCode", appSpecificErrorCode_)) {
+  if (!v.visitField(4, "appSpecificErrorCode", this->appSpecificErrorCode())) {
     return;
   }
 }
 
 template <class V>
 void McVersionReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "value", value_)) {
+  if (!v.visitField(2, "value", this->value())) {
     return;
   }
-  if (!v.visitField(3, "message", message_)) {
+  if (!v.visitField(3, "message", this->message())) {
     return;
   }
-  if (!v.visitField(4, "appSpecificErrorCode", appSpecificErrorCode_)) {
+  if (!v.visitField(4, "appSpecificErrorCode", this->appSpecificErrorCode())) {
     return;
   }
 }
@@ -91,14 +91,14 @@ void McStatsRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void McStatsRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
 
 template <class V>
 void McStatsRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
@@ -116,32 +116,32 @@ void McStatsReply::serialize(Writer&& writer) const {
 
 template <class V>
 void McStatsReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "message", message_)) {
+  if (!v.visitField(2, "message", this->message())) {
     return;
   }
-  if (!v.visitField(3, "stats", stats_)) {
+  if (!v.visitField(3, "stats", this->stats())) {
     return;
   }
-  if (!v.visitField(4, "appSpecificErrorCode", appSpecificErrorCode_)) {
+  if (!v.visitField(4, "appSpecificErrorCode", this->appSpecificErrorCode())) {
     return;
   }
 }
 
 template <class V>
 void McStatsReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "message", message_)) {
+  if (!v.visitField(2, "message", this->message())) {
     return;
   }
-  if (!v.visitField(3, "stats", stats_)) {
+  if (!v.visitField(3, "stats", this->stats())) {
     return;
   }
-  if (!v.visitField(4, "appSpecificErrorCode", appSpecificErrorCode_)) {
+  if (!v.visitField(4, "appSpecificErrorCode", this->appSpecificErrorCode())) {
     return;
   }
 }
@@ -156,14 +156,14 @@ void McShutdownRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void McShutdownRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
 
 template <class V>
 void McShutdownRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
@@ -180,26 +180,26 @@ void McShutdownReply::serialize(Writer&& writer) const {
 
 template <class V>
 void McShutdownReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "message", message_)) {
+  if (!v.visitField(2, "message", this->message())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
     return;
   }
 }
 
 template <class V>
 void McShutdownReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "message", message_)) {
+  if (!v.visitField(2, "message", this->message())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
     return;
   }
 }
@@ -214,14 +214,14 @@ void McQuitRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void McQuitRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
 
 template <class V>
 void McQuitRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
@@ -238,26 +238,26 @@ void McQuitReply::serialize(Writer&& writer) const {
 
 template <class V>
 void McQuitReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "message", message_)) {
+  if (!v.visitField(2, "message", this->message())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
     return;
   }
 }
 
 template <class V>
 void McQuitReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "message", message_)) {
+  if (!v.visitField(2, "message", this->message())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
     return;
   }
 }
@@ -272,14 +272,14 @@ void McExecRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void McExecRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
 
 template <class V>
 void McExecRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
@@ -297,32 +297,32 @@ void McExecReply::serialize(Writer&& writer) const {
 
 template <class V>
 void McExecReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "response", response_)) {
+  if (!v.visitField(2, "response", this->response())) {
     return;
   }
-  if (!v.visitField(3, "message", message_)) {
+  if (!v.visitField(3, "message", this->message())) {
     return;
   }
-  if (!v.visitField(4, "appSpecificErrorCode", appSpecificErrorCode_)) {
+  if (!v.visitField(4, "appSpecificErrorCode", this->appSpecificErrorCode())) {
     return;
   }
 }
 
 template <class V>
 void McExecReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "response", response_)) {
+  if (!v.visitField(2, "response", this->response())) {
     return;
   }
-  if (!v.visitField(3, "message", message_)) {
+  if (!v.visitField(3, "message", this->message())) {
     return;
   }
-  if (!v.visitField(4, "appSpecificErrorCode", appSpecificErrorCode_)) {
+  if (!v.visitField(4, "appSpecificErrorCode", this->appSpecificErrorCode())) {
     return;
   }
 }
@@ -352,20 +352,20 @@ void GoAwayRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void GoAwayRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "reason", reason_)) {
+  if (!v.visitField(2, "reason", this->reason())) {
     return;
   }
 }
 
 template <class V>
 void GoAwayRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "reason", reason_)) {
+  if (!v.visitField(2, "reason", this->reason())) {
     return;
   }
 }

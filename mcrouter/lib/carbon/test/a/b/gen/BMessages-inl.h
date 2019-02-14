@@ -27,14 +27,14 @@ void SimpleStruct::serialize(Writer&& writer) const {
 
 template <class V>
 void SimpleStruct::visitFields(V&& v) {
-  if (!v.visitField(1, "member1", member1_)) {
+  if (!v.visitField(1, "member1", this->member1())) {
     return;
   }
 }
 
 template <class V>
 void SimpleStruct::visitFields(V&& v) const {
-  if (!v.visitField(1, "member1", member1_)) {
+  if (!v.visitField(1, "member1", this->member1())) {
     return;
   }
 }
@@ -142,14 +142,14 @@ void YetAnotherRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void YetAnotherRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
 
 template <class V>
 void YetAnotherRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
@@ -164,14 +164,14 @@ void YetAnotherReply::serialize(Writer&& writer) const {
 
 template <class V>
 void YetAnotherReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
 }
 
 template <class V>
 void YetAnotherReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
 }
