@@ -1,0 +1,19 @@
+Source: mcrouter
+Section: misc
+Priority: optional
+Maintainer: Ori Shalev <orish@fb.com>
+Build-Depends: debhelper (>=9), libc6 (>= 2.23), cmake (>=3.5.1), g++ (>=4:5.3.1), libdouble-conversion-dev (>=2.0.1), libgoogle-glog-dev (>=0.3.4), libevent-dev (>=2.0.21), libboost-all-dev (>=1.58.0), libgtest-dev (>=1.7.0), devscripts (>=2.16.2), autoconf (>=2.69), git (>= 1:2.7.4), liblzma-dev (>=5.1.1), libdwarf-dev (>=20120410), libaio-dev (>=0.3.110), liburcu-dev (>=0.9.1), libbz2-dev (>=1.0.6), libiberty-dev (>=20160215), google-mock (>=1.7.0), ragel (>=6.8), libunwind-dev (>=1.1), libsodium-dev (>=1.0.8), bison (>=2:3.0.4), flex (>=2.6.0)
+Standards-Version: 3.9.7
+Homepage: https://github.com/facebook/mcrouter/
+Vcs-Browser: https://github.com/facebook/mcrouter.git
+
+Package: mcrouter
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}, libdouble-conversion1 (>=2.0.1), openssl (>=1.1.0), libgflags2.2 (>=2.2.1), libgoogle-glog0v5 (>=0.3.5), libboost-context1.65.1 (>=1.65.1), libboost-filesystem1.65.1 (>=1.65.1), libboost-program-options1.65.1 (>=1.65.1), libboost-regex1.65.1 (>=1.65.1), libevent-2.1-6 (>= 2.1.8)
+Description: memcached protocol router for scaling memcached deployments
+ Mcrouter is a memcached protocol router for scaling memcached
+ (http://memcached.org/) deployments. It's a core component of cache
+ infrastructure at Facebook and Instagram where mcrouter handles almost 5
+ billion requests per second at peak.
+ .
+ Mcrouter is developed and maintained by Facebook.

@@ -1,0 +1,27 @@
+Index: mcrouter/mcrouter/Makefile.am
+===================================================================
+--- mcrouter.orig/mcrouter/Makefile.am
++++ mcrouter/mcrouter/Makefile.am
+@@ -208,7 +208,8 @@ mcrouter_SOURCES = \
+ 
+ libmcroutercore_a_CPPFLAGS = -I..
+ 
+-mcrouter_LDADD = libmcroutercore.a lib/libmcrouter.a -lprotocol -lthriftprotocol -lwangle -lfolly
++mcrouter_LDADD = libmcroutercore.a lib/libmcrouter.a -lprotocol -lthriftprotocol -ltransport -lthrift-core -lwangle -lfolly
++
+ mcrouter_CPPFLAGS = -I..
+ 
+ clean-local:
+Index: mcrouter/mcrouter/configure.ac
+===================================================================
+--- mcrouter.orig/mcrouter/configure.ac
++++ mcrouter/mcrouter/configure.ac
+@@ -107,7 +107,7 @@ AC_CHECK_HEADERS([arpa/inet.h fcntl.h li
+ 
+ AC_CHECK_LIB([event], [event_set], [], [AC_MSG_ERROR([Unable to find libevent])])
+ AC_CHECK_LIB([crypto], [MD5_Init], [], [AC_MSG_ERROR([Unable to find libcrypto])])
+-AC_CHECK_LIB([ssl], [SSL_library_init], [], [AC_MSG_ERROR([Unable to find ssl])])
++AC_CHECK_LIB([ssl], [SSL_set_session], [], [AC_MSG_ERROR([Unable to find ssl])])
+ AC_CHECK_LIB([z], [gzread], [], [AC_MSG_ERROR([Unable to find zlib])])
+ AC_CHECK_LIB([double-conversion],[ceil],[],[AC_MSG_ERROR(
+              [Please install double-conversion library])])

@@ -1,0 +1,12 @@
+Index: mcrouter/mcrouter/configure.ac
+===================================================================
+--- mcrouter.orig/mcrouter/configure.ac
++++ mcrouter/mcrouter/configure.ac
+@@ -112,6 +112,7 @@ AC_CHECK_LIB([z], [gzread], [], [AC_MSG_
+ AC_CHECK_LIB([double-conversion],[ceil],[],[AC_MSG_ERROR(
+              [Please install double-conversion library])])
+ AC_CHECK_LIB([dl], [dlopen], [])
++AC_CHECK_LIB([iberty], [cplus_demangle_v3_callback], [])
+ AC_CHECK_LIB([folly],[getenv],[],[AC_MSG_ERROR(
+              [Please install the folly library])])
+ AC_CHECK_LIB([sodium],[sodium_init],[],[AC_MSG_ERROR(
