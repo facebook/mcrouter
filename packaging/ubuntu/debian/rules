@@ -1,0 +1,12 @@
+#!/usr/bin/make -f
+# See debhelper(7) (uncomment to enable)
+# output every command that modifies files on the build system.
+#export DH_VERBOSE = 1
+
+%:
+	dh $@ --buildsystem=autoconf -Dmcrouter
+
+override_dh_update_autotools_config:
+	cd mcrouter && ./autogen.sh && cd ..
+
+override_dh_auto_test:

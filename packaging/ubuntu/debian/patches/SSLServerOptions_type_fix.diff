@@ -1,0 +1,13 @@
+Index: mcrouter/mcrouter/lib/network/ThreadLocalSSLContextProvider.cpp
+===================================================================
+--- mcrouter.orig/mcrouter/lib/network/ThreadLocalSSLContextProvider.cpp
++++ mcrouter/mcrouter/lib/network/ThreadLocalSSLContextProvider.cpp
+@@ -192,7 +192,7 @@ bool configureServerSSLContext(
+     return false;
+   }
+ 
+-  folly::ssl::setCipherSuites<folly::ssl::SSLServerOptions>(sslContext);
++  folly::ssl::setCipherSuites<folly::ssl::SSLCommonOptions>(sslContext);
+ 
+   return true;
+ }
