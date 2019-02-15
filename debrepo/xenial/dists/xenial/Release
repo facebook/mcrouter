@@ -1,0 +1,19 @@
+Origin: Mcrouter, Facebook
+Label: Mcrouter, Facebook
+Codename: xenial
+Date: Sat, 02 Feb 2019 17:40:49 UTC
+Architectures: amd64
+Components: contrib
+Description: Repo hosted on the GitHub project facebook/mcrouter
+MD5Sum:
+ 5f9f87115690482a0719061a73f07c11 1233 contrib/binary-amd64/Packages
+ 8df05f7216e88bfd5fff89891eedb643 688 contrib/binary-amd64/Packages.gz
+ efd6b7bbcb98035aa8b4a0e7b61708c3 129 contrib/binary-amd64/Release
+SHA1:
+ c0201b73bb29c350a1fb7bc2b87ca2d744b7b26a 1233 contrib/binary-amd64/Packages
+ 1907e6f962834b95643613d6e947a9f4fb443086 688 contrib/binary-amd64/Packages.gz
+ 2bdeef7fc4be1190a5e2ec48c461360248aa7ad5 129 contrib/binary-amd64/Release
+SHA256:
+ b1d85dc3766feabdfc72c7414da3ae46b308eabe44f89252b9f45b984b235426 1233 contrib/binary-amd64/Packages
+ a04e8d1701795f0a90810cdd89b23c54b092cad146fab3907f2cd1bb80e5f4cd 688 contrib/binary-amd64/Packages.gz
+ 901c7de612dfb9af70a47e18b9dda954db0a65fe133824668978621bd9de3fe9 129 contrib/binary-amd64/Release

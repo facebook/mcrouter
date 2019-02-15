@@ -1,0 +1,7 @@
+Origin: Mcrouter, Facebook
+Label: Mcrouter, Facebook
+Codename: bionic
+Architectures: amd64
+Components: contrib
+Description: Repo hosted on the GitHub project facebook/mcrouter
+SignWith: C79B72ED
