@@ -11,8 +11,6 @@
 
 #include "mcrouter/lib/fbi/decls.h"
 
-__BEGIN_DECLS
-
 #define SERVER_ERROR_BUSY 307
 
 /*
@@ -419,5 +417,3 @@ const char* mc_res_to_response_string(const mc_res_t result);
  * @return mc_res_t code
  */
 mc_res_t mc_res_from_string(const char* result);
-
-__END_DECLS
