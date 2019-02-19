@@ -12,6 +12,53 @@
 namespace facebook {
 namespace memcache {
 
+namespace {
+const char* errorResultStr(const mc_res_t result) {
+  switch (result) {
+    case mc_res_ooo:
+      return "SERVER_ERROR out of order\r\n";
+    case mc_res_timeout:
+      return "SERVER_ERROR timeout\r\n";
+    case mc_res_connect_timeout:
+      return "SERVER_ERROR connection timeout\r\n";
+    case mc_res_connect_error:
+      return "SERVER_ERROR connection error\r\n";
+    case mc_res_busy:
+      return "SERVER_ERROR 307 busy\r\n";
+    case mc_res_try_again:
+      return "SERVER_ERROR 302 try again\r\n";
+    case mc_res_shutdown:
+      return "SERVER_ERROR 301 shutdown\r\n";
+    case mc_res_tko:
+      return "SERVER_ERROR unavailable\r\n";
+    case mc_res_bad_command:
+      return "CLIENT_ERROR bad command\r\n";
+    case mc_res_bad_key:
+      return "CLIENT_ERROR bad key\r\n";
+    case mc_res_bad_flags:
+      return "CLIENT_ERROR bad flags\r\n";
+    case mc_res_bad_exptime:
+      return "CLIENT_ERROR bad exptime\r\n";
+    case mc_res_bad_lease_id:
+      return "CLIENT_ERROR bad lease_id\r\n";
+    case mc_res_bad_cas_id:
+      return "CLIENT_ERROR bad cas_id\r\n";
+    case mc_res_bad_value:
+      return "SERVER_ERROR bad value\r\n";
+    case mc_res_aborted:
+      return "SERVER_ERROR aborted\r\n";
+    case mc_res_client_error:
+      return "CLIENT_ERROR\r\n";
+    case mc_res_local_error:
+      return "SERVER_ERROR local error\r\n";
+    case mc_res_remote_error:
+      return "SERVER_ERROR remote error\r\n";
+    default:
+      return "SERVER_ERROR unknown result\r\n";
+  }
+}
+} // anonymous namespace
+
 size_t AsciiSerializedRequest::getSize() const {
   return iovsTotalLen_;
 }
@@ -247,7 +294,7 @@ void AsciiSerializedReply::handleError(
     auxString_ = std::move(message);
     addStrings(*auxString_, "\r\n");
   } else {
-    addString(mc_res_to_response_string(result));
+    addString(errorResultStr(result));
   }
 }
 
@@ -543,20 +590,29 @@ void AsciiSerializedReply::prepareUpdateLike(
   }
 
   if (UNLIKELY(result == mc_res_ok)) {
-    addString(mc_res_to_response_string(mc_res_stored));
+    addString("STORED\r\n");
     return;
   }
 
   switch (result) {
     case mc_res_stored:
-    case mc_res_stalestored:
-    case mc_res_found:
-    case mc_res_notstored:
-    case mc_res_notfound:
-    case mc_res_exists:
-      addString(mc_res_to_response_string(result));
+      addString("STORED\r\n");
       break;
-
+    case mc_res_stalestored:
+      addString("STALE_STORED\r\n");
+      break;
+    case mc_res_found:
+      addString("FOUND\r\n");
+      break;
+    case mc_res_notstored:
+      addString("NOT_STORED\r\n");
+      break;
+    case mc_res_notfound:
+      addString("NOT_FOUND\r\n");
+      break;
+    case mc_res_exists:
+      addString("EXISTS\r\n");
+      break;
     default:
       handleUnexpected(result, requestName);
       break;

@@ -405,13 +405,6 @@ typedef enum mc_req_err_s {
 const char* mc_req_err_to_string(const mc_req_err_t err);
 
 /**
- * @param result Result code
- *
- * @return Human-readable ASCII string for result.
- */
-const char* mc_res_to_response_string(const mc_res_t result);
-
-/**
  * @param result string like 'mc_res_notfound'
  *
  * @return mc_res_t code
