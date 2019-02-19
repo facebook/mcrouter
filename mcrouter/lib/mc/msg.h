@@ -391,10 +391,6 @@ static inline int mc_op_has_value(mc_op_t op) {
   }
 }
 
-static inline int mc_res_is_err(const mc_res_t result) {
-  return result >= mc_res_ooo && result < mc_res_waiting;
-}
-
 typedef enum mc_req_err_s {
   mc_req_err_valid,
   mc_req_err_no_key,

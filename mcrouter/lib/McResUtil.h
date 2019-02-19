@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -66,7 +65,7 @@ inline int resultSeverity(mc_res_t result) {
  * Is this reply an error?
  */
 inline bool isErrorResult(const mc_res_t result) {
-  return mc_res_is_err(result);
+  return result >= mc_res_ooo && result < mc_res_waiting;
 }
 
 /**

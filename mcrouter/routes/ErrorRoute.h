@@ -16,6 +16,7 @@
 #include "mcrouter/ProxyRequestContextTyped.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
+#include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
@@ -128,7 +129,7 @@ typename RouterInfo::RouteHandlePtr makeErrorRoute(
           jReplyResult->isString(), "ErrorRoute: result is not a string");
       result = mc_res_from_string(jReplyResult->getString().c_str());
       checkLogic(
-          mc_res_is_err(result),
+          isErrorResult(result),
           "ErrorRoute: result {} (code {}) is not a valid error result.",
           jReplyResult->getString(),
           static_cast<int>(result));
