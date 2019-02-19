@@ -142,7 +142,8 @@ void TestServerOnRequest::flushQueue() {
 }
 
 TestServer::TestServer(Config config)
-    : outOfOrder_(config.outOfOrder),
+    : sock_(config.tcpZeroCopyThresholdBytes ? true : false),
+      outOfOrder_(config.outOfOrder),
       useTicketKeySeeds_(config.useSsl && config.useTicketKeySeeds),
       onConnectionAcceptedAdditionalCb_(
           std::move(config.onConnectionAcceptedAdditionalCb)) {

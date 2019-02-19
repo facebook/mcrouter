@@ -346,6 +346,18 @@ class McServerThread {
       checkLogic(
           !reusePort_,
           "Can't use multiple listening sockets option if using existing socket");
+
+      // Don't enable tcpZeroCopy here as it will be inherited. It has to be
+      // enabled when the socket is in a TCP_CLOSE state, afterwards its too
+      // late.
+      if (opts.worker.tcpZeroCopyThresholdBytes > 0) {
+        int val = 0;
+        socklen_t optlen = sizeof(val);
+        int ret = getsockopt(
+            opts.existingSocketFd, SOL_SOCKET, SO_ZEROCOPY, &val, &optlen);
+        checkLogic(!ret, "Failed to getsockopt existing FD");
+        checkLogic(val, "SO_ZEROCOPY must be enabled on existing socket.");
+      }
       if (!opts.pemCertPath.empty() || !opts.pemKeyPath.empty() ||
           !opts.pemCaPath.empty()) {
         checkLogic(
@@ -402,6 +414,10 @@ class McServerThread {
             socket_->bind(ipAddresses, port);
           }
         }
+        if (opts.worker.tcpZeroCopyThresholdBytes > 0) {
+          int ret = socket_->setZeroCopy(true);
+          checkLogic(!ret, "Failed to set TCP zero copy on socket");
+        }
       }
       if (!server_.opts_.sslPorts.empty()) {
         checkLogic(
@@ -415,6 +431,10 @@ class McServerThread {
         sslSocket_->setReusePortEnabled(reusePort_);
         for (auto sslPort : server_.opts_.sslPorts) {
           sslSocket_->bind(sslPort);
+        }
+        if (opts.worker.tcpZeroCopyThresholdBytes > 0) {
+          int ret = sslSocket_->setZeroCopy(true);
+          checkLogic(!ret, "Failed to set TCP zero copy on ssl socket");
         }
       }
     }
