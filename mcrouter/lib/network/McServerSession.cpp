@@ -503,9 +503,9 @@ void McServerSession::queueWrite(std::unique_ptr<WriteBuffer> wb) {
     if (!writeScheduled_) {
       eventBase_.runInLoop(&sendWritesCallback_, /* thisIteration= */ true);
       writeScheduled_ = true;
-      if (isZeroCopyEnabled() && wb->shouldApplyZeroCopy()) {
-        isNextWriteBatchZeroCopy_ = true;
-      }
+    }
+    if (isZeroCopyEnabled() && wb->shouldApplyZeroCopy()) {
+      isNextWriteBatchZeroCopy_ = true;
     }
     pendingWrites_.pushBack(std::move(wb));
   }
