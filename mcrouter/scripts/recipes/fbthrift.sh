@@ -27,7 +27,7 @@ fi
 
 if [ ! -d "$PKG_DIR/zstd" ]; then
   cd "$PKG_DIR" || die "cd fail"
-  git clone https://github.com/facebook/zstd
+  git clone -b master https://github.com/facebook/zstd
 
   cd "$PKG_DIR/zstd" || die "cd fail"
 
