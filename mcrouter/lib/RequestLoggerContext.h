@@ -35,7 +35,7 @@ struct RequestLoggerContext {
       RequestClass requestClass_,
       const int64_t startTimeUs_,
       const int64_t endTimeUs_,
-      const mc_res_t replyResult_,
+      const carbon::Result replyResult_,
       const RpcStatsContext rpcStatsContext_)
       : strippedRoutingPrefix(strippedRoutingPrefix_),
         requestClass(requestClass_),
@@ -55,7 +55,7 @@ struct RequestLoggerContext {
   const AccessPoint& ap;
   const int64_t startTimeUs;
   const int64_t endTimeUs;
-  const mc_res_t replyResult;
+  const carbon::Result replyResult;
   const RpcStatsContext rpcStatsContext;
 };
 

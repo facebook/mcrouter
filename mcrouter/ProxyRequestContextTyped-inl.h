@@ -55,7 +55,7 @@ bool precheckKey(
   auto key = req.key().fullKey();
   auto err = isKeyValid<kIsMemcacheRequest>(key);
   if (err != mc_req_err_valid) {
-    ReplyT<Request> reply(mc_res_local_error);
+    ReplyT<Request> reply(carbon::Result::LOCAL_ERROR);
     carbon::setMessageIfPresent(reply, mc_req_err_to_string(err));
     preq.sendReply(std::move(reply));
     return false;
@@ -92,7 +92,7 @@ bool precheckRequest(
     ProxyRequestContextTyped<RouterInfo, McShutdownRequest>& preq,
     const McShutdownRequest&) {
   // Return error (pretend to not even understand the protocol)
-  preq.sendReply(mc_res_bad_command);
+  preq.sendReply(carbon::Result::BAD_COMMAND);
   return false;
 }
 
@@ -101,7 +101,7 @@ bool precheckRequest(
     ProxyRequestContextTyped<RouterInfo, McFlushReRequest>& preq,
     const McFlushReRequest&) {
   // Return 'Not supported' message
-  McFlushReReply reply(mc_res_local_error);
+  McFlushReReply reply(carbon::Result::LOCAL_ERROR);
   carbon::setMessageIfPresent(reply, kCommandNotSupportedStr);
   preq.sendReply(std::move(reply));
   return false;
@@ -112,7 +112,7 @@ bool precheckRequest(
     ProxyRequestContextTyped<RouterInfo, McFlushAllRequest>& preq,
     const McFlushAllRequest&) {
   if (!preq.proxy().getRouterOptions().enable_flush_cmd) {
-    McFlushAllReply reply(mc_res_local_error);
+    McFlushAllReply reply(carbon::Result::LOCAL_ERROR);
     carbon::setMessageIfPresent(reply, "Command disabled");
     preq.sendReply(std::move(reply));
     return false;
@@ -163,7 +163,7 @@ void ProxyRequestContextTyped<RouterInfo, Request>::startProcessing() {
        and 2) the clients are winding down, so we wouldn't get any
        meaningful response back anyway. */
     LOG(ERROR) << "Outstanding request on a proxy that's being destroyed";
-    sendReply(ReplyT<Request>(mc_res_unknown));
+    sendReply(ReplyT<Request>(carbon::Result::UNKNOWN));
     return;
   }
 

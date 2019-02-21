@@ -63,11 +63,11 @@ TEST_F(BlackholeRouteTest, route) {
 
   req.shardId() = 1234;
   reply = rh->route(req);
-  EXPECT_EQ(mc_res_notfound, reply.result());
+  EXPECT_EQ(carbon::Result::NOTFOUND, reply.result());
 
   req.shardId() = 2345;
   reply = rh->route(req);
-  EXPECT_EQ(mc_res_local_error, reply.result());
+  EXPECT_EQ(carbon::Result::LOCAL_ERROR, reply.result());
 }
 
 constexpr folly::StringPiece kBlackholeConfigWithChild = R"(
@@ -98,11 +98,11 @@ TEST_F(BlackholeRouteTest, routeWithChild) {
 
   req.shardId() = 1234;
   reply = rh->route(req);
-  EXPECT_EQ(mc_res_local_error, reply.result());
+  EXPECT_EQ(carbon::Result::LOCAL_ERROR, reply.result());
 
   req.shardId() = 5678;
   reply = rh->route(req);
-  EXPECT_EQ(mc_res_notfound, reply.result());
+  EXPECT_EQ(carbon::Result::NOTFOUND, reply.result());
 }
 
 } // namespace mcrouter

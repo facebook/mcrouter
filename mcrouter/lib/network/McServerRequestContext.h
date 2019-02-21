@@ -123,7 +123,7 @@ class McServerRequestContext {
    * moved to parent.
    */
   bool moveReplyToParent(
-      mc_res_t result,
+      carbon::Result result,
       uint32_t errorCode,
       std::string&& errorMessage) const;
 
@@ -262,7 +262,7 @@ class McServerOnRequestWrapper<OnRequest, List<>> : public McServerOnRequest {
   void
   requestReadyImpl(McServerRequestContext&& ctx, Request&&, std::false_type) {
     McServerRequestContext::reply(
-        std::move(ctx), ReplyT<Request>(mc_res_local_error));
+        std::move(ctx), ReplyT<Request>(carbon::Result::LOCAL_ERROR));
   }
 
  protected:

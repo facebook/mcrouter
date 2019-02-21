@@ -70,7 +70,7 @@ void ProxyRequestLogger<RouterInfo>::logDurationByRequestType(
 
 template <class RouterInfo>
 void ProxyRequestLogger<RouterInfo>::logError(
-    mc_res_t result,
+    carbon::Result result,
     RequestClass reqClass) {
   if (isErrorResult(result)) {
     REQUEST_CLASS_ERROR_STATS(proxy_, error, reqClass);

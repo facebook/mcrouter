@@ -57,7 +57,7 @@ class McClientRequestContextBase
    *
    * Should be called only when the request is not in a queue.
    */
-  void replyError(mc_res_t result, folly::StringPiece errorMessage);
+  void replyError(carbon::Result result, folly::StringPiece errorMessage);
 
   /**
    * Schedule a timeout so that the request does not wait
@@ -102,7 +102,7 @@ class McClientRequestContextBase
   virtual void sendTraceOnReply() = 0;
 
   virtual void replyErrorImpl(
-      mc_res_t result,
+      carbon::Result result,
       folly::StringPiece errorMessage) = 0;
 
   ReqState state() const {
@@ -203,7 +203,8 @@ class McClientRequestContext : public McClientRequestContextBase {
 #endif
 
   void sendTraceOnReply() final;
-  void replyErrorImpl(mc_res_t result, folly::StringPiece errorMessage) final;
+  void replyErrorImpl(carbon::Result result, folly::StringPiece errorMessage)
+      final;
 };
 
 class McClientRequestContextQueue {
@@ -224,13 +225,13 @@ class McClientRequestContextQueue {
    * Fails all requests that were already sent (i.e. pending reply) with a given
    * error code.
    */
-  void failAllSent(mc_res_t error, folly::StringPiece errorMessage);
+  void failAllSent(carbon::Result error, folly::StringPiece errorMessage);
 
   /**
    * Fails all requests that were not sent yet (i.e. pending) with a given error
    * code.
    */
-  void failAllPending(mc_res_t error, folly::StringPiece errorMessage);
+  void failAllPending(carbon::Result error, folly::StringPiece errorMessage);
 
   /**
    * Return an id of the first pending request.
@@ -327,7 +328,7 @@ class McClientRequestContextQueue {
 
   void failQueue(
       McClientRequestContextBase::Queue& queue,
-      mc_res_t error,
+      carbon::Result error,
       folly::StringPiece errorMessage);
 
   McClientRequestContextBase::UnorderedSet::iterator getContextById(

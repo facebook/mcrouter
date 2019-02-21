@@ -110,7 +110,9 @@ void ProxyDestination::stopSendingProbes() {
   probeTimer_.reset();
 }
 
-void ProxyDestination::handleTko(const mc_res_t result, bool is_probe_req) {
+void ProxyDestination::handleTko(
+    const carbon::Result result,
+    bool is_probe_req) {
   if (proxy.router().opts().disable_tko_tracking) {
     return;
   }
@@ -152,7 +154,7 @@ bool ProxyDestination::latencyAboveThreshold(uint64_t latency) {
 }
 
 void ProxyDestination::handleRxmittingConnection(
-    const mc_res_t result,
+    const carbon::Result result,
     uint64_t latency) {
   if (!client_) {
     return;
@@ -212,16 +214,18 @@ void ProxyDestination::handleRxmittingConnection(
 }
 
 void ProxyDestination::onReply(
-    const mc_res_t result,
+    const carbon::Result result,
     DestinationRequestCtx& destreqCtx,
     const RpcStatsContext& rpcStatsContext,
     bool isRequestBufferDirty) {
   handleTko(result, /* is_probe_req */ false);
 
   if (!stats_.results) {
-    stats_.results = std::make_unique<std::array<uint64_t, mc_nres>>();
+    stats_.results = std::make_unique<std::array<
+        uint64_t,
+        static_cast<size_t>(carbon::Result::NUM_RESULTS)>>();
   }
-  ++(*stats_.results)[result];
+  ++(*stats_.results)[static_cast<size_t>(result)];
   destreqCtx.endTime = nowUs();
 
   int64_t latency = destreqCtx.endTime - destreqCtx.startTime;
@@ -274,7 +278,7 @@ std::shared_ptr<ProxyDestination> ProxyDestination::create(
 
 ProxyDestination::~ProxyDestination() {
   if (tracker->removeDestination(this)) {
-    onTkoEvent(TkoLogEvent::RemoveFromConfig, mc_res_ok);
+    onTkoEvent(TkoLogEvent::RemoveFromConfig, carbon::Result::OK);
     stopSendingProbes();
   }
 
@@ -319,7 +323,7 @@ ProxyDestination::ProxyDestination(
   }
 }
 
-bool ProxyDestination::maySend(mc_res_t& tkoReason) const {
+bool ProxyDestination::maySend(carbon::Result& tkoReason) const {
   if (tracker->isTko()) {
     // There's a small race window here, but as the tkoReason is used for
     // logging/debugging purposes only, it's ok to eventually return an
@@ -512,8 +516,8 @@ void ProxyDestination::initializeAsyncMcClient() {
           pdstn->setState(State::kDown);
           pdstn->handleTko(
               reason == AsyncMcClient::ConnectionDownReason::CONNECT_TIMEOUT
-                  ? mc_res_connect_timeout
-                  : mc_res_connect_error,
+                  ? carbon::Result::CONNECT_TIMEOUT
+                  : carbon::Result::CONNECT_ERROR,
               /* is_probe_req= */ false);
         }
 
@@ -567,12 +571,13 @@ AsyncMcClient& ProxyDestination::getAsyncMcClient() {
   return *client_;
 }
 
-void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
+void ProxyDestination::onTkoEvent(TkoLogEvent event, carbon::Result result)
+    const {
   auto logUtil = [this, result](folly::StringPiece eventStr) {
     VLOG(1) << accessPoint_->toHostPortString() << " " << eventStr
             << ". Total hard TKOs: " << tracker->globalTkos().hardTkos
             << "; soft TKOs: " << tracker->globalTkos().softTkos
-            << ". Reply: " << mc_res_to_string(result);
+            << ". Reply: " << carbon::resultToString(result);
   };
 
   switch (event) {

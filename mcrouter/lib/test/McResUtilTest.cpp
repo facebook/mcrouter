@@ -14,15 +14,16 @@ namespace facebook {
 namespace memcache {
 namespace test {
 
-TEST(McResUtil, mc_res_from_string) {
+TEST(McResUtil, carbon_resultFromString) {
   const char* resStr1 = "mc_res_busy";
-  ASSERT_EQ(mc_res_from_string(resStr1), mc_res_busy);
+  ASSERT_EQ(carbon::resultFromString(resStr1), carbon::Result::BUSY);
 
   const char* resStr2 = "bad_string";
-  ASSERT_EQ(mc_res_from_string(resStr2), mc_res_unknown);
+  ASSERT_EQ(carbon::resultFromString(resStr2), carbon::Result::UNKNOWN);
 
   std::string resStr3 = "mc_res_notfound";
-  ASSERT_EQ(mc_res_from_string(resStr3.c_str()), mc_res_notfound);
+  ASSERT_EQ(
+      carbon::resultFromString(resStr3.c_str()), carbon::Result::NOTFOUND);
 }
 
 } // namespace test

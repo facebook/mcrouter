@@ -27,10 +27,10 @@ struct VerifyCommonNameOnRequest {
     EXPECT_EQ(session.getClientCommonName(), expectedCommonName);
     if (clientCommonName == expectedCommonName) {
       McServerRequestContext::reply(
-          std::move(ctx), ReplyT<Request>(mc_res_found));
+          std::move(ctx), ReplyT<Request>(carbon::Result::FOUND));
     } else {
       McServerRequestContext::reply(
-          std::move(ctx), ReplyT<Request>(mc_res_client_error));
+          std::move(ctx), ReplyT<Request>(carbon::Result::CLIENT_ERROR));
     }
   }
 };
@@ -44,7 +44,7 @@ TEST(AsyncMcServer, basic) {
 
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_caret_protocol);
-  client.sendGet("empty", mc_res_found);
+  client.sendGet("empty", carbon::Result::FOUND);
   client.waitForReplies();
 
   LOG(INFO) << "Joining...";
@@ -66,7 +66,7 @@ TEST(AsyncMcServer, sslCertCommonName) {
       200,
       mc_ascii_protocol,
       validClientSsl());
-  clientWithSsl.sendGet("empty", mc_res_found);
+  clientWithSsl.sendGet("empty", carbon::Result::FOUND);
   clientWithSsl.waitForReplies();
 
   TestClient clientWithoutSsl(
@@ -75,7 +75,7 @@ TEST(AsyncMcServer, sslCertCommonName) {
       200,
       mc_ascii_protocol,
       folly::none);
-  clientWithoutSsl.sendGet("empty", mc_res_remote_error);
+  clientWithoutSsl.sendGet("empty", carbon::Result::REMOTE_ERROR);
   clientWithoutSsl.waitForReplies();
 
   LOG(INFO) << "Joining...";
@@ -97,7 +97,7 @@ TEST(AsyncMcServer, sslVerify) {
       200,
       mc_ascii_protocol,
       validClientSsl());
-  sadClient.sendGet("empty", mc_res_connect_error);
+  sadClient.sendGet("empty", carbon::Result::CONNECT_ERROR);
   sadClient.waitForReplies();
 
   server->shutdown();
@@ -117,7 +117,7 @@ TEST(AsyncMcServer, rejectAllConnections) {
 
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_caret_protocol);
-  client.sendGet("empty", mc_res_remote_error);
+  client.sendGet("empty", carbon::Result::REMOTE_ERROR);
   client.waitForReplies();
 
   LOG(INFO) << "Joining...";
@@ -137,24 +137,24 @@ TEST(AsyncMcServer, tcpZeroCopyDisabled) {
   TestClient client(
       "localhost", server->getListenPort(), 10000, mc_caret_protocol);
   // Allow only up to two requests in flight.
-  client.sendGet("test", mc_res_found);
+  client.sendGet("test", carbon::Result::FOUND);
   client.waitForReplies();
-  client.sendGet("sleep", mc_res_timeout);
+  client.sendGet("sleep", carbon::Result::TIMEOUT);
   // Wait for the request to timeout.
   client.waitForReplies();
   // We'll need to hold the reply to the set request.
-  client.sendGet("hold", mc_res_timeout);
+  client.sendGet("hold", carbon::Result::TIMEOUT);
   // Will overfill write queue of the server and timeout before completely
   // written.
-  client.sendSet("testKey", bigValue.data(), mc_res_timeout);
+  client.sendSet("testKey", bigValue.data(), carbon::Result::TIMEOUT);
   // Wait until we complete send, note this will happen after server wakes up.
   // This is due to the fact that we cannot timeout until the request wasn't
   // completely sent.
   client.waitForReplies();
   // Flush set reply.
-  client.sendGet("flush", mc_res_found, 600);
-  client.sendGet("test3", mc_res_found);
-  client.sendGet("shutdown", mc_res_notfound);
+  client.sendGet("flush", carbon::Result::FOUND, 600);
+  client.sendGet("test3", carbon::Result::FOUND);
+  client.sendGet("shutdown", carbon::Result::NOTFOUND);
   client.waitForReplies();
   server->join();
   EXPECT_EQ(1, server->getAcceptedConns());
@@ -171,24 +171,24 @@ TEST(AsyncMcServer, tcpZeroCopyEnabled) {
   TestClient client(
       "localhost", server->getListenPort(), 10000, mc_caret_protocol);
   // Allow only up to two requests in flight.
-  client.sendGet("test", mc_res_found);
+  client.sendGet("test", carbon::Result::FOUND);
   client.waitForReplies();
-  client.sendGet("sleep", mc_res_timeout);
+  client.sendGet("sleep", carbon::Result::TIMEOUT);
   // Wait for the request to timeout.
   client.waitForReplies();
   // We'll need to hold the reply to the set request.
-  client.sendGet("hold", mc_res_timeout);
+  client.sendGet("hold", carbon::Result::TIMEOUT);
   // Will overfill write queue of the server and timeout before completely
   // written.
-  client.sendSet("testKey", bigValue.data(), mc_res_timeout);
+  client.sendSet("testKey", bigValue.data(), carbon::Result::TIMEOUT);
   // Wait until we complete send, note this will happen after server wakes up.
   // This is due to the fact that we cannot timeout until the request wasn't
   // completely sent.
   client.waitForReplies();
   // Flush set reply.
-  client.sendGet("flush", mc_res_found, 600);
-  client.sendGet("test3", mc_res_found);
-  client.sendGet("shutdown", mc_res_notfound);
+  client.sendGet("flush", carbon::Result::FOUND, 600);
+  client.sendGet("test3", carbon::Result::FOUND);
+  client.sendGet("shutdown", carbon::Result::NOTFOUND);
   client.waitForReplies();
   server->join();
   EXPECT_EQ(1, server->getAcceptedConns());
@@ -208,7 +208,7 @@ TEST(AsyncMcServer, tcpZeroCopySSLEnabled) {
       200,
       mc_ascii_protocol,
       validClientSsl());
-  sadClient.sendGet("empty", mc_res_connect_error);
+  sadClient.sendGet("empty", carbon::Result::CONNECT_ERROR);
   sadClient.waitForReplies();
 }
 
@@ -224,7 +224,7 @@ TEST(AsyncMcServer, onAccepted_PlainText) {
 
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_caret_protocol);
-  client.sendGet("empty", mc_res_found);
+  client.sendGet("empty", carbon::Result::FOUND);
   client.waitForReplies();
 
   LOG(INFO) << "Joining...";
@@ -249,7 +249,7 @@ TEST(AsyncMcServer, onAccepted_Tls) {
       200,
       mc_caret_protocol,
       validClientSsl());
-  client.sendGet("empty", mc_res_found);
+  client.sendGet("empty", carbon::Result::FOUND);
   client.waitForReplies();
 
   LOG(INFO) << "Joining...";
@@ -273,7 +273,7 @@ TEST(AsyncMcServer, onAccepted_Tls13Fizz) {
 
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_caret_protocol, sslOpts);
-  client.sendGet("empty", mc_res_found);
+  client.sendGet("empty", carbon::Result::FOUND);
   client.waitForReplies();
 
   LOG(INFO) << "Joining...";
@@ -297,7 +297,7 @@ TEST(AsyncMcServer, onAccepted_TlsToPlainText) {
 
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_caret_protocol, sslOpts);
-  client.sendGet("empty", mc_res_found);
+  client.sendGet("empty", carbon::Result::FOUND);
   client.waitForReplies();
 
   LOG(INFO) << "Joining...";
@@ -323,14 +323,14 @@ TEST(AsyncMcServer, onAccepted_RejectTlsToPlainText) {
   sslOpts.mech = SecurityMech::TLS_TO_PLAINTEXT;
   TestClient badClient(
       "localhost", server->getListenPort(), 200, mc_caret_protocol, sslOpts);
-  badClient.sendGet("empty", mc_res_remote_error);
+  badClient.sendGet("empty", carbon::Result::REMOTE_ERROR);
   badClient.waitForReplies();
 
   // tls is fine.
   sslOpts.mech = SecurityMech::TLS;
   TestClient goodClient(
       "localhost", server->getListenPort(), 200, mc_caret_protocol, sslOpts);
-  goodClient.sendGet("empty", mc_res_found);
+  goodClient.sendGet("empty", carbon::Result::FOUND);
   goodClient.waitForReplies();
 
   LOG(INFO) << "Joining...";
@@ -352,19 +352,19 @@ TEST(AsyncMcServer, onAccepted_RejectSecure) {
   sslOpts.mech = SecurityMech::TLS_TO_PLAINTEXT;
   TestClient client1(
       "localhost", server->getListenPort(), 200, mc_caret_protocol, sslOpts);
-  client1.sendGet("empty", mc_res_remote_error);
+  client1.sendGet("empty", carbon::Result::REMOTE_ERROR);
   client1.waitForReplies();
 
   sslOpts.mech = SecurityMech::TLS;
   TestClient client2(
       "localhost", server->getListenPort(), 200, mc_caret_protocol, sslOpts);
-  client2.sendGet("empty", mc_res_remote_error);
+  client2.sendGet("empty", carbon::Result::REMOTE_ERROR);
   client2.waitForReplies();
 
   sslOpts.mech = SecurityMech::TLS13_FIZZ;
   TestClient client3(
       "localhost", server->getListenPort(), 200, mc_caret_protocol, sslOpts);
-  client3.sendGet("empty", mc_res_remote_error);
+  client3.sendGet("empty", carbon::Result::REMOTE_ERROR);
   client3.waitForReplies();
 
   LOG(INFO) << "Joining...";
@@ -384,7 +384,7 @@ TEST(AsyncMcServer, onAccepted_RejectPlainText) {
 
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_caret_protocol);
-  client.sendGet("empty", mc_res_remote_error);
+  client.sendGet("empty", carbon::Result::REMOTE_ERROR);
   client.waitForReplies();
 
   LOG(INFO) << "Joining...";
@@ -414,7 +414,7 @@ TEST(AsyncMcServer, onAccepted_RejectBasedOnCert) {
   sslOpts.mech = SecurityMech::TLS_TO_PLAINTEXT;
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_caret_protocol, sslOpts);
-  client.sendGet("empty", mc_res_remote_error);
+  client.sendGet("empty", carbon::Result::REMOTE_ERROR);
   client.waitForReplies();
 
   LOG(INFO) << "Joining...";
@@ -441,7 +441,7 @@ TEST(AsyncMcServer, onAccepted_RejectEmptyCert) {
       200,
       mc_caret_protocol,
       noCertClientSsl());
-  client.sendGet("empty", mc_res_remote_error);
+  client.sendGet("empty", carbon::Result::REMOTE_ERROR);
   client.waitForReplies();
 
   TestClient goodClient(
@@ -457,7 +457,7 @@ TEST(AsyncMcServer, onAccepted_RejectEmptyCert) {
       false /* enableTfo */,
       false /* offloadHandshakes */,
       false /* sessionCachingEnabled */);
-  goodClient.sendGet("empty", mc_res_found);
+  goodClient.sendGet("empty", carbon::Result::FOUND);
   goodClient.waitForReplies();
 
   auto sslOpts = validClientSsl();
@@ -475,7 +475,7 @@ TEST(AsyncMcServer, onAccepted_RejectEmptyCert) {
       false /* enableTfo */,
       false /* offloadHandshakes */,
       false /* sessionCachingEnabled */);
-  goodClient2.sendGet("empty", mc_res_found);
+  goodClient2.sendGet("empty", carbon::Result::FOUND);
   goodClient2.waitForReplies();
 
   LOG(INFO) << "Joining...";

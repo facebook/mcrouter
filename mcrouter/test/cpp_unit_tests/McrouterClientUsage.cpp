@@ -96,9 +96,9 @@ TEST(CarbonRouterClient, basicUsageSameThreadClient) {
     auto reqRawPtr = req.get();
     client->send(
         *reqRawPtr,
-        [ req = std::move(req), &replyReceived ](
+        [req = std::move(req), &replyReceived](
             const McGetRequest&, McGetReply&& reply) {
-          EXPECT_EQ(mc_res_notfound, reply.result());
+          EXPECT_EQ(carbon::Result::NOTFOUND, reply.result());
           replyReceived = true;
         });
   });
@@ -140,7 +140,7 @@ TEST(CarbonRouterClient, basicUsageRemoteThreadClient) {
 
   client->send(
       req, [&baton, &replyReceived](const McGetRequest&, McGetReply&& reply) {
-        EXPECT_EQ(mc_res_notfound, reply.result());
+        EXPECT_EQ(carbon::Result::NOTFOUND, reply.result());
         replyReceived = true;
         baton.post();
       });
@@ -177,7 +177,7 @@ TEST(CarbonRouterClient, remoteThreadStatsRequestUsage) {
       req,
       [&baton, &replyReceived](const McStatsRequest&, McStatsReply&& reply) {
         EXPECT_GT(reply.stats().size(), 1);
-        EXPECT_EQ(mc_res_ok, reply.result());
+        EXPECT_EQ(carbon::Result::OK, reply.result());
         replyReceived = true;
         baton.post();
       });

@@ -95,7 +95,7 @@ bool CarbonRouterClient<RouterInfo>::send(
       detail::bumpCarbonRouterClientStats(stats_, request, reply);
       if (disconnected_) {
         // "Cancelled" reply.
-        cb(request, ReplyT<Request>(mc_res_unknown));
+        cb(request, ReplyT<Request>(carbon::Result::UNKNOWN));
       } else {
         cb(request, std::move(reply));
       }
@@ -109,7 +109,7 @@ bool CarbonRouterClient<RouterInfo>::send(
   };
 
   auto cancelRemaining = [&req, &callback]() {
-    callback(req, ReplyT<Request>(mc_res_local_error));
+    callback(req, ReplyT<Request>(carbon::Result::LOCAL_ERROR));
   };
 
   return sendMultiImpl(1, makePreq, cancelRemaining);
@@ -195,7 +195,7 @@ bool CarbonRouterClient<RouterInfo>::send(
           detail::bumpCarbonRouterClientStats(stats_, request, reply);
           if (disconnected_) {
             // "Cancelled" reply.
-            callback(request, ReplyT<Request>(mc_res_unknown));
+            callback(request, ReplyT<Request>(carbon::Result::UNKNOWN));
           } else {
             callback(request, std::move(reply));
           }
@@ -213,7 +213,8 @@ bool CarbonRouterClient<RouterInfo>::send(
   auto cancelRemaining = [&begin, &end, &callback]() {
     while (begin != end) {
       callback(
-          detail::unwrapRequest(*begin), ReplyT<Request>(mc_res_local_error));
+          detail::unwrapRequest(*begin),
+          ReplyT<Request>(carbon::Result::LOCAL_ERROR));
       ++begin;
     }
   };

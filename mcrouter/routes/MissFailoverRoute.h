@@ -79,8 +79,8 @@ class MissFailoverRoute {
   const std::vector<std::shared_ptr<RouteHandleIf>> targets_;
   const bool returnBestOnError_;
 
-  bool shouldFailover(const mc_res_t replyResult) const {
-    return !isHitResult(replyResult) && (replyResult != mc_res_ok);
+  bool shouldFailover(const carbon::Result replyResult) const {
+    return !isHitResult(replyResult) && (replyResult != carbon::Result::OK);
   }
 
   template <class Request>

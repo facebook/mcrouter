@@ -69,6 +69,7 @@ libmcrouter_a_SOURCES = \
   carbon/ReplyCommon.h \
   carbon/RequestCommon.h \
   carbon/RequestReplyUtil.h \
+  carbon/Result.cpp \
   carbon/Result.h \
   carbon/RoutingGroups.h \
   carbon/SerializationTraits.h \

@@ -46,13 +46,18 @@ class FailoverErrorsSettingsBase {
     explicit List(std::vector<std::string> errors);
     explicit List(const folly::dynamic& json);
 
-    bool shouldFailover(const mc_res_t result) const;
+    bool shouldFailover(const carbon::Result result) const;
 
    private:
-    std::unique_ptr<std::array<bool, mc_nres>> failover_;
+    std::unique_ptr<
+        std::array<bool, static_cast<size_t>(carbon::Result::NUM_RESULTS)>>
+        failover_;
 
     void init(std::vector<std::string> errors);
-    void init(const std::unique_ptr<std::array<bool, mc_nres>>& otherFailover);
+    void init(
+        const std::unique_ptr<
+            std::array<bool, static_cast<size_t>(carbon::Result::NUM_RESULTS)>>&
+            otherFailover);
   };
 
   enum class FailoverType {

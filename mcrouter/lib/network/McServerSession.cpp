@@ -304,7 +304,7 @@ void McServerSession::onRequest(
   McServerRequestContext ctx(*this, reqid);
 
   if (options_.defaultVersionHandler) {
-    McVersionReply reply(mc_res_ok);
+    McVersionReply reply(carbon::Result::OK);
     reply.value() =
         folly::IOBuf(folly::IOBuf::COPY_BUFFER, options_.versionString);
     McServerRequestContext::reply(std::move(ctx), std::move(reply));
@@ -320,7 +320,8 @@ void McServerSession::onRequest(McShutdownRequest&&, bool) {
     reqid = tailReqid_++;
   }
   McServerRequestContext ctx(*this, reqid, true /* noReply */);
-  McServerRequestContext::reply(std::move(ctx), McShutdownReply(mc_res_ok));
+  McServerRequestContext::reply(
+      std::move(ctx), McShutdownReply(carbon::Result::OK));
   stateCb_.onShutdown();
 }
 
@@ -330,7 +331,8 @@ void McServerSession::onRequest(McQuitRequest&&, bool) {
     reqid = tailReqid_++;
   }
   McServerRequestContext ctx(*this, reqid, true /* noReply */);
-  McServerRequestContext::reply(std::move(ctx), McQuitReply(mc_res_ok));
+  McServerRequestContext::reply(
+      std::move(ctx), McQuitReply(carbon::Result::OK));
   close();
 }
 
@@ -357,7 +359,7 @@ void McServerSession::caretRequestReady(
 
   if (McVersionRequest::typeId == headerInfo.typeId &&
       options_.defaultVersionHandler) {
-    McVersionReply versionReply(mc_res_ok);
+    McVersionReply versionReply(carbon::Result::OK);
     versionReply.value() =
         folly::IOBuf(folly::IOBuf::COPY_BUFFER, options_.versionString);
     McServerRequestContext::reply(std::move(ctx), std::move(versionReply));
@@ -399,7 +401,9 @@ void McServerSession::updateCompressionCodecIdRange(
   }
 }
 
-void McServerSession::parseError(mc_res_t result, folly::StringPiece reason) {
+void McServerSession::parseError(
+    carbon::Result result,
+    folly::StringPiece reason) {
   DestructorGuard dg(this);
 
   if (state_ != STREAMING) {

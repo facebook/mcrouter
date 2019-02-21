@@ -59,7 +59,7 @@ TEST_P(AsyncMcClientSimpleTest, serverShutdownTest) {
   auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
-  client.sendGet("shutdown", mc_res_notfound);
+  client.sendGet("shutdown", carbon::Result::NOTFOUND);
   client.waitForReplies();
 
   // ensure transport matches the mech
@@ -97,11 +97,11 @@ TEST_P(AsyncMcClientSimpleTest, asciiTimeout) {
   auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
-  client.sendGet("nohold1", mc_res_found);
-  client.sendGet("hold", mc_res_timeout);
-  client.sendGet("nohold2", mc_res_timeout);
+  client.sendGet("nohold1", carbon::Result::FOUND);
+  client.sendGet("hold", carbon::Result::TIMEOUT);
+  client.sendGet("nohold2", carbon::Result::TIMEOUT);
   client.waitForReplies();
-  client.sendGet("shutdown", mc_res_notfound);
+  client.sendGet("shutdown", carbon::Result::NOTFOUND);
   client.waitForReplies();
   server->join();
   EXPECT_EQ(1, server->getAcceptedConns());
@@ -114,11 +114,11 @@ TEST_P(AsyncMcClientSimpleTest, caretTimeout) {
   auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_caret_protocol, ssl);
-  client.sendGet("nohold1", mc_res_found);
-  client.sendGet("hold", mc_res_timeout);
-  client.sendGet("nohold2", mc_res_found);
+  client.sendGet("nohold1", carbon::Result::FOUND);
+  client.sendGet("hold", carbon::Result::TIMEOUT);
+  client.sendGet("nohold2", carbon::Result::FOUND);
   client.waitForReplies();
-  client.sendGet("shutdown", mc_res_notfound);
+  client.sendGet("shutdown", carbon::Result::NOTFOUND);
   client.waitForReplies();
   server->join();
   EXPECT_EQ(1, server->getAcceptedConns());
@@ -127,14 +127,14 @@ TEST_P(AsyncMcClientSimpleTest, caretTimeout) {
 TEST_P(AsyncMcClientSimpleTest, noServerTimeout) {
   auto ssl = GetParam();
   TestClient client("100::", 11302, 200, mc_ascii_protocol, ssl);
-  client.sendGet("hold", mc_res_connect_timeout);
+  client.sendGet("hold", carbon::Result::CONNECT_TIMEOUT);
   client.waitForReplies();
 }
 
 TEST_P(AsyncMcClientSimpleTest, immediateConnectFail) {
   auto ssl = GetParam();
   TestClient client("255.255.255.255", 12345, 200, mc_ascii_protocol, ssl);
-  client.sendGet("nohold", mc_res_connect_error);
+  client.sendGet("nohold", carbon::Result::CONNECT_ERROR);
   client.waitForReplies();
 }
 
@@ -148,12 +148,12 @@ TEST_P(AsyncMcClientSimpleTest, inflightThrottle) {
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
   client.setThrottle(5, 6);
   for (size_t i = 0; i < 5; ++i) {
-    client.sendGet("hold", mc_res_timeout);
+    client.sendGet("hold", carbon::Result::TIMEOUT);
   }
   client.waitForReplies();
   EXPECT_EQ(5, client.getMaxPendingReqs());
   EXPECT_EQ(5, client.getMaxInflightReqs());
-  client.sendGet("shutdown", mc_res_notfound);
+  client.sendGet("shutdown", carbon::Result::NOTFOUND);
   client.waitForReplies();
   server->join();
   EXPECT_EQ(1, server->getAcceptedConns());
@@ -169,13 +169,13 @@ TEST_P(AsyncMcClientSimpleTest, inflightThrottleFlush) {
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
   client.setThrottle(6, 6);
   for (size_t i = 0; i < 5; ++i) {
-    client.sendGet("hold", mc_res_found);
+    client.sendGet("hold", carbon::Result::FOUND);
   }
-  client.sendGet("flush", mc_res_found);
+  client.sendGet("flush", carbon::Result::FOUND);
   client.waitForReplies();
   EXPECT_EQ(6, client.getMaxPendingReqs());
   EXPECT_EQ(6, client.getMaxInflightReqs());
-  client.sendGet("shutdown", mc_res_notfound);
+  client.sendGet("shutdown", carbon::Result::NOTFOUND);
   client.waitForReplies();
   server->join();
   EXPECT_EQ(1, server->getAcceptedConns());
@@ -191,13 +191,13 @@ TEST_P(AsyncMcClientSimpleTest, outstandingThrottle) {
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
   client.setThrottle(5, 5);
   for (size_t i = 0; i < 5; ++i) {
-    client.sendGet("hold", mc_res_timeout);
+    client.sendGet("hold", carbon::Result::TIMEOUT);
   }
-  client.sendGet("flush", mc_res_local_error);
+  client.sendGet("flush", carbon::Result::LOCAL_ERROR);
   client.waitForReplies();
   EXPECT_EQ(5, client.getMaxPendingReqs());
   EXPECT_EQ(5, client.getMaxInflightReqs());
-  client.sendGet("shutdown", mc_res_notfound);
+  client.sendGet("shutdown", carbon::Result::NOTFOUND);
   client.waitForReplies();
   server->join();
   EXPECT_EQ(1, server->getAcceptedConns());
@@ -213,10 +213,10 @@ TEST_P(AsyncMcClientSimpleTest, connectionError) {
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
   TestClient client2(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
-  client1.sendGet("shutdown", mc_res_notfound);
+  client1.sendGet("shutdown", carbon::Result::NOTFOUND);
   client1.waitForReplies();
   /* sleep override */ usleep(10000);
-  client2.sendGet("test", mc_res_connect_error);
+  client2.sendGet("test", carbon::Result::CONNECT_ERROR);
   client2.waitForReplies();
   server->join();
   EXPECT_EQ(1, server->getAcceptedConns());
@@ -256,12 +256,12 @@ void testCerts(
       200,
       mc_caret_protocol,
       validClientSsl());
-  brokenClient.sendGet("test", mc_res_connect_error);
+  brokenClient.sendGet("test", carbon::Result::CONNECT_ERROR);
   brokenClient.waitForReplies();
   EXPECT_TRUE(loggedFailure);
-  client.sendGet("test", mc_res_found);
+  client.sendGet("test", carbon::Result::FOUND);
   client.waitForReplies();
-  client.sendGet("shutdown", mc_res_notfound);
+  client.sendGet("shutdown", carbon::Result::NOTFOUND);
   client.waitForReplies();
   server->join();
   EXPECT_EQ(numConns, server->getAcceptedConns());
@@ -298,7 +298,7 @@ TEST(AsyncMcClient, testClientFinalize) {
       mc_caret_protocol,
       validClientSsl());
 
-  client.sendGet("test1", mc_res_found);
+  client.sendGet("test1", carbon::Result::FOUND);
   client.waitForReplies();
   server->shutdown();
   server->join();
@@ -328,17 +328,17 @@ class AsyncMcClientBasicTestBase {
         clientSsl,
         qosClass,
         qosPath);
-    client.sendGet("test1", mc_res_found);
-    client.sendGet("test2", mc_res_found);
-    client.sendGet("empty", mc_res_found);
-    client.sendGet("hold", mc_res_found);
-    client.sendGet("test3", mc_res_found);
-    client.sendGet("test4", mc_res_found);
-    client.sendGet("value_size:4096", mc_res_found);
-    client.sendGet("value_size:8192", mc_res_found);
-    client.sendGet("value_size:16384", mc_res_found);
+    client.sendGet("test1", carbon::Result::FOUND);
+    client.sendGet("test2", carbon::Result::FOUND);
+    client.sendGet("empty", carbon::Result::FOUND);
+    client.sendGet("hold", carbon::Result::FOUND);
+    client.sendGet("test3", carbon::Result::FOUND);
+    client.sendGet("test4", carbon::Result::FOUND);
+    client.sendGet("value_size:4096", carbon::Result::FOUND);
+    client.sendGet("value_size:8192", carbon::Result::FOUND);
+    client.sendGet("value_size:16384", carbon::Result::FOUND);
     client.waitForReplies(6);
-    client.sendGet("shutdown", mc_res_notfound);
+    client.sendGet("shutdown", carbon::Result::NOTFOUND);
     client.waitForReplies();
     server->join();
     EXPECT_EQ(1, server->getAcceptedConns());
@@ -396,18 +396,18 @@ void reconnectTest(mc_protocol_t protocol) {
   auto server = TestServer::create(std::move(config));
 
   TestClient client("localhost", server->getListenPort(), 100, protocol);
-  client.sendGet("test1", mc_res_found, 600);
-  client.sendSet("test", "testValue", mc_res_stored, 600);
+  client.sendGet("test1", carbon::Result::FOUND, 600);
+  client.sendSet("test", "testValue", carbon::Result::STORED, 600);
   client.waitForReplies();
-  client.sendGet("sleep", mc_res_timeout);
+  client.sendGet("sleep", carbon::Result::TIMEOUT);
   // Wait for the reply, we will still have ~900ms for the write to fail.
   client.waitForReplies();
-  client.sendSet("testKey", bigValue.data(), mc_res_remote_error);
+  client.sendSet("testKey", bigValue.data(), carbon::Result::REMOTE_ERROR);
   client.waitForReplies();
   // Allow server some time to wake up.
   /* sleep override */ usleep(1000000);
-  client.sendGet("test2", mc_res_found);
-  client.sendGet("shutdown", mc_res_notfound);
+  client.sendGet("test2", carbon::Result::FOUND);
+  client.sendGet("shutdown", carbon::Result::NOTFOUND);
   client.waitForReplies();
   server->join();
   EXPECT_EQ(2, server->getAcceptedConns());
@@ -429,22 +429,22 @@ void reconnectImmediatelyTest(mc_protocol_t protocol) {
   config.useSsl = false;
   auto server = TestServer::create(std::move(config));
   TestClient client("localhost", server->getListenPort(), 100, protocol);
-  client.sendGet("test1", mc_res_found);
-  client.sendSet("test", "testValue", mc_res_stored);
+  client.sendGet("test1", carbon::Result::FOUND);
+  client.sendSet("test", "testValue", carbon::Result::STORED);
   client.waitForReplies();
-  client.sendGet("sleep", mc_res_timeout);
+  client.sendGet("sleep", carbon::Result::TIMEOUT);
   // Wait for the reply, we will still have ~900ms for the write to fail.
   client.waitForReplies();
   // Prevent get from being sent before we reconnect, this will trigger
   // a reconnect in error handling path of AsyncMcClient.
   client.setThrottle(1, 0);
-  client.sendSet("testKey", bigValue.data(), mc_res_remote_error);
-  client.sendGet("test1", mc_res_timeout);
+  client.sendSet("testKey", bigValue.data(), carbon::Result::REMOTE_ERROR);
+  client.sendGet("test1", carbon::Result::TIMEOUT);
   client.waitForReplies();
   // Allow server some time to wake up.
   /* sleep override */ usleep(1000000);
-  client.sendGet("test2", mc_res_found);
-  client.sendGet("shutdown", mc_res_notfound);
+  client.sendGet("test2", carbon::Result::FOUND);
+  client.sendGet("shutdown", carbon::Result::NOTFOUND);
   client.waitForReplies();
   server->join();
   EXPECT_EQ(2, server->getAcceptedConns());
@@ -469,9 +469,9 @@ void bigKeyTest(mc_protocol_t protocol) {
   for (int i = 0; i < len - 1; ++i) {
     key[i] = 'A';
   }
-  client.sendGet(key, mc_res_bad_key);
+  client.sendGet(key, carbon::Result::BAD_KEY);
   client.waitForReplies();
-  client.sendGet("shutdown", mc_res_notfound);
+  client.sendGet("shutdown", carbon::Result::NOTFOUND);
   client.waitForReplies();
   server->join();
   EXPECT_EQ(1, server->getAcceptedConns());
@@ -510,8 +510,8 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
     McGetRequest req("hold");
     auto reply = client->sendSync(req, std::chrono::milliseconds(100));
     EXPECT_STREQ(
-        mc_res_to_string(reply.result()),
-        mc_res_to_string(mc_res_connect_timeout));
+        carbon::resultToString(reply.result()),
+        carbon::resultToString(carbon::Result::CONNECT_TIMEOUT));
     replied = true;
   });
 
@@ -536,15 +536,15 @@ TEST(AsyncMcClient, asciiSentTimeouts) {
   auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol);
-  client.sendGet("test", mc_res_found);
+  client.sendGet("test", carbon::Result::FOUND);
   client.waitForReplies();
-  client.sendGet("hold", mc_res_timeout);
-  client.sendGet("test2", mc_res_timeout);
+  client.sendGet("hold", carbon::Result::TIMEOUT);
+  client.sendGet("test2", carbon::Result::TIMEOUT);
   // Wait until we timeout everything.
   client.waitForReplies();
-  client.sendGet("flush", mc_res_found);
-  client.sendGet("test3", mc_res_found);
-  client.sendGet("shutdown", mc_res_notfound);
+  client.sendGet("flush", carbon::Result::FOUND);
+  client.sendGet("test3", carbon::Result::FOUND);
+  client.sendGet("shutdown", carbon::Result::NOTFOUND);
   client.waitForReplies();
   server->join();
   EXPECT_EQ(1, server->getAcceptedConns());
@@ -559,16 +559,16 @@ TEST(AsyncMcClient, asciiPendingTimeouts) {
       "localhost", server->getListenPort(), 200, mc_ascii_protocol);
   // Allow only up to two requests in flight.
   client.setThrottle(2, 0);
-  client.sendGet("test", mc_res_found);
+  client.sendGet("test", carbon::Result::FOUND);
   client.waitForReplies();
-  client.sendGet("hold", mc_res_timeout);
-  client.sendGet("test2", mc_res_timeout);
-  client.sendGet("test3", mc_res_timeout);
+  client.sendGet("hold", carbon::Result::TIMEOUT);
+  client.sendGet("test2", carbon::Result::TIMEOUT);
+  client.sendGet("test3", carbon::Result::TIMEOUT);
   // Wait until we timeout everything.
   client.waitForReplies();
-  client.sendGet("flush", mc_res_found);
-  client.sendGet("test3", mc_res_found);
-  client.sendGet("shutdown", mc_res_notfound);
+  client.sendGet("flush", carbon::Result::FOUND);
+  client.sendGet("test3", carbon::Result::FOUND);
+  client.sendGet("shutdown", carbon::Result::NOTFOUND);
   client.waitForReplies();
   server->join();
   EXPECT_EQ(1, server->getAcceptedConns());
@@ -584,24 +584,24 @@ TEST(AsyncMcClient, asciiSendingTimeouts) {
   TestClient client(
       "localhost", server->getListenPort(), 10000, mc_ascii_protocol);
   // Allow only up to two requests in flight.
-  client.sendGet("test", mc_res_found);
+  client.sendGet("test", carbon::Result::FOUND);
   client.waitForReplies();
-  client.sendGet("sleep", mc_res_timeout);
+  client.sendGet("sleep", carbon::Result::TIMEOUT);
   // Wait for the request to timeout.
   client.waitForReplies();
   // We'll need to hold the reply to the set request.
-  client.sendGet("hold", mc_res_timeout);
+  client.sendGet("hold", carbon::Result::TIMEOUT);
   // Will overfill write queue of the server and timeout before completely
   // written.
-  client.sendSet("testKey", bigValue.data(), mc_res_timeout);
+  client.sendSet("testKey", bigValue.data(), carbon::Result::TIMEOUT);
   // Wait until we complete send, note this will happen after server wakes up.
   // This is due to the fact that we cannot timeout until the request wasn't
   // completely sent.
   client.waitForReplies();
   // Flush set reply.
-  client.sendGet("flush", mc_res_found, 600);
-  client.sendGet("test3", mc_res_found);
-  client.sendGet("shutdown", mc_res_notfound);
+  client.sendGet("flush", carbon::Result::FOUND, 600);
+  client.sendGet("test3", carbon::Result::FOUND);
+  client.sendGet("shutdown", carbon::Result::NOTFOUND);
   client.waitForReplies();
   server->join();
   EXPECT_EQ(1, server->getAcceptedConns());
@@ -615,15 +615,15 @@ TEST(AsyncMcClient, oooCaretTimeouts) {
       "localhost", server->getListenPort(), 200, mc_caret_protocol);
   // Allow only up to two requests in flight.
   client.setThrottle(2, 0);
-  client.sendGet("sleep", mc_res_timeout, 500);
-  client.sendGet("sleep", mc_res_timeout, 100);
+  client.sendGet("sleep", carbon::Result::TIMEOUT, 500);
+  client.sendGet("sleep", carbon::Result::TIMEOUT, 100);
   client.waitForReplies();
 
   // wait for server to wake up
   /* sleep override */ usleep(3000000);
 
-  client.sendGet("test", mc_res_found);
-  client.sendGet("shutdown", mc_res_notfound);
+  client.sendGet("test", carbon::Result::FOUND);
+  client.sendGet("shutdown", carbon::Result::NOTFOUND);
   client.waitForReplies();
   server->join();
   EXPECT_EQ(1, server->getAcceptedConns());
@@ -645,25 +645,25 @@ TEST(AsyncMcClient, tonsOfConnections) {
       [&wentDown](AsyncMcClient::ConnectionDownReason, int64_t) {
         wentDown = true;
       });
-  client.sendGet("test", mc_res_found);
+  client.sendGet("test", carbon::Result::FOUND);
   client.waitForReplies();
 
   /* Create 3 more clients to evict the first client. */
   TestClient client2(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol);
-  client2.sendGet("test", mc_res_found);
+  client2.sendGet("test", carbon::Result::FOUND);
   client2.waitForReplies();
   TestClient client3(
       "localhost", server->getListenPort(), 300, mc_ascii_protocol);
-  client3.sendGet("test", mc_res_found);
+  client3.sendGet("test", carbon::Result::FOUND);
   client3.waitForReplies();
   TestClient client4(
       "localhost", server->getListenPort(), 400, mc_ascii_protocol);
-  client4.sendGet("test", mc_res_found);
+  client4.sendGet("test", carbon::Result::FOUND);
   client4.waitForReplies();
 
   /* Force the status callback to be invoked to see if it was evicted. */
-  client.sendGet("test", mc_res_found);
+  client.sendGet("test", carbon::Result::FOUND);
   client.waitForReplies();
 
   /* Should be evicted. */
@@ -671,13 +671,13 @@ TEST(AsyncMcClient, tonsOfConnections) {
 
   /* Given there are at max 3 connections,
    * this should work iff unreapableTime is small (which it is). */
-  client4.sendGet("shutdown", mc_res_notfound);
+  client4.sendGet("shutdown", carbon::Result::NOTFOUND);
   client4.waitForReplies();
 
   server->join();
 }
 
-void caretBinaryReply(std::string data, mc_res_t expectedResult) {
+void caretBinaryReply(std::string data, carbon::Result expectedResult) {
   ListenSocket sock;
 
   std::thread serverThread([&sock, &data] {
@@ -728,7 +728,7 @@ TEST_P(AsyncMcClientSessionTest, SessionResumption) {
           }
         },
         nullptr);
-    client.sendGet("test", mc_res_found);
+    client.sendGet("test", carbon::Result::FOUND);
     client.waitForReplies();
   };
 
@@ -759,7 +759,7 @@ TEST_P(AsyncMcClientSessionTest, SessionResumption) {
   // shutdown the server
   TestClient client(
       "::1", server->getListenPort(), 200, mc_caret_protocol, ssl);
-  client.sendGet("shutdown", mc_res_notfound);
+  client.sendGet("shutdown", carbon::Result::NOTFOUND);
   client.waitForReplies();
 
   server->join();
@@ -810,7 +810,7 @@ TEST(AsyncMcClient, caretAdditionalFields) {
   auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_caret_protocol);
-  client.sendGet("trace_id", mc_res_found);
+  client.sendGet("trace_id", carbon::Result::FOUND);
   client.waitForReplies();
   server->shutdown();
   server->join();
@@ -822,14 +822,14 @@ TEST(AsyncMcClient, caretGoAway) {
   auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_caret_protocol);
-  client.sendGet("test", mc_res_found);
-  client.sendGet("hold", mc_res_found);
+  client.sendGet("test", carbon::Result::FOUND);
+  client.sendGet("hold", carbon::Result::FOUND);
   client.setStatusCallbacks(
       [](const folly::AsyncTransportWrapper&, int64_t) {},
       [&client](AsyncMcClient::ConnectionDownReason reason, int64_t) {
         if (reason == AsyncMcClient::ConnectionDownReason::SERVER_GONE_AWAY) {
           LOG(INFO) << "Server gone away, flushing";
-          client.sendGet("flush", mc_res_found);
+          client.sendGet("flush", carbon::Result::FOUND);
         }
       });
   client.waitForReplies(1);
@@ -921,7 +921,7 @@ TEST_P(AsyncMcClientTFOTest, testTfoWithSSL) {
           }
         },
         nullptr);
-    client.sendGet("test", mc_res_found);
+    client.sendGet("test", carbon::Result::FOUND);
     client.waitForReplies();
   };
 
@@ -946,7 +946,7 @@ TEST_P(AsyncMcClientTFOTest, testTfoWithSSL) {
   // shutdown the server
   TestClient client(
       "::1", server->getListenPort(), 200, mc_caret_protocol, ssl);
-  client.sendGet("shutdown", mc_res_notfound);
+  client.sendGet("shutdown", carbon::Result::NOTFOUND);
   client.waitForReplies();
 
   server->join();
@@ -1015,7 +1015,7 @@ TEST_P(AsyncMcClientSSLOffloadTest, connectErrors) {
       nullptr,
       false,
       GetParam());
-  sadClient.sendGet("empty", mc_res_connect_error);
+  sadClient.sendGet("empty", carbon::Result::CONNECT_ERROR);
   sadClient.waitForReplies();
 
   server->shutdown();

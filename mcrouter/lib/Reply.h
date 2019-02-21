@@ -31,7 +31,7 @@ enum BusyReplyT { BusyReply };
 template <class Request>
 ReplyT<Request>
 createReply(DefaultReplyT, const Request&, carbon::UpdateLikeT<Request> = 0) {
-  return ReplyT<Request>(mc_res_notstored);
+  return ReplyT<Request>(carbon::Result::NOTSTORED);
 }
 
 template <class Request>
@@ -39,24 +39,24 @@ ReplyT<Request> createReply(
     DefaultReplyT,
     const Request&,
     carbon::OtherThanT<Request, carbon::UpdateLike<>> = 0) {
-  return ReplyT<Request>(mc_res_notfound);
+  return ReplyT<Request>(carbon::Result::NOTFOUND);
 }
 
 template <class Request>
 ReplyT<Request> createReply(ErrorReplyT) {
-  return ReplyT<Request>(mc_res_local_error);
+  return ReplyT<Request>(carbon::Result::LOCAL_ERROR);
 }
 
 template <class Request>
 ReplyT<Request> createReply(ErrorReplyT, std::string errorMessage) {
-  ReplyT<Request> reply(mc_res_local_error);
+  ReplyT<Request> reply(carbon::Result::LOCAL_ERROR);
   carbon::setMessageIfPresent(reply, std::move(errorMessage));
   return reply;
 }
 
 template <class Request>
 ReplyT<Request>
-createReply(ErrorReplyT, mc_res_t result, std::string errorMessage) {
+createReply(ErrorReplyT, carbon::Result result, std::string errorMessage) {
   assert(isErrorResult(result));
   ReplyT<Request> reply(result);
   carbon::setMessageIfPresent(reply, std::move(errorMessage));
@@ -65,19 +65,19 @@ createReply(ErrorReplyT, mc_res_t result, std::string errorMessage) {
 
 template <class Request>
 ReplyT<Request> createReply(TkoReplyT) {
-  return ReplyT<Request>(mc_res_tko);
+  return ReplyT<Request>(carbon::Result::TKO);
 }
 
 template <class Request>
 ReplyT<Request> createReply(TkoReplyT, std::string errorMessage) {
-  ReplyT<Request> reply(mc_res_tko);
+  ReplyT<Request> reply(carbon::Result::TKO);
   carbon::setMessageIfPresent(reply, std::move(errorMessage));
   return reply;
 }
 
 template <class Request>
 ReplyT<Request> createReply(BusyReplyT) {
-  return ReplyT<Request>(mc_res_busy);
+  return ReplyT<Request>(carbon::Result::BUSY);
 }
 
 } // namespace memcache

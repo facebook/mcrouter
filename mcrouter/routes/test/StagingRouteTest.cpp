@@ -40,7 +40,7 @@ class StagingRouteTest : public RouteHandleTestBase<HelloGoodbyeRouterInfo> {
       const Request& req,
       TestData warmResult,
       TestData stagingResult,
-      mc_res_t expectedReply) {
+      carbon::Result expectedReply) {
     warm_ = std::make_shared<TestHandle>(warmResult);
     staging_ = std::make_shared<TestHandle>(stagingResult);
 
@@ -86,9 +86,9 @@ TEST_F(StagingRouteTest, GetTestWarmHitStagingAdd) {
   McGetRequest req("abc");
   createAndRun(
       req,
-      GetRouteTestData(mc_res_found, "a"),
-      GetRouteTestData(mc_res_notfound, "a"),
-      mc_res_found);
+      GetRouteTestData(carbon::Result::FOUND, "a"),
+      GetRouteTestData(carbon::Result::NOTFOUND, "a"),
+      carbon::Result::FOUND);
 
   verifyOperations(
       /* warm */
@@ -103,9 +103,9 @@ TEST_F(StagingRouteTest, LeaseGetTestWarmHitStagingAdd) {
   McLeaseGetRequest req("abc");
   createAndRun(
       req,
-      GetRouteTestData(mc_res_found, "a"),
-      GetRouteTestData(mc_res_notfound, "a"),
-      mc_res_found);
+      GetRouteTestData(carbon::Result::FOUND, "a"),
+      GetRouteTestData(carbon::Result::NOTFOUND, "a"),
+      carbon::Result::FOUND);
 
   verifyOperations(
       /* warm */
@@ -121,9 +121,9 @@ TEST_F(StagingRouteTest, GetWarmMiss) {
   McGetRequest req("abc");
   createAndRun(
       req,
-      GetRouteTestData(mc_res_notfound, "a"),
-      GetRouteTestData(mc_res_found, "a"),
-      mc_res_notfound);
+      GetRouteTestData(carbon::Result::NOTFOUND, "a"),
+      GetRouteTestData(carbon::Result::FOUND, "a"),
+      carbon::Result::NOTFOUND);
 
   verifyOperations(
       /* warm */
@@ -139,9 +139,9 @@ TEST_F(StagingRouteTest, LeaseGetWarmMiss) {
   McLeaseGetRequest req("abc");
   createAndRun(
       req,
-      GetRouteTestData(mc_res_notfound, "a"),
-      GetRouteTestData(mc_res_found, "a"),
-      mc_res_notfound);
+      GetRouteTestData(carbon::Result::NOTFOUND, "a"),
+      GetRouteTestData(carbon::Result::FOUND, "a"),
+      carbon::Result::NOTFOUND);
 
   verifyOperations(
       /* warm */
@@ -157,9 +157,9 @@ TEST_F(StagingRouteTest, TestSet) {
   McSetRequest req("abc");
   createAndRun(
       req,
-      UpdateRouteTestData(mc_res_stored, 0),
-      UpdateRouteTestData(mc_res_notstored, 0),
-      mc_res_stored);
+      UpdateRouteTestData(carbon::Result::STORED, 0),
+      UpdateRouteTestData(carbon::Result::NOTSTORED, 0),
+      carbon::Result::STORED);
 
   verifyOperations(
       /* warm */
@@ -175,9 +175,9 @@ TEST_F(StagingRouteTest, TestSetFail) {
   McSetRequest req("abc");
   createAndRun(
       req,
-      UpdateRouteTestData(mc_res_unknown, 0),
-      UpdateRouteTestData(mc_res_stored, 0),
-      mc_res_unknown);
+      UpdateRouteTestData(carbon::Result::UNKNOWN, 0),
+      UpdateRouteTestData(carbon::Result::STORED, 0),
+      carbon::Result::UNKNOWN);
 
   verifyOperations(
       /* warm */
@@ -193,9 +193,9 @@ TEST_F(StagingRouteTest, TestLeaseSet) {
   McLeaseSetRequest req("abc");
   createAndRun(
       req,
-      UpdateRouteTestData(mc_res_stored, 0),
-      UpdateRouteTestData(mc_res_notstored, 0),
-      mc_res_stored);
+      UpdateRouteTestData(carbon::Result::STORED, 0),
+      UpdateRouteTestData(carbon::Result::NOTSTORED, 0),
+      carbon::Result::STORED);
 
   verifyOperations(
       /* warm */
@@ -211,9 +211,9 @@ TEST_F(StagingRouteTest, TestDelete) {
   McDeleteRequest req("abc");
   createAndRun(
       req,
-      DeleteRouteTestData(mc_res_deleted),
-      DeleteRouteTestData(mc_res_unknown),
-      mc_res_unknown); // worse reply
+      DeleteRouteTestData(carbon::Result::DELETED),
+      DeleteRouteTestData(carbon::Result::UNKNOWN),
+      carbon::Result::UNKNOWN); // worse reply
 
   verifyOperations(
       /* warm */
@@ -228,9 +228,9 @@ TEST_F(StagingRouteTest, TestCas) {
   McCasRequest req("abc");
   createAndRun(
       req,
-      UpdateRouteTestData(mc_res_stored, 0),
-      UpdateRouteTestData(mc_res_notstored, 0),
-      mc_res_stored);
+      UpdateRouteTestData(carbon::Result::STORED, 0),
+      UpdateRouteTestData(carbon::Result::NOTSTORED, 0),
+      carbon::Result::STORED);
 
   verifyOperations(
       /* warm */
@@ -245,9 +245,9 @@ TEST_F(StagingRouteTest, TestGets) {
   McGetsRequest req("abc");
   createAndRun(
       req,
-      GetRouteTestData(mc_res_found, "a"),
-      GetRouteTestData(mc_res_notfound, "a"),
-      mc_res_found);
+      GetRouteTestData(carbon::Result::FOUND, "a"),
+      GetRouteTestData(carbon::Result::NOTFOUND, "a"),
+      carbon::Result::FOUND);
 
   verifyOperations(
       /* warm */
@@ -262,9 +262,9 @@ TEST_F(StagingRouteTest, TestGetsNotFound) {
   McGetsRequest req("abc");
   createAndRun(
       req,
-      GetRouteTestData(mc_res_notfound, "a"),
-      GetRouteTestData(mc_res_unknown, "a"),
-      mc_res_notfound);
+      GetRouteTestData(carbon::Result::NOTFOUND, "a"),
+      GetRouteTestData(carbon::Result::UNKNOWN, "a"),
+      carbon::Result::NOTFOUND);
 
   verifyOperations(
       /* warm */
@@ -279,9 +279,9 @@ TEST_F(StagingRouteTest, TestMetaget) {
   McMetagetRequest req("abc");
   createAndRun(
       req,
-      GetRouteTestData(mc_res_found, "a"),
-      GetRouteTestData(mc_res_notfound, "a"),
-      mc_res_found);
+      GetRouteTestData(carbon::Result::FOUND, "a"),
+      GetRouteTestData(carbon::Result::NOTFOUND, "a"),
+      carbon::Result::FOUND);
 
   verifyOperations(
       /* warm */
@@ -298,9 +298,9 @@ TEST_F(StagingRouteTest, TestAddSuccess) {
   McAddRequest req("abc");
   createAndRun(
       req,
-      UpdateRouteTestData(mc_res_stored, 0),
-      UpdateRouteTestData(mc_res_notstored, 0),
-      mc_res_stored);
+      UpdateRouteTestData(carbon::Result::STORED, 0),
+      UpdateRouteTestData(carbon::Result::NOTSTORED, 0),
+      carbon::Result::STORED);
 
   verifyOperations(
       /* warm */
@@ -317,9 +317,9 @@ TEST_F(StagingRouteTest, TestAddFailure) {
   McAddRequest req("abc");
   createAndRun(
       req,
-      UpdateRouteTestData(mc_res_timeout, 0),
-      UpdateRouteTestData(mc_res_stored, 0),
-      mc_res_timeout);
+      UpdateRouteTestData(carbon::Result::TIMEOUT, 0),
+      UpdateRouteTestData(carbon::Result::STORED, 0),
+      carbon::Result::TIMEOUT);
 
   verifyOperations(
       /* warm */

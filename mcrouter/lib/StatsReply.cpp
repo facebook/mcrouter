@@ -21,7 +21,7 @@ McStatsReply StatsReply::getReply() {
    * "STAT stat1 value1\r\nSTAT stat2 value2\r\n..."
    */
 
-  McStatsReply reply(mc_res_ok);
+  McStatsReply reply(carbon::Result::OK);
   std::vector<std::string> statsList;
 
   for (const auto& s : stats_) {

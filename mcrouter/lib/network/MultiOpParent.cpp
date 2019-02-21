@@ -14,13 +14,14 @@ MultiOpParent::MultiOpParent(McServerSession& session, uint64_t blockReqid)
     : session_(session), block_(session, blockReqid, true /* noReply */) {}
 
 bool MultiOpParent::reply(
-    mc_res_t result,
+    carbon::Result result,
     uint32_t errorCode,
     std::string&& errorMessage) {
   bool stolen = false;
   // If not a hit or a miss, and we didn't store a reply yet,
   // take ownership of the error reply and tell caller not to reply
-  if (!(result == mc_res_found || result == mc_res_notfound) &&
+  if (!(result == carbon::Result::FOUND ||
+        result == carbon::Result::NOTFOUND) &&
       !reply_.hasValue()) {
     stolen = true;
     error_ = true;
@@ -53,7 +54,7 @@ void MultiOpParent::recordEnd(uint64_t reqid) {
 
 void MultiOpParent::release() {
   if (!reply_.hasValue()) {
-    reply_.emplace(mc_res_found);
+    reply_.emplace(carbon::Result::FOUND);
   }
   McServerRequestContext::reply(std::move(*end_), std::move(*reply_));
   // It doesn't really matter what reply type we use for the multi-op

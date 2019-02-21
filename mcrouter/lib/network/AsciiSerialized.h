@@ -187,7 +187,7 @@ class AsciiSerializedReply {
   void prepareImpl(McGatsReply&& reply, folly::StringPiece key);
   // Update-like ops
   void prepareUpdateLike(
-      mc_res_t result,
+      carbon::Result result,
       uint16_t errorCode,
       std::string&& message,
       const char* requestName);
@@ -200,7 +200,7 @@ class AsciiSerializedReply {
   void prepareImpl(McLeaseSetReply&& reply);
   // Arithmetic-like ops
   void prepareArithmeticLike(
-      mc_res_t result,
+      carbon::Result result,
       const uint64_t delta,
       uint16_t errorCode,
       std::string&& message,
@@ -222,8 +222,9 @@ class AsciiSerializedReply {
   void prepareImpl(McFlushReReply&&);
   void prepareImpl(McFlushAllReply&&);
   // Server and client error helper
-  void handleError(mc_res_t result, uint16_t errorCode, std::string&& message);
-  void handleUnexpected(mc_res_t result, const char* requestName);
+  void
+  handleError(carbon::Result result, uint16_t errorCode, std::string&& message);
+  void handleUnexpected(carbon::Result result, const char* requestName);
 };
 }
 } // facebook::memcache

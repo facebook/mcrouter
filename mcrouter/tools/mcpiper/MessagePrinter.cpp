@@ -147,15 +147,15 @@ std::string MessagePrinter::serializeConnectionDetails(
 
 std::string MessagePrinter::serializeMessageHeader(
     folly::StringPiece messageName,
-    mc_res_t result,
+    carbon::Result result,
     const std::string& key) {
   std::string out;
 
   if (options_.script) {
     out.append(folly::sformat("\"type\": \"{}\"", messageName.data()));
-    if (result != mc_res_unknown) {
-      out.append(
-          folly::sformat(",\n  \"result\": \"{}\"", mc_res_to_string(result)));
+    if (result != carbon::Result::UNKNOWN) {
+      out.append(folly::sformat(
+          ",\n  \"result\": \"{}\"", carbon::resultToString(result)));
     }
     if (!key.empty()) {
       out.append(
@@ -163,9 +163,9 @@ std::string MessagePrinter::serializeMessageHeader(
     }
   } else {
     out.append(messageName.data());
-    if (result != mc_res_unknown) {
+    if (result != carbon::Result::UNKNOWN) {
       out.push_back(' ');
-      out.append(mc_res_to_string(result));
+      out.append(carbon::resultToString(result));
     }
     if (!key.empty()) {
       out.push_back(' ');

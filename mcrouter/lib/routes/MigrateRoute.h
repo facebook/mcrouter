@@ -86,7 +86,7 @@ class MigrateRoute {
       case kToMask:
       default:
         McLeaseSetReply reply = to_->route(req);
-        if (reply.result() != mc_res_stored &&
+        if (reply.result() != carbon::Result::STORED &&
             now < (migrationTime(req) + 10)) {
           // Send a lease invalidation to from_ if the lease-set failed and we
           // recently migrated to to_. This helps ensure that servers in the old

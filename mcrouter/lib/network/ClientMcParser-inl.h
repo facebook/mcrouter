@@ -153,7 +153,7 @@ bool ClientMcParser<Callback>::caretMessageReady(
     const auto reason = folly::sformat(
         "Expected {} protocol, but received Caret!",
         mc_protocol_to_string(parser_.protocol()));
-    callback_.parseError(mc_res_local_error, reason);
+    callback_.parseError(carbon::Result::LOCAL_ERROR, reason);
     return false;
   }
 
@@ -168,7 +168,7 @@ bool ClientMcParser<Callback>::caretMessageReady(
   } catch (const std::exception& e) {
     const auto reason =
         folly::sformat("Error parsing Caret message: {}", e.what());
-    callback_.parseError(mc_res_local_error, reason);
+    callback_.parseError(carbon::Result::LOCAL_ERROR, reason);
     return false;
   }
 }
@@ -179,7 +179,7 @@ void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
     std::string reason(folly::sformat(
         "Expected {} protocol, but received ASCII!",
         mc_protocol_to_string(parser_.protocol())));
-    callback_.parseError(mc_res_local_error, reason);
+    callback_.parseError(carbon::Result::LOCAL_ERROR, reason);
     return;
   }
 
@@ -194,7 +194,7 @@ void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
                 data,
                 data +
                     std::min(readBuffer.length(), static_cast<size_t>(128))))));
-        callback_.parseError(mc_res_local_error, reason);
+        callback_.parseError(carbon::Result::LOCAL_ERROR, reason);
         return;
       }
     }
@@ -211,7 +211,7 @@ void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
         break;
       case McAsciiParserBase::State::ERROR:
         callback_.parseError(
-            mc_res_local_error, asciiParser_.getErrorDescription());
+            carbon::Result::LOCAL_ERROR, asciiParser_.getErrorDescription());
         return;
       case McAsciiParserBase::State::PARTIAL:
         // Buffer was completely consumed.
@@ -219,7 +219,7 @@ void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
       case McAsciiParserBase::State::UNINIT:
         // We fed parser some data, it shouldn't remain in State::NONE.
         callback_.parseError(
-            mc_res_local_error,
+            carbon::Result::LOCAL_ERROR,
             "Sent data to AsciiParser but it remained in "
             "UNINIT state!");
         return;
@@ -229,7 +229,7 @@ void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
 
 template <class Callback>
 void ClientMcParser<Callback>::parseError(
-    mc_res_t result,
+    carbon::Result result,
     folly::StringPiece reason) {
   callback_.parseError(result, reason);
 }

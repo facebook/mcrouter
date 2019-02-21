@@ -18,7 +18,7 @@ namespace memcache {
 template <class Request>
 void McServerSession::asciiRequestReady(
     Request&& req,
-    mc_res_t result,
+    carbon::Result result,
     bool noreply) {
   DestructorGuard dg(this);
 
@@ -41,13 +41,15 @@ void McServerSession::asciiRequestReady(
 
   ctx.asciiKey().emplace(req.key().raw().cloneOneAsValue());
 
-  if (result == mc_res_bad_key) {
-    McServerRequestContext::reply(std::move(ctx), Reply(mc_res_bad_key));
+  if (result == carbon::Result::BAD_KEY) {
+    McServerRequestContext::reply(
+        std::move(ctx), Reply(carbon::Result::BAD_KEY));
   } else {
     try {
       onRequest_->requestReady(std::move(ctx), std::move(req));
     } catch (...) {
-      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_remote_error));
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::REMOTE_ERROR));
     }
   }
 }

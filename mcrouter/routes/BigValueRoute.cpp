@@ -61,10 +61,10 @@ McLeaseGetReply BigValueRoute::doLeaseGetRoute(
 
   ChunksInfo chunksInfo(coalesceAndGetRange(initialReply.value()));
   if (!chunksInfo.valid()) {
-    // We cannot return mc_res_notfound without a valid lease token. We err on
-    // the side of allowing clients to make progress by returning a lease token
-    // of -1.
-    McLeaseGetReply missReply(mc_res_notfound);
+    // We cannot return carbon::Result::NOTFOUND without a valid lease token. We
+    // err on the side of allowing clients to make progress by returning a lease
+    // token of -1.
+    McLeaseGetReply missReply(carbon::Result::NOTFOUND);
     missReply.leaseToken() = static_cast<uint64_t>(-1);
     return missReply;
   }
@@ -133,7 +133,7 @@ McLeaseGetReply BigValueRoute::doLeaseGetRoute(
     return doLeaseGetRoute(req, --retriesLeft);
   }
 
-  McLeaseGetReply reply(mc_res_remote_error);
+  McLeaseGetReply reply(carbon::Result::REMOTE_ERROR);
   reply.message() = folly::sformat(
       "BigValueRoute: exhausted retries for lease-get for key {}", key);
   return reply;

@@ -38,19 +38,19 @@ class ReplyCommon : public MessageCommon {
 
 class ReplyCommonThrift : public ReplyCommon {
  public:
-  explicit ReplyCommonThrift(mc_res_t result__ = mc_res_unknown)
+  explicit ReplyCommonThrift(carbon::Result result__ = carbon::Result::UNKNOWN)
       : result_(result__) {}
 
-  mc_res_t result() const {
+  carbon::Result result() const {
     return result_;
   }
 
-  mc_res_t& result() {
+  carbon::Result& result() {
     return result_;
   }
 
  private:
-  mc_res_t result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
 };
 
 } // carbon

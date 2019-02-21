@@ -266,7 +266,7 @@ class TestCompactReply : public carbon::ReplyCommon {
  private:
   int64_t valInt64_{0};
   int32_t valInt32_{0};
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
 };
 } // namespace test
 } // namespace carbon

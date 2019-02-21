@@ -121,7 +121,7 @@ class FailoverRoute {
       mutReq.leaseToken() = item->originalToken;
       proxy.stats().increment(redirected_lease_set_count_stat);
       if (targets_.size() <= item->routeHandleChildIndex) {
-        McLeaseSetReply errorReply(mc_res_local_error);
+        McLeaseSetReply errorReply(carbon::Result::LOCAL_ERROR);
         errorReply.message() = "LeaseSet failover destination out-of-range.";
         return errorReply;
       }

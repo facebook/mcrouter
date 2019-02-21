@@ -213,14 +213,14 @@ class TestClient {
 
   void sendGet(
       std::string key,
-      mc_res_t expectedResult,
+      carbon::Result expectedResult,
       uint32_t timeoutMs = 200,
       std::function<void(const RpcStatsContext&)> rpcStatsCallback = nullptr);
 
   void sendSet(
       std::string key,
       std::string value,
-      mc_res_t expectedResult,
+      carbon::Result expectedResult,
       uint32_t timeoutMs = 200,
       std::function<void(const RpcStatsContext&)> rpcStatsCallback = nullptr);
 

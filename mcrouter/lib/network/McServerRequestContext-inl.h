@@ -108,7 +108,7 @@ bool McServerRequestContext::noReply(const Reply& r) const {
   if (!hasParent()) {
     return false;
   }
-  return isParentError() || r.result() != mc_res_found;
+  return isParentError() || r.result() != carbon::Result::FOUND;
 }
 
 inline bool McServerRequestContext::noReply(const McLeaseGetReply&) const {

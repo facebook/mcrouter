@@ -45,21 +45,22 @@ FailoverErrorsSettingsBase::List::List(const folly::dynamic& json) {
 }
 
 bool FailoverErrorsSettingsBase::List::shouldFailover(
-    const mc_res_t result) const {
+    const carbon::Result result) const {
   if (failover_ != nullptr) {
-    return (*failover_)[result];
+    return (*failover_)[static_cast<size_t>(result)];
   }
   return isFailoverErrorResult(result);
 }
 
 void FailoverErrorsSettingsBase::List::init(std::vector<std::string> errors) {
-  failover_ = std::make_unique<std::array<bool, mc_nres>>();
+  failover_ = std::make_unique<
+      std::array<bool, static_cast<size_t>(carbon::Result::NUM_RESULTS)>>();
 
   for (const auto& error : errors) {
-    int i;
-    for (i = 0; i < mc_nres; ++i) {
-      mc_res_t errorType = static_cast<mc_res_t>(i);
-      folly::StringPiece errorName(mc_res_to_string(errorType));
+    size_t i;
+    for (i = 0; i < static_cast<size_t>(carbon::Result::NUM_RESULTS); ++i) {
+      carbon::Result errorType = static_cast<carbon::Result>(i);
+      folly::StringPiece errorName(carbon::resultToString(errorType));
       errorName.removePrefix("mc_res_");
 
       if (isErrorResult(errorType) && error == errorName) {
@@ -69,14 +70,19 @@ void FailoverErrorsSettingsBase::List::init(std::vector<std::string> errors) {
     }
 
     checkLogic(
-        i < mc_nres, "Failover error '{}' is not a valid error type.", error);
+        i < static_cast<size_t>(carbon::Result::NUM_RESULTS),
+        "Failover error '{}' is not a valid error type.",
+        error);
   }
 }
 
 void FailoverErrorsSettingsBase::List::init(
-    const std::unique_ptr<std::array<bool, mc_nres>>& otherFailover) {
+    const std::unique_ptr<
+        std::array<bool, static_cast<size_t>(carbon::Result::NUM_RESULTS)>>&
+        otherFailover) {
   if (otherFailover) {
-    failover_ = std::make_unique<std::array<bool, mc_nres>>();
+    failover_ = std::make_unique<
+        std::array<bool, static_cast<size_t>(carbon::Result::NUM_RESULTS)>>();
     *failover_ = *otherFailover;
   }
 }

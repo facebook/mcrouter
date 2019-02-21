@@ -79,7 +79,7 @@ class RootRoute {
         : routeImpl(*rhPtr, req);
 
     if (isErrorResult(reply.result()) && opts_.group_remote_errors) {
-      reply = ReplyT<Request>(mc_res_remote_error);
+      reply = ReplyT<Request>(carbon::Result::REMOTE_ERROR);
     }
 
     return reply;
@@ -106,7 +106,7 @@ class RootRoute {
           folly::to<std::string>(
               "Error reply transformed into miss due to miss_on_get_errors. "
               "Original reply result: ",
-              mc_res_to_string(originalResult)));
+              carbon::resultToString(originalResult)));
     }
     return reply;
   }

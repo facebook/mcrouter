@@ -180,7 +180,7 @@ class TestRunner {
       FAIL() << "caretRequestReady should never be called for ASCII";
     }
 
-    void parseError(mc_res_t, folly::StringPiece reason) {
+    void parseError(carbon::Result, folly::StringPiece reason) {
       ASSERT_NE(nullptr, parser_)
           << "Test framework bug, didn't provide parser to callback!";
       EXPECT_TRUE(isError_) << "Unexpected parsing error: " << reason

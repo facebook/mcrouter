@@ -23,7 +23,7 @@ using namespace facebook::memcache;
 
 TEST(CarbonQueueAppenderTest, longString) {
   carbon::CarbonQueueAppenderStorage storage;
-  McGetReply reply(mc_res_remote_error);
+  McGetReply reply(carbon::Result::REMOTE_ERROR);
 
   // Require more space than CarbonQueueAppenderStorage's internal 512B buffer.
   // This will append() a copy of the string allocated on the heap.
@@ -65,7 +65,7 @@ TEST(CarbonQueueAppenderTest, longString) {
   carbon::CarbonProtocolReader reader(folly::io::Cursor(inputBody.get()));
   inputReply.deserialize(reader);
 
-  EXPECT_EQ(mc_res_remote_error, inputReply.result());
+  EXPECT_EQ(carbon::Result::REMOTE_ERROR, inputReply.result());
   EXPECT_EQ(message, inputReply.message());
 }
 

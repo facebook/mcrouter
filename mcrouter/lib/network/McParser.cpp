@@ -108,7 +108,7 @@ bool McParser::readCaretData() {
 
     if (parseStatus != ParseStatus::Ok) {
       callback_.parseError(
-          mc_res_remote_error,
+          carbon::Result::REMOTE_ERROR,
           folly::sformat(
               "Error parsing {} header", mc_protocol_to_string(protocol_)));
       return false;

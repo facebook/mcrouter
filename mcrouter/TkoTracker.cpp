@@ -61,7 +61,9 @@ bool TkoTracker::setSumFailures(uintptr_t value) {
   return true;
 }
 
-bool TkoTracker::recordSoftFailure(ProxyDestination* pdstn, mc_res_t result) {
+bool TkoTracker::recordSoftFailure(
+    ProxyDestination* pdstn,
+    carbon::Result result) {
   // We increment soft tko count first before actually taking responsibility
   // for the TKO. This means we run the risk that multiple proxies
   // increment the count for the same destination, causing us to be overly
@@ -108,7 +110,9 @@ bool TkoTracker::recordSoftFailure(ProxyDestination* pdstn, mc_res_t result) {
   return false;
 }
 
-bool TkoTracker::recordHardFailure(ProxyDestination* pdstn, mc_res_t result) {
+bool TkoTracker::recordHardFailure(
+    ProxyDestination* pdstn,
+    carbon::Result result) {
   ++consecutiveFailureCount_;
 
   if (isHardTko()) {
@@ -152,7 +156,7 @@ bool TkoTracker::recordSuccess(ProxyDestination* pdstn) {
     }
     sumFailures_ = 0;
     consecutiveFailureCount_ = 0;
-    tkoReason_.store(mc_res_unknown, std::memory_order_relaxed);
+    tkoReason_.store(carbon::Result::UNKNOWN, std::memory_order_relaxed);
     return true;
   }
 

@@ -19,7 +19,7 @@
 #include <folly/experimental/StringKeyedUnorderedMap.h>
 
 #include "mcrouter/TkoCounters.h"
-#include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/lib/carbon/Result.h"
 
 namespace facebook {
 namespace memcache {
@@ -75,7 +75,7 @@ class TkoTracker {
    * The reason why the destination is marked as TKO.
    * NOTE: If this box is not TKO'd, returns mc_res_unkown.
    */
-  mc_res_t tkoReason() const {
+  carbon::Result tkoReason() const {
     return tkoReason_.load(std::memory_order_relaxed);
   }
 
@@ -108,7 +108,7 @@ class TkoTracker {
    *         is responsible for sending probes and calling recordSuccess()
    *         once a probe is successful.
    */
-  bool recordSoftFailure(ProxyDestination* pdstn, mc_res_t result);
+  bool recordSoftFailure(ProxyDestination* pdstn, carbon::Result result);
 
   /**
    * Can be called from any proxy thread.
@@ -125,7 +125,7 @@ class TkoTracker {
    *         once a probe is successful. Note, transition from soft to hard
    *         TKO does not result in a change of responsibility.
    */
-  bool recordHardFailure(ProxyDestination* pdstn, mc_res_t result);
+  bool recordHardFailure(ProxyDestination* pdstn, carbon::Result result);
 
   /**
    * Resets all consecutive failures accumulated so far
@@ -169,7 +169,7 @@ class TkoTracker {
 
   std::atomic<size_t> consecutiveFailureCount_{0};
 
-  std::atomic<mc_res_t> tkoReason_{mc_res_unknown};
+  std::atomic<carbon::Result> tkoReason_{carbon::Result::UNKNOWN};
 
   /**
    * Decrement the global counter of current soft TKOs

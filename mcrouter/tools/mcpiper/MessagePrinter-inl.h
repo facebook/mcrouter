@@ -87,7 +87,7 @@ void MessagePrinter::requestReady(
           msgId,
           request,
           request.key().fullKey().str(),
-          mc_res_unknown,
+          carbon::Result::UNKNOWN,
           from,
           to,
           protocol)) {
@@ -136,7 +136,7 @@ folly::Optional<StyledString> MessagePrinter::filterAndBuildOutput(
     uint64_t msgId,
     const Message& message,
     const std::string& key,
-    mc_res_t result,
+    carbon::Result result,
     const folly::SocketAddress& from,
     const folly::SocketAddress& to,
     mc_protocol_t protocol,

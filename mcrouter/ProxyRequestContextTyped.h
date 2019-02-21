@@ -191,9 +191,9 @@ class ProxyRequestContextTyped
    *
    * WARNING: This function can be dangerous with new typed requests.
    * For typed requests,
-   *   ctx->sendReply(mc_res_local_error, "Error message")
+   *   ctx->sendReply(carbon::Result::LOCAL_ERROR, "Error message")
    * does the right thing, while
-   *   ctx->sendReply(mc_res_found, "value")
+   *   ctx->sendReply(carbon::Result::FOUND, "value")
    * does the wrong thing.
    */
   template <class... Args>

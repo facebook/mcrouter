@@ -68,13 +68,13 @@ TEST(SlowWarmUpRoute, basic) {
 
   std::vector<std::shared_ptr<TestHandle>> targets{
       std::make_shared<TestHandle>(
-          GetRouteTestData(mc_res_found, "a"),
-          UpdateRouteTestData(mc_res_stored),
-          DeleteRouteTestData(mc_res_notfound)),
+          GetRouteTestData(carbon::Result::FOUND, "a"),
+          UpdateRouteTestData(carbon::Result::STORED),
+          DeleteRouteTestData(carbon::Result::NOTFOUND)),
       std::make_shared<TestHandle>(
-          GetRouteTestData(mc_res_found, "b"),
-          UpdateRouteTestData(mc_res_stored),
-          DeleteRouteTestData(mc_res_notfound)),
+          GetRouteTestData(carbon::Result::FOUND, "b"),
+          UpdateRouteTestData(carbon::Result::STORED),
+          DeleteRouteTestData(carbon::Result::NOTFOUND)),
   };
   auto target = get_route_handles(targets)[0];
   auto failoverTarget = get_route_handles(targets)[1];
@@ -94,7 +94,7 @@ TEST(SlowWarmUpRoute, basic) {
     // send 90 deletes (which return miss) -> moves hit rate to 0.1
     for (int i = 0; i < 90; ++i) {
       auto reply = rh.route(McDeleteRequest("0"));
-      EXPECT_EQ(mc_res_notfound, reply.result());
+      EXPECT_EQ(carbon::Result::NOTFOUND, reply.result());
     }
 
     // send 1000 gets (round 1) -> should have normal and failover results
@@ -144,13 +144,13 @@ TEST(SlowWarmUpRoute, minRequests) {
 
   std::vector<std::shared_ptr<TestHandle>> targets{
       std::make_shared<TestHandle>(
-          GetRouteTestData(mc_res_found, "a"),
-          UpdateRouteTestData(mc_res_stored),
-          DeleteRouteTestData(mc_res_notfound)),
+          GetRouteTestData(carbon::Result::FOUND, "a"),
+          UpdateRouteTestData(carbon::Result::STORED),
+          DeleteRouteTestData(carbon::Result::NOTFOUND)),
       std::make_shared<TestHandle>(
-          GetRouteTestData(mc_res_found, "b"),
-          UpdateRouteTestData(mc_res_stored),
-          DeleteRouteTestData(mc_res_notfound)),
+          GetRouteTestData(carbon::Result::FOUND, "b"),
+          UpdateRouteTestData(carbon::Result::STORED),
+          DeleteRouteTestData(carbon::Result::NOTFOUND)),
   };
   auto target = get_route_handles(targets)[0];
   auto failoverTarget = get_route_handles(targets)[1];
@@ -164,7 +164,7 @@ TEST(SlowWarmUpRoute, minRequests) {
     // send 90 deletes (which return miss) -> hit rate is 0.
     for (int i = 0; i < 90; ++i) {
       auto reply = rh.route(McDeleteRequest("0"));
-      EXPECT_EQ(mc_res_notfound, reply.result());
+      EXPECT_EQ(carbon::Result::NOTFOUND, reply.result());
     }
 
     // as we have not reached minReqs yet (100), use always normal target.

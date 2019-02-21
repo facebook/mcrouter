@@ -152,7 +152,7 @@ class McGetReply : public carbon::ReplyCommon {
   folly::Optional<folly::IOBuf> value_;
   uint64_t flags_{0};
   std::string message_;
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
   int16_t appSpecificErrorCode_{0};
 };
 
@@ -285,7 +285,7 @@ class McSetReply : public carbon::ReplyCommon {
   uint64_t flags_{0};
   folly::IOBuf value_;
   std::string message_;
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
   int16_t appSpecificErrorCode_{0};
 };
 
@@ -418,7 +418,7 @@ class McDeleteReply : public carbon::ReplyCommon {
   uint64_t flags_{0};
   folly::IOBuf value_;
   std::string message_;
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
   int16_t appSpecificErrorCode_{0};
 };
 
@@ -547,7 +547,7 @@ class McLeaseGetReply : public carbon::ReplyCommon {
   folly::Optional<folly::IOBuf> value_;
   uint64_t flags_{0};
   std::string message_;
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
   int16_t appSpecificErrorCode_{0};
 };
 
@@ -678,7 +678,7 @@ class McLeaseSetReply : public carbon::ReplyCommon {
 
  private:
   std::string message_;
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
   int16_t appSpecificErrorCode_{0};
 };
 
@@ -800,7 +800,7 @@ class McAddReply : public carbon::ReplyCommon {
 
  private:
   std::string message_;
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
   int16_t appSpecificErrorCode_{0};
 };
 
@@ -923,7 +923,7 @@ class McReplaceReply : public carbon::ReplyCommon {
 
  private:
   std::string message_;
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
   int16_t appSpecificErrorCode_{0};
 };
 
@@ -1046,7 +1046,7 @@ class McGetsReply : public carbon::ReplyCommon {
   folly::Optional<folly::IOBuf> value_;
   uint64_t flags_{0};
   std::string message_;
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
   int16_t appSpecificErrorCode_{0};
 };
 
@@ -1176,7 +1176,7 @@ class McCasReply : public carbon::ReplyCommon {
 
  private:
   std::string message_;
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
   int16_t appSpecificErrorCode_{0};
 };
 
@@ -1296,7 +1296,7 @@ class McIncrReply : public carbon::ReplyCommon {
  private:
   int64_t delta_{0};
   std::string message_;
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
   int16_t appSpecificErrorCode_{0};
 };
 
@@ -1416,7 +1416,7 @@ class McDecrReply : public carbon::ReplyCommon {
  private:
   int64_t delta_{0};
   std::string message_;
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
   int16_t appSpecificErrorCode_{0};
 };
 
@@ -1546,7 +1546,7 @@ class McMetagetReply : public carbon::ReplyCommon {
   std::string message_;
   int32_t age_{0};
   int32_t exptime_{0};
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
   int16_t ipv_{0};
   int16_t appSpecificErrorCode_{0};
 };
@@ -1669,7 +1669,7 @@ class McAppendReply : public carbon::ReplyCommon {
 
  private:
   std::string message_;
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
   int16_t appSpecificErrorCode_{0};
 };
 
@@ -1792,7 +1792,7 @@ class McPrependReply : public carbon::ReplyCommon {
 
  private:
   std::string message_;
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
   int16_t appSpecificErrorCode_{0};
 };
 
@@ -1902,7 +1902,7 @@ class McTouchReply : public carbon::ReplyCommon {
 
  private:
   std::string message_;
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
   int16_t appSpecificErrorCode_{0};
 };
 
@@ -2008,7 +2008,7 @@ class McFlushReReply : public carbon::ReplyCommon {
 
  private:
   std::string message_;
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
   int16_t appSpecificErrorCode_{0};
 };
 
@@ -2122,7 +2122,7 @@ class McFlushAllReply : public carbon::ReplyCommon {
 
  private:
   std::string message_;
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
   int16_t appSpecificErrorCode_{0};
 };
 
@@ -2243,7 +2243,7 @@ class McGatReply : public carbon::ReplyCommon {
   folly::Optional<folly::IOBuf> value_;
   uint64_t flags_{0};
   std::string message_;
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
   int16_t appSpecificErrorCode_{0};
 };
 
@@ -2371,7 +2371,7 @@ class McGatsReply : public carbon::ReplyCommon {
   folly::Optional<folly::IOBuf> value_;
   uint64_t flags_{0};
   std::string message_;
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
   int16_t appSpecificErrorCode_{0};
 };
 } // namespace memcache

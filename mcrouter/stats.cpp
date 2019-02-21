@@ -65,7 +65,7 @@ const char* clientStateToStr(ProxyDestination::State state) {
 }
 
 struct ServerStat {
-  uint64_t results[mc_nres] = {0};
+  uint64_t results[static_cast<size_t>(carbon::Result::NUM_RESULTS)] = {0};
   size_t states[(size_t)ProxyDestination::State::kNumStates] = {0};
   bool isHardTko{false};
   bool isSoftTko{false};
@@ -104,9 +104,11 @@ struct ServerStat {
       }
     }
     bool firstResult = true;
-    for (size_t i = 0; i < mc_nres; ++i) {
+    for (size_t i = 0; i < static_cast<size_t>(carbon::Result::NUM_RESULTS);
+         ++i) {
       if (results[i] > 0) {
-        folly::StringPiece result(mc_res_to_string(static_cast<mc_res_t>(i)));
+        folly::StringPiece result(
+            carbon::resultToString(static_cast<carbon::Result>(i)));
         result.removePrefix("mc_res_");
         folly::format("{} {}:{}", firstResult ? ";" : "", result, results[i])
             .appendTo(res);
@@ -598,7 +600,7 @@ McStatsReply stats_reply(ProxyBase* proxy, folly::StringPiece group_str) {
 
   auto groups = stat_parse_group_str(group_str);
   if (groups == unknown_stats) {
-    McStatsReply errorReply(mc_res_client_error);
+    McStatsReply errorReply(carbon::Result::CLIENT_ERROR);
     errorReply.message() = "bad stats command";
     return errorReply;
   }
@@ -661,7 +663,9 @@ McStatsReply stats_reply(ProxyBase* proxy, folly::StringPiece group_str) {
             stat.isHardTko = pdstn.tracker->isHardTko();
             stat.isSoftTko = pdstn.tracker->isSoftTko();
             if (pdstn.stats().results) {
-              for (size_t j = 0; j < mc_nres; ++j) {
+              for (size_t j = 0;
+                   j < static_cast<size_t>(carbon::Result::NUM_RESULTS);
+                   ++j) {
                 stat.results[j] += (*pdstn.stats().results)[j];
               }
             }

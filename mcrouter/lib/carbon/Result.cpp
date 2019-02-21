@@ -9,7 +9,6 @@
 #include <unordered_map>
 
 namespace carbon {
-namespace experimental {
 
 namespace {
 std::unordered_map<std::string, Result> makeStringToResultMap() {
@@ -35,5 +34,4 @@ Result resultFromString(const char* result) {
   return Result::UNKNOWN;
 }
 
-} // namespace experimental
 } // namespace carbon

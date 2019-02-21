@@ -130,7 +130,7 @@ class HelloReply : public carbon::ReplyCommon {
   void visitFields(V&& v) const;
 
  private:
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
 };
 
 class GoodbyeReply;
@@ -236,7 +236,7 @@ class GoodbyeReply : public carbon::ReplyCommon {
 
  private:
   std::string message_;
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
 };
 } // namespace hellogoodbye
 

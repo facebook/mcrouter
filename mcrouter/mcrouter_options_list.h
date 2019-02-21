@@ -490,7 +490,7 @@ MCROUTER_OPTION_TOGGLE(
     "group-remote-errors",
     no_short,
     "Groups all remote (i.e. non-local) errors together, returning a single "
-    "result for all of them: mc_res_remote_error")
+    "result for all of them: REMOTE_ERROR")
 
 MCROUTER_OPTION_TOGGLE(
     send_invalid_route_to_default,

@@ -25,9 +25,9 @@ using TestHandle = TestHandleImpl<TestRouteHandleIf>;
 
 TEST(randomRouteTest, success) {
   vector<std::shared_ptr<TestHandle>> test_handles{
-      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
-      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
-      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::FOUND, "a")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::FOUND, "b")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::FOUND, "c")),
   };
 
   TestRouteHandle<RandomRoute<TestRouteHandleIf>> rh(
@@ -39,8 +39,8 @@ TEST(randomRouteTest, success) {
 
 TEST(randomRouteTest, cover) {
   vector<std::shared_ptr<TestHandle>> test_handles{
-      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
-      make_shared<TestHandle>(GetRouteTestData(mc_res_notfound, "b")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::FOUND, "a")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::NOTFOUND, "b")),
   };
 
   TestRouteHandle<RandomRoute<TestRouteHandleIf>> rh(
@@ -61,9 +61,10 @@ TEST(randomRouteTest, cover) {
 
 TEST(randomRouteTest, fail) {
   vector<std::shared_ptr<TestHandle>> test_handles{
-      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
-      make_shared<TestHandle>(GetRouteTestData(mc_res_notfound, "b")),
-      make_shared<TestHandle>(GetRouteTestData(mc_res_remote_error, "c")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::TIMEOUT, "a")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::NOTFOUND, "b")),
+      make_shared<TestHandle>(
+          GetRouteTestData(carbon::Result::REMOTE_ERROR, "c")),
   };
 
   TestRouteHandle<RandomRoute<TestRouteHandleIf>> rh(

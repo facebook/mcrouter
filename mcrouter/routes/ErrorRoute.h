@@ -40,7 +40,7 @@ class ErrorRoute {
   std::string routeName() const {
     const std::string name = "error";
     const std::string log = enableLogging_ ? "log" : "no-log";
-    const std::string res = mc_res_to_string(result_);
+    const std::string res = carbon::resultToString(result_);
     const auto nameWithProps = folly::to<std::string>(name, "|", log, "|", res);
     if (valueToSet_.empty()) {
       return nameWithProps;
@@ -55,7 +55,7 @@ class ErrorRoute {
   explicit ErrorRoute(
       std::string valueToSet = "",
       bool enableLogging = true,
-      mc_res_t result = mc_res_local_error)
+      carbon::Result result = carbon::Result::LOCAL_ERROR)
       : valueToSet_(std::move(valueToSet)),
         enableLogging_(enableLogging),
         result_(result) {}
@@ -87,14 +87,14 @@ class ErrorRoute {
  private:
   const std::string valueToSet_;
   const bool enableLogging_;
-  const mc_res_t result_;
+  const carbon::Result result_;
 };
 
 template <class RouterInfo>
 typename RouterInfo::RouteHandlePtr createErrorRoute(
     std::string valueToSet,
     bool enableLogging = true,
-    mc_res_t result = mc_res_local_error) {
+    carbon::Result result = carbon::Result::LOCAL_ERROR) {
   return makeRouteHandleWithInfo<RouterInfo, ErrorRoute>(
       std::move(valueToSet), enableLogging, result);
 }
@@ -108,7 +108,7 @@ typename RouterInfo::RouteHandlePtr makeErrorRoute(
       "ErrorRoute: should be string or object");
   std::string response;
   bool enableLogging{true};
-  mc_res_t result = mc_res_local_error;
+  carbon::Result result = carbon::Result::LOCAL_ERROR;
 
   if (json.isString()) {
     response = json.getString();
@@ -127,7 +127,7 @@ typename RouterInfo::RouteHandlePtr makeErrorRoute(
     if (auto jReplyResult = json.get_ptr("result")) {
       checkLogic(
           jReplyResult->isString(), "ErrorRoute: result is not a string");
-      result = mc_res_from_string(jReplyResult->getString().c_str());
+      result = carbon::resultFromString(jReplyResult->getString().c_str());
       checkLogic(
           isErrorResult(result),
           "ErrorRoute: result {} (code {}) is not a valid error result.",

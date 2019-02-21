@@ -54,7 +54,7 @@ class TestRoute {
   explicit TestRoute(
       std::string name,
       std::unordered_map<std::string, double> mymap,
-      mc_res_t result = mc_res_ok)
+      carbon::Result result = carbon::Result::OK)
       : name_(std::move(name)), map_(std::move(mymap)), result_(result) {}
 
   template <class Request>
@@ -77,7 +77,7 @@ class TestRoute {
  private:
   std::string name_;
   std::unordered_map<std::string, double> map_;
-  mc_res_t result_;
+  carbon::Result result_;
 };
 
 } // anonymous namespace
@@ -292,10 +292,11 @@ TEST(LoadBalancerRouteTest, failover) {
   mymap.emplace("cpuc", 70);
   std::vector<std::shared_ptr<TestRouteHandleIf>> testHandles{
       makeRouteHandle<TestRouteHandleIf, TestRoute>(
-          "cpua", mymap, mc_res_timeout),
+          "cpua", mymap, carbon::Result::TIMEOUT),
       makeRouteHandle<TestRouteHandleIf, TestRoute>(
-          "cpub", mymap, mc_res_remote_error),
-      makeRouteHandle<TestRouteHandleIf, TestRoute>("cpuc", mymap, mc_res_ok)};
+          "cpub", mymap, carbon::Result::REMOTE_ERROR),
+      makeRouteHandle<TestRouteHandleIf, TestRoute>(
+          "cpuc", mymap, carbon::Result::OK)};
 
   TestRouteHandle<LoadBalancerRoute<TestRouterInfo>> rh1Failover{
       testHandles,
@@ -326,27 +327,27 @@ TEST(LoadBalancerRouteTest, failover) {
   auto reply1 = rh1Failover.route(McGetRequest(key));
   auto reply2 = rh2Failover.route(McGetRequest(key));
   auto reply3 = rh3Failover.route(McGetRequest(key));
-  EXPECT_EQ(mc_res_ok, reply1.result());
-  EXPECT_EQ(mc_res_ok, reply2.result());
-  EXPECT_EQ(mc_res_ok, reply3.result());
+  EXPECT_EQ(carbon::Result::OK, reply1.result());
+  EXPECT_EQ(carbon::Result::OK, reply2.result());
+  EXPECT_EQ(carbon::Result::OK, reply3.result());
 
   // success on the second try.
   key = "req05";
   reply1 = rh1Failover.route(McGetRequest(key));
   reply2 = rh2Failover.route(McGetRequest(key));
   reply3 = rh3Failover.route(McGetRequest(key));
-  EXPECT_EQ(mc_res_remote_error, reply1.result());
-  EXPECT_EQ(mc_res_ok, reply2.result());
-  EXPECT_EQ(mc_res_ok, reply3.result());
+  EXPECT_EQ(carbon::Result::REMOTE_ERROR, reply1.result());
+  EXPECT_EQ(carbon::Result::OK, reply2.result());
+  EXPECT_EQ(carbon::Result::OK, reply3.result());
 
   // success on the third try.
   key = "req10";
   reply1 = rh1Failover.route(McGetRequest(key));
   reply2 = rh2Failover.route(McGetRequest(key));
   reply3 = rh3Failover.route(McGetRequest(key));
-  EXPECT_EQ(mc_res_remote_error, reply1.result());
-  EXPECT_EQ(mc_res_timeout, reply2.result());
-  EXPECT_EQ(mc_res_ok, reply3.result());
+  EXPECT_EQ(carbon::Result::REMOTE_ERROR, reply1.result());
+  EXPECT_EQ(carbon::Result::TIMEOUT, reply2.result());
+  EXPECT_EQ(carbon::Result::OK, reply3.result());
 }
 
 TEST(LoadBalancerRouteTest, failoverStress) {
@@ -356,10 +357,11 @@ TEST(LoadBalancerRouteTest, failoverStress) {
   mymap.emplace("cpuc", 70);
   std::vector<std::shared_ptr<TestRouteHandleIf>> testHandles{
       makeRouteHandle<TestRouteHandleIf, TestRoute>(
-          "cpua", mymap, mc_res_timeout),
+          "cpua", mymap, carbon::Result::TIMEOUT),
       makeRouteHandle<TestRouteHandleIf, TestRoute>(
-          "cpub", mymap, mc_res_remote_error),
-      makeRouteHandle<TestRouteHandleIf, TestRoute>("cpuc", mymap, mc_res_ok)};
+          "cpub", mymap, carbon::Result::REMOTE_ERROR),
+      makeRouteHandle<TestRouteHandleIf, TestRoute>(
+          "cpuc", mymap, carbon::Result::OK)};
 
   TestRouteHandle<LoadBalancerRoute<TestRouterInfo>> rh{
       testHandles,
@@ -369,7 +371,7 @@ TEST(LoadBalancerRouteTest, failoverStress) {
 
   for (size_t i = 0; i < 1000; ++i) {
     auto reply = rh.route(McGetRequest(folly::to<std::string>(i)));
-    EXPECT_EQ(mc_res_ok, reply.result());
+    EXPECT_EQ(carbon::Result::OK, reply.result());
     EXPECT_EQ("cpuc", carbon::valueRangeSlow(reply).str());
   }
 }

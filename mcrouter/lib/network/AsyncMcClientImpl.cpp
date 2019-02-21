@@ -194,10 +194,11 @@ void AsyncMcClientImpl::sendCommon(McClientRequestContextBase& req) {
       }
       return;
     case McSerializedRequest::Result::BAD_KEY:
-      req.replyError(mc_res_bad_key, "The key provided is invalid");
+      req.replyError(carbon::Result::BAD_KEY, "The key provided is invalid");
       return;
     case McSerializedRequest::Result::ERROR:
-      req.replyError(mc_res_local_error, "Error when serializing the request.");
+      req.replyError(
+          carbon::Result::LOCAL_ERROR, "Error when serializing the request.");
       return;
   }
 }
@@ -738,15 +739,15 @@ void AsyncMcClientImpl::connectErr(
         "AsyncMcClient", failure::Category::kBadEnvironment, errorMessage);
   }
 
-  mc_res_t error = mc_res_connect_error;
+  carbon::Result error = carbon::Result::CONNECT_ERROR;
   ConnectionDownReason reason = ConnectionDownReason::CONNECT_ERROR;
   if (ex.getType() == folly::AsyncSocketException::TIMED_OUT) {
-    error = mc_res_connect_timeout;
+    error = carbon::Result::CONNECT_TIMEOUT;
     reason = ConnectionDownReason::CONNECT_TIMEOUT;
     errorMessage = folly::to<std::string>(
         "Timed out when trying to connect to server. Ex: ", ex.what());
   } else if (isAborting_) {
-    error = mc_res_aborted;
+    error = carbon::Result::ABORTED;
     reason = ConnectionDownReason::ABORTED;
     errorMessage =
         folly::to<std::string>("Connection aborted. Ex: ", ex.what());
@@ -789,11 +790,12 @@ void AsyncMcClientImpl::processShutdown(folly::StringPiece errorMessage) {
 
     case ConnectionState::ERROR:
       queue_.failAllSent(
-          isAborting_ ? mc_res_aborted : mc_res_remote_error, errorMessage);
+          isAborting_ ? carbon::Result::ABORTED : carbon::Result::REMOTE_ERROR,
+          errorMessage);
       if (queue_.getInflightRequestCount() == 0) {
         // No need to send any of remaining requests if we're aborting.
         if (isAborting_) {
-          queue_.failAllPending(mc_res_aborted, errorMessage);
+          queue_.failAllPending(carbon::Result::ABORTED, errorMessage);
         }
 
         // This is a last processShutdown() for this error and it is safe
@@ -960,7 +962,7 @@ void AsyncMcClientImpl::handleConnectionControlMessage(
 }
 
 void AsyncMcClientImpl::parseError(
-    mc_res_t /* result */,
+    carbon::Result /* result */,
     folly::StringPiece reason) {
   logErrorWithContext(reason);
   // mc_parser can call the parseError multiple times, process only first.

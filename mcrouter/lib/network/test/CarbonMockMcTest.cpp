@@ -34,9 +34,9 @@ struct TypedMockMcOnRequest {
     auto item = mc_.get(req.key().fullKey());
     McGetReply reply;
     if (!item) {
-      reply.result() = mc_res_notfound;
+      reply.result() = carbon::Result::NOTFOUND;
     } else {
-      reply.result() = mc_res_found;
+      reply.result() = carbon::Result::FOUND;
       reply.value() = *item->value;
       reply.flags() = item->flags;
     }
@@ -47,16 +47,16 @@ struct TypedMockMcOnRequest {
     mc_.set(
         req.key().fullKey(),
         MockMc::Item(req.value(), req.exptime(), req.flags()));
-    McSetReply reply(mc_res_stored);
+    McSetReply reply(carbon::Result::STORED);
     McServerRequestContext::reply(std::move(ctx), std::move(reply));
   }
 
   void onRequest(McServerRequestContext&& ctx, McDeleteRequest&& req) {
     McDeleteReply reply;
     if (mc_.del(req.key().fullKey())) {
-      reply.result() = mc_res_deleted;
+      reply.result() = carbon::Result::DELETED;
     } else {
-      reply.result() = mc_res_notfound;
+      reply.result() = carbon::Result::NOTFOUND;
     }
 
     McServerRequestContext::reply(std::move(ctx), std::move(reply));
@@ -66,7 +66,7 @@ struct TypedMockMcOnRequest {
   void onRequest(McServerRequestContext&& ctx, Request&&) {
     /* non-typed requests not supported */
     McServerRequestContext::reply(
-        std::move(ctx), ReplyT<Request>(mc_res_client_error));
+        std::move(ctx), ReplyT<Request>(carbon::Result::CLIENT_ERROR));
   }
 };
 } // anonymous
@@ -129,7 +129,7 @@ TEST(CarbonMockMc, basic) {
   McGetReply getReply;
   getReply.deserialize(reader);
 
-  EXPECT_EQ(mc_res_found, getReply.result());
+  EXPECT_EQ(carbon::Result::FOUND, getReply.result());
 
   const auto resultVal = carbon::valueRangeSlow(getReply);
   EXPECT_EQ("value", resultVal.str());

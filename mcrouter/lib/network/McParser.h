@@ -8,6 +8,7 @@
 
 #include <folly/io/IOBufQueue.h>
 
+#include "mcrouter/lib/carbon/Result.h"
 #include "mcrouter/lib/debug/ConnectionFifo.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
@@ -58,7 +59,9 @@ class McParser {
     /**
      * Called on fatal parse error (the stream should normally be closed)
      */
-    virtual void parseError(mc_res_t result, folly::StringPiece reason) = 0;
+    virtual void parseError(
+        carbon::Result result,
+        folly::StringPiece reason) = 0;
   };
 
   McParser(

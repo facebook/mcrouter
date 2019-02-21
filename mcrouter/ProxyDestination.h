@@ -57,7 +57,9 @@ class ProxyDestination {
   struct Stats {
     State state{State::kNew};
     ExponentialSmoothData<16> avgLatency;
-    std::unique_ptr<std::array<uint64_t, mc_nres>> results;
+    std::unique_ptr<
+        std::array<uint64_t, static_cast<size_t>(carbon::Result::NUM_RESULTS)>>
+        results;
     size_t probesSent{0};
     double retransPerKByte{0.0};
     // If poolstats config is present, keep track of most recent
@@ -91,7 +93,7 @@ class ProxyDestination {
       RpcStatsContext& rpcStatsContext);
 
   // returns true if okay to send req using this client
-  bool maySend(mc_res_t& tkoReason) const;
+  bool maySend(carbon::Result& tkoReason) const;
 
   /**
    * @return stats for ProxyDestination
@@ -173,11 +175,11 @@ class ProxyDestination {
 
   void scheduleNextProbe();
 
-  void handleTko(const mc_res_t result, bool is_probe_req);
+  void handleTko(const carbon::Result result, bool is_probe_req);
 
   // Process tko, stats and duration timer.
   void onReply(
-      const mc_res_t result,
+      const carbon::Result result,
       DestinationRequestCtx& destreqCtx,
       const RpcStatsContext& rpcStatsContext,
       bool isRequestBufferDirty);
@@ -193,9 +195,9 @@ class ProxyDestination {
       uint64_t qosPath,
       folly::StringPiece routerInfoName);
 
-  void onTkoEvent(TkoLogEvent event, mc_res_t result) const;
+  void onTkoEvent(TkoLogEvent event, carbon::Result result) const;
 
-  void handleRxmittingConnection(const mc_res_t result, uint64_t latency);
+  void handleRxmittingConnection(const carbon::Result result, uint64_t latency);
 
   bool latencyAboveThreshold(uint64_t latency);
 

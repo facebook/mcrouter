@@ -61,12 +61,12 @@ struct FailoverContext {
   /* Normal reply data */
   const folly::IOBuf* normalValue;
   const AccessPoint* normalDestination;
-  const mc_res_t normalResult;
+  const carbon::Result normalResult;
 
   /* Failover reply data */
   const folly::IOBuf* failoverValue;
   const AccessPoint* failoverDestination;
-  const mc_res_t failoverResult;
+  const carbon::Result failoverResult;
 
   const size_t numRetries;
   const size_t maxRetries;

@@ -12,7 +12,7 @@
 #include <folly/Range.h>
 
 #include "mcrouter/TkoCounters.h"
-#include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/lib/carbon/Result.h"
 
 namespace facebook {
 namespace memcache {
@@ -37,7 +37,7 @@ struct TkoLog {
   uintptr_t curSumFailures{0};
   bool isHardTko{false};
   bool isSoftTko{false};
-  mc_res_t result;
+  carbon::Result result;
   size_t probesSent{0};
   double avgLatency{0.0};
   const AccessPoint& accessPoint;

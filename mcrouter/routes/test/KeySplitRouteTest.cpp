@@ -41,7 +41,8 @@ class KeySplitRouteTest : public RouteHandleTestBase<HelloGoodbyeRouterInfo> {
       th_.reset();
     if (rh_)
       rh_.reset();
-    th_ = std::make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a"));
+    th_ = std::make_shared<TestHandle>(
+        GetRouteTestData(carbon::Result::FOUND, "a"));
     rh_ = std::make_shared<RouteHandle>(
         RouteHandle(th_->rh, numReplicas, allSync));
     replicas_ = numReplicas;

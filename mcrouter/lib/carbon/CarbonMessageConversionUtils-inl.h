@@ -84,7 +84,7 @@ class ToDynamicVisitor {
   }
 
   folly::dynamic toDynamic(carbon::Result res) const {
-    return folly::dynamic(mc_res_to_string(res));
+    return folly::dynamic(carbon::resultToString(res));
   }
 
   folly::dynamic toDynamic(char c) const {

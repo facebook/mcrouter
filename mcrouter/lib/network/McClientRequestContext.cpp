@@ -13,7 +13,7 @@ namespace memcache {
 constexpr size_t kSerializedRequestContextLength = 1024;
 
 void McClientRequestContextBase::replyError(
-    mc_res_t result,
+    carbon::Result result,
     folly::StringPiece errorMessage) {
   assert(state() == ReqState::NONE);
   replyErrorImpl(result, errorMessage);
@@ -98,14 +98,14 @@ size_t McClientRequestContextQueue::getInflightRequestCount() const noexcept {
 }
 
 void McClientRequestContextQueue::failAllSent(
-    mc_res_t error,
+    carbon::Result error,
     folly::StringPiece errorMessage) {
   clearStoredInitializers();
   failQueue(pendingReplyQueue_, error, errorMessage);
 }
 
 void McClientRequestContextQueue::failAllPending(
-    mc_res_t error,
+    carbon::Result error,
     folly::StringPiece errorMessage) {
   assert(pendingReplyQueue_.empty());
   assert(writeQueue_.empty());
@@ -175,7 +175,7 @@ McClientRequestContextBase& McClientRequestContextQueue::markNextAsSent() {
 
 void McClientRequestContextQueue::failQueue(
     McClientRequestContextBase::Queue& queue,
-    mc_res_t error,
+    carbon::Result error,
     folly::StringPiece errorMessage) {
   while (!queue.empty()) {
     auto& req = queue.front();

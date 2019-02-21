@@ -211,7 +211,7 @@ class CarbonProtocolReader {
 
   void readRawInto(Result& r) {
     static_assert(
-        sizeof(Result) == sizeof(mc_res_t),
+        sizeof(Result) == sizeof(carbon::Result),
         "Carbon currently assumes sizeof(Result) == sizeof(int16_t)");
     r = static_cast<Result>(readRaw<int16_t>());
   }

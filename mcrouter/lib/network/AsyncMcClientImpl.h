@@ -235,7 +235,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   void
   replyReady(Reply&& reply, uint64_t reqId, RpcStatsContext rpcStatsContext);
   void handleConnectionControlMessage(const CaretMessageInfo& headerInfo);
-  void parseError(mc_res_t result, folly::StringPiece reason);
+  void parseError(carbon::Result result, folly::StringPiece reason);
   bool nextReplyAvailable(uint64_t reqId);
 
   // Create the underlying transport

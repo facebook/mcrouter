@@ -74,7 +74,7 @@ class ClientServerMcParser {
       return true;
     }
 
-    void parseError(mc_res_t, folly::StringPiece) {}
+    void parseError(carbon::Result, folly::StringPiece) {}
 
     void handleConnectionControlMessage(
         const CaretMessageInfo& /* headerInfo */) {}
@@ -108,7 +108,7 @@ class ClientServerMcParser {
     }
 
     void multiOpEnd() {}
-    void parseError(mc_res_t, folly::StringPiece) {}
+    void parseError(carbon::Result, folly::StringPiece) {}
 
    private:
     Callback& callback_;

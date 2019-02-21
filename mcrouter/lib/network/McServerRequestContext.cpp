@@ -70,7 +70,7 @@ McServerRequestContext::~McServerRequestContext() {
 // Note: defined in .cpp in order to avoid circular dependency between
 // McServerRequestContext.h and MultiOpParent.h.
 bool McServerRequestContext::moveReplyToParent(
-    mc_res_t result,
+    carbon::Result result,
     uint32_t errorCode,
     std::string&& errorMessage) const {
   return hasParent() &&

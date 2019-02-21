@@ -396,7 +396,7 @@ class McServerSession
 
   /* McParser's callback if ASCII request is read into a typed request */
   template <class Request>
-  void asciiRequestReady(Request&& req, mc_res_t result, bool noreply);
+  void asciiRequestReady(Request&& req, carbon::Result result, bool noreply);
 
   void caretRequestReady(
       const CaretMessageInfo& headerInfo,
@@ -404,14 +404,14 @@ class McServerSession
 
   void processConnectionControlMessage(const CaretMessageInfo& headerInfo);
 
-  void parseError(mc_res_t result, folly::StringPiece reason);
+  void parseError(carbon::Result result, folly::StringPiece reason);
 
   /* Ascii parser callbacks */
   template <class Request>
   void onRequest(Request&& req, bool noreply) {
-    mc_res_t result = mc_res_unknown;
+    carbon::Result result = carbon::Result::UNKNOWN;
     if (req.key().fullKey().size() > MC_KEY_MAX_LEN_ASCII) {
-      result = mc_res_bad_key;
+      result = carbon::Result::BAD_KEY;
     }
     asciiRequestReady(std::move(req), result, noreply);
   }

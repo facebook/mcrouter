@@ -65,7 +65,7 @@ TEST_F(ErrorRouteTest, createWithBusyReply) {
   auto rh = getErrorRoute(kErrorRouteConfigWithBusyReply);
   EXPECT_EQ("error|log|mc_res_busy", rh->routeName());
   auto reply = rh->route(GoodbyeRequest());
-  EXPECT_EQ(reply.result(), mc_res_busy);
+  EXPECT_EQ(reply.result(), carbon::Result::BUSY);
 }
 
 TEST_F(ErrorRouteTest, createWithUnknownReply) {

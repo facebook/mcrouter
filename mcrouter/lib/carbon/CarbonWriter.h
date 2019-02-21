@@ -172,9 +172,9 @@ class CarbonWriter {
 
   void writeField(const int16_t id, const Result res) {
     static_assert(
-        sizeof(Result) == sizeof(mc_res_t),
-        "Carbon currently assumes sizeof(Result) == sizeof(mc_res_t)");
-    // Note that this actually narrows mc_res_t from int to int16_t
+        sizeof(Result) == sizeof(carbon::Result),
+        "Carbon currently assumes sizeof(Result) == sizeof(carbon::Result)");
+    // Note that this actually narrows carbon::Result from int to int16_t
     writeField(id, static_cast<int16_t>(res));
   }
 

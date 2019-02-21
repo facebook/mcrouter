@@ -6,13 +6,9 @@
  */
 #pragma once
 
-#include <mcrouter/lib/mc/msg.h>
-
 namespace carbon {
 
-using Result = mc_res_t;
-
-namespace experimental {
+#define CARBON_RESULT_ENUM_CLASS
 
 enum class Result {
   UNKNOWN = 0,
@@ -124,5 +120,4 @@ inline const char* resultToString(const Result result) {
 
 Result resultFromString(const char* result);
 
-} // namespace experimental
 } // namespace carbon

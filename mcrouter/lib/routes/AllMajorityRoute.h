@@ -57,8 +57,8 @@ class AllMajorityRoute {
       funcs.push_back([reqCopy, rh]() { return rh->route(*reqCopy); });
     }
 
-    size_t counts[mc_nres];
-    std::fill(counts, counts + mc_nres, 0);
+    std::array<size_t, static_cast<size_t>(mc_nres)> counts;
+    counts.fill(0);
     size_t majorityCount = 0;
     Reply majorityReply = createReply(DefaultReply, req);
 
@@ -66,7 +66,7 @@ class AllMajorityRoute {
     taskIt.reserve(children_.size() / 2 + 1);
     while (taskIt.hasNext() && majorityCount < children_.size() / 2 + 1) {
       auto reply = taskIt.awaitNext();
-      auto result = reply.result();
+      auto result = static_cast<size_t>(reply.result());
 
       ++counts[result];
       if ((counts[result] == majorityCount &&

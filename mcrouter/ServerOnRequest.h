@@ -69,7 +69,7 @@ class ServerOnRequest {
   }
 
   void onRequest(McServerRequestContext&& ctx, McVersionRequest&&) {
-    McVersionReply reply(mc_res_ok);
+    McVersionReply reply(carbon::Result::OK);
     reply.value() =
         folly::IOBuf(folly::IOBuf::COPY_BUFFER, MCROUTER_PACKAGE_STRING);
 
@@ -77,11 +77,13 @@ class ServerOnRequest {
   }
 
   void onRequest(McServerRequestContext&& ctx, McQuitRequest&&) {
-    McServerRequestContext::reply(std::move(ctx), McQuitReply(mc_res_ok));
+    McServerRequestContext::reply(
+        std::move(ctx), McQuitReply(carbon::Result::OK));
   }
 
   void onRequest(McServerRequestContext&& ctx, McShutdownRequest&&) {
-    McServerRequestContext::reply(std::move(ctx), McShutdownReply(mc_res_ok));
+    McServerRequestContext::reply(
+        std::move(ctx), McShutdownReply(carbon::Result::OK));
   }
 
   template <class Request>

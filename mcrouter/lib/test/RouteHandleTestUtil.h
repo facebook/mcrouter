@@ -84,31 +84,34 @@ class SimpleRouteHandleProvider : public RouteHandleProviderIf<RouteHandleIf> {
 };
 
 struct GetRouteTestData {
-  mc_res_t result_;
+  carbon::Result result_;
   std::string value_;
   int64_t flags_;
 
   GetRouteTestData()
-      : result_(mc_res_unknown), value_(std::string()), flags_(0) {}
+      : result_(carbon::Result::UNKNOWN), value_(std::string()), flags_(0) {}
 
-  GetRouteTestData(mc_res_t result, const std::string& value, int64_t flags = 0)
+  GetRouteTestData(
+      carbon::Result result,
+      const std::string& value,
+      int64_t flags = 0)
       : result_(result), value_(value), flags_(flags) {}
 };
 
 struct UpdateRouteTestData {
-  mc_res_t result_;
+  carbon::Result result_;
   uint64_t flags_;
 
-  UpdateRouteTestData() : result_(mc_res_unknown), flags_(0) {}
+  UpdateRouteTestData() : result_(carbon::Result::UNKNOWN), flags_(0) {}
 
-  explicit UpdateRouteTestData(mc_res_t result, uint64_t flags = 0)
+  explicit UpdateRouteTestData(carbon::Result result, uint64_t flags = 0)
       : result_(result), flags_(flags) {}
 };
 
 struct DeleteRouteTestData {
-  mc_res_t result_;
+  carbon::Result result_;
 
-  explicit DeleteRouteTestData(mc_res_t result = mc_res_unknown)
+  explicit DeleteRouteTestData(carbon::Result result = carbon::Result::UNKNOWN)
       : result_(result) {}
 };
 

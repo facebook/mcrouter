@@ -104,7 +104,9 @@ class McAsciiParserHarness {
     ++currentId_;
   }
 
-  void parseError(mc_res_t /* result */, folly::StringPiece /* reason */) {
+  void parseError(
+      carbon::Result /* result */,
+      folly::StringPiece /* reason */) {
     EXPECT_TRUE(currentId_ < replies_.size());
     EXPECT_TRUE(replies_[currentId_]->shouldFail);
     errorState_ = true;
@@ -217,7 +219,7 @@ McMetagetReply createMetagetHitReply(
       msg.ipv() = 4;
     }
   }
-  msg.result() = mc_res_found;
+  msg.result() = carbon::Result::FOUND;
   if (host != "unknown") {
     msg.ipAddress() = host;
   }
@@ -225,7 +227,7 @@ McMetagetReply createMetagetHitReply(
 }
 
 template <class Reply>
-Reply replyWithMessage(mc_res_t res, std::string msg) {
+Reply replyWithMessage(carbon::Result res, std::string msg) {
   Reply reply(res);
   reply.message() = std::move(msg);
   return reply;
@@ -244,21 +246,21 @@ TYPED_TEST_CASE(McAsciiParserTestGet, GetTypes);
 TYPED_TEST(McAsciiParserTestGet, GetHit) {
   McAsciiParserHarness h("VALUE t 10 2\r\nte\r\nEND\r\n");
   h.expectNext<TypeParam>(
-      setFlags(setValue(ReplyT<TypeParam>(mc_res_found), "te"), 10));
+      setFlags(setValue(ReplyT<TypeParam>(carbon::Result::FOUND), "te"), 10));
   h.runTest(2);
 }
 
 TYPED_TEST(McAsciiParserTestGet, GetHit_Empty) {
   McAsciiParserHarness h("VALUE t 5 0\r\n\r\nEND\r\n");
   h.expectNext<TypeParam>(
-      setFlags(setValue(ReplyT<TypeParam>(mc_res_found), ""), 5));
+      setFlags(setValue(ReplyT<TypeParam>(carbon::Result::FOUND), ""), 5));
   h.runTest(2);
 }
 
 TYPED_TEST(McAsciiParserTestGet, GetHit_WithSpaces) {
   McAsciiParserHarness h("VALUE  test  15889  5\r\ntest \r\nEND\r\n");
-  h.expectNext<TypeParam>(
-      setFlags(setValue(ReplyT<TypeParam>(mc_res_found), "test "), 15889));
+  h.expectNext<TypeParam>(setFlags(
+      setValue(ReplyT<TypeParam>(carbon::Result::FOUND), "test "), 15889));
   h.runTest(1);
 }
 
@@ -270,7 +272,7 @@ TYPED_TEST(McAsciiParserTestGet, GetHit_Error) {
 
 TYPED_TEST(McAsciiParserTestGet, GetMiss) {
   McAsciiParserHarness h("END\r\n");
-  h.expectNext<TypeParam>(ReplyT<TypeParam>(mc_res_notfound));
+  h.expectNext<TypeParam>(ReplyT<TypeParam>(carbon::Result::NOTFOUND));
   h.runTest(0);
 }
 
@@ -282,23 +284,23 @@ TYPED_TEST(McAsciiParserTestGet, GetMiss_Error) {
 
 TYPED_TEST(McAsciiParserTestGet, GetClientError) {
   McAsciiParserHarness h("CLIENT_ERROR what\r\n");
-  h.expectNext<TypeParam>(
-      replyWithMessage<ReplyT<TypeParam>>(mc_res_client_error, "what"));
+  h.expectNext<TypeParam>(replyWithMessage<ReplyT<TypeParam>>(
+      carbon::Result::CLIENT_ERROR, "what"));
   h.runTest(3);
 }
 
 TYPED_TEST(McAsciiParserTestGet, GetServerError) {
   McAsciiParserHarness h("SERVER_ERROR what\r\n");
-  h.expectNext<TypeParam>(
-      replyWithMessage<ReplyT<TypeParam>>(mc_res_remote_error, "what"));
+  h.expectNext<TypeParam>(replyWithMessage<ReplyT<TypeParam>>(
+      carbon::Result::REMOTE_ERROR, "what"));
   h.runTest(3);
 }
 
 TYPED_TEST(McAsciiParserTestGet, GetHitMiss) {
   McAsciiParserHarness h("VALUE test 17  5\r\ntest \r\nEND\r\nEND\r\n");
-  h.expectNext<TypeParam>(
-      setFlags(setValue(ReplyT<TypeParam>(mc_res_found), "test "), 17));
-  h.expectNext<TypeParam>(ReplyT<TypeParam>(mc_res_notfound), false);
+  h.expectNext<TypeParam>(setFlags(
+      setValue(ReplyT<TypeParam>(carbon::Result::FOUND), "test "), 17));
+  h.expectNext<TypeParam>(ReplyT<TypeParam>(carbon::Result::NOTFOUND), false);
   h.runTest(1);
 }
 
@@ -313,7 +315,9 @@ TYPED_TEST_CASE(McAsciiParserTestGets, GetsTypes);
 TYPED_TEST(McAsciiParserTestGets, GetsHit) {
   McAsciiParserHarness h("VALUE test 1120 10 573\r\ntest test \r\nEND\r\n");
   h.expectNext<TypeParam>(setCas(
-      setFlags(setValue(ReplyT<TypeParam>(mc_res_found), "test test "), 1120),
+      setFlags(
+          setValue(ReplyT<TypeParam>(carbon::Result::FOUND), "test test "),
+          1120),
       573));
   h.runTest(1);
 }
@@ -329,21 +333,21 @@ TYPED_TEST_CASE(McAsciiParserTestGat, GatTypes);
 TYPED_TEST(McAsciiParserTestGat, GatHit) {
   McAsciiParserHarness h("VALUE t 10 2\r\nte\r\nEND\r\n");
   h.expectNext<TypeParam>(
-      setFlags(setValue(ReplyT<TypeParam>(mc_res_found), "te"), 10));
+      setFlags(setValue(ReplyT<TypeParam>(carbon::Result::FOUND), "te"), 10));
   h.runTest(2);
 }
 
 TYPED_TEST(McAsciiParserTestGat, GatHit_Empty) {
   McAsciiParserHarness h("VALUE t 5 0\r\n\r\nEND\r\n");
   h.expectNext<TypeParam>(
-      setFlags(setValue(ReplyT<TypeParam>(mc_res_found), ""), 5));
+      setFlags(setValue(ReplyT<TypeParam>(carbon::Result::FOUND), ""), 5));
   h.runTest(2);
 }
 
 TYPED_TEST(McAsciiParserTestGat, GatHit_WithSpaces) {
   McAsciiParserHarness h("VALUE  test  15889  5\r\ntest \r\nEND\r\n");
-  h.expectNext<TypeParam>(
-      setFlags(setValue(ReplyT<TypeParam>(mc_res_found), "test "), 15889));
+  h.expectNext<TypeParam>(setFlags(
+      setValue(ReplyT<TypeParam>(carbon::Result::FOUND), "test "), 15889));
   h.runTest(1);
 }
 
@@ -355,7 +359,7 @@ TYPED_TEST(McAsciiParserTestGat, GatHit_Error) {
 
 TYPED_TEST(McAsciiParserTestGat, GatMiss) {
   McAsciiParserHarness h("END\r\n");
-  h.expectNext<TypeParam>(ReplyT<TypeParam>(mc_res_notfound));
+  h.expectNext<TypeParam>(ReplyT<TypeParam>(carbon::Result::NOTFOUND));
   h.runTest(0);
 }
 
@@ -367,23 +371,23 @@ TYPED_TEST(McAsciiParserTestGat, GatMiss_Error) {
 
 TYPED_TEST(McAsciiParserTestGat, GatClientError) {
   McAsciiParserHarness h("CLIENT_ERROR what\r\n");
-  h.expectNext<TypeParam>(
-      replyWithMessage<ReplyT<TypeParam>>(mc_res_client_error, "what"));
+  h.expectNext<TypeParam>(replyWithMessage<ReplyT<TypeParam>>(
+      carbon::Result::CLIENT_ERROR, "what"));
   h.runTest(3);
 }
 
 TYPED_TEST(McAsciiParserTestGat, GatServerError) {
   McAsciiParserHarness h("SERVER_ERROR what\r\n");
-  h.expectNext<TypeParam>(
-      replyWithMessage<ReplyT<TypeParam>>(mc_res_remote_error, "what"));
+  h.expectNext<TypeParam>(replyWithMessage<ReplyT<TypeParam>>(
+      carbon::Result::REMOTE_ERROR, "what"));
   h.runTest(3);
 }
 
 TYPED_TEST(McAsciiParserTestGat, GatHitMiss) {
   McAsciiParserHarness h("VALUE test 17  5\r\ntest \r\nEND\r\nEND\r\n");
-  h.expectNext<TypeParam>(
-      setFlags(setValue(ReplyT<TypeParam>(mc_res_found), "test "), 17));
-  h.expectNext<TypeParam>(ReplyT<TypeParam>(mc_res_notfound), false);
+  h.expectNext<TypeParam>(setFlags(
+      setValue(ReplyT<TypeParam>(carbon::Result::FOUND), "test "), 17));
+  h.expectNext<TypeParam>(ReplyT<TypeParam>(carbon::Result::NOTFOUND), false);
   h.runTest(1);
 }
 
@@ -398,7 +402,9 @@ TYPED_TEST_CASE(McAsciiParserTestGats, GatsTypes);
 TYPED_TEST(McAsciiParserTestGats, GatsHit) {
   McAsciiParserHarness h("VALUE test 1120 10 573\r\ntest test \r\nEND\r\n");
   h.expectNext<TypeParam>(setCas(
-      setFlags(setValue(ReplyT<TypeParam>(mc_res_found), "test test "), 1120),
+      setFlags(
+          setValue(ReplyT<TypeParam>(carbon::Result::FOUND), "test test "),
+          1120),
       573));
   h.runTest(1);
 }
@@ -413,8 +419,8 @@ TYPED_TEST_CASE(McAsciiParserTestLeaseGet, LeaseGetTypes);
 
 TYPED_TEST(McAsciiParserTestLeaseGet, LeaseGetHit) {
   McAsciiParserHarness h("VALUE test 1120 10\r\ntest test \r\nEND\r\n");
-  h.expectNext<TypeParam>(
-      setFlags(setValue(ReplyT<TypeParam>(mc_res_found), "test test "), 1120));
+  h.expectNext<TypeParam>(setFlags(
+      setValue(ReplyT<TypeParam>(carbon::Result::FOUND), "test test "), 1120));
   h.runTest(1);
 }
 
@@ -422,7 +428,8 @@ TYPED_TEST(McAsciiParserTestLeaseGet, LeaseGetFoundStale) {
   McAsciiParserHarness h("LVALUE test 1 1120 10\r\ntest test \r\nEND\r\n");
   h.expectNext<TypeParam>(setLeaseToken(
       setFlags(
-          setValue(ReplyT<TypeParam>(mc_res_notfound), "test test "), 1120),
+          setValue(ReplyT<TypeParam>(carbon::Result::NOTFOUND), "test test "),
+          1120),
       1));
   h.runTest(1);
 }
@@ -430,14 +437,15 @@ TYPED_TEST(McAsciiParserTestLeaseGet, LeaseGetFoundStale) {
 TYPED_TEST(McAsciiParserTestLeaseGet, LeaseGetHotMiss) {
   McAsciiParserHarness h("LVALUE test 1 1120 0\r\n\r\nEND\r\n");
   h.expectNext<TypeParam>(setLeaseToken(
-      setFlags(setValue(ReplyT<TypeParam>(mc_res_notfound), ""), 1120), 1));
+      setFlags(setValue(ReplyT<TypeParam>(carbon::Result::NOTFOUND), ""), 1120),
+      1));
   h.runTest(1);
 }
 
 TYPED_TEST(McAsciiParserTestLeaseGet, LeaseGetMiss) {
   McAsciiParserHarness h("LVALUE test 162481237786486239 112 0\r\n\r\nEND\r\n");
   h.expectNext<TypeParam>(setLeaseToken(
-      setFlags(setValue(ReplyT<TypeParam>(mc_res_notfound), ""), 112),
+      setFlags(setValue(ReplyT<TypeParam>(carbon::Result::NOTFOUND), ""), 112),
       162481237786486239ull));
   h.runTest(1);
 }
@@ -452,13 +460,13 @@ TYPED_TEST_CASE(McAsciiParserTestSet, SetTypes);
 
 TYPED_TEST(McAsciiParserTestSet, SetStored) {
   McAsciiParserHarness h("STORED\r\n");
-  h.expectNext<TypeParam>(ReplyT<TypeParam>(mc_res_stored));
+  h.expectNext<TypeParam>(ReplyT<TypeParam>(carbon::Result::STORED));
   h.runTest(0);
 }
 
 TYPED_TEST(McAsciiParserTestSet, SetNotStored) {
   McAsciiParserHarness h("NOT_STORED\r\n");
-  h.expectNext<TypeParam>(ReplyT<TypeParam>(mc_res_notstored));
+  h.expectNext<TypeParam>(ReplyT<TypeParam>(carbon::Result::NOTSTORED));
   h.runTest(0);
 }
 
@@ -472,19 +480,19 @@ TYPED_TEST_CASE(McAsciiParserTestAdd, AddTypes);
 
 TYPED_TEST(McAsciiParserTestAdd, AddStored) {
   McAsciiParserHarness h("STORED\r\n");
-  h.expectNext<TypeParam>(ReplyT<TypeParam>(mc_res_stored));
+  h.expectNext<TypeParam>(ReplyT<TypeParam>(carbon::Result::STORED));
   h.runTest(0);
 }
 
 TYPED_TEST(McAsciiParserTestAdd, AddNotStored) {
   McAsciiParserHarness h("NOT_STORED\r\n");
-  h.expectNext<TypeParam>(ReplyT<TypeParam>(mc_res_notstored));
+  h.expectNext<TypeParam>(ReplyT<TypeParam>(carbon::Result::NOTSTORED));
   h.runTest(0);
 }
 
 TYPED_TEST(McAsciiParserTestAdd, AddExists) {
   McAsciiParserHarness h("EXISTS\r\n");
-  h.expectNext<TypeParam>(ReplyT<TypeParam>(mc_res_exists));
+  h.expectNext<TypeParam>(ReplyT<TypeParam>(carbon::Result::EXISTS));
   h.runTest(0);
 }
 
@@ -498,19 +506,19 @@ TYPED_TEST_CASE(McAsciiParserTestLeaseSet, LeaseSetTypes);
 
 TYPED_TEST(McAsciiParserTestLeaseSet, LeaseSetStored) {
   McAsciiParserHarness h("STORED\r\n");
-  h.expectNext<TypeParam>(ReplyT<TypeParam>(mc_res_stored));
+  h.expectNext<TypeParam>(ReplyT<TypeParam>(carbon::Result::STORED));
   h.runTest(0);
 }
 
 TYPED_TEST(McAsciiParserTestLeaseSet, LeaseSetNotStored) {
   McAsciiParserHarness h("NOT_STORED\r\n");
-  h.expectNext<TypeParam>(ReplyT<TypeParam>(mc_res_notstored));
+  h.expectNext<TypeParam>(ReplyT<TypeParam>(carbon::Result::NOTSTORED));
   h.runTest(0);
 }
 
 TYPED_TEST(McAsciiParserTestLeaseSet, LeaseSetStaleStored) {
   McAsciiParserHarness h("STALE_STORED\r\n");
-  h.expectNext<TypeParam>(ReplyT<TypeParam>(mc_res_stalestored));
+  h.expectNext<TypeParam>(ReplyT<TypeParam>(carbon::Result::STALESTORED));
   h.runTest(0);
 }
 
@@ -524,13 +532,14 @@ TYPED_TEST_CASE(McAsciiParserTestIncr, IncrTypes);
 
 TYPED_TEST(McAsciiParserTestIncr, IncrSuccess) {
   McAsciiParserHarness h("3636\r\n");
-  h.expectNext<TypeParam>(setDelta(ReplyT<TypeParam>(mc_res_stored), 3636));
+  h.expectNext<TypeParam>(
+      setDelta(ReplyT<TypeParam>(carbon::Result::STORED), 3636));
   h.runTest(0);
 }
 
 TYPED_TEST(McAsciiParserTestIncr, IncrNotFound) {
   McAsciiParserHarness h("NOT_FOUND\r\n");
-  h.expectNext<TypeParam>(ReplyT<TypeParam>(mc_res_notfound));
+  h.expectNext<TypeParam>(ReplyT<TypeParam>(carbon::Result::NOTFOUND));
   h.runTest(0);
 }
 
@@ -544,13 +553,14 @@ TYPED_TEST_CASE(McAsciiParserTestDecr, DecrTypes);
 
 TYPED_TEST(McAsciiParserTestDecr, DecrSuccess) {
   McAsciiParserHarness h("1534\r\n");
-  h.expectNext<TypeParam>(setDelta(ReplyT<TypeParam>(mc_res_stored), 1534));
+  h.expectNext<TypeParam>(
+      setDelta(ReplyT<TypeParam>(carbon::Result::STORED), 1534));
   h.runTest(0);
 }
 
 TYPED_TEST(McAsciiParserTestDecr, DecrNotFound) {
   McAsciiParserHarness h("NOT_FOUND\r\n");
-  h.expectNext<TypeParam>(ReplyT<TypeParam>(mc_res_notfound));
+  h.expectNext<TypeParam>(ReplyT<TypeParam>(carbon::Result::NOTFOUND));
   h.runTest(0);
 }
 
@@ -565,7 +575,7 @@ TYPED_TEST_CASE(McAsciiParserTestVersion, VersionTypes);
 TYPED_TEST(McAsciiParserTestVersion, Version) {
   McAsciiParserHarness h("VERSION HarnessTest\r\n");
   h.expectNext<TypeParam>(
-      setVersion(ReplyT<TypeParam>(mc_res_ok), "HarnessTest"));
+      setVersion(ReplyT<TypeParam>(carbon::Result::OK), "HarnessTest"));
   h.runTest(2);
 }
 
@@ -579,13 +589,13 @@ TYPED_TEST_CASE(McAsciiParserTestDelete, DeleteTypes);
 
 TYPED_TEST(McAsciiParserTestDelete, DeleteDeleted) {
   McAsciiParserHarness h("DELETED\r\n");
-  h.expectNext<TypeParam>(ReplyT<TypeParam>(mc_res_deleted));
+  h.expectNext<TypeParam>(ReplyT<TypeParam>(carbon::Result::DELETED));
   h.runTest(0);
 }
 
 TYPED_TEST(McAsciiParserTestDelete, DeleteNotFound) {
   McAsciiParserHarness h("NOT_FOUND\r\n");
-  h.expectNext<TypeParam>(ReplyT<TypeParam>(mc_res_notfound));
+  h.expectNext<TypeParam>(ReplyT<TypeParam>(carbon::Result::NOTFOUND));
   h.runTest(0);
 }
 
@@ -599,13 +609,13 @@ TYPED_TEST_CASE(McAsciiParserTestTouch, TouchTypes);
 
 TYPED_TEST(McAsciiParserTestTouch, TouchTouched) {
   McAsciiParserHarness h("TOUCHED\r\n");
-  h.expectNext<TypeParam>(ReplyT<TypeParam>(mc_res_touched));
+  h.expectNext<TypeParam>(ReplyT<TypeParam>(carbon::Result::TOUCHED));
   h.runTest(0);
 }
 
 TYPED_TEST(McAsciiParserTestTouch, TouchNotFound) {
   McAsciiParserHarness h("NOT_FOUND\r\n");
-  h.expectNext<TypeParam>(ReplyT<TypeParam>(mc_res_notfound));
+  h.expectNext<TypeParam>(ReplyT<TypeParam>(carbon::Result::NOTFOUND));
   h.runTest(0);
 }
 
@@ -619,7 +629,7 @@ TYPED_TEST_CASE(McAsciiParserTestMetaget, MetagetTypes);
 
 TYPED_TEST(McAsciiParserTestMetaget, MetagetMiss) {
   McAsciiParserHarness h("END\r\n");
-  h.expectNext<TypeParam>(ReplyT<TypeParam>(mc_res_notfound));
+  h.expectNext<TypeParam>(ReplyT<TypeParam>(carbon::Result::NOTFOUND));
   h.runTest(0);
 }
 
@@ -700,7 +710,7 @@ TYPED_TEST(McAsciiParserTestMetaget, MetagetHit_Unknown_NegativeOne_notrans) {
  */
 TEST(McAsciiParserTestFlushAll, FlushAll) {
   McAsciiParserHarness h("OK\r\n");
-  h.expectNext<McFlushAllRequest>(McFlushAllReply(mc_res_ok));
+  h.expectNext<McFlushAllRequest>(McFlushAllReply(carbon::Result::OK));
   h.runTest(0);
 }
 
@@ -745,53 +755,60 @@ TEST(McAsciiParserHarness, AllAtOnce) {
       "from: unknown\r\nEND\r\n"
       "TOUCHED\r\n");
   h.expectNext<McGetRequest>(
-      setFlags(setValue(McGetReply(mc_res_found), "te"), 10));
+      setFlags(setValue(McGetReply(carbon::Result::FOUND), "te"), 10));
   h.expectNext<McGetRequest>(
-      setFlags(setValue(McGetReply(mc_res_found), ""), 5));
+      setFlags(setValue(McGetReply(carbon::Result::FOUND), ""), 5));
   h.expectNext<McGetRequest>(
-      setFlags(setValue(McGetReply(mc_res_found), "test "), 15889));
-  h.expectNext<McGetRequest>(McGetReply(mc_res_notfound));
+      setFlags(setValue(McGetReply(carbon::Result::FOUND), "test "), 15889));
+  h.expectNext<McGetRequest>(McGetReply(carbon::Result::NOTFOUND));
   h.expectNext<McGetRequest>(
-      replyWithMessage<McGetReply>(mc_res_client_error, "what"));
+      replyWithMessage<McGetReply>(carbon::Result::CLIENT_ERROR, "what"));
   h.expectNext<McGetRequest>(
-      replyWithMessage<McGetReply>(mc_res_remote_error, "what"));
+      replyWithMessage<McGetReply>(carbon::Result::REMOTE_ERROR, "what"));
   h.expectNext<McGetRequest>(
-      setFlags(setValue(McGetReply(mc_res_found), "test "), 17));
-  h.expectNext<McGetRequest>(McGetReply(mc_res_notfound));
+      setFlags(setValue(McGetReply(carbon::Result::FOUND), "test "), 17));
+  h.expectNext<McGetRequest>(McGetReply(carbon::Result::NOTFOUND));
   h.expectNext<McGetsRequest>(setCas(
-      setFlags(setValue(McGetsReply(mc_res_found), "test test "), 1120), 573));
-  h.expectNext<McGetRequest>(
-      setFlags(setValue(McGetReply(mc_res_found), "test test "), 1120));
+      setFlags(
+          setValue(McGetsReply(carbon::Result::FOUND), "test test "), 1120),
+      573));
+  h.expectNext<McGetRequest>(setFlags(
+      setValue(McGetReply(carbon::Result::FOUND), "test test "), 1120));
   h.expectNext<McLeaseGetRequest>(setLeaseToken(
-      setFlags(setValue(McLeaseGetReply(mc_res_notfound), "test test "), 1120),
+      setFlags(
+          setValue(McLeaseGetReply(carbon::Result::NOTFOUND), "test test "),
+          1120),
       1));
   h.expectNext<McLeaseGetRequest>(setLeaseToken(
-      setFlags(setValue(McLeaseGetReply(mc_res_notfound), ""), 1120), 1));
+      setFlags(setValue(McLeaseGetReply(carbon::Result::NOTFOUND), ""), 1120),
+      1));
   h.expectNext<McLeaseGetRequest>(setLeaseToken(
-      setFlags(setValue(McLeaseGetReply(mc_res_notfound), ""), 112),
+      setFlags(setValue(McLeaseGetReply(carbon::Result::NOTFOUND), ""), 112),
       162481237786486239ull));
-  h.expectNext<McSetRequest>(McSetReply(mc_res_stored));
-  h.expectNext<McSetRequest>(McSetReply(mc_res_notstored));
-  h.expectNext<McAddRequest>(McAddReply(mc_res_stored));
-  h.expectNext<McAddRequest>(McAddReply(mc_res_notstored));
-  h.expectNext<McAddRequest>(McAddReply(mc_res_exists));
-  h.expectNext<McLeaseSetRequest>(McLeaseSetReply(mc_res_stored));
-  h.expectNext<McLeaseSetRequest>(McLeaseSetReply(mc_res_notstored));
-  h.expectNext<McLeaseSetRequest>(McLeaseSetReply(mc_res_stalestored));
-  h.expectNext<McIncrRequest>(setDelta(McIncrReply(mc_res_stored), 3636));
-  h.expectNext<McIncrRequest>(McIncrReply(mc_res_notfound));
-  h.expectNext<McDecrRequest>(setDelta(McDecrReply(mc_res_stored), 1534));
-  h.expectNext<McDecrRequest>(McDecrReply(mc_res_notfound));
+  h.expectNext<McSetRequest>(McSetReply(carbon::Result::STORED));
+  h.expectNext<McSetRequest>(McSetReply(carbon::Result::NOTSTORED));
+  h.expectNext<McAddRequest>(McAddReply(carbon::Result::STORED));
+  h.expectNext<McAddRequest>(McAddReply(carbon::Result::NOTSTORED));
+  h.expectNext<McAddRequest>(McAddReply(carbon::Result::EXISTS));
+  h.expectNext<McLeaseSetRequest>(McLeaseSetReply(carbon::Result::STORED));
+  h.expectNext<McLeaseSetRequest>(McLeaseSetReply(carbon::Result::NOTSTORED));
+  h.expectNext<McLeaseSetRequest>(McLeaseSetReply(carbon::Result::STALESTORED));
+  h.expectNext<McIncrRequest>(
+      setDelta(McIncrReply(carbon::Result::STORED), 3636));
+  h.expectNext<McIncrRequest>(McIncrReply(carbon::Result::NOTFOUND));
+  h.expectNext<McDecrRequest>(
+      setDelta(McDecrReply(carbon::Result::STORED), 1534));
+  h.expectNext<McDecrRequest>(McDecrReply(carbon::Result::NOTFOUND));
   h.expectNext<McVersionRequest>(
-      setVersion(McVersionReply(mc_res_ok), "HarnessTest"));
-  h.expectNext<McDeleteRequest>(McDeleteReply(mc_res_deleted));
-  h.expectNext<McDeleteRequest>(McDeleteReply(mc_res_notfound));
-  h.expectNext<McMetagetRequest>(McMetagetReply(mc_res_notfound));
+      setVersion(McVersionReply(carbon::Result::OK), "HarnessTest"));
+  h.expectNext<McDeleteRequest>(McDeleteReply(carbon::Result::DELETED));
+  h.expectNext<McDeleteRequest>(McDeleteReply(carbon::Result::NOTFOUND));
+  h.expectNext<McMetagetRequest>(McMetagetReply(carbon::Result::NOTFOUND));
   h.expectNext<McMetagetRequest>(
       createMetagetHitReply(345644, 35, 38, "2001:dbaf:7654:7578:12:06ef::1"));
   h.expectNext<McMetagetRequest>(
       createMetagetHitReply(345644, 35, 48, "23.84.127.32"));
   h.expectNext<McMetagetRequest>(createMetagetHitReply(-1, 37, 48, "unknown"));
-  h.expectNext<McTouchRequest>(McTouchReply(mc_res_touched));
+  h.expectNext<McTouchRequest>(McTouchReply(carbon::Result::TOUCHED));
   h.runTest(1);
 }

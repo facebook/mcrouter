@@ -40,7 +40,7 @@ namespace mcrouter {
  * This has 2 effects: it allows us to know if the object is already there
  * and also allows the synchronize the LRU position of the object for the
  * staging host.
- * In the case of mc_res_busy, we will bail and will not try
+ * In the case of carbon::Result::BUSY, we will bail and will not try
  * to add to the staging host to support partial staging.
  * Otherwise: on a hit, we will be done and no action further.
  *            on a miss, we will do an add operation to the staging host.
@@ -94,7 +94,7 @@ class StagingRoute {
    * This has 2 effects: it allows us to know if the object is already there
    * and also attempts to synchronize the LRU position of the object for the
    * staging host.
-   * In the case of mc_res_busy, we will bail and will not try
+   * In the case of carbon::Result::BUSY, we will bail and will not try
    * to add to the staging host to support partial staging.
    * Otherwise: on a hit, we will be done and no action further.
    *            on a miss, we will do an add operation to the staging host.
@@ -111,7 +111,7 @@ class StagingRoute {
       folly::fibers::addTask([req, reply, warm = warm_, staging = staging_]() {
         McMetagetRequest reqMetaget(req.key().fullKey());
         auto metaReply = staging->route(reqMetaget);
-        if (metaReply.result() != mc_res_busy &&
+        if (metaReply.result() != carbon::Result::BUSY &&
             !isHitResult(metaReply.result())) {
           // add to the staging side if we don't get a busy or a miss.
           // we will have to retrieve the exptime from the warm side through

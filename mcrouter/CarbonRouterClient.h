@@ -65,10 +65,10 @@ class CarbonRouterClient : public CarbonRouterClientBase {
    *                  should be callable
    *                    f(const Request& request, ReplyT<Request>&& reply)
    *
-   *                  result mc_res_unknown means that the request was canceled.
-   *                  It will be moved into a temporary storage before being
-   *                  called. Will be destroyed only after callback is called,
-   *                  but may be delayed, until all sub-requests are processed.
+   *                  result carbon::Result::UNKNOWN means that the request was
+   * canceled. It will be moved into a temporary storage before being called.
+   * Will be destroyed only after callback is called, but may be delayed, until
+   * all sub-requests are processed.
    *
    * @return true iff the request was scheduled to be sent / was sent,
    *         false if some error happened (e.g. RouterInstance was destroyed).

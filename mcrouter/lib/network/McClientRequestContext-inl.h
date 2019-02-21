@@ -28,7 +28,8 @@ void McClientRequestContextBase::reply(Reply&& r) {
         typeid(Reply).name());
 
     replyErrorImpl(
-        mc_res_local_error, "Attempt to forward a reply of wrong type.");
+        carbon::Result::LOCAL_ERROR,
+        "Attempt to forward a reply of wrong type.");
     return;
   }
 
@@ -59,7 +60,7 @@ McClientRequestContextBase::McClientRequestContextBase(
 
 template <class Request>
 void McClientRequestContext<Request>::replyErrorImpl(
-    mc_res_t result,
+    carbon::Result result,
     folly::StringPiece errorMessage) {
   assert(!replyStorage_.hasValue());
   replyStorage_.assign(
@@ -89,12 +90,12 @@ McClientRequestContext<Request>::waitForReply(
     case ReqState::PENDING_QUEUE:
       // Request wasn't sent to the network yet, reply with timeout.
       queue_.removePending(*this);
-      return Reply(mc_res_timeout);
+      return Reply(carbon::Result::TIMEOUT);
     case ReqState::PENDING_REPLY_QUEUE:
       // Request was sent to the network, but wasn't replied yet,
       // reply with timeout.
       queue_.removePendingReply(*this);
-      return Reply(mc_res_timeout);
+      return Reply(carbon::Result::TIMEOUT);
     case ReqState::COMPLETE:
       assert(replyStorage_.hasValue());
       return std::move(replyStorage_.value());
@@ -106,7 +107,7 @@ McClientRequestContext<Request>::waitForReply(
           "Unexpected state of request: {}!",
           static_cast<uint64_t>(state()));
   }
-  return Reply(mc_res_local_error);
+  return Reply(carbon::Result::LOCAL_ERROR);
 }
 
 template <class Request>

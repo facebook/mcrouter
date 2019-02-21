@@ -55,7 +55,7 @@ bool ServerMcParser<Callback>::caretMessageReady(
     callback_.caretRequestReady(headerInfo, buffer);
   } catch (const std::exception& e) {
     std::string reason(std::string("Error parsing Caret message: ") + e.what());
-    callback_.parseError(mc_res_remote_error, reason);
+    callback_.parseError(carbon::Result::REMOTE_ERROR, reason);
     return false;
   }
   return true;
@@ -67,7 +67,7 @@ void ServerMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
     std::string reason(folly::sformat(
         "Expected {} protocol, but received ASCII!",
         mc_protocol_to_string(parser_.protocol())));
-    callback_.parseError(mc_res_local_error, reason);
+    callback_.parseError(carbon::Result::LOCAL_ERROR, reason);
     return;
   }
 
@@ -77,13 +77,13 @@ void ServerMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
   if (result == McAsciiParserBase::State::ERROR) {
     // Note: we could include actual parsing error instead of
     // "malformed request" (e.g. asciiParser_.getErrorDescription()).
-    callback_.parseError(mc_res_client_error, "malformed request");
+    callback_.parseError(carbon::Result::CLIENT_ERROR, "malformed request");
   }
 }
 
 template <class Callback>
 void ServerMcParser<Callback>::parseError(
-    mc_res_t result,
+    carbon::Result result,
     folly::StringPiece reason) {
   callback_.parseError(result, reason);
 }
