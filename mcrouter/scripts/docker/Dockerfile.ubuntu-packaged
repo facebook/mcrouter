@@ -1,10 +1,12 @@
 FROM ubuntu:xenial
 
-RUN DEBIAN_FRONTEND=noninteractive \
-    apt-get update && \
-    apt-get install -yq \
-        wget \
-        apt-transport-https
+RUN set -xe \
+        && buildDeps=" \
+                wget \
+                apt-transport-https" \
+        && DEBIAN_FRONTEND=noninteractive \
+           apt-get update \
+        && apt-get install -y $buildDeps 
 
 COPY ["container/ubuntu-packaged/", "/"]
 
@@ -17,3 +19,5 @@ RUN wget -qO- \
            apt-get install -yq mcrouter --no-install-recommends  \
         && apt-get purge -y --autoremove -o APT::AutoRemove::RecommendsImportant=false wget apt-transport-https \
         && apt-get autoremove && apt-get autoclean && rm -rf /var/lib/apt-lists/*
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
