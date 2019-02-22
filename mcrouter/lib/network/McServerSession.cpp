@@ -686,8 +686,8 @@ void McServerSession::fizzHandshakeAttemptFallback(
   auto fd = socket->detachNetworkSocket().toFd();
   const auto& ctx = transport->getFallbackContext();
 
-  folly::AsyncSSLSocket::UniquePtr sslSocket(
-      new folly::AsyncSSLSocket(ctx, evb, fd, true /* server */));
+  folly::AsyncSSLSocket::UniquePtr sslSocket(new folly::AsyncSSLSocket(
+      ctx, evb, folly::NetworkSocket::fromFd(fd), true /* server */));
   sslSocket->setPreReceivedData(std::move(clientHello));
   sslSocket->enableClientHelloParsing();
   sslSocket->forceCacheAddrOnFailure(true);
