@@ -35,7 +35,7 @@ if [ ! -d "$PKG_DIR/zstd" ]; then
   make $MAKE_ARGS && make install $MAKE_ARGS
 fi
 
-cd "$PKG_DIR/fbthrift/thrift" || die "cd fbthrift failed"
+cd "$PKG_DIR/fbthrift/build" || die "cd fbthrift failed"
 
 CXXFLAGS="$CXXFLAGS -fPIC" \
 cmake .. -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR"
