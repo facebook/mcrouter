@@ -415,8 +415,8 @@ class McServerThread {
           }
         }
         if (opts.worker.tcpZeroCopyThresholdBytes > 0) {
-          int ret = socket_->setZeroCopy(true);
-          checkLogic(!ret, "Failed to set TCP zero copy on socket");
+          bool zeroCopyApplied = socket_->setZeroCopy(true);
+          checkLogic(zeroCopyApplied, "Failed to set TCP zero copy on socket");
         }
       }
       if (!server_.opts_.sslPorts.empty()) {
@@ -433,8 +433,9 @@ class McServerThread {
           sslSocket_->bind(sslPort);
         }
         if (opts.worker.tcpZeroCopyThresholdBytes > 0) {
-          int ret = sslSocket_->setZeroCopy(true);
-          checkLogic(!ret, "Failed to set TCP zero copy on ssl socket");
+          bool zeroCopyApplied = sslSocket_->setZeroCopy(true);
+          checkLogic(
+              zeroCopyApplied, "Failed to set TCP zero copy on ssl socket");
         }
       }
     }
