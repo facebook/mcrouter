@@ -25,16 +25,6 @@ if [ ! -d "$PKG_DIR/mstch" ]; then
   make $MAKE_ARGS && make install $MAKE_ARGS
 fi
 
-if [ ! -d "$PKG_DIR/zstd" ]; then
-  cd "$PKG_DIR" || die "cd fail"
-  git clone https://github.com/facebook/zstd
-
-  cd "$PKG_DIR/zstd" || die "cd fail"
-
-  cmake -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" build/cmake/
-  make $MAKE_ARGS && make install $MAKE_ARGS
-fi
-
 cd "$PKG_DIR/fbthrift/build" || die "cd fbthrift failed"
 
 CXXFLAGS="$CXXFLAGS -fPIC" \

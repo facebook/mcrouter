@@ -31,6 +31,18 @@ if [ ! -d /usr/include/double-conversion ]; then
   export CPPFLAGS="-I$INSTALL_DIR/include $CPPFLAGS"
 fi
 
+if [ ! -d "$PKG_DIR/zstd" ]; then
+  cd "$PKG_DIR" || die "cd fail"
+  git clone https://github.com/facebook/zstd
+
+  cd "$PKG_DIR/zstd" || die "cd fail"
+
+  # Checkout zstd-1.3.7 release
+  git checkout 21cd8a9d95a321f1fe256dc837e388bbc168fdbf
+  cmake -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" build/cmake/
+  make $MAKE_ARGS && make install $MAKE_ARGS
+fi
+
 cd "$PKG_DIR/folly/folly/" || die "cd fail"
 
 CXXFLAGS="$CXXFLAGS -fPIC" \
