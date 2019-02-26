@@ -1,4 +1,4 @@
-SUBDIRS = . config fbi network test
+SUBDIRS = carbon . config fbi network test
 
 noinst_LIBRARIES = libmcrouter.a
 
@@ -78,6 +78,11 @@ libmcrouter_a_SOURCES = \
   carbon/TypeList.h \
   carbon/Util.h \
   carbon/Variant.h \
+  carbon/gen-cpp2/carbon_types.cpp \
+  carbon/gen-cpp2/carbon_types.h \
+  carbon/gen-cpp2/carbon_types.tcc \
+  carbon/gen-cpp2/carbon_data.cpp \
+  carbon/gen-cpp2/carbon_data.h \
   config/ConfigPreprocessor.cpp \
   config/ConfigPreprocessor.h \
   config/ImportResolverIf.h \

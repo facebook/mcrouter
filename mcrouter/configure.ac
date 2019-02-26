@@ -9,6 +9,17 @@ m4_append([mcrouter_version], [.0])
 m4_append([mcrouter_version], [mcrouter_version_suffix])
 AC_INIT([mcrouter], [mcrouter_version], mcrouter@fb.com)
 
+AC_ARG_VAR([FBTHRIFT_BIN], [Path to FBThrift compiler])
+AC_ARG_VAR([FBTHRIFT_TEMPLATES], [Path to FBThrift mustache templates folder])
+AC_CHECK_PROG(have_fbthrift, thrift1, yes, no, path = $FBTHRIFT_BIN)
+AS_IF(
+  [test "x$have_fbthrift" = "xyes"],
+  [FBTHRIFT="$FBTHRIFT_BIN/thrift1 --templates $FBTHRIFT_TEMPLATES "],
+  [AC_MSG_ERROR([Unable to find FBThrift Compiler])]
+)
+AC_SUBST([FBTHRIFT])
+
+
 AC_DEFINE_UNQUOTED([MCROUTER_PACKAGE_STRING], ["AC_PACKAGE_VERSION AC_PACKAGE_NAME"], [Full name and version of this package, with version coming first for libmemcached compatibility])
 
 AC_CONFIG_SRCDIR([CarbonRouterInstance.h])
@@ -175,6 +186,7 @@ AH_BOTTOM([#include "RouterRegistry.h"])
 AC_CONFIG_FILES([Makefile
                  lib/Makefile
                  lib/test/Makefile
+                 lib/carbon/Makefile
                  lib/config/Makefile
                  lib/config/test/Makefile
                  lib/fbi/Makefile

@@ -212,10 +212,9 @@ mcrouter_LDADD = libmcroutercore.a lib/libmcrouter.a -lprotocol -lthriftprotocol
 mcrouter_CPPFLAGS = -I..
 
 clean-local:
-	-rm -f lib/network/gen-cpp2/*.h \
-	       lib/network/gen-cpp2/*.cpp \
-	       lib/network/gen-cpp2/*.o \
-	       lib/network/gen-cpp2/*.tcc
+	-rm -rf lib/network/gen-cpp2/ \
+	        lib/carbon/gen-cpp2/
 
 distclean-local:
-	-rm -rf lib/network/gen-cpp2/
+	-rm -rf lib/network/gen-cpp2/ \
+		lib/carbon/gen-cpp2/
