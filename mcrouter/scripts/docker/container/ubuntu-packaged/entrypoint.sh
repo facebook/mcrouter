@@ -6,7 +6,8 @@ function run_mcrouter() {
         local CONFIG_PATH=$1
         mcrouter \
         --config file:${CONFIG_PATH} \
-        -p "${MCROUTER_LISTEN_PORT:-5000}"
+        -p "${MCROUTER_LISTEN_PORT:-5000}" \
+	"$@"
 }
 
 
