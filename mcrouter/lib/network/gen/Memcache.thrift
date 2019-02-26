@@ -13,6 +13,7 @@
  *  @generated
  */
 include "mcrouter/lib/carbon/carbon.thrift"
+include "mcrouter/lib/carbon/carbon_result.thrift"
 include "mcrouter/lib/network/gen/Common.thrift"
 
 namespace cpp2 facebook.memcache.thrift
@@ -23,7 +24,7 @@ struct McGetRequest {
 }
 
 struct McGetReply {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: optional binary (cpp.type = "folly::IOBuf") value
   3: i64 (cpp.type = "uint64_t") flags
   4: string message
@@ -38,7 +39,7 @@ struct McSetRequest {
 }
 
 struct McSetReply {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: i64 (cpp.type = "uint64_t") flags
   3: binary (cpp.type = "folly::IOBuf") value
   4: string message
@@ -53,7 +54,7 @@ struct McDeleteRequest {
 }
 
 struct McDeleteReply {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: i64 (cpp.type = "uint64_t") flags
   3: binary (cpp.type = "folly::IOBuf") value
   4: string message
@@ -66,7 +67,7 @@ struct McLeaseGetRequest {
 }
 
 struct McLeaseGetReply {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: i64 leaseToken
   3: optional binary (cpp.type = "folly::IOBuf") value
   4: i64 (cpp.type = "uint64_t") flags
@@ -83,7 +84,7 @@ struct McLeaseSetRequest {
 }
 
 struct McLeaseSetReply {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: string message
   3: i16 appSpecificErrorCode
 }
@@ -96,7 +97,7 @@ struct McAddRequest {
 }
 
 struct McAddReply {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: string message
   3: i16 appSpecificErrorCode
 }
@@ -109,7 +110,7 @@ struct McReplaceRequest {
 }
 
 struct McReplaceReply {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: string message
   3: i16 appSpecificErrorCode
 }
@@ -119,7 +120,7 @@ struct McGetsRequest {
 }
 
 struct McGetsReply {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: i64 (cpp.type = "uint64_t") casToken
   3: optional binary (cpp.type = "folly::IOBuf") value
   4: i64 (cpp.type = "uint64_t") flags
@@ -136,7 +137,7 @@ struct McCasRequest {
 }
 
 struct McCasReply {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: string message
   3: i16 appSpecificErrorCode
 }
@@ -147,7 +148,7 @@ struct McIncrRequest {
 }
 
 struct McIncrReply {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: i64 delta
   3: string message
   4: i16 appSpecificErrorCode
@@ -159,7 +160,7 @@ struct McDecrRequest {
 }
 
 struct McDecrReply {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: i64 delta
   3: string message
   4: i16 appSpecificErrorCode
@@ -170,7 +171,7 @@ struct McMetagetRequest {
 }
 
 struct McMetagetReply {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: i32 age
   3: i32 exptime
   4: i16 ipv
@@ -187,7 +188,7 @@ struct McAppendRequest {
 }
 
 struct McAppendReply {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: string message
   3: i16 appSpecificErrorCode
 }
@@ -200,7 +201,7 @@ struct McPrependRequest {
 }
 
 struct McPrependReply {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: string message
   3: i16 appSpecificErrorCode
 }
@@ -211,7 +212,7 @@ struct McTouchRequest {
 }
 
 struct McTouchReply {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: string message
   3: i16 appSpecificErrorCode
 }
@@ -221,7 +222,7 @@ struct McFlushReRequest {
 }
 
 struct McFlushReReply {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: string message
   3: i16 appSpecificErrorCode
 }
@@ -232,7 +233,7 @@ struct McFlushAllRequest {
 }
 
 struct McFlushAllReply {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: string message
   3: i16 appSpecificErrorCode
 }
@@ -243,7 +244,7 @@ struct McGatRequest {
 }
 
 struct McGatReply {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: optional binary (cpp.type = "folly::IOBuf") value
   3: i64 (cpp.type = "uint64_t") flags
   4: string message
@@ -256,7 +257,7 @@ struct McGatsRequest {
 }
 
 struct McGatsReply {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: i64 (cpp.type = "uint64_t") casToken
   3: optional binary (cpp.type = "folly::IOBuf") value
   4: i64 (cpp.type = "uint64_t") flags

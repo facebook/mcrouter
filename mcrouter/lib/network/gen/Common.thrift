@@ -13,6 +13,7 @@
  *  @generated
  */
 include "mcrouter/lib/carbon/carbon.thrift"
+include "mcrouter/lib/carbon/carbon_result.thrift"
 
 
 namespace cpp2 facebook.memcache.thrift
@@ -22,7 +23,7 @@ struct McVersionRequest {
 }
 
 struct McVersionReply {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: binary (cpp.type = "folly::IOBuf") value
   3: string message
   4: i16 appSpecificErrorCode
@@ -33,7 +34,7 @@ struct McStatsRequest {
 }
 
 struct McStatsReply {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: string message
   3: list<string> stats
   4: i16 appSpecificErrorCode
@@ -44,7 +45,7 @@ struct McShutdownRequest {
 }
 
 struct McShutdownReply {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: string message
   3: i16 appSpecificErrorCode
 }
@@ -54,7 +55,7 @@ struct McQuitRequest {
 }
 
 struct McQuitReply {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: string message
   3: i16 appSpecificErrorCode
 }
@@ -64,7 +65,7 @@ struct McExecRequest {
 }
 
 struct McExecReply {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: string response
   3: string message
   4: i16 appSpecificErrorCode
@@ -75,7 +76,7 @@ struct GoAwayAcknowledgement {
 }
 
 struct GoAwayRequest {
-  1: carbon.Result result
+  1: carbon_result.Result result
   2: string reason
 }
 

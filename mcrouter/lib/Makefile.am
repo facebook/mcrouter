@@ -78,6 +78,11 @@ libmcrouter_a_SOURCES = \
   carbon/TypeList.h \
   carbon/Util.h \
   carbon/Variant.h \
+  carbon/gen-cpp2/carbon_result_types.cpp \
+  carbon/gen-cpp2/carbon_result_types.h \
+  carbon/gen-cpp2/carbon_result_types.tcc \
+  carbon/gen-cpp2/carbon_result_data.cpp \
+  carbon/gen-cpp2/carbon_result_data.h \
   carbon/gen-cpp2/carbon_types.cpp \
   carbon/gen-cpp2/carbon_types.h \
   carbon/gen-cpp2/carbon_types.tcc \
