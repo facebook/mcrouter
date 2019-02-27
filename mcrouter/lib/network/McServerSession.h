@@ -249,6 +249,16 @@ class McServerSession
    */
   SecurityMech securityMech() const noexcept;
 
+  /**
+   * Flush pending writes to the transport.
+   */
+  inline void flushWrites() {
+    if (writeScheduled_) {
+      sendWritesCallback_.cancelLoopCallback();
+    }
+    sendWrites();
+  }
+
  private:
   const AsyncMcServerWorkerOptions& options_;
 

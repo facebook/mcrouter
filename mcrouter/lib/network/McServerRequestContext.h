@@ -37,7 +37,8 @@ class McServerRequestContext {
   using DestructorFunc = void (*)(void*);
 
   template <class Reply>
-  static void reply(McServerRequestContext&& ctx, Reply&& reply);
+  static void
+  reply(McServerRequestContext&& ctx, Reply&& reply, bool flush = false);
 
   template <class Reply>
   static void reply(
@@ -93,7 +94,8 @@ class McServerRequestContext {
       McServerRequestContext&& ctx,
       Reply&& reply,
       DestructorFunc destructor = nullptr,
-      void* toDestruct = nullptr);
+      void* toDestruct = nullptr,
+      bool flush = false);
 
   folly::Optional<folly::IOBuf>& asciiKey() {
     if (!asciiState_) {
@@ -288,7 +290,7 @@ class McServerOnRequestWrapper<OnRequest, List<Request, Requests...>>
   }
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
 
 #include "McServerRequestContext-inl.h"

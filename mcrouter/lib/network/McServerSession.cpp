@@ -518,6 +518,10 @@ void McServerSession::queueWrite(std::unique_ptr<WriteBuffer> wb) {
 void McServerSession::sendWrites() {
   DestructorGuard dg(this);
 
+  if (pendingWrites_.empty()) {
+    return;
+  }
+
   bool doZeroCopy = isNextWriteBatchZeroCopy_;
   writeScheduled_ = false;
   isNextWriteBatchZeroCopy_ = false;

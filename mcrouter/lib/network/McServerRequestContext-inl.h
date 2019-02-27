@@ -13,8 +13,9 @@ namespace memcache {
 template <class Reply>
 void McServerRequestContext::reply(
     McServerRequestContext&& ctx,
-    Reply&& reply) {
-  replyImpl(std::move(ctx), std::move(reply));
+    Reply&& reply,
+    bool flush) {
+  replyImpl(std::move(ctx), std::move(reply), nullptr, nullptr, flush);
 }
 
 template <class Reply>
@@ -23,7 +24,12 @@ void McServerRequestContext::reply(
     Reply&& reply,
     DestructorFunc destructor,
     void* toDestruct) {
-  replyImpl(std::move(ctx), std::move(reply), destructor, toDestruct);
+  replyImpl(
+      std::move(ctx),
+      std::move(reply),
+      destructor,
+      toDestruct,
+      false /* flush */);
 }
 
 template <class Reply, class... Args>
@@ -60,7 +66,8 @@ void McServerRequestContext::replyImpl2(
     McServerRequestContext&& ctx,
     Reply&& reply,
     DestructorFunc destructor,
-    void* toDestruct) {
+    void* toDestruct,
+    bool flush) {
   ctx.replied_ = true;
   // Note: 'SessionType' being a template parameter allows the use of
   // McServerSession members, otherwise there's a circular dependency preventing
@@ -91,6 +98,9 @@ void McServerRequestContext::replyImpl2(
     return;
   }
   session->reply(std::move(wb), reqid);
+  if (UNLIKELY(flush)) {
+    session->flushWrites();
+  }
 }
 
 /**
@@ -150,5 +160,5 @@ void McServerOnRequestWrapper<OnRequest, List<>>::caretRequestReady(
       HasDispatchTypedRequest<OnRequest>::value);
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

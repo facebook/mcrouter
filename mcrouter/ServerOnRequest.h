@@ -37,8 +37,10 @@ template <class RouterInfo>
 class ServerOnRequest {
  public:
   template <class Request>
-  using ReplyFunction =
-      void (*)(McServerRequestContext&& ctx, ReplyT<Request>&& reply);
+  using ReplyFunction = void (*)(
+      McServerRequestContext&& ctx,
+      ReplyT<Request>&& reply,
+      bool flush);
 
   ServerOnRequest(
       CarbonRouterClient<RouterInfo>& client,
@@ -113,9 +115,9 @@ class ServerOnRequest {
       reqRef.setSerializedBuffer(reqBufferRef);
     }
 
-    auto cb = [ sctx = std::move(rctx), replyFn ](
-        const Request&, ReplyT<Request>&& reply) {
-      replyFn(std::move(sctx->ctx), std::move(reply));
+    auto cb = [sctx = std::move(rctx), replyFn](
+                  const Request&, ReplyT<Request>&& reply) {
+      replyFn(std::move(sctx->ctx), std::move(reply), false /* flush */);
     };
 
     if (retainSourceIp_) {
@@ -131,6 +133,6 @@ class ServerOnRequest {
   bool retainSourceIp_{false};
   bool enablePassThroughMode_{false};
 };
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
