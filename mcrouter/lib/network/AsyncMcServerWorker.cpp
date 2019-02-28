@@ -30,15 +30,16 @@ bool AsyncMcServerWorker::addSecureClientSocket(
     AsyncMcServerWorker::ContextPair contexts,
     void* userCtxt) {
   McFizzServer::UniquePtr socket(new McFizzServer(
-      folly::AsyncSocket::UniquePtr(new folly::AsyncSocket(&eventBase_, fd)),
+      folly::AsyncSocket::UniquePtr(new folly::AsyncSocket(
+          &eventBase_, folly::NetworkSocket::fromFd(fd))),
       std::move(contexts.second),
       std::move(contexts.first)));
   return addClientSocket(std::move(socket), userCtxt);
 }
 
 bool AsyncMcServerWorker::addClientSocket(int fd, void* userCtxt) {
-  auto socket =
-      folly::AsyncSocket::UniquePtr(new folly::AsyncSocket(&eventBase_, fd));
+  auto socket = folly::AsyncSocket::UniquePtr(
+      new folly::AsyncSocket(&eventBase_, folly::NetworkSocket::fromFd(fd)));
   return addClientSocket(std::move(socket), userCtxt);
 }
 
