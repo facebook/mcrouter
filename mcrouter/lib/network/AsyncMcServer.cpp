@@ -239,7 +239,7 @@ class McServerThread {
 
   /* Safe to call from other threads */
   void shutdown() {
-    auto result = evb_->runInEventBaseThread([&]() {
+    evb_->runInEventBaseThread([&]() {
       if (accepting_) {
         socket_.reset();
         sslSocket_.reset();
@@ -254,10 +254,6 @@ class McServerThread {
       }
       worker_.shutdown();
     });
-
-    if (!result) {
-      throw std::runtime_error("error calling runInEventBaseThread");
-    }
   }
 
   void shutdownFromSignalHandler() {
