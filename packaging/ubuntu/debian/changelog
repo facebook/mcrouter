@@ -1,3 +1,9 @@
+mcrouter (0.40.0-1) DIST; urgency=medium
+
+  * Version 0.40.0
+
+ -- Ori Shalev <orish@fb.com>  Fri, 1 Mar 2019 14:16:00 -0700
+
 mcrouter (0.39.0-1) DIST; urgency=medium
 
   * Version 0.39.0

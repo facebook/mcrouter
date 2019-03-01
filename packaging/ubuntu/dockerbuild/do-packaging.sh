@@ -22,15 +22,15 @@ wanglecommit="$(curl https://raw.githubusercontent.com/facebook/mcrouter/$releas
 thriftcommit="$(curl https://raw.githubusercontent.com/facebook/mcrouter/$releasetag/mcrouter/FBTHRIFT_COMMIT 2>/dev/null)"
 
 echo "folly commit: $follycommit"
-echo "fizz commit: $follycommit"
-echo "wangle commit: $follycommit"
-echo "fbthrift commit: $follycommit"
+echo "fizz commit: $fizzcommit"
+echo "wangle commit: $wanglecommit"
+echo "fbthrift commit: $thriftcommit"
 buildargs="--build-arg follycommit=$follycommit --build-arg fizzcommit=$fizzcommit --build-arg wanglecommit=$wanglecommit --build-arg thriftcommit=$thriftcommit"
 
 docker build --build-arg dist=$dist $buildargs -t mcrouter-${dist}-packaging .
 docker run -i -d -v "$srcdir":/src -v "$debiandir":/debdir -v "$dstdir":/dst mcrouter-${dist}-packaging /bin/bash -l
 cid=$(docker run -i -d -v "$srcdir":/src -v "$debiandir":/debdir -v "$dstdir":/dst mcrouter-${dist}-packaging)
-docker exec -it "$cid" bash -l -c "cp /src/$srctargz $origtargz && tar zxf $origtargz && cd $mcrouterdir && cp -R /debdir/* debian/ && rm -rf debian/{pool,db,dists} && sed -e \"s/DIST/$dist/\" -i debian/changelog && cp debian/control.$dist debian/control && debuild -us -uc && cp ../$fileprefix* /dst/"
+docker exec -it "$cid" bash -l -c "cp /src/$srctargz $origtargz && tar zxf $origtargz && cd $mcrouterdir && mkdir debian && cp -R /debdir/* debian/ && sed -e \"s/DIST/$dist/\" -i debian/changelog && cp debian/control.$dist debian/control && debuild -us -uc && cp ../$fileprefix* /dst/"
 docker stop "$cid"
 docker rm "$cid"
 
