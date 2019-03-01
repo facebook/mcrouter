@@ -1,8 +1,9 @@
-/**
- * Copyright (c) Facebook, Inc. and its affiliates.
+/*
+ *  Copyright (c) 2014-present, Facebook, Inc.
  *
- * This source code is licensed under the MIT license found in the LICENSE
- * file in the root directory of this source tree.
+ *  This source code is licensed under the MIT license found in the LICENSE
+ *  file in the root directory of this source tree.
+ *
  */
 #include "flavor.h"
 
@@ -11,7 +12,6 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/path.hpp>
-#include <glog/logging.h>
 
 #include <folly/FileUtil.h>
 #include <folly/Range.h>

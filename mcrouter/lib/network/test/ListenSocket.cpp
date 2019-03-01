@@ -13,8 +13,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <glog/logging.h>
-
 #include <folly/Conv.h>
 #include <folly/ScopeGuard.h>
 #include <folly/String.h>

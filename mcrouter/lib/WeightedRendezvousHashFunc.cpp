@@ -1,15 +1,14 @@
-/**
- * Copyright (c) Facebook, Inc. and its affiliates.
+/*
+ *  Copyright (c) 2017-present, Facebook, Inc.
  *
- * This source code is licensed under the MIT license found in the LICENSE
- * file in the root directory of this source tree.
+ *  This source code is licensed under the MIT license found in the LICENSE
+ *  file in the root directory of this source tree.
+ *
  */
 #include "WeightedRendezvousHashFunc.h"
 
 #include <cassert>
 #include <cmath>
-
-#include <glog/logging.h>
 
 #include "mcrouter/lib/RendezvousHashHelper.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
