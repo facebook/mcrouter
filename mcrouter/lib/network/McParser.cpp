@@ -25,6 +25,8 @@ namespace memcache {
 namespace {
 // Adjust buffer size after this many CPU cycles (~2 billion)
 constexpr uint64_t kAdjustBufferSizeCpuCycles = 1UL << 31;
+// Max allowed body size is 1GB.
+constexpr size_t kMaxBodySize = 1UL << 30;
 
 #ifdef FOLLY_JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
 
@@ -145,6 +147,11 @@ bool McParser::readCaretData() {
     // return to wait for remaining data.
     if (readBuffer_.length() + readBuffer_.tailroom() < messageSize) {
       assert(!readBuffer_.isChained());
+      if (messageSize > kMaxBodySize) {
+        LOG(ERROR) << "Body size was " << messageSize
+                   << ", but max size allowed is " << kMaxBodySize;
+        return false;
+      }
       readBuffer_.unshareOne();
       bufferSize_ = std::max<size_t>(bufferSize_, messageSize);
       readBuffer_.reserve(
