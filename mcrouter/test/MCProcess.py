@@ -811,15 +811,15 @@ class Memcached(MCProcess):
                 '-A',
                 '-g',
                 '-t', '1',
-                '--enable-hash-alias',
-                '--enable-unchecked-l1-sentinel-reads',
+                '--enable_hash_aliases',
+                '--enable_unchecked_l1_sentinel_reads',
                 '--reaper_throttle=100',
-                '--ini-hashpower=16',
+                '--ini_hashpower=16',
             ])
             if port is None:
                 listen_sock = create_listen_socket()
                 port = listen_sock.getsockname()[1]
-                args.extend(['--listen-sock-fd', str(listen_sock.fileno())])
+                args.extend(['--listen_sock_fd', str(listen_sock.fileno())])
             else:
                 args.extend(['-p', str(port)])
 
