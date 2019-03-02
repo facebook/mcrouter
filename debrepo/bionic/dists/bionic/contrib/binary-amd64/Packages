@@ -1,17 +1,17 @@
 Package: mcrouter
-Version: 0.39.0-1
+Version: 0.40.0-1
 Architecture: amd64
 Maintainer: Ori Shalev <orish@fb.com>
-Installed-Size: 19771
+Installed-Size: 20552
 Depends: libboost-context1.65.1 (>= 1.65.1), libboost-filesystem1.65.1 (>= 1.65.1), libboost-program-options1.65.1 (>= 1.65.1), libboost-regex1.65.1 (>= 1.65.1), libboost-system1.65.1, libc6 (>= 2.23), libdouble-conversion1 (>= 2.0.1), libevent-2.1-6 (>= 2.1.8-stable), libgflags2.2 (>= 2.2.1), libgoogle-glog0v5 (>= 0.3.5), libsodium23 (>= 0.6.0), libssl1.1 (>= 1.1.0), libstdc++6 (>= 7), libunwind8, openssl (>= 1.1.0)
 Homepage: https://github.com/facebook/mcrouter/
 Priority: optional
 Section: misc
-Filename: pool/contrib/m/mcrouter/mcrouter_0.39.0-1_amd64.deb
-Size: 3348796
-SHA256: 5b3f15b17720aca051e57f1a03c3c2ad462a6fc25fea4101bf9c764e64db674b
-SHA1: 5c5a65d217bc5c609f8162af6d40dbbc2461f2d9
-MD5sum: 25f646cae6b87b093f7ecb47a626d999
+Filename: pool/contrib/m/mcrouter/mcrouter_0.40.0-1_amd64.deb
+Size: 3410160
+SHA256: 416432c0176f71f2cd72cc5eefc0e9e6d2a23d3975b07bb5aab5d2372032db8b
+SHA1: e311ba3558271d56c9c2ab11bae5fc9a29d149b2
+MD5sum: f5047d1da010b46755c207ab110109d4
 Description: memcached protocol router for scaling memcached deployments
  Mcrouter is a memcached protocol router for scaling memcached
  (http://memcached.org/) deployments. It's a core component of cache

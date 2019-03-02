@@ -1,19 +1,19 @@
 Origin: Mcrouter, Facebook
 Label: Mcrouter, Facebook
 Codename: bionic
-Date: Sat, 02 Feb 2019 04:44:15 UTC
+Date: Sat, 02 Mar 2019 07:44:37 UTC
 Architectures: amd64
 Components: contrib
 Description: Repo hosted on the GitHub project facebook/mcrouter
 MD5Sum:
- c080a5a1186c190197af6c5aa05fad35 1227 contrib/binary-amd64/Packages
- c4a2c872f5f4e69e9987aec9d904f96c 681 contrib/binary-amd64/Packages.gz
+ 57d5c3c02e2c6dbae054b708c1b7fc61 1227 contrib/binary-amd64/Packages
+ 026be56886061c136719a31001ed1b04 679 contrib/binary-amd64/Packages.gz
  59aedcf0610d943de9b4fb410bcb3406 157 contrib/binary-amd64/Release
 SHA1:
- c85352d35d8d8f12e95ed7d3c335527fcb6c457b 1227 contrib/binary-amd64/Packages
- eab9ca1e8eafeccbdb9854103c84911377c774ff 681 contrib/binary-amd64/Packages.gz
+ 5efd1c24f4db9d4d0cf66a1bfab9fe9a17f726f0 1227 contrib/binary-amd64/Packages
+ b6fa588fc35d4c9e0273a71df90abcfd0cef2026 679 contrib/binary-amd64/Packages.gz
  ceca68462500fcf5efb2613854d65b68cf422f59 157 contrib/binary-amd64/Release
 SHA256:
- f54039112c525d222f44dc8d1e8de5d1b4adc270eaf4b8cd8524c24f4f22a062 1227 contrib/binary-amd64/Packages
- f6b33ce9f5de7bc0e5f0db2f09bae76d9ab971c77196918240ef2dba9fcf2e0b 681 contrib/binary-amd64/Packages.gz
+ e063fdeff3e2d62f7e31c91bed88aa14285488dcbae81955172349b184480267 1227 contrib/binary-amd64/Packages
+ 26a0776eed6851210877186db0cd2c5320885cdb34db41f9dcef3c10c0701e98 679 contrib/binary-amd64/Packages.gz
  0cbdbc82004fe1953e15a1474e4eee23adb8d2a21757d52cc178521a561b8f21 157 contrib/binary-amd64/Release
