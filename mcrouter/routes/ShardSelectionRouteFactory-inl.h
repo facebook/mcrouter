@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2018-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <folly/Range.h>
 #include <folly/dynamic.h>
@@ -228,6 +227,23 @@ void buildChildrenLoadBalancerRoutes(
   });
 }
 
+template <class RouterInfo, class MapType>
+void buildChildrenCustomRoutes(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json,
+    const ShardDestinationsMap<RouterInfo>& shardMap,
+    const RouteHandleWithChildrenFactoryFn<RouterInfo>& createCustomRh,
+    std::vector<typename RouterInfo::RouteHandlePtr>& destinations,
+    MapType& shardToDestinationIndexMap) {
+  std::for_each(shardMap.begin(), shardMap.end(), [&](auto& item) {
+    auto shardId = item.first;
+    auto childrenRouteHandles = std::move(item.second);
+    destinations.push_back(
+        createCustomRh(factory, json, std::move(childrenRouteHandles)));
+    shardToDestinationIndexMap[shardId] = destinations.size() - 1;
+  });
+}
+
 } // namespace detail
 
 // routes
@@ -272,7 +288,8 @@ typename RouterInfo::RouteHandlePtr createShardSelectionRoute(
 template <class RouterInfo, class ShardSelector, class MapType>
 typename RouterInfo::RouteHandlePtr createEagerShardSelectionRoute(
     RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
-    const folly::dynamic& json) {
+    const folly::dynamic& json,
+    const ChildrenFactoryMap<RouterInfo>& childrenFactoryMap) {
   checkLogic(
       json.isObject(), "EagerShardSelectionRoute config should be an object");
 
@@ -318,9 +335,20 @@ typename RouterInfo::RouteHandlePtr createEagerShardSelectionRoute(
         destinations,
         shardToDestinationIndexMap);
   } else {
-    throwLogic(
-        "EagerShardSelectionRoute: 'children_type' {} not supported",
-        childrenType);
+    auto it = childrenFactoryMap.find(childrenType.str());
+    if (it != childrenFactoryMap.end()) {
+      detail::buildChildrenCustomRoutes<RouterInfo, MapType>(
+          factory,
+          childrenSettings,
+          shardMap,
+          it->second,
+          destinations,
+          shardToDestinationIndexMap);
+    } else {
+      throwLogic(
+          "EagerShardSelectionRoute: 'children_type' {} not supported",
+          childrenType);
+    }
   }
 
   ShardSelector selector(std::move(shardToDestinationIndexMap));

@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2018-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <unordered_set>
 #include <vector>
@@ -18,6 +17,7 @@
 #include "mcrouter/lib/carbon/example/gen/HelloGoodbyeRouterInfo.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/options.h"
+#include "mcrouter/routes/AllMajorityRouteFactory.h"
 #include "mcrouter/routes/McRouteHandleProvider.h"
 #include "mcrouter/routes/ShardSelectionRouteFactory.h"
 #include "mcrouter/routes/test/RouteHandleTestBase.h"
@@ -57,10 +57,13 @@ class EagerShardSelectionRouteTest
     : public RouteHandleTestBase<HelloGoodbyeRouterInfo> {
  public:
   HelloGoodbyeRouterInfo::RouteHandlePtr getEagerShardSelectionRoute(
-      folly::StringPiece jsonStr) {
+      folly::StringPiece jsonStr,
+      const ChildrenFactoryMap<HelloGoodbyeRouterInfo>& childrenFactoryMap =
+          {}) {
     return createEagerShardSelectionRoute<
         HelloGoodbyeRouterInfo,
-        EagerShardSelector>(rhFactory_, folly::parseJson(jsonStr));
+        EagerShardSelector>(
+        rhFactory_, folly::parseJson(jsonStr), childrenFactoryMap);
   }
 
   void testCreate(folly::StringPiece config) {
@@ -402,6 +405,69 @@ TEST_F(EagerShardSelectionRouteTest, traverseAndCheckChildrenIsFailover) {
   // We should iterate just once, for host "localhost:35602"
   // (FailoverRoute is optimized away).
   EXPECT_EQ(iterations, 1);
+}
+
+TEST_F(EagerShardSelectionRouteTest, customChildrenRoute) {
+  constexpr folly::StringPiece kSelectionRouteConfig = R"(
+  {
+    "children_type": "AllMajorityRoute",
+    "children_settings": {},
+    "pools": [
+      {
+        "pool": {
+          "type": "Pool",
+          "name": "pool1",
+          "servers": [ "localhost:12345", "localhost:12325" ],
+          "protocol": "caret"
+        },
+        "shards": [
+          "1, 2, 3",
+          "3, 5, 6"
+        ]
+      },
+      {
+        "pool": {
+          "type": "Pool",
+          "name": "pool2",
+          "servers": [ "localhost:12302", "localhost:35602" ],
+          "protocol": "caret"
+        },
+        "shards": [
+          "1, 2, 3",
+          "3, 5, 6"
+        ]
+      }
+    ]
+  }
+  )";
+
+  ChildrenFactoryMap<HelloGoodbyeRouterInfo> childrenFactoryMap{
+      {"AllMajorityRoute",
+       [](RouteHandleFactory<HelloGoodbyeRouterInfo::RouteHandleIf>&,
+          const folly::dynamic&,
+          std::vector<HelloGoodbyeRouterInfo::RouteHandlePtr> children) {
+         return createAllMajorityRoute<HelloGoodbyeRouterInfo>(
+             std::move(children));
+       }}};
+
+  auto rh =
+      getEagerShardSelectionRoute(kSelectionRouteConfig, childrenFactoryMap);
+  ASSERT_TRUE(rh);
+  EXPECT_EQ("selection|basic-shard-selector", rh->routeName());
+
+  GoodbyeRequest req;
+
+  req.shardId() = 1;
+  size_t iterations = 0;
+  RouteHandleTraverser<HelloGoodbyeRouterInfo::RouteHandleIf> t{
+      [&iterations](const HelloGoodbyeRouterInfo::RouteHandleIf& r) {
+        ++iterations;
+        if (iterations == 1) {
+          EXPECT_EQ("all-majority", r.routeName());
+        }
+      }};
+  rh->traverse(req, t);
+  EXPECT_GE(iterations, 1);
 }
 
 } // namespace mcrouter

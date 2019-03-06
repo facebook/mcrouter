@@ -1,14 +1,15 @@
-/*
- *  Copyright (c) 2017-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
 #include <algorithm>
 #include <cassert>
+#include <unordered_map>
+#include <vector>
 
 #include <folly/Range.h>
 #include <folly/dynamic.h>
@@ -19,6 +20,17 @@
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
+
+// Alias for eager shard selector factory.
+template <class RouterInfo>
+using RouteHandleWithChildrenFactoryFn =
+    std::function<typename RouterInfo::RouteHandlePtr(
+        RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+        const folly::dynamic& json,
+        std::vector<typename RouterInfo::RouteHandlePtr> children)>;
+template <class RouterInfo>
+using ChildrenFactoryMap = std::
+    unordered_map<std::string, RouteHandleWithChildrenFactoryFn<RouterInfo>>;
 
 /**
  * Create a route handle for sharding requests to servers.
@@ -112,7 +124,9 @@ typename RouterInfo::RouteHandlePtr createShardSelectionRoute(
  * DETAILS:
  *  - "shards" can also be an array of strings of comma-separated shard ids,
  *    as stated in the documentation of createShardSelectionRoute() above.
- *  - "children_type" can be either LatestRoute or LoadBalancerRoute.
+ *  - "children_type" the name of route handle that will group the servers that
+ *    are responsible for a given shard. Can be: LoadBalancerRoute,
+ *    LatestRoute, or one of the names provided in the childrenFactoryMap.
  *  - "children_settings" is the properties of the route handle specified
  *    in the "children_type" option.
  *  - "pools" is an array of pools (or tiers).
@@ -125,8 +139,13 @@ typename RouterInfo::RouteHandlePtr createShardSelectionRoute(
  *                       shardId -> destinationIndex.
  * @tparam MapType       C++ type container that maps shardId -> destinationIdx
  *
- * @param factory               RouteHandleFactory
- * @param json                  JSON object with RouteHandle representation.
+ * @param factory             The route handle factory.
+ * @param json                JSON object with the config of this route handle.
+ * @param childrenFactoryMap  Map with factory functions of custom route handles
+ *                            that are supported to group the destinations that
+ *                            handle a given shard.
+ *
+ * @return  Pointer to the EagerShardSelectionRoute.
  */
 template <
     class RouterInfo,
@@ -134,7 +153,8 @@ template <
     class MapType = std::unordered_map<uint32_t, uint32_t>>
 typename RouterInfo::RouteHandlePtr createEagerShardSelectionRoute(
     RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
-    const folly::dynamic& json);
+    const folly::dynamic& json,
+    const ChildrenFactoryMap<RouterInfo>& childrenFactoryMap = {});
 
 } // namespace mcrouter
 } // namespace memcache
