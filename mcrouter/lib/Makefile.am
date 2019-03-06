@@ -1,4 +1,4 @@
-SUBDIRS = carbon . config fbi network test
+SUBDIRS = carbon network/gen . config fbi network test
 
 noinst_LIBRARIES = libmcrouter.a
 
@@ -173,6 +173,16 @@ libmcrouter_a_SOURCES = \
   network/gen/MemcacheMessages-inl.h \
   network/gen/MemcacheMessages.cpp \
   network/gen/MemcacheMessages.h \
+  network/gen/gen-cpp2/Common_types.cpp \
+  network/gen/gen-cpp2/Common_types.h \
+  network/gen/gen-cpp2/Common_types.tcc \
+  network/gen/gen-cpp2/Common_data.cpp \
+  network/gen/gen-cpp2/Common_data.h \
+  network/gen/gen-cpp2/Memcache_types.cpp \
+  network/gen/gen-cpp2/Memcache_types.h \
+  network/gen/gen-cpp2/Memcache_types.tcc \
+  network/gen/gen-cpp2/Memcache_data.cpp \
+  network/gen/gen-cpp2/Memcache_data.h \
   network/FizzContextProvider.cpp \
   network/FizzContextProvider.h \
   network/McAsciiParser-gen.cpp \

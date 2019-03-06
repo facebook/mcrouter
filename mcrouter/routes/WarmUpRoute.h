@@ -137,7 +137,7 @@ class WarmUpRoute {
       // On hit, no need to copy appSpecificErrorCode or message
       McLeaseGetReply reply(warmReply.result());
       reply.flags() = warmReply.flags();
-      reply.value() = warmReply.value();
+      reply.value().move_from(warmReply.value());
       return reply;
     }
     return coldReply;

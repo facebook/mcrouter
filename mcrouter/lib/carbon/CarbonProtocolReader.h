@@ -18,6 +18,7 @@
 #include <folly/io/Cursor.h>
 #include <folly/io/IOBuf.h>
 #include <folly/small_vector.h>
+#include <thrift/lib/cpp2/FieldRef.h>
 
 #include "mcrouter/lib/carbon/CarbonProtocolCommon.h"
 #include "mcrouter/lib/carbon/CarbonProtocolWriter.h"
@@ -54,6 +55,19 @@ class CarbonProtocolReader {
   template <class T>
   void readField(folly::Optional<T>& data, FieldType /* fieldType */) {
     data = folly::Optional<T>(readRaw<T>());
+  }
+
+  void readField(
+      apache::thrift::optional_field_ref<bool&> data,
+      FieldType fieldType) {
+    data = fieldType == FieldType::True;
+  }
+
+  template <class T>
+  void readField(
+      apache::thrift::optional_field_ref<T&> data,
+      FieldType /* fieldType */) {
+    data = readRaw<T>();
   }
 
   template <class T>

@@ -117,7 +117,7 @@ McLeaseGetReply L1L2SizeSplitRoute::doLeaseGetRoute(
   if (isHitResult(l2Reply.result())) {
     McLeaseGetReply reply(carbon::Result::FOUND);
     reply.flags() = l2Reply.flags();
-    reply.value() = std::move(l2Reply.value());
+    reply.value().move_from(l2Reply.value());
     return reply;
   }
 

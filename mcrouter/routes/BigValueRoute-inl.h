@@ -205,7 +205,7 @@ Reply BigValueRoute::mergeChunkGetReplies(
 
   std::vector<std::unique_ptr<folly::IOBuf>> dataVec;
   while (begin != end) {
-    if (begin->value().hasValue()) {
+    if (begin->value().has_value()) {
       dataVec.push_back(begin->value()->clone());
     }
     ++begin;

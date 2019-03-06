@@ -207,8 +207,8 @@ class CarbonLookasideRoute {
         cacheRequest,
         [&baton, &ret](const McGetRequest&, McGetReply&& cacheReply) {
           if (isHitResult(cacheReply.result()) &&
-              cacheReply.value().hasValue()) {
-            folly::io::Cursor cur(cacheReply.value().get_pointer());
+              cacheReply.value().has_value()) {
+            folly::io::Cursor cur(&cacheReply.value().value());
             carbon::CarbonProtocolReader reader(cur);
             ReplyT<Request> reply;
             reply.deserialize(reader);
@@ -244,8 +244,8 @@ class CarbonLookasideRoute {
               const McLeaseGetRequest&, McLeaseGetReply&& cacheReply) {
             retry = false;
             if (isHitResult(cacheReply.result()) &&
-                cacheReply.value().hasValue()) {
-              folly::io::Cursor cur(cacheReply.value().get_pointer());
+                cacheReply.value().has_value()) {
+              folly::io::Cursor cur(&cacheReply.value().value());
               carbon::CarbonProtocolReader reader(cur);
               ReplyT<Request> reply;
               reply.deserialize(reader);

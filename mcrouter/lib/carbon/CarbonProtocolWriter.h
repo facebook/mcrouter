@@ -16,6 +16,7 @@
 #include <folly/Optional.h>
 #include <folly/io/IOBuf.h>
 #include <folly/small_vector.h>
+#include <thrift/lib/cpp2/FieldRef.h>
 
 #include "mcrouter/lib/carbon/CarbonProtocolCommon.h"
 #include "mcrouter/lib/carbon/CarbonQueueAppender.h"
@@ -264,6 +265,24 @@ class CarbonProtocolWriter {
 
   void writeField(const int16_t id, const folly::Optional<bool>& data) {
     if (data.hasValue()) {
+      writeFieldAlways(id, *data);
+    }
+  }
+
+  template <class T>
+  void writeField(
+      const int16_t id,
+      const apache::thrift::optional_field_ref<const T&> data) {
+    if (data.has_value()) {
+      writeFieldHeader(detail::TypeToField<T>::fieldType, id);
+      writeRaw(*data);
+    }
+  }
+
+  void writeField(
+      const int16_t id,
+      const apache::thrift::optional_field_ref<const bool&> data) {
+    if (data.has_value()) {
       writeFieldAlways(id, *data);
     }
   }

@@ -30,6 +30,8 @@
 #include <mcrouter/lib/carbon/TypeList.h>
 #include <mcrouter/lib/carbon/Variant.h>
 
+#include "mcrouter/lib/network/gen/gen-cpp2/Common_types.h"
+
 namespace facebook {
 namespace memcache {
 
@@ -50,16 +52,19 @@ class McVersionRequest : public carbon::RequestCommon {
   McVersionRequest& operator=(const McVersionRequest&) = default;
   McVersionRequest(McVersionRequest&&) = default;
   McVersionRequest& operator=(McVersionRequest&&) = default;
-  explicit McVersionRequest(folly::StringPiece sp) : key_(sp) {}
-  explicit McVersionRequest(folly::IOBuf&& carbonKey)
-      : key_(std::move(carbonKey)) {}
+  explicit McVersionRequest(folly::StringPiece sp) {
+    underlyingThriftStruct_.key = sp;
+  }
+  explicit McVersionRequest(folly::IOBuf&& carbonKey) {
+    underlyingThriftStruct_.key = std::move(carbonKey);
+  }
 
   const carbon::Keys<folly::IOBuf>& key() const {
-    return key_;
+    return underlyingThriftStruct_.key;
   }
   carbon::Keys<folly::IOBuf>& key() {
     markBufferAsDirty();
-    return key_;
+    return underlyingThriftStruct_.key;
   }
   uint64_t flags() const {
     return 0;
@@ -79,7 +84,7 @@ class McVersionRequest : public carbon::RequestCommon {
   void visitFields(V&& v) const;
 
  private:
-  carbon::Keys<folly::IOBuf> key_;
+  facebook::memcache::thrift::McVersionRequest underlyingThriftStruct_;
 };
 
 class McVersionReply : public carbon::ReplyCommon {
@@ -95,32 +100,33 @@ class McVersionReply : public carbon::ReplyCommon {
   McVersionReply& operator=(const McVersionReply&) = default;
   McVersionReply(McVersionReply&&) = default;
   McVersionReply& operator=(McVersionReply&&) = default;
-  explicit McVersionReply(carbon::Result carbonResult)
-      : result_(carbonResult) {}
+  explicit McVersionReply(carbon::Result carbonResult) {
+    underlyingThriftStruct_.result = carbonResult;
+  }
 
   carbon::Result result() const {
-    return result_;
+    return underlyingThriftStruct_.result;
   }
   carbon::Result& result() {
-    return result_;
+    return underlyingThriftStruct_.result;
   }
   const folly::IOBuf& value() const {
-    return value_;
+    return underlyingThriftStruct_.value;
   }
   folly::IOBuf& value() {
-    return value_;
+    return underlyingThriftStruct_.value;
   }
   const std::string& message() const {
-    return message_;
+    return underlyingThriftStruct_.message;
   }
   std::string& message() {
-    return message_;
+    return underlyingThriftStruct_.message;
   }
   int16_t appSpecificErrorCode() const {
-    return appSpecificErrorCode_;
+    return underlyingThriftStruct_.appSpecificErrorCode;
   }
   int16_t& appSpecificErrorCode() {
-    return appSpecificErrorCode_;
+    return underlyingThriftStruct_.appSpecificErrorCode;
   }
   uint64_t flags() const {
     return 0;
@@ -140,10 +146,7 @@ class McVersionReply : public carbon::ReplyCommon {
   void visitFields(V&& v) const;
 
  private:
-  folly::IOBuf value_;
-  std::string message_;
-  carbon::Result result_{carbon::Result::UNKNOWN};
-  int16_t appSpecificErrorCode_{0};
+  facebook::memcache::thrift::McVersionReply underlyingThriftStruct_;
 };
 
 class McStatsReply;
@@ -163,16 +166,19 @@ class McStatsRequest : public carbon::RequestCommon {
   McStatsRequest& operator=(const McStatsRequest&) = default;
   McStatsRequest(McStatsRequest&&) = default;
   McStatsRequest& operator=(McStatsRequest&&) = default;
-  explicit McStatsRequest(folly::StringPiece sp) : key_(sp) {}
-  explicit McStatsRequest(folly::IOBuf&& carbonKey)
-      : key_(std::move(carbonKey)) {}
+  explicit McStatsRequest(folly::StringPiece sp) {
+    underlyingThriftStruct_.key = sp;
+  }
+  explicit McStatsRequest(folly::IOBuf&& carbonKey) {
+    underlyingThriftStruct_.key = std::move(carbonKey);
+  }
 
   const carbon::Keys<folly::IOBuf>& key() const {
-    return key_;
+    return underlyingThriftStruct_.key;
   }
   carbon::Keys<folly::IOBuf>& key() {
     markBufferAsDirty();
-    return key_;
+    return underlyingThriftStruct_.key;
   }
   uint64_t flags() const {
     return 0;
@@ -192,7 +198,7 @@ class McStatsRequest : public carbon::RequestCommon {
   void visitFields(V&& v) const;
 
  private:
-  carbon::Keys<folly::IOBuf> key_;
+  facebook::memcache::thrift::McStatsRequest underlyingThriftStruct_;
 };
 
 class McStatsReply : public carbon::ReplyCommon {
@@ -208,31 +214,33 @@ class McStatsReply : public carbon::ReplyCommon {
   McStatsReply& operator=(const McStatsReply&) = default;
   McStatsReply(McStatsReply&&) = default;
   McStatsReply& operator=(McStatsReply&&) = default;
-  explicit McStatsReply(carbon::Result carbonResult) : result_(carbonResult) {}
+  explicit McStatsReply(carbon::Result carbonResult) {
+    underlyingThriftStruct_.result = carbonResult;
+  }
 
   carbon::Result result() const {
-    return result_;
+    return underlyingThriftStruct_.result;
   }
   carbon::Result& result() {
-    return result_;
+    return underlyingThriftStruct_.result;
   }
   const std::string& message() const {
-    return message_;
+    return underlyingThriftStruct_.message;
   }
   std::string& message() {
-    return message_;
+    return underlyingThriftStruct_.message;
   }
   const std::vector<std::string>& stats() const {
-    return stats_;
+    return underlyingThriftStruct_.stats;
   }
   std::vector<std::string>& stats() {
-    return stats_;
+    return underlyingThriftStruct_.stats;
   }
   int16_t appSpecificErrorCode() const {
-    return appSpecificErrorCode_;
+    return underlyingThriftStruct_.appSpecificErrorCode;
   }
   int16_t& appSpecificErrorCode() {
-    return appSpecificErrorCode_;
+    return underlyingThriftStruct_.appSpecificErrorCode;
   }
   uint64_t flags() const {
     return 0;
@@ -252,10 +260,7 @@ class McStatsReply : public carbon::ReplyCommon {
   void visitFields(V&& v) const;
 
  private:
-  std::string message_;
-  std::vector<std::string> stats_;
-  carbon::Result result_{carbon::Result::UNKNOWN};
-  int16_t appSpecificErrorCode_{0};
+  facebook::memcache::thrift::McStatsReply underlyingThriftStruct_;
 };
 
 class McShutdownReply;
@@ -275,16 +280,19 @@ class McShutdownRequest : public carbon::RequestCommon {
   McShutdownRequest& operator=(const McShutdownRequest&) = default;
   McShutdownRequest(McShutdownRequest&&) = default;
   McShutdownRequest& operator=(McShutdownRequest&&) = default;
-  explicit McShutdownRequest(folly::StringPiece sp) : key_(sp) {}
-  explicit McShutdownRequest(folly::IOBuf&& carbonKey)
-      : key_(std::move(carbonKey)) {}
+  explicit McShutdownRequest(folly::StringPiece sp) {
+    underlyingThriftStruct_.key = sp;
+  }
+  explicit McShutdownRequest(folly::IOBuf&& carbonKey) {
+    underlyingThriftStruct_.key = std::move(carbonKey);
+  }
 
   const carbon::Keys<folly::IOBuf>& key() const {
-    return key_;
+    return underlyingThriftStruct_.key;
   }
   carbon::Keys<folly::IOBuf>& key() {
     markBufferAsDirty();
-    return key_;
+    return underlyingThriftStruct_.key;
   }
   uint64_t flags() const {
     return 0;
@@ -304,7 +312,7 @@ class McShutdownRequest : public carbon::RequestCommon {
   void visitFields(V&& v) const;
 
  private:
-  carbon::Keys<folly::IOBuf> key_;
+  facebook::memcache::thrift::McShutdownRequest underlyingThriftStruct_;
 };
 
 class McShutdownReply : public carbon::ReplyCommon {
@@ -320,26 +328,27 @@ class McShutdownReply : public carbon::ReplyCommon {
   McShutdownReply& operator=(const McShutdownReply&) = default;
   McShutdownReply(McShutdownReply&&) = default;
   McShutdownReply& operator=(McShutdownReply&&) = default;
-  explicit McShutdownReply(carbon::Result carbonResult)
-      : result_(carbonResult) {}
+  explicit McShutdownReply(carbon::Result carbonResult) {
+    underlyingThriftStruct_.result = carbonResult;
+  }
 
   carbon::Result result() const {
-    return result_;
+    return underlyingThriftStruct_.result;
   }
   carbon::Result& result() {
-    return result_;
+    return underlyingThriftStruct_.result;
   }
   const std::string& message() const {
-    return message_;
+    return underlyingThriftStruct_.message;
   }
   std::string& message() {
-    return message_;
+    return underlyingThriftStruct_.message;
   }
   int16_t appSpecificErrorCode() const {
-    return appSpecificErrorCode_;
+    return underlyingThriftStruct_.appSpecificErrorCode;
   }
   int16_t& appSpecificErrorCode() {
-    return appSpecificErrorCode_;
+    return underlyingThriftStruct_.appSpecificErrorCode;
   }
   uint64_t flags() const {
     return 0;
@@ -359,9 +368,7 @@ class McShutdownReply : public carbon::ReplyCommon {
   void visitFields(V&& v) const;
 
  private:
-  std::string message_;
-  carbon::Result result_{carbon::Result::UNKNOWN};
-  int16_t appSpecificErrorCode_{0};
+  facebook::memcache::thrift::McShutdownReply underlyingThriftStruct_;
 };
 
 class McQuitReply;
@@ -381,16 +388,19 @@ class McQuitRequest : public carbon::RequestCommon {
   McQuitRequest& operator=(const McQuitRequest&) = default;
   McQuitRequest(McQuitRequest&&) = default;
   McQuitRequest& operator=(McQuitRequest&&) = default;
-  explicit McQuitRequest(folly::StringPiece sp) : key_(sp) {}
-  explicit McQuitRequest(folly::IOBuf&& carbonKey)
-      : key_(std::move(carbonKey)) {}
+  explicit McQuitRequest(folly::StringPiece sp) {
+    underlyingThriftStruct_.key = sp;
+  }
+  explicit McQuitRequest(folly::IOBuf&& carbonKey) {
+    underlyingThriftStruct_.key = std::move(carbonKey);
+  }
 
   const carbon::Keys<folly::IOBuf>& key() const {
-    return key_;
+    return underlyingThriftStruct_.key;
   }
   carbon::Keys<folly::IOBuf>& key() {
     markBufferAsDirty();
-    return key_;
+    return underlyingThriftStruct_.key;
   }
   uint64_t flags() const {
     return 0;
@@ -410,7 +420,7 @@ class McQuitRequest : public carbon::RequestCommon {
   void visitFields(V&& v) const;
 
  private:
-  carbon::Keys<folly::IOBuf> key_;
+  facebook::memcache::thrift::McQuitRequest underlyingThriftStruct_;
 };
 
 class McQuitReply : public carbon::ReplyCommon {
@@ -426,25 +436,27 @@ class McQuitReply : public carbon::ReplyCommon {
   McQuitReply& operator=(const McQuitReply&) = default;
   McQuitReply(McQuitReply&&) = default;
   McQuitReply& operator=(McQuitReply&&) = default;
-  explicit McQuitReply(carbon::Result carbonResult) : result_(carbonResult) {}
+  explicit McQuitReply(carbon::Result carbonResult) {
+    underlyingThriftStruct_.result = carbonResult;
+  }
 
   carbon::Result result() const {
-    return result_;
+    return underlyingThriftStruct_.result;
   }
   carbon::Result& result() {
-    return result_;
+    return underlyingThriftStruct_.result;
   }
   const std::string& message() const {
-    return message_;
+    return underlyingThriftStruct_.message;
   }
   std::string& message() {
-    return message_;
+    return underlyingThriftStruct_.message;
   }
   int16_t appSpecificErrorCode() const {
-    return appSpecificErrorCode_;
+    return underlyingThriftStruct_.appSpecificErrorCode;
   }
   int16_t& appSpecificErrorCode() {
-    return appSpecificErrorCode_;
+    return underlyingThriftStruct_.appSpecificErrorCode;
   }
   uint64_t flags() const {
     return 0;
@@ -464,9 +476,7 @@ class McQuitReply : public carbon::ReplyCommon {
   void visitFields(V&& v) const;
 
  private:
-  std::string message_;
-  carbon::Result result_{carbon::Result::UNKNOWN};
-  int16_t appSpecificErrorCode_{0};
+  facebook::memcache::thrift::McQuitReply underlyingThriftStruct_;
 };
 
 class McExecReply;
@@ -486,16 +496,19 @@ class McExecRequest : public carbon::RequestCommon {
   McExecRequest& operator=(const McExecRequest&) = default;
   McExecRequest(McExecRequest&&) = default;
   McExecRequest& operator=(McExecRequest&&) = default;
-  explicit McExecRequest(folly::StringPiece sp) : key_(sp) {}
-  explicit McExecRequest(folly::IOBuf&& carbonKey)
-      : key_(std::move(carbonKey)) {}
+  explicit McExecRequest(folly::StringPiece sp) {
+    underlyingThriftStruct_.key = sp;
+  }
+  explicit McExecRequest(folly::IOBuf&& carbonKey) {
+    underlyingThriftStruct_.key = std::move(carbonKey);
+  }
 
   const carbon::Keys<folly::IOBuf>& key() const {
-    return key_;
+    return underlyingThriftStruct_.key;
   }
   carbon::Keys<folly::IOBuf>& key() {
     markBufferAsDirty();
-    return key_;
+    return underlyingThriftStruct_.key;
   }
   uint64_t flags() const {
     return 0;
@@ -515,7 +528,7 @@ class McExecRequest : public carbon::RequestCommon {
   void visitFields(V&& v) const;
 
  private:
-  carbon::Keys<folly::IOBuf> key_;
+  facebook::memcache::thrift::McExecRequest underlyingThriftStruct_;
 };
 
 class McExecReply : public carbon::ReplyCommon {
@@ -531,31 +544,33 @@ class McExecReply : public carbon::ReplyCommon {
   McExecReply& operator=(const McExecReply&) = default;
   McExecReply(McExecReply&&) = default;
   McExecReply& operator=(McExecReply&&) = default;
-  explicit McExecReply(carbon::Result carbonResult) : result_(carbonResult) {}
+  explicit McExecReply(carbon::Result carbonResult) {
+    underlyingThriftStruct_.result = carbonResult;
+  }
 
   carbon::Result result() const {
-    return result_;
+    return underlyingThriftStruct_.result;
   }
   carbon::Result& result() {
-    return result_;
+    return underlyingThriftStruct_.result;
   }
   const std::string& response() const {
-    return response_;
+    return underlyingThriftStruct_.response;
   }
   std::string& response() {
-    return response_;
+    return underlyingThriftStruct_.response;
   }
   const std::string& message() const {
-    return message_;
+    return underlyingThriftStruct_.message;
   }
   std::string& message() {
-    return message_;
+    return underlyingThriftStruct_.message;
   }
   int16_t appSpecificErrorCode() const {
-    return appSpecificErrorCode_;
+    return underlyingThriftStruct_.appSpecificErrorCode;
   }
   int16_t& appSpecificErrorCode() {
-    return appSpecificErrorCode_;
+    return underlyingThriftStruct_.appSpecificErrorCode;
   }
   uint64_t flags() const {
     return 0;
@@ -575,10 +590,7 @@ class McExecReply : public carbon::ReplyCommon {
   void visitFields(V&& v) const;
 
  private:
-  std::string response_;
-  std::string message_;
-  carbon::Result result_{carbon::Result::UNKNOWN};
-  int16_t appSpecificErrorCode_{0};
+  facebook::memcache::thrift::McExecReply underlyingThriftStruct_;
 };
 
 class GoAwayRequest;
@@ -617,6 +629,7 @@ class GoAwayAcknowledgement : public carbon::RequestCommon {
   void visitFields(V&& v) const;
 
  private:
+  facebook::memcache::thrift::GoAwayAcknowledgement underlyingThriftStruct_;
 };
 
 class GoAwayRequest : public carbon::ReplyCommon {
@@ -632,19 +645,21 @@ class GoAwayRequest : public carbon::ReplyCommon {
   GoAwayRequest& operator=(const GoAwayRequest&) = default;
   GoAwayRequest(GoAwayRequest&&) = default;
   GoAwayRequest& operator=(GoAwayRequest&&) = default;
-  explicit GoAwayRequest(carbon::Result carbonResult) : result_(carbonResult) {}
+  explicit GoAwayRequest(carbon::Result carbonResult) {
+    underlyingThriftStruct_.result = carbonResult;
+  }
 
   carbon::Result result() const {
-    return result_;
+    return underlyingThriftStruct_.result;
   }
   carbon::Result& result() {
-    return result_;
+    return underlyingThriftStruct_.result;
   }
   const std::string& reason() const {
-    return reason_;
+    return underlyingThriftStruct_.reason;
   }
   std::string& reason() {
-    return reason_;
+    return underlyingThriftStruct_.reason;
   }
   uint64_t flags() const {
     return 0;
@@ -664,8 +679,7 @@ class GoAwayRequest : public carbon::ReplyCommon {
   void visitFields(V&& v) const;
 
  private:
-  std::string reason_;
-  carbon::Result result_{carbon::Result::UNKNOWN};
+  facebook::memcache::thrift::GoAwayRequest underlyingThriftStruct_;
 };
 } // namespace memcache
 } // namespace facebook

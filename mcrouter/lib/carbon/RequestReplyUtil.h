@@ -11,6 +11,7 @@
 #include <folly/Optional.h>
 #include <folly/Range.h>
 #include <folly/io/IOBuf.h>
+#include <thrift/lib/cpp2/FieldRef.h>
 
 #include "mcrouter/lib/fbi/cpp/TypeList.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
@@ -141,6 +142,15 @@ inline folly::IOBuf* bufPtr(folly::IOBuf& buf) {
 }
 inline const folly::IOBuf* bufPtr(const folly::IOBuf& buf) {
   return &buf;
+}
+
+inline folly::IOBuf* bufPtr(
+    apache::thrift::optional_field_ref<folly::IOBuf&> buf) {
+  return buf.has_value() ? &buf.value() : nullptr;
+}
+inline const folly::IOBuf* bufPtr(
+    apache::thrift::optional_field_ref<const folly::IOBuf&> buf) {
+  return buf.has_value() ? &buf.value() : nullptr;
 }
 
 } // namespace detail

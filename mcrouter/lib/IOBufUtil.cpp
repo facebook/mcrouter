@@ -42,6 +42,11 @@ folly::StringPiece coalesceAndGetRange(folly::Optional<folly::IOBuf>& buf) {
   return buf.hasValue() ? coalesceAndGetRange(*buf) : folly::StringPiece();
 }
 
+folly::StringPiece coalesceAndGetRange(
+    apache::thrift::optional_field_ref<folly::IOBuf&> buf) {
+  return buf.has_value() ? coalesceAndGetRange(*buf) : folly::StringPiece();
+}
+
 void copyInto(char* raw, const folly::IOBuf& buf) {
   auto cur = &buf;
   auto next = cur->next();

@@ -36,7 +36,7 @@ variable cs savedCs_;
 # Action that initializes/performs data parsing for replies.
 action reply_value_data {
   // We must ensure message.value() is nonempty for ASCII get-like replies
-  message.value().emplace();
+  message.value() = folly::IOBuf();
   if (!readValue(buffer, *message.value())) {
     fbreak;
   }
@@ -446,7 +446,7 @@ transient = uint %{
   // We no longer support is_transient with typed requests.
 };
 
-#TODO(stuclar): Remove optional parsing of is_transient (T32090075) 
+#TODO(stuclar): Remove optional parsing of is_transient (T32090075)
 meta = 'META' % { message.result() = carbon::Result::FOUND; };
 mhit = meta ' '+ skip_key ' '+ 'age:' ' '* (age | age_unknown) ';' ' '*
   'exptime:' ' '* exptime ';' ' '* 'from:' ' '* (ip_addr|'unknown') (';' ' '*

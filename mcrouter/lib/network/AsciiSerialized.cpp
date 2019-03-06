@@ -349,7 +349,9 @@ void AsciiSerializedReply::prepareImpl(
           folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
       assert(!iobuf_.hasValue());
       // value was coalesced in coalesceAndGetRange()
-      iobuf_ = std::move(reply.value());
+      if (reply.value().has_value()) {
+        iobuf_ = std::move(reply.value().value());
+      }
       addStrings(valueStr, "\r\n");
     }
   } else if (isErrorResult(reply.result())) {
@@ -383,7 +385,9 @@ void AsciiSerializedReply::prepareImpl(
         folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
     assert(!iobuf_.hasValue());
     // value was coalesced in coalescedAndGetRange()
-    iobuf_ = std::move(reply.value());
+    if (reply.value().has_value()) {
+      iobuf_ = std::move(reply.value().value());
+    }
     addStrings(valueStr, "\r\n");
   } else if (isErrorResult(reply.result())) {
     handleError(
@@ -471,7 +475,9 @@ void AsciiSerializedReply::prepareImpl(
         folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
     assert(!iobuf_.hasValue());
     // value was coalesced in coalescedAndGetRange()
-    iobuf_ = std::move(reply.value());
+    if (reply.value().has_value()) {
+      iobuf_ = std::move(reply.value().value());
+    }
     addStrings(valueStr, "\r\n");
   } else if (reply.result() == carbon::Result::NOTFOUND) {
     const auto len = snprintf(
@@ -485,7 +491,9 @@ void AsciiSerializedReply::prepareImpl(
         "LVALUE ",
         key,
         folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
-    iobuf_ = std::move(reply.value());
+    if (reply.value().has_value()) {
+      iobuf_ = std::move(reply.value().value());
+    }
     addStrings(valueStr, "\r\n");
   } else if (reply.result() == carbon::Result::NOTFOUNDHOT) {
     addString("NOT_FOUND_HOT\r\n");
@@ -533,7 +541,9 @@ void AsciiSerializedReply::prepareImpl(
           folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
       assert(!iobuf_.hasValue());
       // value was coalesced in coalesceAndGetRange()
-      iobuf_ = std::move(reply.value());
+      if (reply.value().has_value()) {
+        iobuf_ = std::move(reply.value().value());
+      }
       addStrings(valueStr, "\r\n");
     }
   } else if (isErrorResult(reply.result())) {
@@ -567,7 +577,9 @@ void AsciiSerializedReply::prepareImpl(
         folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
     assert(!iobuf_.hasValue());
     // value was coalesced in coalescedAndGetRange()
-    iobuf_ = std::move(reply.value());
+    if (reply.value().has_value()) {
+      iobuf_ = std::move(reply.value().value());
+    }
     addStrings(valueStr, "\r\n");
   } else if (isErrorResult(reply.result())) {
     handleError(
@@ -844,5 +856,5 @@ void AsciiSerializedReply::prepareImpl(McShutdownReply&& reply) {
     handleUnexpected(reply.result(), "shutdown");
   }
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook
