@@ -78,6 +78,13 @@ class McGetRequest : public carbon::RequestCommon {
   int32_t exptime() const {
     return 0;
   }
+  const facebook::memcache::thrift::McGetRequest& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McGetRequest& getThriftStruct() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_;
+  }
 
   template <class Writer>
   void serialize(Writer&& writer) const;
@@ -142,6 +149,12 @@ class McGetReply : public carbon::ReplyCommon {
   }
   int32_t exptime() const {
     return 0;
+  }
+  const facebook::memcache::thrift::McGetReply& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McGetReply& getThriftStruct() {
+    return underlyingThriftStruct_;
   }
 
   template <class Writer>
@@ -210,6 +223,14 @@ class McSetRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return underlyingThriftStruct_.value;
   }
+  const facebook::memcache::thrift::McSetRequest& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McSetRequest& getThriftStruct() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_;
+  }
+
   template <class Writer>
   void serialize(Writer&& writer) const;
 
@@ -273,6 +294,12 @@ class McSetReply : public carbon::ReplyCommon {
   }
   int32_t exptime() const {
     return 0;
+  }
+  const facebook::memcache::thrift::McSetReply& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McSetReply& getThriftStruct() {
+    return underlyingThriftStruct_;
   }
 
   template <class Writer>
@@ -341,6 +368,14 @@ class McDeleteRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return underlyingThriftStruct_.value;
   }
+  const facebook::memcache::thrift::McDeleteRequest& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McDeleteRequest& getThriftStruct() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_;
+  }
+
   template <class Writer>
   void serialize(Writer&& writer) const;
 
@@ -405,6 +440,12 @@ class McDeleteReply : public carbon::ReplyCommon {
   int32_t exptime() const {
     return 0;
   }
+  const facebook::memcache::thrift::McDeleteReply& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McDeleteReply& getThriftStruct() {
+    return underlyingThriftStruct_;
+  }
 
   template <class Writer>
   void serialize(Writer&& writer) const;
@@ -460,6 +501,13 @@ class McLeaseGetRequest : public carbon::RequestCommon {
   }
   int32_t exptime() const {
     return 0;
+  }
+  const facebook::memcache::thrift::McLeaseGetRequest& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McLeaseGetRequest& getThriftStruct() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_;
   }
 
   template <class Writer>
@@ -531,6 +579,12 @@ class McLeaseGetReply : public carbon::ReplyCommon {
   }
   int32_t exptime() const {
     return 0;
+  }
+  const facebook::memcache::thrift::McLeaseGetReply& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McLeaseGetReply& getThriftStruct() {
+    return underlyingThriftStruct_;
   }
 
   template <class Writer>
@@ -606,6 +660,14 @@ class McLeaseSetRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return underlyingThriftStruct_.leaseToken;
   }
+  const facebook::memcache::thrift::McLeaseSetRequest& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McLeaseSetRequest& getThriftStruct() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_;
+  }
+
   template <class Writer>
   void serialize(Writer&& writer) const;
 
@@ -660,6 +722,12 @@ class McLeaseSetReply : public carbon::ReplyCommon {
   }
   int32_t exptime() const {
     return 0;
+  }
+  const facebook::memcache::thrift::McLeaseSetReply& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McLeaseSetReply& getThriftStruct() {
+    return underlyingThriftStruct_;
   }
 
   template <class Writer>
@@ -728,6 +796,14 @@ class McAddRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return underlyingThriftStruct_.value;
   }
+  const facebook::memcache::thrift::McAddRequest& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McAddRequest& getThriftStruct() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_;
+  }
+
   template <class Writer>
   void serialize(Writer&& writer) const;
 
@@ -782,6 +858,12 @@ class McAddReply : public carbon::ReplyCommon {
   }
   int32_t exptime() const {
     return 0;
+  }
+  const facebook::memcache::thrift::McAddReply& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McAddReply& getThriftStruct() {
+    return underlyingThriftStruct_;
   }
 
   template <class Writer>
@@ -850,6 +932,14 @@ class McReplaceRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return underlyingThriftStruct_.value;
   }
+  const facebook::memcache::thrift::McReplaceRequest& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McReplaceRequest& getThriftStruct() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_;
+  }
+
   template <class Writer>
   void serialize(Writer&& writer) const;
 
@@ -905,6 +995,12 @@ class McReplaceReply : public carbon::ReplyCommon {
   int32_t exptime() const {
     return 0;
   }
+  const facebook::memcache::thrift::McReplaceReply& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McReplaceReply& getThriftStruct() {
+    return underlyingThriftStruct_;
+  }
 
   template <class Writer>
   void serialize(Writer&& writer) const;
@@ -956,6 +1052,13 @@ class McGetsRequest : public carbon::RequestCommon {
   }
   int32_t exptime() const {
     return 0;
+  }
+  const facebook::memcache::thrift::McGetsRequest& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McGetsRequest& getThriftStruct() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_;
   }
 
   template <class Writer>
@@ -1027,6 +1130,12 @@ class McGetsReply : public carbon::ReplyCommon {
   }
   int32_t exptime() const {
     return 0;
+  }
+  const facebook::memcache::thrift::McGetsReply& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McGetsReply& getThriftStruct() {
+    return underlyingThriftStruct_;
   }
 
   template <class Writer>
@@ -1102,6 +1211,14 @@ class McCasRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return underlyingThriftStruct_.casToken;
   }
+  const facebook::memcache::thrift::McCasRequest& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McCasRequest& getThriftStruct() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_;
+  }
+
   template <class Writer>
   void serialize(Writer&& writer) const;
 
@@ -1156,6 +1273,12 @@ class McCasReply : public carbon::ReplyCommon {
   }
   int32_t exptime() const {
     return 0;
+  }
+  const facebook::memcache::thrift::McCasReply& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McCasReply& getThriftStruct() {
+    return underlyingThriftStruct_;
   }
 
   template <class Writer>
@@ -1215,6 +1338,13 @@ class McIncrRequest : public carbon::RequestCommon {
   }
   int32_t exptime() const {
     return 0;
+  }
+  const facebook::memcache::thrift::McIncrRequest& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McIncrRequest& getThriftStruct() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_;
   }
 
   template <class Writer>
@@ -1278,6 +1408,12 @@ class McIncrReply : public carbon::ReplyCommon {
   int32_t exptime() const {
     return 0;
   }
+  const facebook::memcache::thrift::McIncrReply& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McIncrReply& getThriftStruct() {
+    return underlyingThriftStruct_;
+  }
 
   template <class Writer>
   void serialize(Writer&& writer) const;
@@ -1336,6 +1472,13 @@ class McDecrRequest : public carbon::RequestCommon {
   }
   int32_t exptime() const {
     return 0;
+  }
+  const facebook::memcache::thrift::McDecrRequest& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McDecrRequest& getThriftStruct() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_;
   }
 
   template <class Writer>
@@ -1399,6 +1542,12 @@ class McDecrReply : public carbon::ReplyCommon {
   int32_t exptime() const {
     return 0;
   }
+  const facebook::memcache::thrift::McDecrReply& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McDecrReply& getThriftStruct() {
+    return underlyingThriftStruct_;
+  }
 
   template <class Writer>
   void serialize(Writer&& writer) const;
@@ -1450,6 +1599,13 @@ class McMetagetRequest : public carbon::RequestCommon {
   }
   int32_t exptime() const {
     return 0;
+  }
+  const facebook::memcache::thrift::McMetagetRequest& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McMetagetRequest& getThriftStruct() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_;
   }
 
   template <class Writer>
@@ -1528,6 +1684,12 @@ class McMetagetReply : public carbon::ReplyCommon {
   uint64_t flags() const {
     return 0;
   }
+  const facebook::memcache::thrift::McMetagetReply& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McMetagetReply& getThriftStruct() {
+    return underlyingThriftStruct_;
+  }
 
   template <class Writer>
   void serialize(Writer&& writer) const;
@@ -1595,6 +1757,14 @@ class McAppendRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return underlyingThriftStruct_.value;
   }
+  const facebook::memcache::thrift::McAppendRequest& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McAppendRequest& getThriftStruct() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_;
+  }
+
   template <class Writer>
   void serialize(Writer&& writer) const;
 
@@ -1649,6 +1819,12 @@ class McAppendReply : public carbon::ReplyCommon {
   }
   int32_t exptime() const {
     return 0;
+  }
+  const facebook::memcache::thrift::McAppendReply& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McAppendReply& getThriftStruct() {
+    return underlyingThriftStruct_;
   }
 
   template <class Writer>
@@ -1717,6 +1893,14 @@ class McPrependRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return underlyingThriftStruct_.value;
   }
+  const facebook::memcache::thrift::McPrependRequest& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McPrependRequest& getThriftStruct() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_;
+  }
+
   template <class Writer>
   void serialize(Writer&& writer) const;
 
@@ -1771,6 +1955,12 @@ class McPrependReply : public carbon::ReplyCommon {
   }
   int32_t exptime() const {
     return 0;
+  }
+  const facebook::memcache::thrift::McPrependReply& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McPrependReply& getThriftStruct() {
+    return underlyingThriftStruct_;
   }
 
   template <class Writer>
@@ -1828,6 +2018,13 @@ class McTouchRequest : public carbon::RequestCommon {
   uint64_t flags() const {
     return 0;
   }
+  const facebook::memcache::thrift::McTouchRequest& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McTouchRequest& getThriftStruct() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_;
+  }
 
   template <class Writer>
   void serialize(Writer&& writer) const;
@@ -1884,6 +2081,12 @@ class McTouchReply : public carbon::ReplyCommon {
   int32_t exptime() const {
     return 0;
   }
+  const facebook::memcache::thrift::McTouchReply& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McTouchReply& getThriftStruct() {
+    return underlyingThriftStruct_;
+  }
 
   template <class Writer>
   void serialize(Writer&& writer) const;
@@ -1935,6 +2138,13 @@ class McFlushReRequest : public carbon::RequestCommon {
   }
   int32_t exptime() const {
     return 0;
+  }
+  const facebook::memcache::thrift::McFlushReRequest& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McFlushReRequest& getThriftStruct() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_;
   }
 
   template <class Writer>
@@ -1991,6 +2201,12 @@ class McFlushReReply : public carbon::ReplyCommon {
   }
   int32_t exptime() const {
     return 0;
+  }
+  const facebook::memcache::thrift::McFlushReReply& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McFlushReReply& getThriftStruct() {
+    return underlyingThriftStruct_;
   }
 
   template <class Writer>
@@ -2051,6 +2267,13 @@ class McFlushAllRequest : public carbon::RequestCommon {
   int32_t exptime() const {
     return 0;
   }
+  const facebook::memcache::thrift::McFlushAllRequest& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McFlushAllRequest& getThriftStruct() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_;
+  }
 
   template <class Writer>
   void serialize(Writer&& writer) const;
@@ -2107,6 +2330,12 @@ class McFlushAllReply : public carbon::ReplyCommon {
   int32_t exptime() const {
     return 0;
   }
+  const facebook::memcache::thrift::McFlushAllReply& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McFlushAllReply& getThriftStruct() {
+    return underlyingThriftStruct_;
+  }
 
   template <class Writer>
   void serialize(Writer&& writer) const;
@@ -2162,6 +2391,13 @@ class McGatRequest : public carbon::RequestCommon {
   }
   uint64_t flags() const {
     return 0;
+  }
+  const facebook::memcache::thrift::McGatRequest& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McGatRequest& getThriftStruct() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_;
   }
 
   template <class Writer>
@@ -2228,6 +2464,12 @@ class McGatReply : public carbon::ReplyCommon {
   int32_t exptime() const {
     return 0;
   }
+  const facebook::memcache::thrift::McGatReply& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McGatReply& getThriftStruct() {
+    return underlyingThriftStruct_;
+  }
 
   template <class Writer>
   void serialize(Writer&& writer) const;
@@ -2283,6 +2525,13 @@ class McGatsRequest : public carbon::RequestCommon {
   }
   uint64_t flags() const {
     return 0;
+  }
+  const facebook::memcache::thrift::McGatsRequest& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McGatsRequest& getThriftStruct() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_;
   }
 
   template <class Writer>
@@ -2354,6 +2603,12 @@ class McGatsReply : public carbon::ReplyCommon {
   }
   int32_t exptime() const {
     return 0;
+  }
+  const facebook::memcache::thrift::McGatsReply& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  facebook::memcache::thrift::McGatsReply& getThriftStruct() {
+    return underlyingThriftStruct_;
   }
 
   template <class Writer>
