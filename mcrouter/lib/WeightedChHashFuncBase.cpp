@@ -6,6 +6,8 @@
  */
 #include "mcrouter/lib/WeightedChHashFuncBase.h"
 
+#include <glog/logging.h>
+
 #include <folly/dynamic.h>
 #include "mcrouter/lib/fbi/cpp/util.h"
 
