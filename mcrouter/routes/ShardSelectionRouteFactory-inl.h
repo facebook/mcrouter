@@ -7,6 +7,7 @@
 #include <folly/Range.h>
 #include <folly/dynamic.h>
 
+#include "mcrouter/lib/DynamicUtil.h"
 #include "mcrouter/lib/SelectionRouteFactory.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/routes/ErrorRoute.h"
@@ -228,7 +229,7 @@ void buildChildrenLoadBalancerRoutes(
 }
 
 template <class RouterInfo, class MapType>
-void buildChildrenCustomRoutes(
+void buildChildrenCustomRoutesFromMap(
     RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
     const folly::dynamic& json,
     const ShardDestinationsMap<RouterInfo>& shardMap,
@@ -240,6 +241,23 @@ void buildChildrenCustomRoutes(
     auto childrenRouteHandles = std::move(item.second);
     destinations.push_back(
         createCustomRh(factory, json, std::move(childrenRouteHandles)));
+    shardToDestinationIndexMap[shardId] = destinations.size() - 1;
+  });
+}
+
+template <class RouterInfo, class MapType>
+void buildChildrenCustomJsonmRoutes(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json,
+    const ShardDestinationsMap<RouterInfo>& shardMap,
+    std::vector<typename RouterInfo::RouteHandlePtr>& destinations,
+    MapType& shardToDestinationIndexMap) {
+  std::for_each(shardMap.begin(), shardMap.end(), [&](auto& item) {
+    auto shardId = item.first;
+    auto childrenList = std::move(item.second);
+    // push children to factory. Factory will use when it sees "%children_list%"
+    factory.pushChildrenList(std::move(childrenList));
+    destinations.push_back(factory.create(json));
     shardToDestinationIndexMap[shardId] = destinations.size() - 1;
   });
 }
@@ -334,10 +352,17 @@ typename RouterInfo::RouteHandlePtr createEagerShardSelectionRoute(
         shardMap,
         destinations,
         shardToDestinationIndexMap);
+  } else if (childrenType == "CustomJsonmRoute") {
+    detail::buildChildrenCustomJsonmRoutes<RouterInfo, MapType>(
+        factory,
+        childrenSettings,
+        shardMap,
+        destinations,
+        shardToDestinationIndexMap);
   } else {
     auto it = childrenFactoryMap.find(childrenType.str());
     if (it != childrenFactoryMap.end()) {
-      detail::buildChildrenCustomRoutes<RouterInfo, MapType>(
+      detail::buildChildrenCustomRoutesFromMap<RouterInfo, MapType>(
           factory,
           childrenSettings,
           shardMap,

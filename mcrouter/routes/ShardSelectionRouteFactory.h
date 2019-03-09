@@ -124,11 +124,18 @@ typename RouterInfo::RouteHandlePtr createShardSelectionRoute(
  * DETAILS:
  *  - "shards" can also be an array of strings of comma-separated shard ids,
  *    as stated in the documentation of createShardSelectionRoute() above.
+ *
  *  - "children_type" the name of route handle that will group the servers that
  *    are responsible for a given shard. Can be: LoadBalancerRoute,
- *    LatestRoute, or one of the names provided in the childrenFactoryMap.
+ *    LatestRoute, CustomJsonmRoute, or one of the names provided in the
+ *    childrenFactoryMap. If CustomJsonmRoute is used, "children_settings"
+ *    will have access to "%children_list%", which expands to the list of
+ *    servers that serve a given shard. Check EagerShardSelectionRouteTest for
+ *    more details.
+ *
  *  - "children_settings" is the properties of the route handle specified
  *    in the "children_type" option.
+ *
  *  - "pools" is an array of pools (or tiers).
  *    - "shards" and "servers" must have the same number of entries, in exactly
  *      the same order (e.g. shards[5] has the shards processed by servers[5]).
