@@ -63,7 +63,7 @@ std::shared_ptr<ProxyDestination> ProxyDestinationMap::emplace(
   {
     std::lock_guard<std::mutex> lck(destinationsLock_);
     auto destIt = destinations_.emplace(key, destination);
-    destination->pdstnKey_ = destIt.first->first;
+    destination->setKey(destIt.first->first);
   }
 
   // Update shared area of ProxyDestinations with same key from different
@@ -106,7 +106,7 @@ void ProxyDestinationMap::removeDestination(ProxyDestination& destination) {
   }
   {
     std::lock_guard<std::mutex> lck(destinationsLock_);
-    destinations_.erase(destination.pdstnKey_);
+    destinations_.erase(destination.key());
   }
 }
 

@@ -127,7 +127,7 @@ void ProxyDestinationBase::onTkoEvent(TkoLogEvent event, carbon::Result result)
 
 void ProxyDestinationBase::handleTko(
     const carbon::Result result,
-    bool is_probe_req) {
+    bool isProbeRequest) {
   if (proxy().router().opts().disable_tko_tracking) {
     return;
   }
@@ -148,7 +148,7 @@ void ProxyDestinationBase::handleTko(
   }
 
   if (tracker_->isTko()) {
-    if (is_probe_req && tracker_->recordSuccess(this)) {
+    if (isProbeRequest && tracker_->recordSuccess(this)) {
       onTkoEvent(TkoLogEvent::UnMarkTko, result);
       stopSendingProbes();
     }
@@ -201,7 +201,7 @@ void ProxyDestinationBase::startSendingProbes() {
             }
             pdstn->markAsActive();
             auto result = pdstn->sendProbe();
-            pdstn->handleTko(result, /* is_probe_req */ true);
+            pdstn->handleTko(result, /* isProbeRequest */ true);
             pdstn->probeInflight_ = false;
           });
         }
@@ -213,6 +213,120 @@ void ProxyDestinationBase::startSendingProbes() {
 void ProxyDestinationBase::stopSendingProbes() {
   stats_.probesSent = 0;
   probeTimer_.reset();
+}
+
+void ProxyDestinationBase::updateConnectionClosedInternalStat() {
+  if (stats().inactiveConnectionClosedTimestampUs != 0) {
+    std::chrono::microseconds timeClosed(
+        nowUs() - stats().inactiveConnectionClosedTimestampUs);
+    proxy().stats().inactiveConnectionClosedIntervalSec().insertSample(
+        std::chrono::duration_cast<std::chrono::seconds>(timeClosed).count());
+
+    // resets inactiveConnectionClosedTimestampUs, as we just want to take
+    // into account connections that were closed due to lack of activity
+    stats().inactiveConnectionClosedTimestampUs = 0;
+  }
+}
+
+void ProxyDestinationBase::setPoolStatsIndex(int32_t index) {
+  proxy().eventBase().runInEventBaseThread([selfPtr = selfPtr(), index]() {
+    auto pdstn = selfPtr.lock();
+    if (!pdstn) {
+      return;
+    }
+    pdstn->stats().poolStatIndex_ = index;
+    if (pdstn->stats().state == State::Up) {
+      if (auto* poolStats = pdstn->proxy().stats().getPoolStats(index)) {
+        poolStats->updateConnections(1);
+      }
+    }
+  });
+}
+
+void ProxyDestinationBase::updatePoolStatConnections(bool connected) {
+  if (auto poolStats = proxy().stats().getPoolStats(stats().poolStatIndex_)) {
+    poolStats->updateConnections(connected ? 1 : -1);
+  }
+}
+
+void ProxyDestinationBase::onTransitionToState(State st) {
+  onTransitionImpl(st, true /* to */);
+}
+
+void ProxyDestinationBase::onTransitionFromState(State st) {
+  onTransitionImpl(st, false /* to */);
+}
+
+void ProxyDestinationBase::onTransitionImpl(State st, bool to) {
+  const int64_t delta = to ? 1 : -1;
+  const bool ssl = accessPoint()->useSsl();
+
+  switch (st) {
+    case ProxyDestinationBase::State::New: {
+      proxy().stats().increment(num_servers_new_stat, delta);
+      if (ssl) {
+        proxy().stats().increment(num_ssl_servers_new_stat, delta);
+      }
+      break;
+    }
+    case ProxyDestinationBase::State::Up: {
+      proxy().stats().increment(num_servers_up_stat, delta);
+      if (ssl) {
+        proxy().stats().increment(num_ssl_servers_up_stat, delta);
+      }
+      break;
+    }
+    case ProxyDestinationBase::State::Closed: {
+      proxy().stats().increment(num_servers_closed_stat, delta);
+      if (ssl) {
+        proxy().stats().increment(num_ssl_servers_closed_stat, delta);
+      }
+      break;
+    }
+    case ProxyDestinationBase::State::Down: {
+      proxy().stats().increment(num_servers_down_stat, delta);
+      if (ssl) {
+        proxy().stats().increment(num_ssl_servers_down_stat, delta);
+      }
+      break;
+    }
+    case ProxyDestinationBase::State::NumStates: {
+      CHECK(false);
+      break;
+    }
+  }
+}
+
+void ProxyDestinationBase::setState(State newState) {
+  if (stats().state == newState) {
+    return;
+  }
+
+  auto logUtil = [this](const char* s) {
+    VLOG(3) << "server " << key_ << " " << s << " ("
+            << proxy().stats().getValue(num_servers_up_stat) << " of "
+            << proxy().stats().getValue(num_servers_stat) << ")";
+  };
+
+  onTransitionFromState(stats().state);
+  onTransitionToState(newState);
+  stats().state = newState;
+
+  switch (stats().state) {
+    case State::Up:
+      logUtil("up");
+      break;
+    case State::Closed:
+      logUtil("closed");
+      break;
+    case State::Down:
+      logUtil("down");
+      break;
+    case State::New:
+    case State::NumStates:
+      assert(false);
+      break;
+  }
 }
 
 } // namespace mcrouter

@@ -60,9 +60,6 @@ class ProxyDestination : public ProxyDestinationBase {
       std::chrono::milliseconds timeout,
       RpcStatsContext& rpcStatsContext);
 
-  // Set poolStatIndex_
-  void setPoolStatsIndex(int32_t index);
-
   void resetInactive();
 
   size_t getPendingRequestCount() const;
@@ -90,9 +87,6 @@ class ProxyDestination : public ProxyDestinationBase {
   // while config and stats threads may be accessing it
   mutable folly::SpinLock clientLock_;
 
-  // The string is stored in ProxyDestinationMap::destinations_
-  folly::StringPiece pdstnKey_; ///< consists of ap, server_timeout
-
   // Retransmits control information
   uint64_t lastRetransCycles_{0}; // Cycles when restransmits were last fetched
   uint64_t rxmitsToCloseConnection_{0};
@@ -106,24 +100,6 @@ class ProxyDestination : public ProxyDestinationBase {
       uint64_t qosPath,
       folly::StringPiece routerInfoName);
 
-  void setState(State st);
-
-  /**
-   * If the connection was previously closed due to lack of activity,
-   * log for how long it was closed.
-   */
-  void updateConnectionClosedInternalStat();
-
-  // update per pool connections
-  void updatePoolStatConnections(bool connected);
-
-  // Process tko, stats and duration timer.
-  void onReply(
-      const carbon::Result result,
-      DestinationRequestCtx& destreqCtx,
-      const RpcStatsContext& rpcStatsContext,
-      bool isRequestBufferDirty);
-
   AsyncMcClient& getAsyncMcClient();
   void initializeAsyncMcClient();
 
@@ -135,12 +111,15 @@ class ProxyDestination : public ProxyDestinationBase {
       uint64_t qosPath,
       folly::StringPiece routerInfoName);
 
+  // Process tko, stats and duration timer.
+  void onReply(
+      const carbon::Result result,
+      DestinationRequestCtx& destreqCtx,
+      const RpcStatsContext& rpcStatsContext,
+      bool isRequestBufferDirty);
+
   void handleRxmittingConnection(const carbon::Result result, uint64_t latency);
   bool latencyAboveThreshold(uint64_t latency);
-
-  void onTransitionToState(State state);
-  void onTransitionFromState(State state);
-  void onTransitionImpl(State state, bool to);
 
   void* stateList_{nullptr};
   folly::IntrusiveListHook stateListHook_;

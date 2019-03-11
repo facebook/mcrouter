@@ -22,6 +22,7 @@ namespace facebook {
 namespace memcache {
 
 struct AccessPoint;
+struct RpcStatsContext;
 
 namespace mcrouter {
 
@@ -99,11 +100,31 @@ class ProxyDestinationBase {
       std::chrono::milliseconds connectTimeout,
       std::chrono::milliseconds writeTimeout);
 
+  /**
+   * If the connection was previously closed due to lack of activity,
+   * log for how long it was closed.
+   */
+  void updateConnectionClosedInternalStat();
+
   std::shared_ptr<TkoTracker> tracker() const {
     return tracker_;
   }
   void setTracker(std::shared_ptr<TkoTracker> tracker) {
     tracker_ = std::move(tracker);
+  }
+
+  void setPoolStatsIndex(int32_t index);
+  void updatePoolStatConnections(bool connected);
+
+  /**
+   * Sets the key for this proxy destination. This proxy destination will only
+   * store the StringPiece, so the string has to be kept alive by the caller.
+   */
+  void setKey(folly::StringPiece key) {
+    key_ = key;
+  }
+  folly::StringPiece key() const {
+    return key_;
   }
 
  protected:
@@ -114,6 +135,15 @@ class ProxyDestinationBase {
   virtual std::weak_ptr<ProxyDestinationBase> selfPtr() = 0;
   virtual void markAsActive() = 0;
 
+  void setState(State st);
+
+  void handleTko(const carbon::Result result, bool isProbeRequest);
+  void onTransitionToState(State state);
+  void onTransitionFromState(State state);
+
+  Stats& stats() {
+    return stats_;
+  }
   std::chrono::milliseconds shortestConnectTimeout() const {
     return shortestConnectTimeout_;
   }
@@ -131,11 +161,6 @@ class ProxyDestinationBase {
   }
   bool probeInflight() const {
     return probeInflight_;
-  }
-
-  void handleTko(const carbon::Result result, bool is_probe_req);
-  Stats& stats() {
-    return stats_;
   }
 
  private:
@@ -157,11 +182,16 @@ class ProxyDestinationBase {
   int probeDelayNextMs{0};
   bool probeInflight_{false};
 
+  // The string is stored in ProxyDestinationMap::destinations_
+  folly::StringPiece key_; ///< consists of AccessPoint, and timeout
+
   void onTkoEvent(TkoLogEvent event, carbon::Result result) const;
 
   void startSendingProbes();
   void stopSendingProbes();
   void scheduleNextProbe();
+
+  void onTransitionImpl(State state, bool to);
 };
 
 } // namespace mcrouter

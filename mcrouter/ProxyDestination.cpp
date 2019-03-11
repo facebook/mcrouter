@@ -135,7 +135,7 @@ void ProxyDestination::onReply(
     DestinationRequestCtx& destreqCtx,
     const RpcStatsContext& rpcStatsContext,
     bool isRequestBufferDirty) {
-  handleTko(result, /* is_probe_req */ false);
+  handleTko(result, /* isProbeRequest */ false);
 
   if (!stats().results) {
     stats().results = std::make_unique<std::array<
@@ -238,27 +238,6 @@ void ProxyDestination::resetInactive() {
     }
     client->closeNow();
     stats().inactiveConnectionClosedTimestampUs = nowUs();
-  }
-}
-
-void ProxyDestination::setPoolStatsIndex(int32_t index) {
-  proxy().eventBase().runInEventBaseThread([selfPtr = selfPtr_, index]() {
-    auto pdstn = selfPtr.lock();
-    if (!pdstn) {
-      return;
-    }
-    pdstn->stats().poolStatIndex_ = index;
-    if (pdstn->stats().state == State::Up) {
-      if (auto* poolStats = pdstn->proxy().stats().getPoolStats(index)) {
-        poolStats->updateConnections(1);
-      }
-    }
-  });
-}
-
-void ProxyDestination::updatePoolStatConnections(bool connected) {
-  if (auto poolStats = proxy().stats().getPoolStats(stats().poolStatIndex_)) {
-    poolStats->updateConnections(connected ? 1 : -1);
   }
 }
 
@@ -413,7 +392,7 @@ void ProxyDestination::initializeAsyncMcClient() {
               reason == AsyncMcClient::ConnectionDownReason::CONNECT_TIMEOUT
                   ? carbon::Result::CONNECT_TIMEOUT
                   : carbon::Result::CONNECT_ERROR,
-              /* is_probe_req= */ false);
+              /* isProbeRequest= */ false);
         }
 
         pdstn->proxy().stats().increment(
@@ -423,19 +402,6 @@ void ProxyDestination::initializeAsyncMcClient() {
   if (opts.target_max_inflight_requests > 0) {
     client_->setThrottle(
         opts.target_max_inflight_requests, opts.target_max_pending_requests);
-  }
-}
-
-void ProxyDestination::updateConnectionClosedInternalStat() {
-  if (stats().inactiveConnectionClosedTimestampUs != 0) {
-    std::chrono::microseconds timeClosed(
-        nowUs() - stats().inactiveConnectionClosedTimestampUs);
-    proxy().stats().inactiveConnectionClosedIntervalSec().insertSample(
-        std::chrono::duration_cast<std::chrono::seconds>(timeClosed).count());
-
-    // resets inactiveConnectionClosedTimestampUs, as we just want to take
-    // into account connections that were closed due to lack of activity
-    stats().inactiveConnectionClosedTimestampUs = 0;
   }
 }
 
@@ -464,87 +430,6 @@ AsyncMcClient& ProxyDestination::getAsyncMcClient() {
     initializeAsyncMcClient();
   }
   return *client_;
-}
-
-
-void ProxyDestination::setState(State newState) {
-  if (stats().state == newState) {
-    return;
-  }
-
-  auto logUtil = [this](const char* s) {
-    VLOG(3) << "server " << pdstnKey_ << " " << s << " ("
-            << proxy().stats().getValue(num_servers_up_stat) << " of "
-            << proxy().stats().getValue(num_servers_stat) << ")";
-  };
-
-  onTransitionFromState(stats().state);
-  onTransitionToState(newState);
-  stats().state = newState;
-
-  switch (stats().state) {
-    case State::Up:
-      logUtil("up");
-      break;
-    case State::Closed:
-      logUtil("closed");
-      break;
-    case State::Down:
-      logUtil("down");
-      break;
-    case State::New:
-    case State::NumStates:
-      assert(false);
-      break;
-  }
-}
-
-void ProxyDestination::onTransitionToState(State st) {
-  onTransitionImpl(st, true /* to */);
-}
-
-void ProxyDestination::onTransitionFromState(State st) {
-  onTransitionImpl(st, false /* to */);
-}
-
-void ProxyDestination::onTransitionImpl(State st, bool to) {
-  const int64_t delta = to ? 1 : -1;
-  const bool ssl = accessPoint()->useSsl();
-
-  switch (st) {
-    case ProxyDestination::State::New: {
-      proxy().stats().increment(num_servers_new_stat, delta);
-      if (ssl) {
-        proxy().stats().increment(num_ssl_servers_new_stat, delta);
-      }
-      break;
-    }
-    case ProxyDestination::State::Up: {
-      proxy().stats().increment(num_servers_up_stat, delta);
-      if (ssl) {
-        proxy().stats().increment(num_ssl_servers_up_stat, delta);
-      }
-      break;
-    }
-    case ProxyDestination::State::Closed: {
-      proxy().stats().increment(num_servers_closed_stat, delta);
-      if (ssl) {
-        proxy().stats().increment(num_ssl_servers_closed_stat, delta);
-      }
-      break;
-    }
-    case ProxyDestination::State::Down: {
-      proxy().stats().increment(num_servers_down_stat, delta);
-      if (ssl) {
-        proxy().stats().increment(num_ssl_servers_down_stat, delta);
-      }
-      break;
-    }
-    case ProxyDestination::State::NumStates: {
-      CHECK(false);
-      break;
-    }
-  }
 }
 
 } // namespace mcrouter
