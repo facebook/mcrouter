@@ -14,15 +14,11 @@
 #include <folly/Range.h>
 #include <folly/SpinLock.h>
 
-#include "mcrouter/ExponentialSmoothData.h"
+#include "mcrouter/ProxyDestinationBase.h"
 #include "mcrouter/TkoLog.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/mc/msg.h"
-
-namespace folly {
-class AsyncTimeout;
-} // namespace folly
 
 namespace facebook {
 namespace memcache {
@@ -44,36 +40,8 @@ struct DestinationRequestCtx {
   explicit DestinationRequestCtx(int64_t now) : startTime(now) {}
 };
 
-class ProxyDestination {
+class ProxyDestination : public ProxyDestinationBase {
  public:
-  enum class State {
-    kNew, // never connected
-    kUp, // currently connected
-    kDown, // currently down
-    kClosed, // closed due to inactive
-    kNumStates
-  };
-
-  struct Stats {
-    State state{State::kNew};
-    ExponentialSmoothData<16> avgLatency;
-    std::unique_ptr<
-        std::array<uint64_t, static_cast<size_t>(carbon::Result::NUM_RESULTS)>>
-        results;
-    size_t probesSent{0};
-    double retransPerKByte{0.0};
-    // If poolstats config is present, keep track of most recent
-    // pool with this destination
-    int32_t poolStatIndex_{-1};
-
-    // last time this connection was closed due to inactivity
-    uint64_t inactiveConnectionClosedTimestampUs{0};
-  };
-
-  ProxyBase& proxy; // for convenience
-
-  std::shared_ptr<TkoTracker> tracker;
-
   ~ProxyDestination();
 
   /**
@@ -92,20 +60,6 @@ class ProxyDestination {
       std::chrono::milliseconds timeout,
       RpcStatsContext& rpcStatsContext);
 
-  // returns true if okay to send req using this client
-  bool maySend(carbon::Result& tkoReason) const;
-
-  /**
-   * @return stats for ProxyDestination
-   */
-  const Stats& stats() const {
-    return stats_;
-  }
-
-  const std::shared_ptr<const AccessPoint>& accessPoint() const {
-    return accessPoint_;
-  }
-
   // Set poolStatIndex_
   void setPoolStatsIndex(int32_t index);
 
@@ -114,42 +68,35 @@ class ProxyDestination {
   size_t getPendingRequestCount() const;
   size_t getInflightRequestCount() const;
 
-  void updateShortestTimeout(
-      std::chrono::milliseconds connectTimeout,
-      std::chrono::milliseconds writeTimeout);
-
   /**
    * Gracefully closes the connection, allowing it to properly drain if
    * possible.
    */
   void closeGracefully();
 
+ protected:
+  void updateTransportTimeoutsIfShorter(
+      std::chrono::milliseconds shortestConnectTimeout,
+      std::chrono::milliseconds shortestWriteTimeout) override final;
+  carbon::Result sendProbe() override final;
+  std::weak_ptr<ProxyDestinationBase> selfPtr() override final {
+    return selfPtr_;
+  }
+  void markAsActive() override final;
+
  private:
   std::unique_ptr<AsyncMcClient> client_;
-  const std::shared_ptr<const AccessPoint> accessPoint_;
   // Ensure proxy thread doesn't reset AsyncMcClient
   // while config and stats threads may be accessing it
   mutable folly::SpinLock clientLock_;
 
-  // Shortest timeout among all DestinationRoutes using this destination
-  std::chrono::milliseconds shortestConnectTimeout_{0};
-  std::chrono::milliseconds shortestWriteTimeout_{0};
-  const uint64_t qosClass_{0};
-  const uint64_t qosPath_{0};
-  const folly::StringPiece routerInfoName_;
-
-  Stats stats_;
-
-  uint64_t lastRetransCycles_{0}; // Cycles when restransmits were last fetched
-  uint64_t rxmitsToCloseConnection_{0};
-  uint64_t lastConnCloseCycles_{0}; // Cycles when connection was last closed
-
-  int probe_delay_next_ms{0};
-  bool probeInflight_{false};
   // The string is stored in ProxyDestinationMap::destinations_
   folly::StringPiece pdstnKey_; ///< consists of ap, server_timeout
 
-  std::unique_ptr<folly::AsyncTimeout> probeTimer_;
+  // Retransmits control information
+  uint64_t lastRetransCycles_{0}; // Cycles when restransmits were last fetched
+  uint64_t rxmitsToCloseConnection_{0};
+  uint64_t lastConnCloseCycles_{0}; // Cycles when connection was last closed
 
   static std::shared_ptr<ProxyDestination> create(
       ProxyBase& proxy,
@@ -170,13 +117,6 @@ class ProxyDestination {
   // update per pool connections
   void updatePoolStatConnections(bool connected);
 
-  void startSendingProbes();
-  void stopSendingProbes();
-
-  void scheduleNextProbe();
-
-  void handleTko(const carbon::Result result, bool is_probe_req);
-
   // Process tko, stats and duration timer.
   void onReply(
       const carbon::Result result,
@@ -195,10 +135,7 @@ class ProxyDestination {
       uint64_t qosPath,
       folly::StringPiece routerInfoName);
 
-  void onTkoEvent(TkoLogEvent event, carbon::Result result) const;
-
   void handleRxmittingConnection(const carbon::Result result, uint64_t latency);
-
   bool latencyAboveThreshold(uint64_t latency);
 
   void onTransitionToState(State state);

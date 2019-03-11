@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -25,7 +24,7 @@ namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
-class ProxyDestination;
+class ProxyDestinationBase;
 class TkoTrackerMap;
 
 /**
@@ -108,7 +107,7 @@ class TkoTracker {
    *         is responsible for sending probes and calling recordSuccess()
    *         once a probe is successful.
    */
-  bool recordSoftFailure(ProxyDestination* pdstn, carbon::Result result);
+  bool recordSoftFailure(ProxyDestinationBase* pdstn, carbon::Result result);
 
   /**
    * Can be called from any proxy thread.
@@ -125,7 +124,7 @@ class TkoTracker {
    *         once a probe is successful. Note, transition from soft to hard
    *         TKO does not result in a change of responsibility.
    */
-  bool recordHardFailure(ProxyDestination* pdstn, carbon::Result result);
+  bool recordHardFailure(ProxyDestinationBase* pdstn, carbon::Result result);
 
   /**
    * Resets all consecutive failures accumulated so far
@@ -136,14 +135,14 @@ class TkoTracker {
    *
    * @return true if `pdstn` was responsible for sending probes
    */
-  bool recordSuccess(ProxyDestination* pdstn);
+  bool recordSuccess(ProxyDestinationBase* pdstn);
 
   /**
    * Should be called when ProxyDestination is going to be destroyed
    *
    * @return true if `pdstn` was responsible for sending probes
    */
-  bool removeDestination(ProxyDestination* pdstn);
+  bool removeDestination(ProxyDestinationBase* pdstn);
 
   ~TkoTracker();
 
@@ -187,7 +186,7 @@ class TkoTracker {
   bool setSumFailures(uintptr_t value);
 
   /* Return true if this thread is responsible for the TKO state */
-  bool isResponsible(ProxyDestination* pdstn) const;
+  bool isResponsible(ProxyDestinationBase* pdstn) const;
 
   /**
    * @param tkoThreshold    Require this many soft failures to mark
@@ -211,7 +210,7 @@ class TkoTrackerMap {
   /**
    * Creates/updates TkoTracker for `pdstn` and updates `pdstn->tko` pointer.
    */
-  void updateTracker(ProxyDestination& pdstn, const size_t tkoThreshold);
+  void updateTracker(ProxyDestinationBase& pdstn, const size_t tkoThreshold);
 
   /**
    * @return  number of servers that recently returned error replies.

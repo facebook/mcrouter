@@ -23,7 +23,7 @@ ReplyT<Request> ProxyDestination::send(
     DestinationRequestCtx& requestContext,
     std::chrono::milliseconds timeout,
     RpcStatsContext& rpcStatsContext) {
-  proxy.destinationMap()->markAsActive(*this);
+  markAsActive();
   auto reply = getAsyncMcClient().sendSync(request, timeout, &rpcStatsContext);
   onReply(
       reply.result(), requestContext, rpcStatsContext, request.isBufferDirty());

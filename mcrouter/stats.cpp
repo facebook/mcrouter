@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "stats.h"
 
@@ -50,15 +49,15 @@ char* gStandaloneArgs = nullptr;
 
 const char* clientStateToStr(ProxyDestination::State state) {
   switch (state) {
-    case ProxyDestination::State::kUp:
+    case ProxyDestination::State::Up:
       return "up";
-    case ProxyDestination::State::kNew:
+    case ProxyDestination::State::New:
       return "new";
-    case ProxyDestination::State::kClosed:
+    case ProxyDestination::State::Closed:
       return "closed";
-    case ProxyDestination::State::kDown:
+    case ProxyDestination::State::Down:
       return "down";
-    case ProxyDestination::State::kNumStates:
+    case ProxyDestination::State::NumStates:
       assert(false);
   }
   return "unknown";
@@ -66,7 +65,7 @@ const char* clientStateToStr(ProxyDestination::State state) {
 
 struct ServerStat {
   uint64_t results[static_cast<size_t>(carbon::Result::NUM_RESULTS)] = {0};
-  size_t states[(size_t)ProxyDestination::State::kNumStates] = {0};
+  size_t states[(size_t)ProxyDestination::State::NumStates] = {0};
   bool isHardTko{false};
   bool isSoftTko{false};
   double sumLatencies{0.0};
@@ -97,7 +96,7 @@ struct ServerStat {
           minRetransPerKByte)
           .appendTo(res);
     }
-    for (size_t i = 0; i < (size_t)ProxyDestination::State::kNumStates; ++i) {
+    for (size_t i = 0; i < (size_t)ProxyDestination::State::NumStates; ++i) {
       if (states[i] > 0) {
         auto state = clientStateToStr(static_cast<ProxyDestination::State>(i));
         folly::format(" {}:{}", state, states[i]).appendTo(res);
@@ -660,8 +659,8 @@ McStatsReply stats_reply(ProxyBase* proxy, folly::StringPiece group_str) {
           [&serverStats](
               folly::StringPiece key, const ProxyDestination& pdstn) {
             auto& stat = serverStats[key];
-            stat.isHardTko = pdstn.tracker->isHardTko();
-            stat.isSoftTko = pdstn.tracker->isSoftTko();
+            stat.isHardTko = pdstn.tracker()->isHardTko();
+            stat.isSoftTko = pdstn.tracker()->isSoftTko();
             if (pdstn.stats().results) {
               for (size_t j = 0;
                    j < static_cast<size_t>(carbon::Result::NUM_RESULTS);

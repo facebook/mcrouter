@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "TkoTracker.h"
 
@@ -12,8 +11,9 @@
 
 #include <folly/MapUtil.h>
 
-#include "mcrouter/ProxyDestination.h"
+#include "mcrouter/ProxyDestinationBase.h"
 #include "mcrouter/TkoCounters.h"
+#include "mcrouter/lib/network/AccessPoint.h"
 
 namespace facebook {
 namespace memcache {
@@ -62,7 +62,7 @@ bool TkoTracker::setSumFailures(uintptr_t value) {
 }
 
 bool TkoTracker::recordSoftFailure(
-    ProxyDestination* pdstn,
+    ProxyDestinationBase* pdstn,
     carbon::Result result) {
   // We increment soft tko count first before actually taking responsibility
   // for the TKO. This means we run the risk that multiple proxies
@@ -111,7 +111,7 @@ bool TkoTracker::recordSoftFailure(
 }
 
 bool TkoTracker::recordHardFailure(
-    ProxyDestination* pdstn,
+    ProxyDestinationBase* pdstn,
     carbon::Result result) {
   ++consecutiveFailureCount_;
 
@@ -139,11 +139,11 @@ bool TkoTracker::recordHardFailure(
   return success;
 }
 
-bool TkoTracker::isResponsible(ProxyDestination* pdstn) const {
+bool TkoTracker::isResponsible(ProxyDestinationBase* pdstn) const {
   return (sumFailures_ & ~1) == reinterpret_cast<uintptr_t>(pdstn);
 }
 
-bool TkoTracker::recordSuccess(ProxyDestination* pdstn) {
+bool TkoTracker::recordSuccess(ProxyDestinationBase* pdstn) {
   // If we're responsible, no one else can change any state and we're
   // effectively under mutex.
   if (isResponsible(pdstn)) {
@@ -173,7 +173,7 @@ bool TkoTracker::recordSuccess(ProxyDestination* pdstn) {
   return false;
 }
 
-bool TkoTracker::removeDestination(ProxyDestination* pdstn) {
+bool TkoTracker::removeDestination(ProxyDestinationBase* pdstn) {
   // We should clear the TKO state if pdstn is responsible
   if (isResponsible(pdstn)) {
     return recordSuccess(pdstn);
@@ -186,7 +186,7 @@ TkoTracker::~TkoTracker() {
 }
 
 void TkoTrackerMap::updateTracker(
-    ProxyDestination& pdstn,
+    ProxyDestinationBase& pdstn,
     const size_t tkoThreshold) {
   auto key = pdstn.accessPoint()->toHostPortString();
 
@@ -207,7 +207,7 @@ void TkoTrackerMap::updateTracker(
       tracker->key_ = trackerIt.first->first;
     }
   }
-  pdstn.tracker = std::move(tracker);
+  pdstn.setTracker(std::move(tracker));
 }
 
 std::unordered_map<std::string, std::pair<bool, size_t>>
