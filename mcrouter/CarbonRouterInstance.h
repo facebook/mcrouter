@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -124,6 +123,11 @@ class CarbonRouterInstance
    * until all threads are stopped.
    */
   void shutdown() noexcept;
+
+  /**
+   * @return whether the router has been shutdown.
+   */
+  bool isShutdown() const;
 
   ProxyBase* getProxyBase(size_t index) const override;
 
