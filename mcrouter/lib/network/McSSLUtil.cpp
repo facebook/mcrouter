@@ -7,7 +7,7 @@
 #include "McSSLUtil.h"
 
 #include <folly/SharedMutex.h>
-#include <folly/io/async/AsyncTransportCertificate.h>
+#include <folly/io/async/ssl/BasicTransportCertificate.h>
 #include <folly/io/async/ssl/OpenSSLUtils.h>
 
 #include "mcrouter/lib/network/SecurityOptions.h"
@@ -35,37 +35,6 @@ static McSSLUtil::SSLFinalizeFunction& getClientFinalizeFuncRef() {
   static McSSLUtil::SSLFinalizeFunction FINALIZER;
   return FINALIZER;
 }
-
-class ClonedCertificate : public folly::AsyncTransportCertificate {
- public:
-  static std::unique_ptr<folly::AsyncTransportCertificate> create(
-      const folly::AsyncTransportCertificate* cert) {
-    if (!cert) {
-      return nullptr;
-    }
-    return std::make_unique<ClonedCertificate>(cert);
-  }
-
-  explicit ClonedCertificate(const folly::AsyncTransportCertificate* cert)
-      : identity_(cert->getIdentity()), x509_(cert->getX509()) {}
-
-  std::string getIdentity() const override {
-    return identity_;
-  }
-
-  folly::ssl::X509UniquePtr getX509() const override {
-    if (!x509_) {
-      return nullptr;
-    }
-    auto x509raw = x509_.get();
-    X509_up_ref(x509raw);
-    return folly::ssl::X509UniquePtr(x509raw);
-  }
-
- private:
-  const std::string identity_;
-  const folly::ssl::X509UniquePtr x509_;
-};
 
 class PlaintextWithCerts : public folly::AsyncSocket {
  public:
@@ -201,8 +170,10 @@ folly::AsyncTransportWrapper::UniquePtr McSSLUtil::moveToPlaintext(
   SSL_shutdown(ssl);
 
   // fallback to plaintext
-  auto selfCert = ClonedCertificate::create(sock.getSelfCertificate());
-  auto peerCert = ClonedCertificate::create(sock.getPeerCertificate());
+  auto selfCert =
+      folly::ssl::BasicTransportCertificate::create(sock.getSelfCertificate());
+  auto peerCert =
+      folly::ssl::BasicTransportCertificate::create(sock.getPeerCertificate());
   auto evb = sock.getEventBase();
   auto zcId = sock.getZeroCopyBufId();
   auto fd = sock.detachNetworkSocket();
