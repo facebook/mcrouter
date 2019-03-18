@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2017-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "McSSLUtil.h"
 
@@ -191,6 +190,16 @@ folly::AsyncTransportWrapper::UniquePtr McSSLUtil::moveToPlaintext(
   if (!negotiatedPlaintextFallback(sock)) {
     return nullptr;
   }
+
+  // We need to mark the SSL as shutdown here, but need to do
+  // it quietly so no alerts are sent over the wire.
+  // This prevents SSL thinking we are shutting down in a bad state
+  // when AsyncSSLSocket is cleaned up, which could remove the session
+  // from the session cache
+  auto ssl = const_cast<SSL*>(sock.getSSL());
+  SSL_set_quiet_shutdown(ssl, 1);
+  SSL_shutdown(ssl);
+
   // fallback to plaintext
   auto selfCert = ClonedCertificate::create(sock.getSelfCertificate());
   auto peerCert = ClonedCertificate::create(sock.getPeerCertificate());
