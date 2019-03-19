@@ -113,13 +113,13 @@ class StagingRoute {
         auto metaReply = staging->route(reqMetaget);
         if (metaReply.result() != carbon::Result::BUSY &&
             !isHitResult(metaReply.result())) {
-          // add to the staging side if we don't get a busy or a miss.
-          // we will have to retrieve the exptime from the warm side through
-          // a metaget.
+          // Add to the staging side if we don't get a busy or a miss.
+          // We will have to retrieve the exptime from the warm side through
+          // a metaget and use the reply from the warm side for the value.
           uint32_t calculatedExptime = 0;
           if (getExptimeFromRoute(
                   warm, req.key().fullKey(), calculatedExptime)) {
-            auto addReq = createRequestFromReply<McAddRequest>(
+            auto addReq = createRequestFromMessage<McAddRequest>(
                 req.key().fullKey(), reply, calculatedExptime);
             staging->route(addReq);
           }
@@ -172,14 +172,16 @@ class StagingRoute {
     // start with routing to warm
     auto reply = warm_->route(req);
 
-    // set the data to the staging side as a normal set
+    // Set the data to the staging side as a normal set using the
+    // original request value.
     int32_t exptime = req.exptime();
     if (isStoredResult(reply.result())) {
-      folly::fibers::addTask([staging = staging_,
-                              setReq = createRequestFromReply<McSetRequest>(
-                                  req.key().fullKey(), reply, exptime)]() {
-        staging->route(setReq);
-      });
+      folly::fibers::addTask(
+          [staging = staging_,
+           setReq = createRequestFromMessage<McSetRequest, Request>(
+               req.key().fullKey(), req, exptime)]() {
+            staging->route(setReq);
+          });
     }
 
     // always return warm reply

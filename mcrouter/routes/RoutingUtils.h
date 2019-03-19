@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2018-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -51,25 +50,25 @@ static bool getExptimeFromRoute(
 
 /**
  * This will create a new write request based on the value
- * of a Reply object.
+ * of a Reply or Request object.
  *
  * @param(key)     - the key of the new request
- * @param(reply)   - the reply object that contains the value
+ * @param(message) - the message that contains the value
  * @param(exptime) - exptime of the new object
  *
  * @return(ToRequest)
  */
-template <class ToRequest, class Reply>
-static ToRequest createRequestFromReply(
+template <class ToRequest, class Message>
+static ToRequest createRequestFromMessage(
     const folly::StringPiece& key,
-    const Reply& reply,
+    const Message& message,
     uint32_t exptime) {
   ToRequest newReq(key);
-  folly::IOBuf cloned = carbon::valuePtrUnsafe(reply)
-      ? carbon::valuePtrUnsafe(reply)->cloneAsValue()
+  folly::IOBuf cloned = carbon::valuePtrUnsafe(message)
+      ? carbon::valuePtrUnsafe(message)->cloneAsValue()
       : folly::IOBuf();
   newReq.value() = std::move(cloned);
-  newReq.flags() = reply.flags();
+  newReq.flags() = message.flags();
   newReq.exptime() = exptime;
   return newReq;
 }

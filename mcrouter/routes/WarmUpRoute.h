@@ -95,7 +95,7 @@ class WarmUpRoute {
     uint32_t exptime = 0;
     if (isHitResult(warmReply.result()) && getExptimeForCold(req, exptime)) {
       folly::fibers::addTask([cold = cold_,
-                              addReq = createRequestFromReply<McAddRequest>(
+                              addReq = createRequestFromMessage<McAddRequest>(
                                   req.key().fullKey(), warmReply, exptime)]() {
         cold->route(addReq);
       });
@@ -128,7 +128,7 @@ class WarmUpRoute {
     if (isHitResult(warmReply.result()) &&
         getExptimeForCold(reqOpGet, exptime)) {
       // update cold route with lease set
-      auto setReq = createRequestFromReply<McLeaseSetRequest>(
+      auto setReq = createRequestFromMessage<McLeaseSetRequest>(
           reqOpGet.key().fullKey(), warmReply, exptime);
       setReq.leaseToken() = coldReply.leaseToken();
 
@@ -156,7 +156,7 @@ class WarmUpRoute {
     uint32_t exptime = 0;
     if (isHitResult(warmReply.result()) && getExptimeForCold(req, exptime)) {
       // update cold route if we have the value
-      auto addReq = createRequestFromReply<McAddRequest>(
+      auto addReq = createRequestFromMessage<McAddRequest>(
           req.key().fullKey(), warmReply, exptime);
       cold_->route(addReq);
       // and grab cas token again
@@ -177,7 +177,7 @@ class WarmUpRoute {
     auto warmReply = warm_->route(reqGet);
     if (isHitResult(warmReply.result())) {
       // update cold route if we have the value
-      auto addReq = createRequestFromReply<McAddRequest>(
+      auto addReq = createRequestFromMessage<McAddRequest>(
           req.key().fullKey(), warmReply, req.exptime());
       cold_->route(addReq);
       return cold_->route(req);
@@ -197,7 +197,7 @@ class WarmUpRoute {
     auto warmReply = warm_->route(reqGet);
     if (isHitResult(warmReply.result())) {
       // update cold route if we have the value
-      auto addReq = createRequestFromReply<McAddRequest>(
+      auto addReq = createRequestFromMessage<McAddRequest>(
           req.key().fullKey(), warmReply, req.exptime());
       cold_->route(addReq);
       // and grab cas token again
