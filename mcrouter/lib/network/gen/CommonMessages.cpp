@@ -343,6 +343,7 @@ void GoAwayAcknowledgement::deserialize(carbon::CarbonProtocolReader& reader) {
     }
 
     switch (fieldId) {
+
       default: {
         reader.skip(fieldType);
         break;

@@ -53,7 +53,8 @@ class AnotherRequest : public carbon::RequestCommon {
   AnotherRequest& operator=(const AnotherRequest&) = default;
   AnotherRequest(AnotherRequest&&) = default;
   AnotherRequest& operator=(AnotherRequest&&) = default;
-  explicit AnotherRequest(folly::StringPiece sp) : key_(sp) {}
+  explicit AnotherRequest(folly::StringPiece sp)
+      : key_(sp) {}
   explicit AnotherRequest(folly::IOBuf&& carbonKey)
       : key_(std::move(carbonKey)) {}
 
@@ -70,7 +71,6 @@ class AnotherRequest : public carbon::RequestCommon {
   int32_t exptime() const {
     return 0;
   }
-
   template <class Writer>
   void serialize(Writer&& writer) const;
 
@@ -98,7 +98,8 @@ class AnotherReply : public carbon::ReplyCommon {
   AnotherReply& operator=(const AnotherReply&) = default;
   AnotherReply(AnotherReply&&) = default;
   AnotherReply& operator=(AnotherReply&&) = default;
-  explicit AnotherReply(carbon::Result carbonResult) : result_(carbonResult) {}
+  explicit AnotherReply(carbon::Result carbonResult)
+      : result_(carbonResult) {}
 
   carbon::Result result() const {
     return result_;

@@ -33,9 +33,9 @@
 #include "mcrouter/lib/carbon/test/a/gen/AMessages.h"
 #include "mcrouter/lib/network/gen/CommonMessages.h"
 
+#include "mcrouter/lib/carbon/test/TestUserType.h"
 #include "folly/container/F14Map.h"
 #include "folly/container/F14Set.h"
-#include "mcrouter/lib/carbon/test/TestUserType.h"
 
 namespace carbon {
 namespace test {
@@ -57,8 +57,10 @@ class TestRequest : public carbon::RequestCommon {
   TestRequest& operator=(const TestRequest&) = default;
   TestRequest(TestRequest&&) = default;
   TestRequest& operator=(TestRequest&&) = default;
-  explicit TestRequest(folly::StringPiece sp) : key_(sp) {}
-  explicit TestRequest(folly::IOBuf&& carbonKey) : key_(std::move(carbonKey)) {}
+  explicit TestRequest(folly::StringPiece sp)
+      : key_(sp) {}
+  explicit TestRequest(folly::IOBuf&& carbonKey)
+      : key_(std::move(carbonKey)) {}
 
   SimpleStruct& asBase() {
     markBufferAsDirty();
@@ -354,8 +356,7 @@ class TestRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return testF14ValueMap_;
   }
-  const folly::F14VectorMap<std::string, std::string>& testF14VectorMap()
-      const {
+  const folly::F14VectorMap<std::string, std::string>& testF14VectorMap() const {
     return testF14VectorMap_;
   }
   folly::F14VectorMap<std::string, std::string>& testF14VectorMap() {
@@ -403,7 +404,6 @@ class TestRequest : public carbon::RequestCommon {
   int32_t exptime() const {
     return 0;
   }
-
   template <class Writer>
   void serialize(Writer&& writer) const;
 
@@ -472,7 +472,8 @@ class TestReply : public carbon::ReplyCommon {
   TestReply& operator=(const TestReply&) = default;
   TestReply(TestReply&&) = default;
   TestReply& operator=(TestReply&&) = default;
-  explicit TestReply(carbon::Result carbonResult) : result_(carbonResult) {}
+  explicit TestReply(carbon::Result carbonResult)
+      : result_(carbonResult) {}
 
   carbon::Result result() const {
     return result_;
@@ -532,10 +533,12 @@ class TestRequestStringKey : public carbon::RequestCommon {
   TestRequestStringKey& operator=(const TestRequestStringKey&) = default;
   TestRequestStringKey(TestRequestStringKey&&) = default;
   TestRequestStringKey& operator=(TestRequestStringKey&&) = default;
-  explicit TestRequestStringKey(folly::StringPiece sp) : key_(sp) {}
+  explicit TestRequestStringKey(folly::StringPiece sp)
+      : key_(sp) {}
   explicit TestRequestStringKey(std::string&& carbonKey)
       : key_(std::move(carbonKey)) {}
-  explicit TestRequestStringKey(const char* key) : key_(key) {}
+  explicit TestRequestStringKey(const char* key)
+      : key_(key) {}
 
   const carbon::Keys<std::string>& key() const {
     return key_;
@@ -550,7 +553,6 @@ class TestRequestStringKey : public carbon::RequestCommon {
   int32_t exptime() const {
     return 0;
   }
-
   template <class Writer>
   void serialize(Writer&& writer) const;
 
@@ -678,51 +680,43 @@ class TestOptionalUnion {
       return emplace<1>();
     }
     if (_which_ != 1) {
-      throw std::runtime_error(
-          "umember1 is not set in union TestOptionalUnion.");
+      throw std::runtime_error("umember1 is not set in union TestOptionalUnion.");
     }
     return _carbon_variant.get<folly::Optional<int64_t>>();
   }
   const folly::Optional<int64_t>& umember1() const {
     if (_which_ != 1) {
-      throw std::runtime_error(
-          "umember1 is not set in union TestOptionalUnion.");
+      throw std::runtime_error("umember1 is not set in union TestOptionalUnion.");
     }
     return _carbon_variant.get<folly::Optional<int64_t>>();
   }
-
   folly::Optional<bool>& umember2() {
     if (_which_ == 0) {
       return emplace<2>();
     }
     if (_which_ != 2) {
-      throw std::runtime_error(
-          "umember2 is not set in union TestOptionalUnion.");
+      throw std::runtime_error("umember2 is not set in union TestOptionalUnion.");
     }
     return _carbon_variant.get<folly::Optional<bool>>();
   }
   const folly::Optional<bool>& umember2() const {
     if (_which_ != 2) {
-      throw std::runtime_error(
-          "umember2 is not set in union TestOptionalUnion.");
+      throw std::runtime_error("umember2 is not set in union TestOptionalUnion.");
     }
     return _carbon_variant.get<folly::Optional<bool>>();
   }
-
   folly::Optional<std::string>& umember3() {
     if (_which_ == 0) {
       return emplace<3>();
     }
     if (_which_ != 3) {
-      throw std::runtime_error(
-          "umember3 is not set in union TestOptionalUnion.");
+      throw std::runtime_error("umember3 is not set in union TestOptionalUnion.");
     }
     return _carbon_variant.get<folly::Optional<std::string>>();
   }
   const folly::Optional<std::string>& umember3() const {
     if (_which_ != 3) {
-      throw std::runtime_error(
-          "umember3 is not set in union TestOptionalUnion.");
+      throw std::runtime_error("umember3 is not set in union TestOptionalUnion.");
     }
     return _carbon_variant.get<folly::Optional<std::string>>();
   }
@@ -732,8 +726,7 @@ class TestOptionalUnion {
       class C = typename carbon::FindByKey<id, _IdTypeMap>::type>
   C& get() {
     if (id != _which_) {
-      throw std::runtime_error(
-          "Type id is not set in union TestOptionalUnion.");
+      throw std::runtime_error("Type id is not set in union TestOptionalUnion.");
     }
     return _carbon_variant.get<C>();
   }
@@ -743,8 +736,7 @@ class TestOptionalUnion {
       class C = typename carbon::FindByKey<id, _IdTypeMap>::type>
   const C& get() const {
     if (id != _which_) {
-      throw std::runtime_error(
-          "Type id is not set in union TestOptionalUnion.");
+      throw std::runtime_error("Type id is not set in union TestOptionalUnion.");
     }
     return _carbon_variant.get<C>();
   }
@@ -770,7 +762,6 @@ class TestOptionalUnion {
     _which_ = static_cast<uint32_t>(id);
     return _carbon_variant.emplace<C>(std::forward<Args>(args)...);
   }
-
   template <class Writer>
   void serialize(Writer&& writer) const;
 
@@ -789,9 +780,7 @@ class TestOptionalUnion {
   carbon::Variant<
       folly::Optional<int64_t>,
       folly::Optional<bool>,
-      folly::Optional<std::string>>
-      _carbon_variant;
-
+      folly::Optional<std::string>> _carbon_variant;
   uint32_t _which_{0};
 };
 

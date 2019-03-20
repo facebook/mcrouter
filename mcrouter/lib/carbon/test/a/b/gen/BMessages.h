@@ -123,7 +123,6 @@ class SimpleUnion {
     }
     return _carbon_variant.get<int64_t>();
   }
-
   bool& umember2() {
     if (_which_ == 0) {
       return emplace<2>();
@@ -139,7 +138,6 @@ class SimpleUnion {
     }
     return _carbon_variant.get<bool>();
   }
-
   std::string& umember3() {
     if (_which_ == 0) {
       return emplace<3>();
@@ -197,7 +195,6 @@ class SimpleUnion {
     _which_ = static_cast<uint32_t>(id);
     return _carbon_variant.emplace<C>(std::forward<Args>(args)...);
   }
-
   template <class Writer>
   void serialize(Writer&& writer) const;
 
@@ -213,8 +210,10 @@ class SimpleUnion {
   void foreachMember(V&& v) const;
 
  private:
-  carbon::Variant<int64_t, bool, std::string> _carbon_variant;
-
+  carbon::Variant<
+      int64_t,
+      bool,
+      std::string> _carbon_variant;
   uint32_t _which_{0};
 };
 
@@ -235,7 +234,8 @@ class YetAnotherRequest : public carbon::RequestCommon {
   YetAnotherRequest& operator=(const YetAnotherRequest&) = default;
   YetAnotherRequest(YetAnotherRequest&&) = default;
   YetAnotherRequest& operator=(YetAnotherRequest&&) = default;
-  explicit YetAnotherRequest(folly::StringPiece sp) : key_(sp) {}
+  explicit YetAnotherRequest(folly::StringPiece sp)
+      : key_(sp) {}
   explicit YetAnotherRequest(folly::IOBuf&& carbonKey)
       : key_(std::move(carbonKey)) {}
 
@@ -252,7 +252,6 @@ class YetAnotherRequest : public carbon::RequestCommon {
   int32_t exptime() const {
     return 0;
   }
-
   template <class Writer>
   void serialize(Writer&& writer) const;
 

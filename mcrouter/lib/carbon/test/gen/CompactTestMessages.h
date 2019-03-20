@@ -59,10 +59,12 @@ class TestCompactRequest : public carbon::RequestCommon {
   TestCompactRequest& operator=(const TestCompactRequest&) = default;
   TestCompactRequest(TestCompactRequest&&) = default;
   TestCompactRequest& operator=(TestCompactRequest&&) = default;
-  explicit TestCompactRequest(folly::StringPiece sp) : key_(sp) {}
+  explicit TestCompactRequest(folly::StringPiece sp)
+      : key_(sp) {}
   explicit TestCompactRequest(std::string&& carbonKey)
       : key_(std::move(carbonKey)) {}
-  explicit TestCompactRequest(const char* key) : key_(key) {}
+  explicit TestCompactRequest(const char* key)
+      : key_(key) {}
 
   const carbon::Keys<std::string>& key() const {
     return key_;
@@ -182,7 +184,6 @@ class TestCompactRequest : public carbon::RequestCommon {
   int32_t exptime() const {
     return 0;
   }
-
   template <class Writer>
   void serialize(Writer&& writer) const;
 

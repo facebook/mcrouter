@@ -682,8 +682,7 @@ class GoAwayAcknowledgement : public carbon::RequestCommon {
   int32_t exptime() const {
     return 0;
   }
-  const facebook::memcache::thrift::GoAwayAcknowledgement& getThriftStruct()
-      const {
+  const facebook::memcache::thrift::GoAwayAcknowledgement& getThriftStruct() const {
     return underlyingThriftStruct_;
   }
   facebook::memcache::thrift::GoAwayAcknowledgement& getThriftStruct() {

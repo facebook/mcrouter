@@ -51,7 +51,8 @@ class HelloRequest : public carbon::RequestCommon {
   HelloRequest& operator=(const HelloRequest&) = default;
   HelloRequest(HelloRequest&&) = default;
   HelloRequest& operator=(HelloRequest&&) = default;
-  explicit HelloRequest(folly::StringPiece sp) : key_(sp) {}
+  explicit HelloRequest(folly::StringPiece sp)
+      : key_(sp) {}
   explicit HelloRequest(folly::IOBuf&& carbonKey)
       : key_(std::move(carbonKey)) {}
 
@@ -75,7 +76,6 @@ class HelloRequest : public carbon::RequestCommon {
   int32_t exptime() const {
     return 0;
   }
-
   template <class Writer>
   void serialize(Writer&& writer) const;
 
@@ -104,7 +104,8 @@ class HelloReply : public carbon::ReplyCommon {
   HelloReply& operator=(const HelloReply&) = default;
   HelloReply(HelloReply&&) = default;
   HelloReply& operator=(HelloReply&&) = default;
-  explicit HelloReply(carbon::Result carbonResult) : result_(carbonResult) {}
+  explicit HelloReply(carbon::Result carbonResult)
+      : result_(carbonResult) {}
 
   carbon::Result result() const {
     return result_;
@@ -150,7 +151,8 @@ class GoodbyeRequest : public carbon::RequestCommon {
   GoodbyeRequest& operator=(const GoodbyeRequest&) = default;
   GoodbyeRequest(GoodbyeRequest&&) = default;
   GoodbyeRequest& operator=(GoodbyeRequest&&) = default;
-  explicit GoodbyeRequest(folly::StringPiece sp) : key_(sp) {}
+  explicit GoodbyeRequest(folly::StringPiece sp)
+      : key_(sp) {}
   explicit GoodbyeRequest(folly::IOBuf&& carbonKey)
       : key_(std::move(carbonKey)) {}
 
@@ -174,7 +176,6 @@ class GoodbyeRequest : public carbon::RequestCommon {
   int32_t exptime() const {
     return 0;
   }
-
   template <class Writer>
   void serialize(Writer&& writer) const;
 
@@ -203,7 +204,8 @@ class GoodbyeReply : public carbon::ReplyCommon {
   GoodbyeReply& operator=(const GoodbyeReply&) = default;
   GoodbyeReply(GoodbyeReply&&) = default;
   GoodbyeReply& operator=(GoodbyeReply&&) = default;
-  explicit GoodbyeReply(carbon::Result carbonResult) : result_(carbonResult) {}
+  explicit GoodbyeReply(carbon::Result carbonResult)
+      : result_(carbonResult) {}
 
   carbon::Result result() const {
     return result_;

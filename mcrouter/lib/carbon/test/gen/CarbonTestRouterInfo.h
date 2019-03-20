@@ -61,7 +61,7 @@ struct CarbonTestRouterInfo {
   template <class Route>
   using RouteHandle = CarbonTestRouteHandle<Route>;
   using RoutableRequests = detail::CarbonTestRoutableRequests;
-
+  
   using RouterStats = carbon::Stats<CarbonTestRouterStatsConfig>;
 
   using RouteHandleFactoryMap = std::unordered_map<

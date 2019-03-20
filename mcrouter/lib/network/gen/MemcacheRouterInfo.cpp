@@ -70,7 +70,8 @@ MemcacheRouterInfo::buildRouteMap() {
          return makeHashRoute<MemcacheRouterInfo>(factory, json);
        }},
       {"HostIdRoute", &makeHostIdRoute<MemcacheRouterInfo>},
-      {"LatencyInjectionRoute", &makeLatencyInjectionRoute<MemcacheRouterInfo>},
+      {"LatencyInjectionRoute",
+       &makeLatencyInjectionRoute<MemcacheRouterInfo>},
       {"LatestRoute", &makeLatestRoute<MemcacheRouterInfo>},
       {"LoadBalancerRoute", &makeLoadBalancerRoute<MemcacheRouterInfo>},
       {"LoggingRoute", &makeLoggingRoute<MemcacheRouterInfo>},

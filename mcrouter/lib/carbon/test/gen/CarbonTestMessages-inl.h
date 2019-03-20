@@ -462,15 +462,12 @@ void TestOptionalUnion::visitFields(V&& v) {
     case 1:
       v.visitField(1, "umember1", umember1());
       break;
-
     case 2:
       v.visitField(2, "umember2", umember2());
       break;
-
     case 3:
       v.visitField(3, "umember3", umember3());
       break;
-
     default:
       break;
   }
@@ -482,15 +479,12 @@ void TestOptionalUnion::visitFields(V&& v) const {
     case 1:
       v.visitField(1, "umember1", umember1());
       break;
-
     case 2:
       v.visitField(2, "umember2", umember2());
       break;
-
     case 3:
       v.visitField(3, "umember3", umember3());
       break;
-
     default:
       break;
   }
@@ -498,36 +492,26 @@ void TestOptionalUnion::visitFields(V&& v) const {
 
 template <class V>
 void TestOptionalUnion::foreachMember(V&& v) {
-  if (!v.template visitUnionMember<1, folly::Optional<int64_t>>(
-          "umember1", *this)) {
+  if (!v.template visitUnionMember<1, folly::Optional<int64_t>>("umember1", *this)) {
     return;
   }
-
-  if (!v.template visitUnionMember<2, folly::Optional<bool>>(
-          "umember2", *this)) {
+  if (!v.template visitUnionMember<2, folly::Optional<bool>>("umember2", *this)) {
     return;
   }
-
-  if (!v.template visitUnionMember<3, folly::Optional<std::string>>(
-          "umember3", *this)) {
+  if (!v.template visitUnionMember<3, folly::Optional<std::string>>("umember3", *this)) {
     return;
   }
 }
 
 template <class V>
 void TestOptionalUnion::foreachMember(V&& v) const {
-  if (!v.template visitUnionMember<1, folly::Optional<int64_t>>(
-          "umember1", *this)) {
+  if (!v.template visitUnionMember<1, folly::Optional<int64_t>>("umember1", *this)) {
     return;
   }
-
-  if (!v.template visitUnionMember<2, folly::Optional<bool>>(
-          "umember2", *this)) {
+  if (!v.template visitUnionMember<2, folly::Optional<bool>>("umember2", *this)) {
     return;
   }
-
-  if (!v.template visitUnionMember<3, folly::Optional<std::string>>(
-          "umember3", *this)) {
+  if (!v.template visitUnionMember<3, folly::Optional<std::string>>("umember3", *this)) {
     return;
   }
 }

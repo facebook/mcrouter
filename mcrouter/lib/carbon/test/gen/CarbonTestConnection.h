@@ -59,12 +59,10 @@ class CarbonTestConnection {
       std::vector<std::reference_wrapper<const TestRequestStringKey>>&&,
       carbon::RequestCb<TestRequestStringKey>) = 0;
   virtual void sendRequestMulti(
-      std::vector<
-          std::reference_wrapper<const test2::util::YetAnotherRequest>>&&,
+      std::vector<std::reference_wrapper<const test2::util::YetAnotherRequest>>&&,
       carbon::RequestCb<test2::util::YetAnotherRequest>) = 0;
 
-  virtual facebook::memcache::CacheClientCounters getStatCounters() const
-      noexcept = 0;
+  virtual facebook::memcache::CacheClientCounters getStatCounters() const noexcept = 0;
   virtual std::unordered_map<std::string, std::string> getConfigOptions() = 0;
   virtual bool healthCheck() = 0;
   virtual std::unique_ptr<CarbonTestConnection> recreate() = 0;
@@ -132,8 +130,7 @@ class CarbonTestConnectionImpl : public CarbonTestConnection {
     return impl_.sendRequestMulti(std::move(reqs), std::move(cb));
   }
   void sendRequestMulti(
-      std::vector<
-          std::reference_wrapper<const test2::util::YetAnotherRequest>>&& reqs,
+      std::vector<std::reference_wrapper<const test2::util::YetAnotherRequest>>&& reqs,
       carbon::RequestCb<test2::util::YetAnotherRequest> cb) {
     return impl_.sendRequestMulti(std::move(reqs), std::move(cb));
   }
@@ -142,10 +139,10 @@ class CarbonTestConnectionImpl : public CarbonTestConnection {
   Impl impl_;
 };
 
-using CarbonTestPooledConnection = CarbonTestConnectionImpl<
-    carbon::PooledCarbonConnectionImpl<CarbonTestConnection>>;
-using CarbonTestInternalConnection = CarbonTestConnectionImpl<
-    carbon::InternalCarbonConnectionImpl<CarbonTestConnection>>;
+using CarbonTestPooledConnection =
+    CarbonTestConnectionImpl<carbon::PooledCarbonConnectionImpl<CarbonTestConnection>>;
+using CarbonTestInternalConnection =
+    CarbonTestConnectionImpl<carbon::InternalCarbonConnectionImpl<CarbonTestConnection>>;
 using CarbonTestExternalConnection =
     CarbonTestConnectionImpl<carbon::ExternalCarbonConnectionImpl>;
 } // namespace test

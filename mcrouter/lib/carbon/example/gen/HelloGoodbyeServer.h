@@ -42,8 +42,7 @@ class HelloGoodbyeRequestHandler
 
   template <class... Args>
   explicit HelloGoodbyeRequestHandler(Args&&... args)
-      : carbon::
-            CarbonRequestHandler<OnRequest, detail::HelloGoodbyeRequestList>(
-                std::forward<Args>(args)...) {}
+      : carbon::CarbonRequestHandler<OnRequest, detail::HelloGoodbyeRequestList>(
+            std::forward<Args>(args)...) {}
 };
 } // namespace hellogoodbye
