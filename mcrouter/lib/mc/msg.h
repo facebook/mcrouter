@@ -9,8 +9,6 @@
 #include <inttypes.h>
 #include <stdint.h>
 
-#include "mcrouter/lib/fbi/decls.h"
-
 #define SERVER_ERROR_BUSY 307
 
 /*

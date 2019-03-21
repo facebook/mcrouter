@@ -39,33 +39,6 @@ struct HasMessage : std::false_type {};
 template <typename T>
 struct HasMessage<T, decltype(std::declval<T>().message())> : std::true_type {};
 
-template <class Request, class = bool&>
-struct HasFailover : public std::false_type {};
-template <class Request>
-struct HasFailover<Request, decltype(std::declval<Request>().failover())>
-    : public std::true_type {};
-
-template <class Request>
-typename std::enable_if<HasFailover<Request>::value, void>::type
-setRequestFailover(Request& req) {
-  req.failover() = true;
-}
-
-template <class Request>
-typename std::enable_if<!HasFailover<Request>::value, void>::type
-setRequestFailover(Request& req) {
-  if (!req.key().hasHashStop()) {
-    return;
-  }
-  constexpr folly::StringPiece kFailoverTag = ":failover=1";
-  auto keyWithFailover =
-      folly::to<std::string>(req.key().fullKey(), kFailoverTag);
-  /* It's always safe to not append a failover tag */
-  if (keyWithFailover.size() <= MC_KEY_MAX_LEN) {
-    req.key() = std::move(keyWithFailover);
-  }
-}
-
 template <class RequestList>
 struct GetRequestReplyPairsImpl;
 

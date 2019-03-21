@@ -10,7 +10,7 @@
 #include <memory>
 
 #include "mcrouter/lib/carbon/MessageCommon.h"
-#include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/lib/carbon/gen-cpp2/carbon_result_types.h"
 
 namespace facebook {
 namespace memcache {

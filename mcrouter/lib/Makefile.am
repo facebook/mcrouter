@@ -55,6 +55,7 @@ libmcrouter_a_SOURCES = \
   ZstdCompressionCodec.cpp \
   ZstdCompressionCodec.h \
   carbon/Fields.h \
+  carbon/FailoverUtil.h \
   carbon/CarbonQueueAppender.cpp \
   carbon/CarbonQueueAppender.h \
   carbon/CarbonProtocolCommon.h \
@@ -105,7 +106,7 @@ libmcrouter_a_SOURCES = \
   debug/Fifo.h \
   debug/FifoManager.cpp \
   debug/FifoManager.h \
-  fbi/counting_sem.c \
+  fbi/counting_sem.cpp \
   fbi/counting_sem.h \
   fbi/cpp/FuncGenerator.h \
   fbi/cpp/LogFailure.cpp \
@@ -129,7 +130,7 @@ libmcrouter_a_SOURCES = \
   fbi/network.c \
   fbi/network.h \
   fbi/queue.h \
-  fbi/sfrlock.c \
+  fbi/sfrlock.cpp \
   fbi/sfrlock.h \
   fbi/time.h \
   fbi/util.h \

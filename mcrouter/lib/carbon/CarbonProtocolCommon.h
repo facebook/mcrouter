@@ -7,6 +7,8 @@
  */
 #pragma once
 
+#include <stddef.h>
+
 namespace carbon {
 namespace detail {
 

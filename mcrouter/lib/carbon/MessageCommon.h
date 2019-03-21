@@ -7,6 +7,9 @@
  */
 #pragma once
 
+#include <cstdlib>
+#include <string>
+
 namespace carbon {
 
 class MessageCommon {

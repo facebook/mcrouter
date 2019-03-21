@@ -9,6 +9,8 @@
 
 #include <utility>
 
+#include <folly/io/IOBuf.h>
+
 #include "mcrouter/lib/Ref.h"
 #include "mcrouter/lib/carbon/MessageCommon.h"
 

@@ -8,10 +8,6 @@
 
 #include <string.h>
 
-#include "mcrouter/lib/fbi/decls.h"
-
-__BEGIN_DECLS
-
 #define MC_KEY_MAX_LEN_ASCII (250)
 #define MC_KEY_MAX_LEN_CARET (2 * 1024)
 #define MC_KEY_MAX_LEN (MC_KEY_MAX_LEN_CARET)
@@ -45,5 +41,3 @@ static inline const char* mc_protocol_to_string(const mc_protocol_t value) {
   };
   return strings[value < mc_nprotocols ? value : mc_unknown_protocol];
 }
-
-__END_DECLS
