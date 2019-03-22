@@ -16,6 +16,7 @@
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/ProxyBase.h"
 #include "mcrouter/ProxyDestination.h"
+#include "mcrouter/ProxyDestinationBase.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/network/AccessPoint.h"
 
@@ -40,8 +41,9 @@ std::string genProxyDestinationKey(
 } // anonymous
 
 struct ProxyDestinationMap::StateList {
-  using List =
-      folly::IntrusiveList<ProxyDestination, &ProxyDestination::stateListHook_>;
+  using List = folly::IntrusiveList<
+      ProxyDestinationBase,
+      &ProxyDestinationBase::stateListHook_>;
   List list;
 };
 
@@ -84,12 +86,12 @@ std::shared_ptr<ProxyDestination> ProxyDestinationMap::find(
   auto key = genProxyDestinationKey(ap, timeout);
   {
     std::lock_guard<std::mutex> lck(destinationsLock_);
-    return find(key);
+    return std::dynamic_pointer_cast<ProxyDestination>(find(key));
   }
 }
 
 // Note: caller must be holding destionationsLock_.
-std::shared_ptr<ProxyDestination> ProxyDestinationMap::find(
+std::shared_ptr<ProxyDestinationBase> ProxyDestinationMap::find(
     const std::string& key) const {
   auto it = destinations_.find(key);
   if (it == destinations_.end()) {
@@ -98,7 +100,7 @@ std::shared_ptr<ProxyDestination> ProxyDestinationMap::find(
   return it->second.lock();
 }
 
-void ProxyDestinationMap::removeDestination(ProxyDestination& destination) {
+void ProxyDestinationMap::removeDestination(ProxyDestinationBase& destination) {
   if (destination.stateList_ == active_.get()) {
     active_->list.erase(StateList::List::s_iterator_to(destination));
   } else if (destination.stateList_ == inactive_.get()) {
@@ -110,7 +112,7 @@ void ProxyDestinationMap::removeDestination(ProxyDestination& destination) {
   }
 }
 
-void ProxyDestinationMap::markAsActive(ProxyDestination& destination) {
+void ProxyDestinationMap::markAsActive(ProxyDestinationBase& destination) {
   if (destination.stateList_ == active_.get()) {
     return;
   }
@@ -152,7 +154,7 @@ void ProxyDestinationMap::scheduleTimer(bool initialAttempt) {
 }
 
 void ProxyDestinationMap::releaseProxyDestinationRef(
-    std::shared_ptr<const ProxyDestination>&& destination) {
+    std::shared_ptr<const ProxyDestinationBase>&& destination) {
   ProxyBase& proxy = destination->proxy();
   proxy.eventBase().runInEventBaseThread([dst = std::move(destination)]() {});
 }

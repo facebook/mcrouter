@@ -10,6 +10,8 @@
 #include <chrono>
 #include <memory>
 
+#include <folly/IntrusiveList.h>
+
 #include "mcrouter/ExponentialSmoothData.h"
 #include "mcrouter/TkoLog.h"
 #include "mcrouter/lib/carbon/Result.h"
@@ -127,6 +129,17 @@ class ProxyDestinationBase {
     return key_;
   }
 
+  struct RequestStats {
+    size_t numPending;
+    size_t numInflight;
+  };
+  virtual RequestStats getRequestStats() const = 0;
+
+  /**
+   * Closes transport connection.
+   */
+  virtual void resetInactive() = 0;
+
  protected:
   virtual void updateTransportTimeoutsIfShorter(
       std::chrono::milliseconds shortestConnectTimeout,
@@ -185,6 +198,9 @@ class ProxyDestinationBase {
   // The string is stored in ProxyDestinationMap::destinations_
   folly::StringPiece key_; ///< consists of AccessPoint, and timeout
 
+  void* stateList_{nullptr};
+  folly::IntrusiveListHook stateListHook_;
+
   void onTkoEvent(TkoLogEvent event, carbon::Result result) const;
 
   void startSendingProbes();
@@ -192,6 +208,8 @@ class ProxyDestinationBase {
   void scheduleNextProbe();
 
   void onTransitionImpl(State state, bool to);
+
+  friend class ProxyDestinationMap;
 };
 
 } // namespace mcrouter

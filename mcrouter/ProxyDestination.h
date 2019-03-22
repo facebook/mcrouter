@@ -10,7 +10,6 @@
 #include <memory>
 #include <string>
 
-#include <folly/IntrusiveList.h>
 #include <folly/Range.h>
 #include <folly/SpinLock.h>
 
@@ -60,16 +59,15 @@ class ProxyDestination : public ProxyDestinationBase {
       std::chrono::milliseconds timeout,
       RpcStatsContext& rpcStatsContext);
 
-  void resetInactive();
-
-  size_t getPendingRequestCount() const;
-  size_t getInflightRequestCount() const;
+  void resetInactive() override;
 
   /**
    * Gracefully closes the connection, allowing it to properly drain if
    * possible.
    */
   void closeGracefully();
+
+  RequestStats getRequestStats() const override;
 
  protected:
   void updateTransportTimeoutsIfShorter(
@@ -120,9 +118,6 @@ class ProxyDestination : public ProxyDestinationBase {
 
   void handleRxmittingConnection(const carbon::Result result, uint64_t latency);
   bool latencyAboveThreshold(uint64_t latency);
-
-  void* stateList_{nullptr};
-  folly::IntrusiveListHook stateListHook_;
 
   std::weak_ptr<ProxyDestination> selfPtr_;
 

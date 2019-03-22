@@ -170,14 +170,16 @@ void ProxyDestination::onReply(
   handleRxmittingConnection(result, latency);
 }
 
-size_t ProxyDestination::getPendingRequestCount() const {
-  folly::SpinLockGuard g(clientLock_);
-  return client_ ? client_->getPendingRequestCount() : 0;
-}
-
-size_t ProxyDestination::getInflightRequestCount() const {
-  folly::SpinLockGuard g(clientLock_);
-  return client_ ? client_->getInflightRequestCount() : 0;
+ProxyDestinationBase::RequestStats ProxyDestination::getRequestStats() const {
+  RequestStats stats{0, 0};
+  {
+    folly::SpinLockGuard g(clientLock_);
+    if (client_) {
+      stats.numPending = client_->getPendingRequestCount();
+      stats.numInflight = client_->getInflightRequestCount();
+    }
+  }
+  return stats;
 }
 
 std::shared_ptr<ProxyDestination> ProxyDestination::create(

@@ -657,7 +657,7 @@ McStatsReply stats_reply(ProxyBase* proxy, folly::StringPiece group_str) {
     for (size_t i = 0; i < router.opts().num_proxies; ++i) {
       router.getProxyBase(i)->destinationMap()->foreachDestinationSynced(
           [&serverStats](
-              folly::StringPiece key, const ProxyDestination& pdstn) {
+              folly::StringPiece key, const ProxyDestinationBase& pdstn) {
             auto& stat = serverStats[key];
             stat.isHardTko = pdstn.tracker()->isHardTko();
             stat.isSoftTko = pdstn.tracker()->isSoftTko();
@@ -682,8 +682,9 @@ McStatsReply stats_reply(ProxyBase* proxy, folly::StringPiece group_str) {
               stat.minRetransPerKByte = std::min(stat.minRetransPerKByte, val);
               ++stat.cntRetransPerKByte;
             }
-            stat.pendingRequestsCount += pdstn.getPendingRequestCount();
-            stat.inflightRequestsCount += pdstn.getInflightRequestCount();
+            auto reqStats = pdstn.getRequestStats();
+            stat.pendingRequestsCount += reqStats.numPending;
+            stat.inflightRequestsCount += reqStats.numInflight;
           });
     }
     for (const auto& it : serverStats) {
