@@ -1,8 +1,9 @@
-/**
- * Copyright (c) Facebook, Inc. and its affiliates.
+/*
+ *  Copyright (c) 2016-present, Facebook, Inc.
  *
- * This source code is licensed under the MIT license found in the LICENSE
- * file in the root directory of this source tree.
+ *  This source code is licensed under the MIT license found in the LICENSE
+ *  file in the root directory of this source tree.
+ *
  */
 #include <vector>
 
@@ -361,11 +362,6 @@ template <class RouterInfo>
 void CarbonRouterInstance<RouterInfo>::shutdown() noexcept {
   CHECK(!shutdownStarted_.exchange(true));
   shutdownImpl();
-}
-
-template <class RouterInfo>
-bool CarbonRouterInstance<RouterInfo>::isShutdown() const {
-  return shutdownStarted_.load();
 }
 
 template <class RouterInfo>
