@@ -96,6 +96,31 @@ class McGetRequest : public carbon::RequestCommon {
   template <class V>
   void visitFields(V&& v) const;
 
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McGetRequest>;
+
  private:
   facebook::memcache::thrift::McGetRequest underlyingThriftStruct_;
 };
@@ -166,6 +191,31 @@ class McGetReply : public carbon::ReplyCommon {
   void visitFields(V&& v);
   template <class V>
   void visitFields(V&& v) const;
+
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McGetReply>;
 
  private:
   facebook::memcache::thrift::McGetReply underlyingThriftStruct_;
@@ -241,6 +291,31 @@ class McSetRequest : public carbon::RequestCommon {
   template <class V>
   void visitFields(V&& v) const;
 
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McSetRequest>;
+
  private:
   facebook::memcache::thrift::McSetRequest underlyingThriftStruct_;
 };
@@ -311,6 +386,31 @@ class McSetReply : public carbon::ReplyCommon {
   void visitFields(V&& v);
   template <class V>
   void visitFields(V&& v) const;
+
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McSetReply>;
 
  private:
   facebook::memcache::thrift::McSetReply underlyingThriftStruct_;
@@ -386,6 +486,31 @@ class McDeleteRequest : public carbon::RequestCommon {
   template <class V>
   void visitFields(V&& v) const;
 
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McDeleteRequest>;
+
  private:
   facebook::memcache::thrift::McDeleteRequest underlyingThriftStruct_;
 };
@@ -457,6 +582,31 @@ class McDeleteReply : public carbon::ReplyCommon {
   template <class V>
   void visitFields(V&& v) const;
 
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McDeleteReply>;
+
  private:
   facebook::memcache::thrift::McDeleteReply underlyingThriftStruct_;
 };
@@ -519,6 +669,31 @@ class McLeaseGetRequest : public carbon::RequestCommon {
   void visitFields(V&& v);
   template <class V>
   void visitFields(V&& v) const;
+
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McLeaseGetRequest>;
 
  private:
   facebook::memcache::thrift::McLeaseGetRequest underlyingThriftStruct_;
@@ -596,6 +771,31 @@ class McLeaseGetReply : public carbon::ReplyCommon {
   void visitFields(V&& v);
   template <class V>
   void visitFields(V&& v) const;
+
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McLeaseGetReply>;
 
  private:
   facebook::memcache::thrift::McLeaseGetReply underlyingThriftStruct_;
@@ -678,6 +878,31 @@ class McLeaseSetRequest : public carbon::RequestCommon {
   template <class V>
   void visitFields(V&& v) const;
 
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McLeaseSetRequest>;
+
  private:
   facebook::memcache::thrift::McLeaseSetRequest underlyingThriftStruct_;
 };
@@ -739,6 +964,31 @@ class McLeaseSetReply : public carbon::ReplyCommon {
   void visitFields(V&& v);
   template <class V>
   void visitFields(V&& v) const;
+
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McLeaseSetReply>;
 
  private:
   facebook::memcache::thrift::McLeaseSetReply underlyingThriftStruct_;
@@ -814,6 +1064,31 @@ class McAddRequest : public carbon::RequestCommon {
   template <class V>
   void visitFields(V&& v) const;
 
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McAddRequest>;
+
  private:
   facebook::memcache::thrift::McAddRequest underlyingThriftStruct_;
 };
@@ -875,6 +1150,31 @@ class McAddReply : public carbon::ReplyCommon {
   void visitFields(V&& v);
   template <class V>
   void visitFields(V&& v) const;
+
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McAddReply>;
 
  private:
   facebook::memcache::thrift::McAddReply underlyingThriftStruct_;
@@ -950,6 +1250,31 @@ class McReplaceRequest : public carbon::RequestCommon {
   template <class V>
   void visitFields(V&& v) const;
 
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McReplaceRequest>;
+
  private:
   facebook::memcache::thrift::McReplaceRequest underlyingThriftStruct_;
 };
@@ -1012,6 +1337,31 @@ class McReplaceReply : public carbon::ReplyCommon {
   template <class V>
   void visitFields(V&& v) const;
 
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McReplaceReply>;
+
  private:
   facebook::memcache::thrift::McReplaceReply underlyingThriftStruct_;
 };
@@ -1070,6 +1420,31 @@ class McGetsRequest : public carbon::RequestCommon {
   void visitFields(V&& v);
   template <class V>
   void visitFields(V&& v) const;
+
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McGetsRequest>;
 
  private:
   facebook::memcache::thrift::McGetsRequest underlyingThriftStruct_;
@@ -1147,6 +1522,31 @@ class McGetsReply : public carbon::ReplyCommon {
   void visitFields(V&& v);
   template <class V>
   void visitFields(V&& v) const;
+
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McGetsReply>;
 
  private:
   facebook::memcache::thrift::McGetsReply underlyingThriftStruct_;
@@ -1229,6 +1629,31 @@ class McCasRequest : public carbon::RequestCommon {
   template <class V>
   void visitFields(V&& v) const;
 
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McCasRequest>;
+
  private:
   facebook::memcache::thrift::McCasRequest underlyingThriftStruct_;
 };
@@ -1290,6 +1715,31 @@ class McCasReply : public carbon::ReplyCommon {
   void visitFields(V&& v);
   template <class V>
   void visitFields(V&& v) const;
+
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McCasReply>;
 
  private:
   facebook::memcache::thrift::McCasReply underlyingThriftStruct_;
@@ -1356,6 +1806,31 @@ class McIncrRequest : public carbon::RequestCommon {
   void visitFields(V&& v);
   template <class V>
   void visitFields(V&& v) const;
+
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McIncrRequest>;
 
  private:
   facebook::memcache::thrift::McIncrRequest underlyingThriftStruct_;
@@ -1425,6 +1900,31 @@ class McIncrReply : public carbon::ReplyCommon {
   template <class V>
   void visitFields(V&& v) const;
 
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McIncrReply>;
+
  private:
   facebook::memcache::thrift::McIncrReply underlyingThriftStruct_;
 };
@@ -1490,6 +1990,31 @@ class McDecrRequest : public carbon::RequestCommon {
   void visitFields(V&& v);
   template <class V>
   void visitFields(V&& v) const;
+
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McDecrRequest>;
 
  private:
   facebook::memcache::thrift::McDecrRequest underlyingThriftStruct_;
@@ -1559,6 +2084,31 @@ class McDecrReply : public carbon::ReplyCommon {
   template <class V>
   void visitFields(V&& v) const;
 
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McDecrReply>;
+
  private:
   facebook::memcache::thrift::McDecrReply underlyingThriftStruct_;
 };
@@ -1617,6 +2167,31 @@ class McMetagetRequest : public carbon::RequestCommon {
   void visitFields(V&& v);
   template <class V>
   void visitFields(V&& v) const;
+
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McMetagetRequest>;
 
  private:
   facebook::memcache::thrift::McMetagetRequest underlyingThriftStruct_;
@@ -1701,6 +2276,31 @@ class McMetagetReply : public carbon::ReplyCommon {
   template <class V>
   void visitFields(V&& v) const;
 
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McMetagetReply>;
+
  private:
   facebook::memcache::thrift::McMetagetReply underlyingThriftStruct_;
 };
@@ -1775,6 +2375,31 @@ class McAppendRequest : public carbon::RequestCommon {
   template <class V>
   void visitFields(V&& v) const;
 
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McAppendRequest>;
+
  private:
   facebook::memcache::thrift::McAppendRequest underlyingThriftStruct_;
 };
@@ -1836,6 +2461,31 @@ class McAppendReply : public carbon::ReplyCommon {
   void visitFields(V&& v);
   template <class V>
   void visitFields(V&& v) const;
+
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McAppendReply>;
 
  private:
   facebook::memcache::thrift::McAppendReply underlyingThriftStruct_;
@@ -1911,6 +2561,31 @@ class McPrependRequest : public carbon::RequestCommon {
   template <class V>
   void visitFields(V&& v) const;
 
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McPrependRequest>;
+
  private:
   facebook::memcache::thrift::McPrependRequest underlyingThriftStruct_;
 };
@@ -1972,6 +2647,31 @@ class McPrependReply : public carbon::ReplyCommon {
   void visitFields(V&& v);
   template <class V>
   void visitFields(V&& v) const;
+
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McPrependReply>;
 
  private:
   facebook::memcache::thrift::McPrependReply underlyingThriftStruct_;
@@ -2036,6 +2736,31 @@ class McTouchRequest : public carbon::RequestCommon {
   template <class V>
   void visitFields(V&& v) const;
 
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McTouchRequest>;
+
  private:
   facebook::memcache::thrift::McTouchRequest underlyingThriftStruct_;
 };
@@ -2098,6 +2823,31 @@ class McTouchReply : public carbon::ReplyCommon {
   template <class V>
   void visitFields(V&& v) const;
 
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McTouchReply>;
+
  private:
   facebook::memcache::thrift::McTouchReply underlyingThriftStruct_;
 };
@@ -2156,6 +2906,31 @@ class McFlushReRequest : public carbon::RequestCommon {
   void visitFields(V&& v);
   template <class V>
   void visitFields(V&& v) const;
+
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McFlushReRequest>;
 
  private:
   facebook::memcache::thrift::McFlushReRequest underlyingThriftStruct_;
@@ -2218,6 +2993,31 @@ class McFlushReReply : public carbon::ReplyCommon {
   void visitFields(V&& v);
   template <class V>
   void visitFields(V&& v) const;
+
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McFlushReReply>;
 
  private:
   facebook::memcache::thrift::McFlushReReply underlyingThriftStruct_;
@@ -2285,6 +3085,31 @@ class McFlushAllRequest : public carbon::RequestCommon {
   template <class V>
   void visitFields(V&& v) const;
 
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McFlushAllRequest>;
+
  private:
   facebook::memcache::thrift::McFlushAllRequest underlyingThriftStruct_;
 };
@@ -2346,6 +3171,31 @@ class McFlushAllReply : public carbon::ReplyCommon {
   void visitFields(V&& v);
   template <class V>
   void visitFields(V&& v) const;
+
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McFlushAllReply>;
 
  private:
   facebook::memcache::thrift::McFlushAllReply underlyingThriftStruct_;
@@ -2409,6 +3259,31 @@ class McGatRequest : public carbon::RequestCommon {
   void visitFields(V&& v);
   template <class V>
   void visitFields(V&& v) const;
+
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McGatRequest>;
 
  private:
   facebook::memcache::thrift::McGatRequest underlyingThriftStruct_;
@@ -2481,6 +3356,31 @@ class McGatReply : public carbon::ReplyCommon {
   template <class V>
   void visitFields(V&& v) const;
 
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McGatReply>;
+
  private:
   facebook::memcache::thrift::McGatReply underlyingThriftStruct_;
 };
@@ -2543,6 +3443,31 @@ class McGatsRequest : public carbon::RequestCommon {
   void visitFields(V&& v);
   template <class V>
   void visitFields(V&& v) const;
+
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McGatsRequest>;
 
  private:
   facebook::memcache::thrift::McGatsRequest underlyingThriftStruct_;
@@ -2620,6 +3545,31 @@ class McGatsReply : public carbon::ReplyCommon {
   void visitFields(V&& v);
   template <class V>
   void visitFields(V&& v) const;
+
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
+ private:
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McGatsReply>;
 
  private:
   facebook::memcache::thrift::McGatsReply underlyingThriftStruct_;
