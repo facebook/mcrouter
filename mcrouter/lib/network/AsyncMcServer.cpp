@@ -278,10 +278,8 @@ class McServerThread {
     AcceptCallback(McServerThread* mcServerThread, bool secure)
         : mcServerThread_(mcServerThread), secure_(secure) {}
     void connectionAccepted(
-        folly::NetworkSocket fdNetworkSocket,
+        int fd,
         const folly::SocketAddress& /* clientAddr */) noexcept final {
-      int fd = fdNetworkSocket.toFd();
-
       if (secure_) {
         const auto& server = mcServerThread_->server_;
         auto& opts = server.opts_;
