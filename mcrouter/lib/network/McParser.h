@@ -1,17 +1,18 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
 #include <folly/io/IOBufQueue.h>
 
+#include "mcrouter/lib/carbon/Result.h"
 #include "mcrouter/lib/debug/ConnectionFifo.h"
+#include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
-#include "mcrouter/lib/network/UmbrellaProtocol.h"
+#include "mcrouter/lib/network/CaretHeader.h"
 
 namespace facebook {
 namespace memcache {
@@ -23,8 +24,6 @@ inline mc_protocol_t determineProtocol(uint8_t firstByte) {
   switch (firstByte) {
     case kCaretMagicByte:
       return mc_caret_protocol;
-    case ENTRY_LIST_MAGIC_BYTE:
-      return mc_umbrella_protocol_DONOTUSE;
     default:
       return mc_ascii_protocol;
   }
@@ -37,19 +36,6 @@ class McParser {
     virtual ~ParserCallback() = 0;
 
     /**
-     * We fully parsed an umbrella message and want to call RequestReady or
-     * ReplyReady callback.
-     *
-     * @param info        Message information
-     * @param buffer      Coalesced IOBuf that holds the entire message
-     *                    (header and body)
-     * @return            False on any parse errors.
-     */
-    virtual bool umMessageReady(
-        const UmbrellaMessageInfo& info,
-        const folly::IOBuf& buffer) = 0;
-
-    /**
      * caretMessageReady should be called after we have successfully parsed the
      * Caret header and after the full Caret message body is in the read buffer.
      *
@@ -59,7 +45,7 @@ class McParser {
      * @return            False on any parse errors.
      */
     virtual bool caretMessageReady(
-        const UmbrellaMessageInfo& headerInfo,
+        const CaretMessageInfo& headerInfo,
         const folly::IOBuf& buffer) = 0;
 
     /**
@@ -73,7 +59,9 @@ class McParser {
     /**
      * Called on fatal parse error (the stream should normally be closed)
      */
-    virtual void parseError(mc_res_t result, folly::StringPiece reason) = 0;
+    virtual void parseError(
+        carbon::Result result,
+        folly::StringPiece reason) = 0;
   };
 
   McParser(
@@ -114,9 +102,11 @@ class McParser {
    */
   bool readDataAvailable(size_t len);
 
-  double getDropProbability() const;
-
   void reset();
+
+  void setDebugFifo(ConnectionFifo* fifo) {
+    debugFifo_ = fifo;
+  }
 
  private:
   bool seenFirstByte_{false};
@@ -135,18 +125,19 @@ class McParser {
   folly::IOBuf readBuffer_;
 
   /**
-   * If we've read an umbrella header, this will contain header/body sizes.
+   * If we've read a caret header, this will contain header/body sizes.
    */
-  UmbrellaMessageInfo umMsgInfo_;
+  CaretMessageInfo msgInfo_;
 
   /**
    * Custom allocator states and method
    */
   bool useJemallocNodumpAllocator_{false};
 
-  bool readUmbrellaOrCaretData();
+  bool readCaretData();
 };
 
 inline McParser::ParserCallback::~ParserCallback() {}
-}
-} // facebook::memcache
+
+} // namespace memcache
+} // namespace facebook

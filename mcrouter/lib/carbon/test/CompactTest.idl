@@ -1,0 +1,37 @@
+namespace carbon::test;
+
+enum SimpleEnum : int64_t {
+  Twenty = 20,
+  Zero = 0,
+  One = 1,
+  Negative = -92233
+};
+
+request TestCompactRequest {
+  id: 5;
+  name: "testCompact";
+  reply: TestCompactReply;
+
+  1: carbon::Keys<std::string> key;
+  2: SimpleEnum testEnum;
+  3: bool testBool;
+  4: char testChar;
+  5: int8_t testInt8;
+  6: int16_t testInt16;
+  7: int32_t testInt32;
+  8: int64_t testInt64;
+  9: uint8_t testUInt8;
+  10: uint16_t testUInt16;
+  11: uint32_t testUInt32;
+  12: uint64_t testUInt64;
+  13: std::string testShortString;
+  14: std::string testLongString;
+  15: folly::IOBuf testIobuf;
+  16: std::vector<std::string> testList;
+  };
+
+reply TestCompactReply {
+  1: Result result;
+  2: int32_t valInt32;
+  3: int64_t valInt64;
+};

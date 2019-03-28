@@ -16,30 +16,46 @@
 namespace carbon {
 namespace test {
 
+template <class Writer>
+void AnotherRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void AnotherRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
 
 template <class V>
 void AnotherRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
 
+template <class Writer>
+void AnotherReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void AnotherReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
 }
 
 template <class V>
 void AnotherReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
 }

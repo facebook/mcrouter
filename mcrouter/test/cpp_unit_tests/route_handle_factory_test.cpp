@@ -33,7 +33,7 @@ TEST(RouteHandleFactoryTest, sanity) {
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
     auto reply = rh->route(McGetRequest("a"));
-    EXPECT_EQ(mc_res_notfound, reply.result());
+    EXPECT_EQ(carbon::Result::NOTFOUND, reply.result());
   });
 
   rh = factory.create("AllFastestRoute|ErrorRoute");
@@ -68,7 +68,7 @@ TEST(RouteHandleFactoryTest, sanity) {
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
     auto reply = rh->route(McGetRequest("a"));
-    EXPECT_EQ(mc_res_notfound, reply.result());
+    EXPECT_EQ(carbon::Result::NOTFOUND, reply.result());
   });
 
   rh = factory.create("HashRoute|ErrorRoute");
@@ -89,7 +89,7 @@ TEST(RouteHandleFactoryTest, sanity) {
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
     auto reply = rh->route(McGetRequest("a"));
-    EXPECT_EQ(mc_res_notfound, reply.result());
+    EXPECT_EQ(carbon::Result::NOTFOUND, reply.result());
   });
 
   rh = factory.create("LoggingRoute");
@@ -97,14 +97,14 @@ TEST(RouteHandleFactoryTest, sanity) {
   fm.run([&rh]() {
     mockFiberContext();
     auto reply = rh->route(McGetRequest("a"));
-    EXPECT_EQ(mc_res_notfound, reply.result());
+    EXPECT_EQ(carbon::Result::NOTFOUND, reply.result());
   });
 
   rh = factory.create("MissFailoverRoute|NullRoute");
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
     auto reply = rh->route(McGetRequest("a"));
-    EXPECT_EQ(mc_res_notfound, reply.result());
+    EXPECT_EQ(carbon::Result::NOTFOUND, reply.result());
   });
 
   rh = factory.create("RandomRoute|ErrorRoute");

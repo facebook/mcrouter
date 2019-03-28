@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -11,7 +10,7 @@
 #include <functional>
 #include <utility>
 
-#include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/network/AsyncMcClientImpl.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
 
@@ -23,7 +22,7 @@ class EventBase;
 namespace facebook {
 namespace memcache {
 
-struct ReplyStatsContext;
+struct RpcStatsContext;
 
 /**
  * A class for network communication with memcache protocol.
@@ -53,7 +52,7 @@ class AsyncMcClient {
   /**
    * Set status callbacks for the underlying connection.
    *
-   * @param onUp  will be called whenever client successfully connects to the
+   * @param onUp  Will be called whenever client successfully connects to the
    *              server. Will be called immediately if we're already connected.
    *              Can be nullptr.
    * @param onDown  will be called whenever connection goes down. Will be passed
@@ -65,8 +64,11 @@ class AsyncMcClient {
    *       some requests left, for wich reply callback wasn't called yet.
    */
   void setStatusCallbacks(
-      std::function<void(const folly::AsyncTransportWrapper&)> onUp,
-      std::function<void(ConnectionDownReason)> onDown);
+      std::function<void(
+          const folly::AsyncTransportWrapper& socket,
+          int64_t numConnectRetries)> onUp,
+      std::function<void(ConnectionDownReason, int64_t numConnectRetires)>
+          onDown);
 
   /**
    * Set callbacks for when requests state change.
@@ -75,25 +77,36 @@ class AsyncMcClient {
    *                        pendingDiff and inflightDiff will hold the
    *                        difference in the number of pending and inflight
    *                        requests, respectively.
-   * @param onWrite           Will be called everytime AsyncMcClient is about to
-   *                          write data to network. The numToSend argument
-   *                          holds the number of requests that will be sent in
-   *                          a single batch.
+   * @param onWrite         Will be called everytime AsyncMcClient is about to
+   *                        write data to network. The numToSend argument
+   *                        holds the number of requests that will be sent in
+   *                        a single batch.
+   * @param onPartialWrite  Will be called everytime a partial write happened.
+   *                        This means we would block when performing the full
+   *                        write, so we buffered some data to try again when
+   *                        the transport becomes ready to be written to again.
    */
   void setRequestStatusCallbacks(
       std::function<void(int pendingDiff, int inflightDiff)> onStateChange,
-      std::function<void(int numToSend)> onWrite);
+      std::function<void(size_t numToSend)> onWrite,
+      std::function<void()> onPartialWrite);
 
   /**
    * Send request synchronously (i.e. blocking call).
-   * Note: it must be called only from fiber context. It will block the current
+   * NOTE: it must be called only from fiber context. It will block the current
    *       stack and will send request only when we loop EventBase.
+   *
+   * @param request       The request to send.
+   * @param timeout       The timeout of this call.
+   * @param rpcContext    Output argument that can be used to return information
+   *                      about the reply received. If nullptr, it will be
+   *                      ignored (i.e. no information is going be sent back up)
    */
   template <class Request>
   ReplyT<Request> sendSync(
       const Request& request,
       std::chrono::milliseconds timeout,
-      ReplyStatsContext* replyContext = nullptr);
+      RpcStatsContext* rpcContext = nullptr);
 
   /**
    * Set throttling options.
@@ -132,10 +145,15 @@ class AsyncMcClient {
   size_t getInflightRequestCount() const;
 
   /**
-   * Update send and connect timeout. If new value is larger than current
-   * it is ignored.
+   * Update connect and write timeouts. If the new value is larger than the
+   * current value, it is ignored.
+   *
+   * @param connectTimeout  The new connect timeout.
+   * @param writeTimeout    The new write timeout.
    */
-  void updateWriteTimeout(std::chrono::milliseconds timeout);
+  void updateTimeoutsIfShorter(
+      std::chrono::milliseconds connectTimeout,
+      std::chrono::milliseconds writeTimeout);
 
   /**
    * @return        The transport used to manage socket
@@ -146,12 +164,6 @@ class AsyncMcClient {
    * @return Retransmits per packet used to detect lossy connections
    */
   double getRetransmissionInfo();
-
-  /**
-   * Get the drop probability
-   */
-  template <class Request>
-  double getDropProbability() const;
 
   /**
    * Set external queue for managing flush callbacks. By default we'll use

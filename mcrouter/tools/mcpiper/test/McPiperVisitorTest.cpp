@@ -20,7 +20,7 @@ using namespace carbon::test;
 namespace {
 
 void testBasic(bool scriptMode) {
-  McLeaseSetReply msg(mc_res_found);
+  McLeaseSetReply msg(carbon::Result::FOUND);
   msg.appSpecificErrorCode() = 17;
   msg.message() = "A message";
 

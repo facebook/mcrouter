@@ -154,7 +154,7 @@ class RouteCommandDispatcher {
             }
             str.append(d);
           }
-          ReplyT<ServiceInfoRequest> reply(mc_res_found);
+          ReplyT<ServiceInfoRequest> reply(carbon::Result::FOUND);
           reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, str);
           ctx->sendReply(std::move(reply));
         });
@@ -402,7 +402,7 @@ void ServiceInfo<RouterInfo>::ServiceInfoImpl::handleRequest(
   } catch (const std::exception& e) {
     replyStr = std::string("ERROR: ") + e.what();
   }
-  ReplyT<ServiceInfoRequest> reply(mc_res_found);
+  ReplyT<ServiceInfoRequest> reply(carbon::Result::FOUND);
   reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, replyStr);
   ctx->sendReply(std::move(reply));
 }

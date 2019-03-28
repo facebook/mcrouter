@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <limits>
 #include <random>
@@ -11,7 +10,7 @@
 #include "mcrouter/ProxyBase.h"
 #include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/config-impl.h"
-#include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
 
 namespace facebook {
@@ -23,28 +22,12 @@ ReplyT<Request> ProxyDestination::send(
     const Request& request,
     DestinationRequestCtx& requestContext,
     std::chrono::milliseconds timeout,
-    ReplyStatsContext& replyStatsContext) {
-  proxy.destinationMap()->markAsActive(*this);
-  auto reply =
-      getAsyncMcClient().sendSync(request, timeout, &replyStatsContext);
-  onReply(reply.result(), requestContext, replyStatsContext);
+    RpcStatsContext& rpcStatsContext) {
+  markAsActive();
+  auto reply = getAsyncMcClient().sendSync(request, timeout, &rpcStatsContext);
+  onReply(
+      reply.result(), requestContext, rpcStatsContext, request.isBufferDirty());
   return reply;
-}
-
-template <class Request>
-bool ProxyDestination::shouldDrop() const {
-  if (!client_) {
-    return false;
-  }
-
-  auto dropProbability = client_->getDropProbability<Request>();
-
-  if (dropProbability == 0.0) {
-    return false;
-  }
-
-  return std::generate_canonical<double, std::numeric_limits<double>::digits>(
-             proxy.randomGenerator()) < dropProbability;
 }
 
 } // namespace mcrouter

@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <folly/Conv.h>
 #include <folly/String.h>
@@ -22,10 +21,6 @@ WriteBuffer::WriteBuffer(mc_protocol_t protocol) : protocol_(protocol) {
       new (&asciiReply_) AsciiSerializedReply;
       break;
 
-    case mc_umbrella_protocol_DONOTUSE:
-      new (&umbrellaReply_) UmbrellaSerializedMessage;
-      break;
-
     case mc_caret_protocol:
       new (&caretReply_) CaretSerializedMessage;
       break;
@@ -41,16 +36,12 @@ WriteBuffer::~WriteBuffer() {
       asciiReply_.~AsciiSerializedReply();
       break;
 
-    case mc_umbrella_protocol_DONOTUSE:
-      umbrellaReply_.~UmbrellaSerializedMessage();
-      break;
-
     case mc_caret_protocol:
       caretReply_.~CaretSerializedMessage();
       break;
 
     default:
-      CHECK(false);
+      CHECK(false) << "Unknown protocol";
   }
 }
 
@@ -63,10 +54,6 @@ void WriteBuffer::clear() {
   switch (protocol_) {
     case mc_ascii_protocol:
       asciiReply_.clear();
-      break;
-
-    case mc_umbrella_protocol_DONOTUSE:
-      umbrellaReply_.clear();
       break;
 
     case mc_caret_protocol:
@@ -94,12 +81,11 @@ WriteBuffer::List& WriteBufferQueue::initFreeStack(
     mc_protocol_t protocol) noexcept {
   assert(
       protocol == mc_ascii_protocol ||
-      protocol == mc_umbrella_protocol_DONOTUSE ||
       protocol == mc_caret_protocol);
 
   static thread_local WriteBuffer::List freeBuffers[mc_nprotocols];
   return freeBuffers[static_cast<size_t>(protocol)];
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

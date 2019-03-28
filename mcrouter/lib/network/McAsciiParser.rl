@@ -8,7 +8,6 @@
 #include "mcrouter/lib/network/McAsciiParser.h"
 
 #include "mcrouter/lib/mc/msg.h"
-#include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 
 namespace facebook { namespace memcache {
@@ -37,7 +36,7 @@ variable cs savedCs_;
 # Action that initializes/performs data parsing for replies.
 action reply_value_data {
   // We must ensure message.value() is nonempty for ASCII get-like replies
-  message.value().emplace();
+  message.value() = folly::IOBuf();
   if (!readValue(buffer, *message.value())) {
     fbreak;
   }
@@ -157,11 +156,11 @@ error_code = uint %{
 };
 
 # Common storage replies.
-not_found = 'NOT_FOUND' @{ message.result() = mc_res_notfound; };
-deleted = 'DELETED' @{ message.result() = mc_res_deleted; };
-touched = 'TOUCHED' @{ message.result() = mc_res_touched; };
+not_found = 'NOT_FOUND' @{ message.result() = carbon::Result::NOTFOUND; };
+deleted = 'DELETED' @{ message.result() = carbon::Result::DELETED; };
+touched = 'TOUCHED' @{ message.result() = carbon::Result::TOUCHED; };
 
-VALUE = 'VALUE' % { message.result() = mc_res_found; };
+VALUE = 'VALUE' % { message.result() = carbon::Result::FOUND; };
 
 hit = VALUE ' '+ skip_key ' '+ flags ' '+ value_bytes new_line @reply_value_data
       new_line;
@@ -185,14 +184,14 @@ server_error = 'SERVER_ERROR' (' ' error_code ' ')? ' '? error_message
                %{
                  uint32_t errorCode = currentUInt_;
                  if (errorCode == SERVER_ERROR_BUSY) {
-                   message.result() = mc_res_busy;
+                   message.result() = carbon::Result::BUSY;
                  } else {
-                   message.result() = mc_res_remote_error;
+                   message.result() = carbon::Result::REMOTE_ERROR;
                  }
                };
 
 client_error = 'CLIENT_ERROR' (' ' error_code ' ')? ' '? error_message
-               %{ message.result() = mc_res_client_error; };
+               %{ message.result() = carbon::Result::CLIENT_ERROR; };
 
 error = command_error | server_error | client_error;
 }%%
@@ -202,7 +201,7 @@ error = command_error | server_error | client_error;
 machine mc_ascii_get_reply;
 include mc_ascii_common;
 
-get = hit? >{ message.result() = mc_res_notfound; } 'END';
+get = hit? >{ message.result() = carbon::Result::NOTFOUND; } 'END';
 get_reply := (get | error) msg_end;
 write data;
 }%%
@@ -222,7 +221,7 @@ void McClientAsciiParser::consumeMessage<McGetRequest>(folly::IOBuf& buffer) {
 machine mc_ascii_gets_reply;
 include mc_ascii_common;
 
-gets = gets_hit? >{ message.result() = mc_res_notfound; } 'END';
+gets = gets_hit? >{ message.result() = carbon::Result::NOTFOUND; } 'END';
 gets_reply := (gets | error) msg_end;
 write data;
 }%%
@@ -237,15 +236,55 @@ void McClientAsciiParser::consumeMessage<McGetsRequest>(folly::IOBuf& buffer) {
   }%%
 }
 
+// McGat reply.
+%%{
+machine mc_ascii_gat_reply;
+include mc_ascii_common;
+
+gat = hit? >{ message.result() = carbon::Result::NOTFOUND; } 'END';
+gat_reply := (gat | error) msg_end;
+write data;
+}%%
+
+template <>
+void McClientAsciiParser::consumeMessage<McGatRequest>(folly::IOBuf& buffer) {
+  auto& message = currentMessage_.get<McGatReply>();
+  %%{
+    machine mc_ascii_gat_reply;
+    write init nocs;
+    write exec;
+  }%%
+}
+
+// McGats reply.
+%%{
+machine mc_ascii_gats_reply;
+include mc_ascii_common;
+
+gats = gets_hit? >{ message.result() = carbon::Result::NOTFOUND; } 'END';
+gats_reply := (gats | error) msg_end;
+write data;
+}%%
+
+template <>
+void McClientAsciiParser::consumeMessage<McGatsRequest>(folly::IOBuf& buffer) {
+  auto& message = currentMessage_.get<McGatsReply>();
+  %%{
+    machine mc_ascii_gats_reply;
+    write init nocs;
+    write exec;
+  }%%
+}
+
 // McLeaseGet reply.
 %%{
 machine mc_ascii_lease_get_reply;
 include mc_ascii_common;
 
-# FIXME, we should return mc_res_foundstale or mc_res_notfoundhot.
+# FIXME, we should return carbon::Result::FOUNDSTALE or carbon::Result::NOTFOUNDHOT.
 lvalue = 'LVALUE' ' '+ skip_key ' '+ lease_token ' '+ flags ' '+ value_bytes
          new_line @reply_value_data new_line
-         @{ message.result() = mc_res_notfound; };
+         @{ message.result() = carbon::Result::NOTFOUND; };
 
 lease_get = (hit | lvalue) 'END';
 lease_get_reply := (lease_get | error) msg_end;
@@ -269,10 +308,10 @@ void McClientAsciiParser::consumeMessage<
 machine mc_ascii_storage_reply;
 include mc_ascii_common;
 
-stored = 'STORED' @{ message.result() = mc_res_stored; };
-stale_stored = 'STALE_STORED' @{ message.result() = mc_res_stalestored; };
-not_stored = 'NOT_STORED' @{ message.result() = mc_res_notstored; };
-exists = 'EXISTS' @{ message.result() = mc_res_exists; };
+stored = 'STORED' @{ message.result() = carbon::Result::STORED; };
+stale_stored = 'STALE_STORED' @{ message.result() = carbon::Result::STALESTORED; };
+not_stored = 'NOT_STORED' @{ message.result() = carbon::Result::NOTSTORED; };
+exists = 'EXISTS' @{ message.result() = carbon::Result::EXISTS; };
 
 storage = stored | stale_stored | not_stored | exists | not_found | deleted;
 storage_reply := (storage | error) msg_end;
@@ -295,7 +334,7 @@ void McClientAsciiParser::consumeStorageReplyCommon(folly::IOBuf& buffer) {
 machine mc_ascii_arithm_reply;
 include mc_ascii_common;
 
-arithm = not_found | (delta @{ message.result() = mc_res_stored; }) ' '*;
+arithm = not_found | (delta @{ message.result() = carbon::Result::STORED; }) ' '*;
 arithm_reply := (arithm | error) msg_end;
 
 write data;
@@ -316,7 +355,7 @@ void McClientAsciiParser::consumeArithmReplyCommon(folly::IOBuf& buffer) {
 machine mc_ascii_version_reply;
 include mc_ascii_common;
 
-version = 'VERSION ' @{ message.result() = mc_res_ok; }
+version = 'VERSION ' @{ message.result() = carbon::Result::OK; }
           (any* -- ('\r' | '\n')) ${
   using MsgT = std::decay<decltype(message)>::type;
   consumeVersion<MsgT>(buffer);
@@ -407,11 +446,12 @@ transient = uint %{
   // We no longer support is_transient with typed requests.
 };
 
-meta = 'META' % { message.result() = mc_res_found; };
+#TODO(stuclar): Remove optional parsing of is_transient (T32090075)
+meta = 'META' % { message.result() = carbon::Result::FOUND; };
 mhit = meta ' '+ skip_key ' '+ 'age:' ' '* (age | age_unknown) ';' ' '*
-  'exptime:' ' '* exptime ';' ' '* 'from:' ' '* (ip_addr|'unknown') ';' ' '*
-  'is_transient:' ' '* transient ' '* new_line;
-metaget = mhit? >{ message.result() = mc_res_notfound; } 'END' msg_end;
+  'exptime:' ' '* exptime ';' ' '* 'from:' ' '* (ip_addr|'unknown') (';' ' '*
+  'is_transient:' ' '* transient ' '*)? new_line;
+metaget = mhit? >{ message.result() = carbon::Result::NOTFOUND; } 'END' msg_end;
 metaget_reply := (metaget | error) msg_end;
 
 write data;
@@ -433,7 +473,7 @@ void McClientAsciiParser::consumeMessage<McMetagetRequest>(
 machine mc_ascii_flushall_reply;
 include mc_ascii_common;
 
-flushall = 'OK' $ { message.result() = mc_res_ok; };
+flushall = 'OK' $ { message.result() = carbon::Result::OK; };
 flushall_reply := (flushall | error) msg_end;
 
 write data;
@@ -464,6 +504,22 @@ void McClientAsciiParser::initializeReplyParser<McGetsRequest>() {
   savedCs_ = mc_ascii_gets_reply_en_gets_reply;
   errorCs_ = mc_ascii_gets_reply_error;
   consumer_ = &McClientAsciiParser::consumeMessage<McGetsRequest>;
+}
+
+template <>
+void McClientAsciiParser::initializeReplyParser<McGatRequest>() {
+  initializeCommon<McGatReply>();
+  savedCs_ = mc_ascii_gat_reply_en_gat_reply;
+  errorCs_ = mc_ascii_gat_reply_error;
+  consumer_ = &McClientAsciiParser::consumeMessage<McGatRequest>;
+}
+
+template <>
+void McClientAsciiParser::initializeReplyParser<McGatsRequest>() {
+  initializeCommon<McGatsReply>();
+  savedCs_ = mc_ascii_gats_reply_en_gats_reply;
+  errorCs_ = mc_ascii_gats_reply_error;
+  consumer_ = &McClientAsciiParser::consumeMessage<McGatsRequest>;
 }
 
 template <>
@@ -622,6 +678,40 @@ void McServerAsciiParser::initGetLike() {
   state_ = State::PARTIAL;
   currentMessage_.emplace<Request>();
   consumer_ = &McServerAsciiParser::consumeGetLike<Request>;
+}
+
+// Gat-like requests (gat, gats).
+
+%%{
+machine mc_ascii_gat_like_req_body;
+include mc_ascii_common;
+
+action on_full_key {
+  callback_->onRequest(std::move(message));
+}
+
+req_body := ' '* exptime_req ' '+ key % on_full_key (' '+ key % on_full_key)* ' '* multi_op_end;
+
+write data;
+}%%
+
+template <class Request>
+void McServerAsciiParser::consumeGatLike(folly::IOBuf& buffer) {
+  auto& message = currentMessage_.get<Request>();
+  %%{
+    machine mc_ascii_gat_like_req_body;
+    write init nocs;
+    write exec;
+  }%%
+}
+
+template <class Request>
+void McServerAsciiParser::initGatLike() {
+  savedCs_ = mc_ascii_gat_like_req_body_en_req_body;
+  errorCs_ = mc_ascii_gat_like_req_body_error;
+  state_ = State::PARTIAL;
+  currentMessage_.emplace<Request>();
+  consumer_ = &McServerAsciiParser::consumeGatLike<Request>;
 }
 
 // Set-like requests (set, add, replace, append, prepend).
@@ -953,6 +1043,16 @@ metaget = 'metaget ' @{
   fbreak;
 };
 
+gat = 'gat ' @{
+  initGatLike<McGatRequest>();
+  fbreak;
+};
+
+gats = 'gats ' @{
+  initGatLike<McGatsRequest>();
+  fbreak;
+};
+
 set = 'set ' @{
   initSetLike<McSetRequest>();
   fbreak;
@@ -1084,7 +1184,7 @@ flush_all = 'flush_all' @{
 
 command := get | gets | lease_get | metaget | set | add | replace | append |
            prepend | cas | lease_set | delete | shutdown | incr | decr |
-           version | quit | stats | exec | flush_re | flush_all | touch;
+           version | quit | stats | exec | flush_re | flush_all | touch | gat | gats;
 
 write data;
 }%%

@@ -16,12 +16,13 @@
 #include <folly/Optional.h>
 #include <folly/io/IOBuf.h>
 #include <folly/small_vector.h>
+#include <thrift/lib/cpp2/FieldRef.h>
 
 #include "mcrouter/lib/carbon/CarbonProtocolCommon.h"
 #include "mcrouter/lib/carbon/CarbonQueueAppender.h"
+#include "mcrouter/lib/carbon/CommonSerializationTraits.h"
 #include "mcrouter/lib/carbon/Fields.h"
 #include "mcrouter/lib/carbon/Result.h"
-#include "mcrouter/lib/carbon/SerializationTraits.h"
 #include "mcrouter/lib/carbon/Util.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 
@@ -215,17 +216,17 @@ class CarbonProtocolWriter {
 
   void writeField(const int16_t id, const Result res) {
     static_assert(
-        sizeof(Result) == sizeof(mc_res_t),
-        "Carbon currently assumes sizeof(Result) == sizeof(mc_res_t)");
-    // Note that this actually narrows mc_res_t from int to int16_t
+        sizeof(Result) == sizeof(carbon::Result),
+        "Carbon currently assumes sizeof(Result) == sizeof(carbon::Result)");
+    // Note that this actually narrows carbon::Result from int to int16_t
     writeField(id, static_cast<int16_t>(res));
   }
 
   void writeFieldAlways(const int16_t id, const Result res) {
     static_assert(
-        sizeof(Result) == sizeof(mc_res_t),
-        "Carbon currently assumes sizeof(Result) == sizeof(mc_res_t)");
-    // Note that this actually narrows mc_res_t from int to int16_t
+        sizeof(Result) == sizeof(carbon::Result),
+        "Carbon currently assumes sizeof(Result) == sizeof(carbon::Result)");
+    // Note that this actually narrows carbon::Result from int to int16_t
     writeFieldAlways(id, static_cast<int16_t>(res));
   }
 
@@ -264,6 +265,24 @@ class CarbonProtocolWriter {
 
   void writeField(const int16_t id, const folly::Optional<bool>& data) {
     if (data.hasValue()) {
+      writeFieldAlways(id, *data);
+    }
+  }
+
+  template <class T>
+  void writeField(
+      const int16_t id,
+      const apache::thrift::optional_field_ref<const T&> data) {
+    if (data.has_value()) {
+      writeFieldHeader(detail::TypeToField<T>::fieldType, id);
+      writeRaw(*data);
+    }
+  }
+
+  void writeField(
+      const int16_t id,
+      const apache::thrift::optional_field_ref<const bool&> data) {
+    if (data.has_value()) {
       writeFieldAlways(id, *data);
     }
   }
@@ -542,4 +561,4 @@ class CarbonProtocolWriter {
   int16_t lastFieldId_{0};
 };
 
-} // carbon
+} // namespace carbon

@@ -26,6 +26,7 @@ class ExternalCarbonConnectionImpl {
 
     size_t maxOutstanding{0};
     bool maxOutstandingError{false};
+    uint16_t portOverride{0};
   };
 
   explicit ExternalCarbonConnectionImpl(

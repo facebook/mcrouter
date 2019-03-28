@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -24,20 +23,11 @@ constexpr size_t kMaxHeaderLength = 1 /* magic byte */ +
     2 * kMaxAdditionalFields * folly::kMaxVarintLength64; /* key and value for
                                                           additional fields */
 
-// Normalize the dropProbability to the accuracy of 10^-6.
-constexpr uint32_t kDropProbabilityNormalizer = 1000000;
-
 constexpr uint32_t kCaretConnectionControlReqId = 0;
 
-enum class UmbrellaVersion : uint8_t {
-  BASIC = 0,
-  TYPED_MESSAGE = 1,
-};
-
-struct UmbrellaMessageInfo {
+struct CaretMessageInfo {
   uint32_t headerSize;
   uint32_t bodySize;
-  UmbrellaVersion version;
   uint32_t typeId;
   uint32_t reqId;
 
@@ -47,7 +37,7 @@ struct UmbrellaMessageInfo {
   uint64_t supportedCodecsSize{0};
   uint64_t usedCodecId{0};
   uint64_t uncompressedBodySize{0};
-  uint64_t dropProbability{0}; // Use uint64_t to store a double.
+  uint64_t dropProbability{0}; // Deprecated in version 37
   ServerLoad serverLoad{0};
 };
 
@@ -65,6 +55,7 @@ enum class CaretAdditionalFieldType {
   UNCOMPRESSED_BODY_SIZE = 4,
 
   // Drop Probability of each request.
+  // Deprecated in version 37
   DROP_PROBABILITY = 5,
 
   // Node ID for trace
@@ -74,5 +65,5 @@ enum class CaretAdditionalFieldType {
   SERVER_LOAD = 7,
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

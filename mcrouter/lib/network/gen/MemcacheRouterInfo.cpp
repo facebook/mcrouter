@@ -28,6 +28,7 @@
 #include <mcrouter/routes/AllInitialRouteFactory.h>
 #include <mcrouter/routes/AllMajorityRouteFactory.h>
 #include <mcrouter/routes/AllSyncRouteFactory.h>
+#include <mcrouter/routes/BlackholeRoute.h>
 #include <mcrouter/routes/DevNullRoute.h>
 #include <mcrouter/routes/ErrorRoute.h>
 #include <mcrouter/routes/FailoverRoute.h>
@@ -60,6 +61,7 @@ MemcacheRouterInfo::buildRouteMap() {
       {"AllInitialRoute", &makeAllInitialRoute<MemcacheRouterInfo>},
       {"AllMajorityRoute", &makeAllMajorityRoute<MemcacheRouterInfo>},
       {"AllSyncRoute", &makeAllSyncRoute<MemcacheRouterInfo>},
+      {"BlackholeRoute", &makeBlackholeRoute<MemcacheRouterInfo>},
       {"DevNullRoute", &makeDevNullRoute<MemcacheRouterInfo>},
       {"ErrorRoute", &makeErrorRoute<MemcacheRouterInfo>},
       {"HashRoute",
@@ -68,7 +70,8 @@ MemcacheRouterInfo::buildRouteMap() {
          return makeHashRoute<MemcacheRouterInfo>(factory, json);
        }},
       {"HostIdRoute", &makeHostIdRoute<MemcacheRouterInfo>},
-      {"LatencyInjectionRoute", &makeLatencyInjectionRoute<MemcacheRouterInfo>},
+      {"LatencyInjectionRoute",
+       &makeLatencyInjectionRoute<MemcacheRouterInfo>},
       {"LatestRoute", &makeLatestRoute<MemcacheRouterInfo>},
       {"LoadBalancerRoute", &makeLoadBalancerRoute<MemcacheRouterInfo>},
       {"LoggingRoute", &makeLoggingRoute<MemcacheRouterInfo>},

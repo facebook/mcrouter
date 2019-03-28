@@ -42,17 +42,9 @@ folly::StringPiece coalesceAndGetRange(folly::Optional<folly::IOBuf>& buf) {
   return buf.hasValue() ? coalesceAndGetRange(*buf) : folly::StringPiece();
 }
 
-bool hasSameMemoryRegion(const folly::IOBuf& buf, folly::StringPiece range) {
-  return !buf.isChained() &&
-      (buf.length() == 0 ||
-       (range.begin() == reinterpret_cast<const char*>(buf.data()) &&
-        range.size() == buf.length()));
-}
-
-bool hasSameMemoryRegion(const folly::IOBuf& a, const folly::IOBuf& b) {
-  return !a.isChained() && !b.isChained() &&
-      ((a.length() == 0 && b.length() == 0) ||
-       (a.data() == b.data() && a.length() == b.length()));
+folly::StringPiece coalesceAndGetRange(
+    apache::thrift::optional_field_ref<folly::IOBuf&> buf) {
+  return buf.has_value() ? coalesceAndGetRange(*buf) : folly::StringPiece();
 }
 
 void copyInto(char* raw, const folly::IOBuf& buf) {

@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -51,7 +50,13 @@ class CarbonQueueAppenderStorage {
     assert(nIovsUsed_ < kMaxIovecs);
 
     struct iovec* nextIov = iovs_ + nIovsUsed_;
-    const auto nFilled = buf.fillIov(nextIov, kMaxIovecs - nIovsUsed_);
+    const auto nFilled =
+        buf.fillIov(nextIov, kMaxIovecs - nIovsUsed_).numIovecs;
+
+    if (tcpZeroCopyThreshold_ && !applyZeroCopy_ &&
+        buf.capacity() >= tcpZeroCopyThreshold_) {
+      applyZeroCopy_ = true;
+    }
 
     if (nFilled > 0) {
       nIovsUsed_ += nFilled;
@@ -102,6 +107,18 @@ class CarbonQueueAppenderStorage {
 
   void coalesce();
 
+  bool setFullBuffer(const folly::IOBuf& buf) {
+    struct iovec* nextIov = iovs_ + nIovsUsed_;
+    const auto nFilled =
+        buf.fillIov(nextIov, kMaxIovecs - nIovsUsed_).numIovecs;
+
+    if (nFilled > 0) {
+      nIovsUsed_ += nFilled;
+      return true;
+    }
+    return false;
+  }
+
   void reset() {
     storageIdx_ = kMaxHeaderLength;
     head_.clear();
@@ -111,6 +128,7 @@ class CarbonQueueAppenderStorage {
     nIovsUsed_ = 1;
     canUsePreviousIov_ = false;
     headerOverlap_ = 0;
+    applyZeroCopy_ = false;
   }
 
   std::pair<const struct iovec*, size_t> getIovecs() {
@@ -150,12 +168,20 @@ class CarbonQueueAppenderStorage {
     }
   }
 
+  // If an IOBuf exceeds this size threshold, zero copy will be enabled
+  void setTCPZeroCopyThreshold(size_t threshold) {
+    tcpZeroCopyThreshold_ = threshold;
+  }
+
+  bool shouldApplyZeroCopy() const {
+    return applyZeroCopy_;
+  }
+
  private:
   static constexpr size_t kMaxIovecs{32};
   static constexpr size_t kInlineIOBufLen{128};
 
-  // Copied from UmbrellaProtocol.h, which will eventually die
-  static constexpr size_t kMaxAdditionalFields = 3;
+  static constexpr size_t kMaxAdditionalFields = 6;
   static constexpr size_t kMaxHeaderLength = 1 /* magic byte */ +
       1 /* GroupVarint header (lengths of 4 ints) */ +
       4 * sizeof(uint32_t) /* body size, typeId, reqId, num addl fields */ +
@@ -166,6 +192,8 @@ class CarbonQueueAppenderStorage {
   size_t nIovsUsed_{1};
   size_t headerOverlap_{0};
   bool canUsePreviousIov_{false};
+  bool applyZeroCopy_{false};
+  size_t tcpZeroCopyThreshold_{0};
 
   // Buffer used for non-IOBuf data, e.g., ints, strings, and protocol
   // data
@@ -189,7 +217,8 @@ class CarbonQueueAppenderStorage {
     struct iovec* nextIov = iovs_ + nIovsUsed_;
     auto bufCopy = buf;
     bufCopy.coalesce();
-    const auto nFilledRetry = bufCopy.fillIov(nextIov, kMaxIovecs - nIovsUsed_);
+    const auto nFilledRetry =
+        bufCopy.fillIov(nextIov, kMaxIovecs - nIovsUsed_).numIovecs;
     assert(nFilledRetry == 1);
     (void)nFilledRetry;
     ++nIovsUsed_;

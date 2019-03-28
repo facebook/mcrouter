@@ -8,8 +8,8 @@
 #pragma once
 
 #include "mcrouter/McrouterFiberContext.h"
+#include "mcrouter/lib/carbon/Result.h"
 #include "mcrouter/lib/carbon/RoutingGroups.h"
-#include "mcrouter/lib/mc/msg.h"
 
 namespace facebook {
 namespace memcache {
@@ -30,7 +30,7 @@ class ProxyRequestLogger {
  protected:
   Proxy<RouterInfo>& proxy_;
 
-  void logError(mc_res_t result, RequestClass reqClass);
+  void logError(carbon::Result result, RequestClass reqClass);
 
  private:
   template <class Request>

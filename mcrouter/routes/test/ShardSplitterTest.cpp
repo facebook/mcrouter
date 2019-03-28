@@ -37,7 +37,10 @@ TEST(ShardSplitter, basic) {
   EXPECT_EQ(10, split->getSplitSizeForCurrentHost());
   EXPECT_TRUE(split->fanoutDeletesEnabled());
   EXPECT_EQ(nullptr, splitter.getShardSplit("abc:123aa:", shard));
-  EXPECT_EQ(nullptr, splitter.getShardSplit("abc:12:", shard));
+  // Should return the default ShardSplitInfo
+  split = splitter.getShardSplit("abc:12:", shard);
+  ASSERT_NE(nullptr, split);
+  EXPECT_EQ(1, split->getSplitSizeForCurrentHost());
 }
 
 folly::dynamic getConfigTemplate(uint32_t startTime) {
@@ -69,6 +72,17 @@ TEST(ShardSplitter, afterMigration) {
     ASSERT_NE(nullptr, split);
     EXPECT_EQ(10, split->getSplitSizeForCurrentHost());
   }
+}
+
+TEST(ShardSplitter, defaultSplit) {
+  ShardSplitter splitter(folly::dynamic::object("123", 10), 2);
+  folly::StringPiece shard;
+  auto split = splitter.getShardSplit("abc:123:", shard);
+  ASSERT_NE(nullptr, split);
+  EXPECT_EQ(10, split->getSplitSizeForCurrentHost());
+  split = splitter.getShardSplit("bcd:234:", shard);
+  ASSERT_NE(nullptr, split);
+  EXPECT_EQ(2, split->getSplitSizeForCurrentHost());
 }
 
 void migrationTest(folly::dynamic config, double migrationPoint) {

@@ -1,13 +1,13 @@
-/*
- *  Copyright (c) 2018-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <folly/Range.h>
 #include <folly/dynamic.h>
 
+#include "mcrouter/lib/DynamicUtil.h"
 #include "mcrouter/lib/SelectionRouteFactory.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/routes/ErrorRoute.h"
@@ -20,9 +20,7 @@ namespace mcrouter {
 
 namespace detail {
 
-void parseShardsPerServerJson(
-    const folly::dynamic& json,
-    std::function<void(uint32_t)>&& f);
+std::vector<size_t> parseShardsPerServerJson(const folly::dynamic& json);
 
 std::vector<std::vector<size_t>> parseAllShardsJson(
     const folly::dynamic& allShardsJson);
@@ -174,19 +172,17 @@ ShardDestinationsMap<RouterInfo> getShardDestinationsMap(
     }
 
     for (size_t j = 0; j < shardsJson.size(); j++) {
-      parseShardsPerServerJson(
-          shardsJson[j], [&destinations, &shardMap, j](uint32_t shard) {
-            auto rh = destinations[j];
-            auto it = shardMap.find(shard);
-            if (it == shardMap.end()) {
-              it = shardMap
-                       .insert(
-                           {shard,
+      for (auto shard : parseShardsPerServerJson(shardsJson[j])) {
+        auto rh = destinations[j];
+        auto it = shardMap.find(shard);
+        if (it == shardMap.end()) {
+          it = shardMap
+                   .insert({shard,
                             std::vector<typename RouterInfo::RouteHandlePtr>()})
-                       .first;
-            }
-            it->second.push_back(std::move(rh));
-          });
+                   .first;
+        }
+        it->second.push_back(std::move(rh));
+      }
     }
   }
   return shardMap;
@@ -228,6 +224,40 @@ void buildChildrenLoadBalancerRoutes(
     auto childrenRouteHandles = std::move(item.second);
     destinations.push_back(createLoadBalancerRoute<RouterInfo>(
         std::move(childrenRouteHandles), options));
+    shardToDestinationIndexMap[shardId] = destinations.size() - 1;
+  });
+}
+
+template <class RouterInfo, class MapType>
+void buildChildrenCustomRoutesFromMap(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json,
+    const ShardDestinationsMap<RouterInfo>& shardMap,
+    const RouteHandleWithChildrenFactoryFn<RouterInfo>& createCustomRh,
+    std::vector<typename RouterInfo::RouteHandlePtr>& destinations,
+    MapType& shardToDestinationIndexMap) {
+  std::for_each(shardMap.begin(), shardMap.end(), [&](auto& item) {
+    auto shardId = item.first;
+    auto childrenRouteHandles = std::move(item.second);
+    destinations.push_back(
+        createCustomRh(factory, json, std::move(childrenRouteHandles)));
+    shardToDestinationIndexMap[shardId] = destinations.size() - 1;
+  });
+}
+
+template <class RouterInfo, class MapType>
+void buildChildrenCustomJsonmRoutes(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json,
+    const ShardDestinationsMap<RouterInfo>& shardMap,
+    std::vector<typename RouterInfo::RouteHandlePtr>& destinations,
+    MapType& shardToDestinationIndexMap) {
+  std::for_each(shardMap.begin(), shardMap.end(), [&](auto& item) {
+    auto shardId = item.first;
+    auto childrenList = std::move(item.second);
+    // push children to factory. Factory will use when it sees "%children_list%"
+    factory.pushChildrenList(std::move(childrenList));
+    destinations.push_back(factory.create(json));
     shardToDestinationIndexMap[shardId] = destinations.size() - 1;
   });
 }
@@ -276,7 +306,8 @@ typename RouterInfo::RouteHandlePtr createShardSelectionRoute(
 template <class RouterInfo, class ShardSelector, class MapType>
 typename RouterInfo::RouteHandlePtr createEagerShardSelectionRoute(
     RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
-    const folly::dynamic& json) {
+    const folly::dynamic& json,
+    const ChildrenFactoryMap<RouterInfo>& childrenFactoryMap) {
   checkLogic(
       json.isObject(), "EagerShardSelectionRoute config should be an object");
 
@@ -321,10 +352,28 @@ typename RouterInfo::RouteHandlePtr createEagerShardSelectionRoute(
         shardMap,
         destinations,
         shardToDestinationIndexMap);
+  } else if (childrenType == "CustomJsonmRoute") {
+    detail::buildChildrenCustomJsonmRoutes<RouterInfo, MapType>(
+        factory,
+        childrenSettings,
+        shardMap,
+        destinations,
+        shardToDestinationIndexMap);
   } else {
-    throwLogic(
-        "EagerShardSelectionRoute: 'children_type' {} not supported",
-        childrenType);
+    auto it = childrenFactoryMap.find(childrenType.str());
+    if (it != childrenFactoryMap.end()) {
+      detail::buildChildrenCustomRoutesFromMap<RouterInfo, MapType>(
+          factory,
+          childrenSettings,
+          shardMap,
+          it->second,
+          destinations,
+          shardToDestinationIndexMap);
+    } else {
+      throwLogic(
+          "EagerShardSelectionRoute: 'children_type' {} not supported",
+          childrenType);
+    }
   }
 
   ShardSelector selector(std::move(shardToDestinationIndexMap));

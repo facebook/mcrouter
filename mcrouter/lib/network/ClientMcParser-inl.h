@@ -1,13 +1,15 @@
-/*
- *  Copyright (c) 2015-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
+#pragma once
+
 #include <folly/Format.h>
 #include <folly/io/Cursor.h>
 
+#include "mcrouter/lib/carbon/Artillery.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
 
@@ -61,17 +63,14 @@ typename std::enable_if<ListContains<McRequestList, Request>::value>::type
 ClientMcParser<Callback>::expectNext() {
   if (parser_.protocol() == mc_ascii_protocol) {
     asciiParser_.initializeReplyParser<Request>();
-    replyForwarder_ = &ClientMcParser<Callback>::forwardAsciiReply<Request>;
+    asciiReplyForwarder_ =
+        &ClientMcParser<Callback>::forwardAsciiReply<Request>;
     if (UNLIKELY(debugFifo_ && debugFifo_->isConnected())) {
       debugFifo_->startMessage(
           MessageDirection::Received, ReplyT<Request>::typeId);
     }
-  } else if (parser_.protocol() == mc_umbrella_protocol_DONOTUSE) {
-    umbrellaOrCaretForwarder_ =
-        &ClientMcParser<Callback>::forwardUmbrellaReply<Request>;
   } else if (parser_.protocol() == mc_caret_protocol) {
-    umbrellaOrCaretForwarder_ =
-        &ClientMcParser<Callback>::forwardCaretReply<Request>;
+    caretForwarder_ = &ClientMcParser<Callback>::forwardCaretReply<Request>;
   }
 }
 
@@ -80,8 +79,7 @@ template <class Request>
 typename std::enable_if<!ListContains<McRequestList, Request>::value>::type
 ClientMcParser<Callback>::expectNext() {
   assert(parser_.protocol() == mc_caret_protocol);
-  umbrellaOrCaretForwarder_ =
-      &ClientMcParser<Callback>::forwardCaretReply<Request>;
+  caretForwarder_ = &ClientMcParser<Callback>::forwardCaretReply<Request>;
 }
 
 template <class Callback>
@@ -92,38 +90,18 @@ void ClientMcParser<Callback>::forwardAsciiReply() {
   callback_.replyReady(
       std::move(reply),
       0, /* reqId */
-      ReplyStatsContext(
+      RpcStatsContext(
           0 /* usedCodecId  */,
           replySize /* reply size before compression */,
           replySize /* reply size after compression */,
           ServerLoad::zero()));
-  replyForwarder_ = nullptr;
-}
-
-template <class Callback>
-template <class Request>
-void ClientMcParser<Callback>::forwardUmbrellaReply(
-    const UmbrellaMessageInfo& info,
-    const folly::IOBuf& buffer,
-    uint64_t reqId) {
-  auto reply = umbrellaParseReply<Request>(
-      buffer,
-      buffer.data(),
-      info.headerSize,
-      buffer.data() + info.headerSize,
-      info.bodySize);
-
-  callback_.replyReady(
-      std::move(reply),
-      reqId,
-      ReplyStatsContext(
-          0 /* usedCodecId */, info.bodySize, info.bodySize, info.serverLoad));
+  asciiReplyForwarder_ = nullptr;
 }
 
 template <class Callback>
 template <class Request>
 void ClientMcParser<Callback>::forwardCaretReply(
-    const UmbrellaMessageInfo& headerInfo,
+    const CaretMessageInfo& headerInfo,
     const folly::IOBuf& buffer,
     uint64_t reqId) {
   const folly::IOBuf* finalBuffer = &buffer;
@@ -142,13 +120,15 @@ void ClientMcParser<Callback>::forwardCaretReply(
   cur += offset;
   carbon::CarbonProtocolReader reader(cur);
   reply.deserialize(reader);
+  reply.setTraceContext(
+      carbon::tracing::deserializeTraceContext(headerInfo.traceId));
 
   callback_.replyReady(std::move(reply), reqId, getReplyStats(headerInfo));
 }
 
 template <class Callback>
 std::unique_ptr<folly::IOBuf> ClientMcParser<Callback>::decompress(
-    const UmbrellaMessageInfo& headerInfo,
+    const CaretMessageInfo& headerInfo,
     const folly::IOBuf& buffer) {
   assert(!buffer.isChained());
   auto* codec = compressionCodecMap_
@@ -166,42 +146,14 @@ std::unique_ptr<folly::IOBuf> ClientMcParser<Callback>::decompress(
 }
 
 template <class Callback>
-bool ClientMcParser<Callback>::umMessageReady(
-    const UmbrellaMessageInfo& info,
-    const folly::IOBuf& buffer) {
-  if (UNLIKELY(parser_.protocol() != mc_umbrella_protocol_DONOTUSE)) {
-    std::string reason = folly::sformat(
-        "Expected {} protocol, but received umbrella!",
-        mc_protocol_to_string(parser_.protocol()));
-    callback_.parseError(mc_res_local_error, reason);
-    return false;
-  }
-
-  try {
-    const size_t reqId = umbrellaDetermineReqId(buffer.data(), info.headerSize);
-    if (callback_.nextReplyAvailable(reqId)) {
-      (this->*umbrellaOrCaretForwarder_)(info, buffer, reqId);
-    }
-    // Consume the message, but don't fail.
-    return true;
-  } catch (const std::exception& e) {
-    std::string reason(
-        std::string("Error parsing Umbrella message: ") + e.what());
-    LOG(ERROR) << reason;
-    callback_.parseError(mc_res_local_error, reason);
-    return false;
-  }
-}
-
-template <class Callback>
 bool ClientMcParser<Callback>::caretMessageReady(
-    const UmbrellaMessageInfo& headerInfo,
+    const CaretMessageInfo& headerInfo,
     const folly::IOBuf& buffer) {
   if (UNLIKELY(parser_.protocol() != mc_caret_protocol)) {
     const auto reason = folly::sformat(
         "Expected {} protocol, but received Caret!",
         mc_protocol_to_string(parser_.protocol()));
-    callback_.parseError(mc_res_local_error, reason);
+    callback_.parseError(carbon::Result::LOCAL_ERROR, reason);
     return false;
   }
 
@@ -210,13 +162,13 @@ bool ClientMcParser<Callback>::caretMessageReady(
     if (UNLIKELY(reqId == kCaretConnectionControlReqId)) {
       callback_.handleConnectionControlMessage(headerInfo);
     } else if (callback_.nextReplyAvailable(reqId)) {
-      (this->*umbrellaOrCaretForwarder_)(headerInfo, buffer, reqId);
+      (this->*caretForwarder_)(headerInfo, buffer, reqId);
     }
     return true;
   } catch (const std::exception& e) {
     const auto reason =
         folly::sformat("Error parsing Caret message: {}", e.what());
-    callback_.parseError(mc_res_local_error, reason);
+    callback_.parseError(carbon::Result::LOCAL_ERROR, reason);
     return false;
   }
 }
@@ -227,7 +179,7 @@ void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
     std::string reason(folly::sformat(
         "Expected {} protocol, but received ASCII!",
         mc_protocol_to_string(parser_.protocol())));
-    callback_.parseError(mc_res_local_error, reason);
+    callback_.parseError(carbon::Result::LOCAL_ERROR, reason);
     return;
   }
 
@@ -242,7 +194,7 @@ void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
                 data,
                 data +
                     std::min(readBuffer.length(), static_cast<size_t>(128))))));
-        callback_.parseError(mc_res_local_error, reason);
+        callback_.parseError(carbon::Result::LOCAL_ERROR, reason);
         return;
       }
     }
@@ -255,11 +207,11 @@ void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
     }
     switch (result) {
       case McAsciiParserBase::State::COMPLETE:
-        (this->*replyForwarder_)();
+        (this->*asciiReplyForwarder_)();
         break;
       case McAsciiParserBase::State::ERROR:
         callback_.parseError(
-            mc_res_local_error, asciiParser_.getErrorDescription());
+            carbon::Result::LOCAL_ERROR, asciiParser_.getErrorDescription());
         return;
       case McAsciiParserBase::State::PARTIAL:
         // Buffer was completely consumed.
@@ -267,7 +219,7 @@ void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
       case McAsciiParserBase::State::UNINIT:
         // We fed parser some data, it shouldn't remain in State::NONE.
         callback_.parseError(
-            mc_res_local_error,
+            carbon::Result::LOCAL_ERROR,
             "Sent data to AsciiParser but it remained in "
             "UNINIT state!");
         return;
@@ -277,7 +229,7 @@ void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
 
 template <class Callback>
 void ClientMcParser<Callback>::parseError(
-    mc_res_t result,
+    carbon::Result result,
     folly::StringPiece reason) {
   callback_.parseError(result, reason);
 }
@@ -289,9 +241,9 @@ bool ClientMcParser<Callback>::shouldReadToAsciiBuffer() const {
 }
 
 template <class Callback>
-ReplyStatsContext ClientMcParser<Callback>::getReplyStats(
-    const UmbrellaMessageInfo& headerInfo) const {
-  ReplyStatsContext replyStatsContext;
+RpcStatsContext ClientMcParser<Callback>::getReplyStats(
+    const CaretMessageInfo& headerInfo) const {
+  RpcStatsContext rpcStatsContext;
   if (headerInfo.usedCodecId > 0) {
     // We need to remove compression additional fields to calculate the
     // real size of reply if it was not compressed at all.
@@ -299,32 +251,19 @@ ReplyStatsContext ClientMcParser<Callback>::getReplyStats(
         2 + // varints of two compression additional field types
         (headerInfo.usedCodecId / 128 + 1) + // varint
         (headerInfo.uncompressedBodySize / 128 + 1); // varint
-    replyStatsContext.replySizeBeforeCompression = headerInfo.headerSize +
+    rpcStatsContext.replySizeBeforeCompression = headerInfo.headerSize +
         headerInfo.uncompressedBodySize - compressionOverhead;
-    replyStatsContext.replySizeAfterCompression =
+    rpcStatsContext.replySizeAfterCompression =
         headerInfo.headerSize + headerInfo.bodySize;
   } else {
-    replyStatsContext.replySizeBeforeCompression =
+    rpcStatsContext.replySizeBeforeCompression =
         headerInfo.headerSize + headerInfo.bodySize;
-    replyStatsContext.replySizeAfterCompression =
-        replyStatsContext.replySizeBeforeCompression;
+    rpcStatsContext.replySizeAfterCompression =
+        rpcStatsContext.replySizeBeforeCompression;
   }
-  replyStatsContext.usedCodecId = headerInfo.usedCodecId;
-  replyStatsContext.serverLoad = headerInfo.serverLoad;
-  return replyStatsContext;
+  rpcStatsContext.usedCodecId = headerInfo.usedCodecId;
+  rpcStatsContext.serverLoad = headerInfo.serverLoad;
+  return rpcStatsContext;
 }
-
-template <class Callback>
-double ClientMcParser<Callback>::getDropProbability() const {
-  if (parser_.protocol() == mc_caret_protocol) {
-    const auto dropProbability = parser_.getDropProbability();
-    if (dropProbability >= 0.0 && dropProbability <= 1.0) {
-      return dropProbability;
-    }
-    callback_.logErrorWithContext(folly::sformat(
-        "Invalid drop probability: {}, resetting to 0", dropProbability));
-  }
-  return 0.0;
-}
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -47,6 +47,12 @@ using ObservableRuntimeVars =
 using ShadowLeaseTokenMap = folly::Synchronized<
     folly::EvictingCacheMap<int64_t, int64_t>,
     folly::fibers::TimedMutex>;
+
+using LogPostprocessCallbackFunc = std::function<void(
+    const folly::dynamic&, // Serialized request
+    const folly::dynamic&, // Serialized reply
+    const char* const, // Name of operation (e.g. 'get')
+    const folly::StringPiece)>; // User ip
 
 class CarbonRouterInstanceBase {
  public:
@@ -247,6 +253,7 @@ class CarbonRouterInstanceBase {
   // Aggregates stats for all associated proxies. Should be called periodically.
   void updateStats();
 };
-}
-}
-} // facebook::memcache::mcrouter
+
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

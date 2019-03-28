@@ -1,21 +1,16 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
 #include <string.h>
 
-#include "mcrouter/lib/fbi/decls.h"
-
-__BEGIN_DECLS
-
 #define MC_KEY_MAX_LEN_ASCII (250)
-#define MC_KEY_MAX_LEN_UMBRELLA (2 * 1024)
-#define MC_KEY_MAX_LEN (MC_KEY_MAX_LEN_UMBRELLA)
+#define MC_KEY_MAX_LEN_CARET (2 * 1024)
+#define MC_KEY_MAX_LEN (MC_KEY_MAX_LEN_CARET)
 
 typedef enum mc_protocol_e {
   mc_unknown_protocol = 0,
@@ -46,5 +41,3 @@ static inline const char* mc_protocol_to_string(const mc_protocol_t value) {
   };
   return strings[value < mc_nprotocols ? value : mc_unknown_protocol];
 }
-
-__END_DECLS

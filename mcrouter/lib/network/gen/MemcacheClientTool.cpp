@@ -12,6 +12,7 @@
  *
  *  @generated
  */
+#include <folly/init/Init.h>
 
 #include <mcrouter/lib/carbon/CmdLineClient.h>
 #include <mcrouter/lib/carbon/JsonClient.h>
@@ -36,100 +37,86 @@ class MemcacheJsonClient : public JsonClient {
       const folly::dynamic& requestJson,
       folly::dynamic& replyJson) override final {
     if (requestName == facebook::memcache::McAddRequest::name) {
-      return sendRequest<facebook::memcache::McAddRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McAddRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McAppendRequest::name) {
-      return sendRequest<facebook::memcache::McAppendRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McAppendRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McCasRequest::name) {
-      return sendRequest<facebook::memcache::McCasRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McCasRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McDecrRequest::name) {
-      return sendRequest<facebook::memcache::McDecrRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McDecrRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McDeleteRequest::name) {
-      return sendRequest<facebook::memcache::McDeleteRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McDeleteRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McExecRequest::name) {
-      return sendRequest<facebook::memcache::McExecRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McExecRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McFlushAllRequest::name) {
-      return sendRequest<facebook::memcache::McFlushAllRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McFlushAllRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McFlushReRequest::name) {
-      return sendRequest<facebook::memcache::McFlushReRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McFlushReRequest>(requestJson, replyJson);
+    }
+    if (requestName == facebook::memcache::McGatRequest::name) {
+      return sendRequest<facebook::memcache::McGatRequest>(requestJson, replyJson);
+    }
+    if (requestName == facebook::memcache::McGatsRequest::name) {
+      return sendRequest<facebook::memcache::McGatsRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McGetRequest::name) {
-      return sendRequest<facebook::memcache::McGetRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McGetRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McGetsRequest::name) {
-      return sendRequest<facebook::memcache::McGetsRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McGetsRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McIncrRequest::name) {
-      return sendRequest<facebook::memcache::McIncrRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McIncrRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McLeaseGetRequest::name) {
-      return sendRequest<facebook::memcache::McLeaseGetRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McLeaseGetRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McLeaseSetRequest::name) {
-      return sendRequest<facebook::memcache::McLeaseSetRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McLeaseSetRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McMetagetRequest::name) {
-      return sendRequest<facebook::memcache::McMetagetRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McMetagetRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McPrependRequest::name) {
-      return sendRequest<facebook::memcache::McPrependRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McPrependRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McQuitRequest::name) {
-      return sendRequest<facebook::memcache::McQuitRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McQuitRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McReplaceRequest::name) {
-      return sendRequest<facebook::memcache::McReplaceRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McReplaceRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McSetRequest::name) {
-      return sendRequest<facebook::memcache::McSetRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McSetRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McShutdownRequest::name) {
-      return sendRequest<facebook::memcache::McShutdownRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McShutdownRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McStatsRequest::name) {
-      return sendRequest<facebook::memcache::McStatsRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McStatsRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McTouchRequest::name) {
-      return sendRequest<facebook::memcache::McTouchRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McTouchRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McVersionRequest::name) {
-      return sendRequest<facebook::memcache::McVersionRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McVersionRequest>(requestJson, replyJson);
     }
     return false;
   }
 };
 } // anonymous namespace
 
-int main(int argc, const char** argv) {
+int main(int argc, char** argv) {
+  int tmpArgc = 1;
+  folly::init(&tmpArgc, &argv, /* removeFlags */ false);
   CmdLineClient client;
-  client.sendRequests<MemcacheJsonClient>(argc, argv);
+  client.sendRequests<MemcacheJsonClient>(argc, const_cast<const char**>(argv));
   return 0;
 }

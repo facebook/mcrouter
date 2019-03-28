@@ -1,4 +1,4 @@
-# Copyright (c) 2015-present, Facebook, Inc.
+# Copyright (c) Facebook, Inc. and its affiliates.
 #
 # This source code is licensed under the MIT license found in the LICENSE
 # file in the root directory of this source tree.
@@ -28,6 +28,7 @@ class CarbonLookasideTmpConfig():
     "type": "CarbonLookasideRoute",
     "prefix": "$TEMPLATE_PREFIX",
     "ttl": $TEMPLATE_TTL,
+    "ttl_unit_ms": $TEMPLATE_TTL_UNIT_MS,
     "flavor": "$TEMPLATE_FILENAME",
     "lease_settings": {
       "enable_leases": $TEMPLATE_LEASE_ENABLE,
@@ -99,7 +100,8 @@ class CarbonLookasideTmpConfig():
             os.remove(self.tmpFlavorFile)
 
     def __init__(self, prefix, ttl, port, lease_enable='false', lease_interval=0,
-            lease_num_retries=0, latency_before=0, latency_after=0):
+            lease_num_retries=0, latency_before=0, latency_after=0,
+            has_ms_ttl='false'):
         # Client file configuration
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as self.tmpClientFile:
             clientDict = {'TEMPLATE_PORT': port}
@@ -116,6 +118,7 @@ class CarbonLookasideTmpConfig():
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as self.tmpRouteFile:
             routeDict = {'TEMPLATE_PREFIX': prefix,
                          'TEMPLATE_TTL': ttl,
+                         'TEMPLATE_TTL_UNIT_MS': has_ms_ttl,
                          'TEMPLATE_FILENAME': 'file:' + self.tmpFlavorFile.name,
                          'TEMPLATE_LEASE_ENABLE': lease_enable,
                          'TEMPLATE_LEASE_WAIT_INTERVAL': lease_interval,
@@ -165,7 +168,7 @@ class TestCarbonLookasideRouteBasic(McrouterTestCase):
         # that the items have indeed been stored.
         for i in range(0, n):
             key = '{}someprefix:{}:|#|id=123'.format(self.prefix, i)
-            self.assertTrue(self.mc.get(key), 'value')
+            self.assertTrue(self.mc.get(key))
         # Query the items through mcrouter and check that they are there
         # This query will be fed from carbonlookaside.
         for i in range(0, n):
@@ -187,7 +190,7 @@ class TestCarbonLookasideRouteBasic(McrouterTestCase):
         # that the items have indeed been stored.
         for i in range(0, n):
             key = '{}someprefix:{}:|#|id=123'.format(self.prefix, i)
-            self.assertTrue(self.mc.get(key), 'value')
+            self.assertTrue(self.mc.get(key))
         # Query the items through mcrouter and check that they are there
         # This query will be fed from carbonlookaside.
         for i in range(0, n):
@@ -227,12 +230,12 @@ class TestCarbonLookasideRouteExpiry(McrouterTestCase):
         # that the items have indeed been stored.
         for i in range(0, n):
             key = '{}someprefix:{}:|#|id=123'.format(self.prefix, i)
-            self.assertTrue(self.mc.get(key), 'value')
-        time.sleep(2)
+            self.assertTrue(self.mc.get(key))
+        time.sleep(3)
         # Query carbonlookaside directly and check they have expired
         for i in range(0, n):
             key = '{}someprefix:{}:|#|id=123'.format(self.prefix, i)
-            self.assertFalse(self.mc.get(key), 'value')
+            self.assertFalse(self.mc.get(key))
 
 
 class TestCarbonLookasideRouteNoExpiry(McrouterTestCase):
@@ -263,15 +266,15 @@ class TestCarbonLookasideRouteNoExpiry(McrouterTestCase):
         for i in range(0, n):
             key = 'someprefix:{}:|#|id=123'.format(i)
             self.assertTrue(self.mcrouter.get(key), 'value')
-        time.sleep(3)
+        time.sleep(4)
         # Items should have expired in memcache
         for i in range(0, n):
             key = 'someprefix:{}:|#|id=123'.format(i)
-            self.assertFalse(self.mc.get(key), 'value')
+            self.assertFalse(self.mc.get(key))
         # Items still available in carbonlookaside through mcrouter
         for i in range(0, n):
             key = 'someprefix:{}:|#|id=123'.format(i)
-            self.assertTrue(self.mcrouter.get(key), 'value')
+            self.assertTrue(self.mcrouter.get(key))
 
 
 class TestCarbonLookasideRouteLeases(McrouterTestCase):
@@ -307,7 +310,7 @@ class TestCarbonLookasideRouteLeases(McrouterTestCase):
         # that the items have indeed been stored.
         for i in range(0, n):
             key = '{}someprefix:{}:|#|id=123'.format(self.prefix, i)
-            self.assertTrue(self.mc.get(key), 'value')
+            self.assertTrue(self.mc.get(key))
         # Query the items through mcrouter and check that they are there
         # This query will be fed from carbonlookaside.
         for i in range(0, n):
@@ -329,7 +332,7 @@ class TestCarbonLookasideRouteLeases(McrouterTestCase):
         # that the items have indeed been stored.
         for i in range(0, n):
             key = '{}someprefix:{}:|#|id=123'.format(self.prefix, i)
-            self.assertTrue(self.mc.get(key), 'value')
+            self.assertTrue(self.mc.get(key))
         # Query the items through mcrouter and check that they are there
         # This query will be fed from carbonlookaside.
         for i in range(0, n):
@@ -387,7 +390,7 @@ class TestCarbonLookasideRouteLeasesHotMiss(McrouterTestCase):
         # Now wait on the back end returning and the write to carbonLookaside
         # completing.
         t.join()
-        self.assertTrue(ret.get(), 'value')
+        self.assertTrue(ret.get())
         stats = self.mc.stats()
 
         # the lookaside sets dont block, so allow it to retry till set arrives
@@ -398,3 +401,88 @@ class TestCarbonLookasideRouteLeasesHotMiss(McrouterTestCase):
             retry += 1
         self.assertTrue(stats["cmd_lease_set"] == '1')
         self.assertTrue(stats["lease_tokens_in_use"] == '0')
+
+
+class TestCarbonLookasideRouteExpiryMsTTLBase(McrouterTestCase):
+    prefix = "CarbonLookaside"
+    ttl = 500
+    has_ms_ttl = 'true'
+    extra_args = []
+
+    def setUp(self):
+        self.mc = self.add_server(self.make_memcached())
+        self.tmpConfig = CarbonLookasideTmpConfig(self.prefix, self.ttl,
+                                                  self.mc.getport(), 'false', 0,
+                                                  0, 0, 0, self.has_ms_ttl)
+        self.config = self.tmpConfig.getFileName()
+        self.mcrouter = self.add_mcrouter(
+            self.config,
+            extra_args=self.extra_args)
+
+    def tearDown(self):
+        self.tmpConfig.cleanup()
+
+    def test_carbonlookaside_ttl_ms_expiry_config(self):
+        k = "some_key"
+        v = "some_value"
+        self.assertTrue(self.mcrouter.set(k, v))
+
+
+class TestCarbonLookasideRouteExpiryConfig100(TestCarbonLookasideRouteExpiryMsTTLBase):
+    ttl = 100
+
+
+class TestCarbonLookasideRouteExpiryConfig200(TestCarbonLookasideRouteExpiryMsTTLBase):
+    ttl = 200
+
+
+class TestCarbonLookasideRouteExpiryMsTTL(McrouterTestCase):
+    prefix = "CarbonLookaside"
+    ttl = 500
+    n = 1
+    has_ms_ttl = 'true'
+    extra_args = []
+
+    def setUp(self):
+        self.mc = self.add_server(self.make_memcached())
+        self.tmpConfig = CarbonLookasideTmpConfig(self.prefix, self.ttl,
+                                                  self.mc.getport(), 'false', 0,
+                                                  0, 0, 0, self.has_ms_ttl)
+        self.config = self.tmpConfig.getFileName()
+        self.mcrouter = self.add_mcrouter(
+            self.config,
+            extra_args=self.extra_args)
+
+    def tearDown(self):
+        self.tmpConfig.cleanup()
+
+    def test_carbonlookaside_ttl_ms_expiry(self):
+        # Align to 1 second boundary
+        epoch_t1 = int(time.time())
+        epoch_t2 = int(time.time())
+        while (epoch_t1 == epoch_t2):
+            time.sleep(0.1)
+            epoch_t2 = int(time.time())
+
+        # Insert n items into memcache
+        for i in range(0, self.n):
+            key = 'someprefix:{}:id=123'.format(i)
+            self.assertTrue(self.mcrouter.set(key, 'value'))
+
+        # Get the n items from memcache, they will be set in
+        # carbonlookaside. Then delete them from memcache.
+        for i in range(0, self.n):
+            key = 'someprefix:{}:id=123'.format(i)
+            self.assertTrue(self.mcrouter.get(key), 'value')
+            self.assertTrue(self.mc.delete(key))
+
+        # Check that the keys have been correctly set in carbonlookaside
+        stats = self.mc.stats()
+        self.assertEqual(int(stats["total_items"]), 2 * self.n)
+
+        # Let item expire
+        time.sleep(0.5)
+        # Query carbonlookaside directly and check they have expired
+        for i in range(0, self.n):
+            key = '{}someprefix:{}:id=123'.format(self.prefix, i)
+            self.assertFalse(self.mc.get(key), 'value')

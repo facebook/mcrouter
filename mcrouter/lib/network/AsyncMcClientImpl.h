@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -18,13 +17,13 @@
 #include <folly/io/async/VirtualEventBase.h>
 
 #include "mcrouter/lib/CompressionCodecManager.h"
-#include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/debug/ConnectionFifo.h"
 #include "mcrouter/lib/fbi/cpp/ObjectPool.h"
 #include "mcrouter/lib/network/ClientMcParser.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
 #include "mcrouter/lib/network/McClientRequestContext.h"
-#include "mcrouter/lib/network/ReplyStatsContext.h"
+#include "mcrouter/lib/network/RpcStatsContext.h"
 
 namespace facebook {
 namespace memcache {
@@ -37,7 +36,8 @@ namespace memcache {
 class AsyncMcClientImpl : public folly::DelayedDestruction,
                           private folly::AsyncSocket::ConnectCallback,
                           private folly::AsyncTransportWrapper::ReadCallback,
-                          private folly::AsyncTransportWrapper::WriteCallback {
+                          private folly::AsyncTransportWrapper::WriteCallback,
+                          private folly::AsyncTransport::BufferCallback {
  public:
   enum class ConnectionDownReason {
     ERROR,
@@ -62,25 +62,28 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   void closeNow();
 
   void setStatusCallbacks(
-      std::function<void(const folly::AsyncTransportWrapper&)> onUp,
-      std::function<void(ConnectionDownReason)> onDown);
+      std::function<void(const folly::AsyncTransportWrapper&, int64_t)> onUp,
+      std::function<void(ConnectionDownReason, int64_t)> onDown);
 
   void setRequestStatusCallbacks(
       std::function<void(int pendingDiff, int inflightDiff)> onStateChange,
-      std::function<void(int numToSend)> onWrite);
+      std::function<void(size_t numToSend)> onWrite,
+      std::function<void()> onPartialWrite);
 
   template <class Request>
   ReplyT<Request> sendSync(
       const Request& request,
       std::chrono::milliseconds timeout,
-      ReplyStatsContext* replyContext);
+      RpcStatsContext* rpcContext);
 
   void setThrottle(size_t maxInflight, size_t maxPending);
 
   size_t getPendingRequestCount() const;
   size_t getInflightRequestCount() const;
 
-  void updateWriteTimeout(std::chrono::milliseconds timeout);
+  void updateTimeoutsIfShorter(
+      std::chrono::milliseconds connectTimeout,
+      std::chrono::milliseconds writeTimeout);
 
   /**
    * @return        The transport used to manage socket
@@ -90,9 +93,6 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   }
 
   double getRetransmissionInfo();
-
-  template <class Request>
-  double getDropProbability() const;
 
   void setFlushList(FlushList* flushList) {
     flushList_ = flushList;
@@ -110,12 +110,15 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   };
 
   struct ConnectionStatusCallbacks {
-    std::function<void(const folly::AsyncTransportWrapper&)> onUp;
-    std::function<void(ConnectionDownReason)> onDown;
+    std::function<
+        void(const folly::AsyncTransportWrapper&, size_t numConnectRetries)>
+        onUp;
+    std::function<void(ConnectionDownReason, size_t numConnectRetires)> onDown;
   };
   struct RequestStatusCallbacks {
     std::function<void(int pendingDiff, int inflightDiff)> onStateChange;
     std::function<void(size_t numToSend)> onWrite;
+    std::function<void()> onPartialWrite;
   };
 
   folly::EventBase& eventBase_;
@@ -129,6 +132,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   folly::AsyncTransportWrapper::UniquePtr socket_;
   ConnectionStatusCallbacks statusCallbacks_;
   RequestStatusCallbacks requestStatusCallbacks_;
+  int32_t numConnectTimeoutRetriesLeft_{0};
 
   // Debug pipe.
   ConnectionFifo debugFifo_;
@@ -168,7 +172,8 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
 
   ConnectionOptions connectionOptions_;
 
-  std::unique_ptr<folly::EventBase::LoopCallback> eventBaseDestructionCallback_;
+  std::unique_ptr<folly::EventBase::OnDestructionCallback>
+      eventBaseDestructionCallback_;
 
   // We need to be able to get shared_ptr to ourself and shared_from_this()
   // doesn't work correctly with DelayedDestruction.
@@ -219,16 +224,26 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
       size_t bytesWritten,
       const folly::AsyncSocketException& ex) noexcept final;
 
+  // AsyncTransport::BufferCallback overrides
+  void onEgressBuffered() override final;
+  void onEgressBufferCleared() override final;
+
+  int64_t getNumConnectRetries() noexcept;
+
   // Callbacks for McParser.
   template <class Reply>
-  void replyReady(Reply&& reply, uint64_t reqId, ReplyStatsContext replyStats);
-  void handleConnectionControlMessage(const UmbrellaMessageInfo& headerInfo);
-  void parseError(mc_res_t result, folly::StringPiece reason);
+  void
+  replyReady(Reply&& reply, uint64_t reqId, RpcStatsContext rpcStatsContext);
+  void handleConnectionControlMessage(const CaretMessageInfo& headerInfo);
+  void parseError(carbon::Result result, folly::StringPiece reason);
   bool nextReplyAvailable(uint64_t reqId);
+
+  // Create the underlying transport
+  folly::AsyncTransportWrapper::UniquePtr createTransport();
 
   static void incMsgId(uint32_t& msgId);
 };
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
 
 #include "AsyncMcClientImpl-inl.h"

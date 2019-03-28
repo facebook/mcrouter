@@ -1,4 +1,4 @@
-# Copyright (c) 2016-present, Facebook, Inc.
+# Copyright (c) Facebook, Inc. and its affiliates.
 #
 # This source code is licensed under the MIT license found in the LICENSE
 # file in the root directory of this source tree.
@@ -12,6 +12,7 @@ import time
 
 from mcrouter.test.MCProcess import Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
+
 
 class TestDevNull(McrouterTestCase):
     config = './mcrouter/test/test_dev_null.json'
@@ -41,7 +42,8 @@ class TestDevNull(McrouterTestCase):
         self.assertEqual(mcwild_val, "should_be_set_wild")
 
         self.assertEqual(mcr.delete("null:key2"), None)
-        self.assertEqual(int(mcr.stats('ods')['dev_null_requests']), 2)
+        self.assertEqual(int(mcr.stats('all')['dev_null_requests']), 2)
+
 
 class TestMigratedPools(McrouterTestCase):
     config = './mcrouter/test/test_migrated_pools.json'
@@ -51,13 +53,18 @@ class TestMigratedPools(McrouterTestCase):
         self.wild_new = self.add_server(Memcached())
         self.wild_old = self.add_server(Memcached())
 
-    def get_mcrouter(self):
+    def get_mcrouter(self, start_time):
         return self.add_mcrouter(
             self.config, extra_args=self.extra_args,
-            replace_map={"START_TIME": (int(time.time()) + 2)})
+            replace_map={"START_TIME": start_time})
 
     def test_migrated_pools(self):
-        mcr = self.get_mcrouter()
+        phase_1_time = int(time.time())
+        phase_2_time = phase_1_time + 4  # start time
+        phase_3_time = phase_2_time + 4
+        phase_4_time = phase_3_time + 4
+
+        mcr = self.get_mcrouter(phase_2_time)
 
         #set keys that should be deleted in later phases
         for phase in range(1, 5):
@@ -66,49 +73,55 @@ class TestMigratedPools(McrouterTestCase):
 
         # first we are in the old domain make sure all ops go to
         # the old host only
-        self.assertEqual(mcr.get("get-key-1"), str(1))
-        mcr.set("set-key-1", str(42))
-        self.assertEqual(self.wild_old.get("set-key-1"), str(42))
-        self.assertEqual(self.wild_new.get("set-key-1"), None)
-        mcr.delete("get-key-1")
-        #make sure the delete went to old but not new
-        self.assertEqual(self.wild_old.get("get-key-1"), None)
-        self.assertEqual(self.wild_new.get("get-key-1"), str(100))
+        # note: only run if we're still in phase 1
+        if int(time.time()) < phase_2_time:
+            self.assertEqual(mcr.get("get-key-1"), str(1))
+            mcr.set("set-key-1", str(42))
+            self.assertEqual(self.wild_old.get("set-key-1"), str(42))
+            self.assertEqual(self.wild_new.get("set-key-1"), None)
+            mcr.delete("get-key-1")
+            #make sure the delete went to old but not new
+            self.assertEqual(self.wild_old.get("get-key-1"), None)
+            self.assertEqual(self.wild_new.get("get-key-1"), str(100))
 
-        #next phase
-        time.sleep(2)
-        # gets/sets go to the old place
-        self.assertEqual(mcr.get("get-key-2"), str(2))
-        mcr.set("set-key-2", str(4242))
-        self.assertEqual(self.wild_old.get("set-key-2"), str(4242))
-        self.assertEqual(self.wild_new.get("set-key-2"), None)
+        # next phase (2)
+        time.sleep(phase_2_time - int(time.time()))
+        # note: only run if we're still in phase 2
+        if int(time.time()) < phase_3_time:
+            # gets/sets go to the old place
+            self.assertEqual(mcr.get("get-key-2"), str(2))
+            mcr.set("set-key-2", str(4242))
+            self.assertEqual(self.wild_old.get("set-key-2"), str(4242))
+            self.assertEqual(self.wild_new.get("set-key-2"), None)
 
-        mcr.delete("get-key-2")
-        #make sure the delete went to both places
-        self.assertEqual(self.wild_old.get("get-key-2"), None)
-        self.assertEqual(self.wild_new.get("get-key-2"), None)
+            mcr.delete("get-key-2")
+            #make sure the delete went to both places
+            self.assertEqual(self.wild_old.get("get-key-2"), None)
+            self.assertEqual(self.wild_new.get("get-key-2"), None)
 
-        # next phase: migrating gets/sets uniformly over duration of this phase.
-        time.sleep(2)
+        # next phase (3):
+        # migrating gets/sets uniformly over duration of this phase.
+        time.sleep(phase_3_time - int(time.time()))
         # gets/sets may go to either the old or new place depending on the
         # specific key and when the request is made during the migration period.
-        value = mcr.get("get-key-3")
-        self.assertTrue(value == "3" or value == "300")
-        mcr.set("set-key-3", str(424242))
-        wild_old_value = self.wild_old.get("set-key-3")
-        wild_new_value = self.wild_new.get("set-key-3")
-        self.assertTrue(
-            (wild_old_value is None and wild_new_value == "424242") or
-            (wild_old_value == "424242" and wild_new_value is None)
-        )
+        # note: only run if we're still in phase 3
+        if int(time.time()) < phase_4_time:
+            value = mcr.get("get-key-3")
+            self.assertTrue(value == "3" or value == "300")
+            mcr.set("set-key-3", str(424242))
+            wild_old_value = self.wild_old.get("set-key-3")
+            wild_new_value = self.wild_new.get("set-key-3")
+            self.assertTrue(
+                (wild_old_value is None and wild_new_value == "424242") or
+                (wild_old_value == "424242" and wild_new_value is None)
+            )
+            mcr.delete("get-key-3")
+            #make sure the delete went to both places
+            self.assertEqual(self.wild_old.get("get-key-3"), None)
+            self.assertEqual(self.wild_new.get("get-key-3"), None)
 
-        mcr.delete("get-key-3")
-        #make sure the delete went to both places
-        self.assertEqual(self.wild_old.get("get-key-3"), None)
-        self.assertEqual(self.wild_new.get("get-key-3"), None)
-
-        #next phase
-        time.sleep(2)
+        # next phase (4)
+        time.sleep(phase_4_time - int(time.time()))
         # gets/sets go to the new place
         self.assertEqual(mcr.get("get-key-4"), str(400))
         mcr.set("set-key-4", str(42424242))
@@ -120,6 +133,7 @@ class TestMigratedPools(McrouterTestCase):
         self.assertEqual(self.wild_old.get("get-key-4"), str(4))
         self.assertEqual(self.wild_new.get("get-key-4"), None)
 
+
 class TestMigratedPoolsFailover(McrouterTestCase):
     config = './mcrouter/test/test_migrated_pools_failover.json'
     extra_args = []
@@ -130,13 +144,18 @@ class TestMigratedPoolsFailover(McrouterTestCase):
         self.b_new = self.add_server(Memcached())
         self.b_old = self.add_server(Memcached())
 
-    def get_mcrouter(self):
+    def get_mcrouter(self, start_time):
         return self.add_mcrouter(
             self.config, extra_args=self.extra_args,
-            replace_map={"START_TIME": (int(time.time()) + 4)})
+            replace_map={"START_TIME": start_time})
 
     def test_migrated_pools_failover(self):
-        mcr = self.get_mcrouter()
+        phase_1_time = int(time.time())
+        phase_2_time = phase_1_time + 4  # start time
+        phase_3_time = phase_2_time + 4
+        phase_4_time = phase_3_time + 4
+
+        mcr = self.get_mcrouter(phase_2_time)
 
         #set keys that should be deleted in later phases
         for phase in range(1, 5):
@@ -147,23 +166,29 @@ class TestMigratedPoolsFailover(McrouterTestCase):
 
         # first we are in the old domain make sure all ops go to
         # the old host only
-        self.assertEqual(mcr.get("get-key-1"), str(1))
-        mcr.set("set-key-1", str(42))
-        self.assertEqual(self.a_old.get("set-key-1"), str(42))
+        # note: only run if we're still in phase 1
+        if int(time.time()) < phase_2_time:
+            self.assertEqual(mcr.get("get-key-1"), str(1))
+            mcr.set("set-key-1", str(42))
+            self.assertEqual(self.a_old.get("set-key-1"), str(42))
 
-        self.a_old.terminate()
-        self.assertEqual(mcr.get("get-key-1"), str(100))
-        mcr.set("set-key-1", str(42))
-        self.assertEqual(self.b_old.get("set-key-1"), str(42))
+            self.a_old.terminate()
+            self.assertEqual(mcr.get("get-key-1"), str(100))
+            mcr.set("set-key-1", str(42))
+            self.assertEqual(self.b_old.get("set-key-1"), str(42))
+        else:
+            self.a_old.terminate()
 
-        #next phase
-        time.sleep(5)
-        self.assertEqual(mcr.get("get-key-2"), str(200))
-        mcr.set("set-key-2", str(42))
-        self.assertEqual(self.b_old.get("set-key-2"), str(42))
+        # next phase (2)
+        time.sleep(phase_2_time - int(time.time()))
+        # note: only run if we're still in phase 2
+        if int(time.time()) < phase_3_time:
+            self.assertEqual(mcr.get("get-key-2"), str(200))
+            mcr.set("set-key-2", str(42))
+            self.assertEqual(self.b_old.get("set-key-2"), str(42))
 
-        #next phase
-        time.sleep(10)
+        # last phase (4)
+        time.sleep(phase_4_time - int(time.time()) + 1)
         # gets/sets go to the new place
         self.assertEqual(mcr.get("get-key-3"), str(30))
         mcr.set("set-key-3", str(424242))
@@ -171,6 +196,7 @@ class TestMigratedPoolsFailover(McrouterTestCase):
 
         self.a_new.terminate()
         self.assertEqual(mcr.get("get-key-3"), str(3000))
+
 
 class TestDuplicateServers(McrouterTestCase):
     config = './mcrouter/test/test_duplicate_servers.json'
@@ -194,6 +220,7 @@ class TestDuplicateServers(McrouterTestCase):
         key = ('localhost:' + str(self.port_map[12345]) +
                ':ascii:plain:notcompressed-1000')
         self.assertTrue(key in stats)
+
 
 class TestDuplicateServersDiffTimeouts(McrouterTestCase):
     config = './mcrouter/test/test_duplicate_servers_difftimeouts.json'
@@ -222,6 +249,7 @@ class TestDuplicateServersDiffTimeouts(McrouterTestCase):
                ':ascii:plain:notcompressed-2000')
         self.assertTrue(key in stats)
 
+
 class TestPoolServerErrors(McrouterTestCase):
     config = './mcrouter/test/test_pool_server_errors.json'
 
@@ -245,6 +273,7 @@ class TestPoolServerErrors(McrouterTestCase):
         self.assertTrue(mcr.set('/b/b/ab', 'valueC'))
         self.assertEqual(self.mc3.get('ab'), 'valueC')
 
+
 class TestSamePoolFailover(McrouterTestCase):
     config = './mcrouter/test/test_same_pool_failover.json'
     extra_args = []
@@ -263,6 +292,7 @@ class TestSamePoolFailover(McrouterTestCase):
         self.assertEqual(mcr.get('foobar'), 'bizbang')
         mcr.delete('foobar')
         self.assertEqual(mcr.get('foobar'), None)
+
 
 class TestGetFailover(McrouterTestCase):
     config = './mcrouter/test/test_get_failover.json'
@@ -297,6 +327,7 @@ class TestGetFailover(McrouterTestCase):
         time.sleep(4)
         self.assertEqual(self.mcr.get('testkey'), None)
 
+
 class TestGetFailoverWithFailoverTag(TestGetFailover):
     config = './mcrouter/test/test_get_failover_with_failover_tag.json'
 
@@ -308,6 +339,7 @@ class TestGetFailoverWithFailoverTag(TestGetFailover):
         fail_key = key + ":failover=1"
         self.assertEqual(self.mcr.get(key), 'bizbang-fail')
         self.assertEqual(self.gut.get(fail_key), 'bizbang-fail')
+
 
 class TestLeaseGetFailover(McrouterTestCase):
     config = './mcrouter/test/test_get_failover.json'
@@ -352,6 +384,7 @@ class TestLeaseGetFailover(McrouterTestCase):
         self.assertGreater(get_res['testkey']['token'], 0)
         self.assertFalse(get_res['testkey']['value'])
 
+
 class TestMetaGetFailover(McrouterTestCase):
     config = './mcrouter/test/test_get_failover.json'
     extra_args = []
@@ -367,9 +400,14 @@ class TestMetaGetFailover(McrouterTestCase):
         mcr = self.get_mcrouter()
 
         get_res = {}
-        self.assertTrue(mcr.set('testkey', 'bizbang'))
+
+        key_set_time = int(time.time())
+        self.assertTrue(mcr.set('testkey', 'bizbang', exptime=100))
+        key_after_set_time = int(time.time())
+
         get_res = mcr.metaget('testkey')
-        self.assertEqual(0, int(get_res['exptime']))
+        self.assertIn(int(get_res['exptime']),
+                      range(key_set_time + 100, key_after_set_time + 101))
 
         self.wildcard.terminate()
 
@@ -386,6 +424,7 @@ class TestMetaGetFailover(McrouterTestCase):
         time.sleep(4)
         self.assertEqual(mcr.metaget('testkey'), {})
         self.assertEqual(mcr.get('testkey'), None)
+
 
 class TestFailoverWithLimit(McrouterTestCase):
     config = './mcrouter/test/test_failover_limit.json'

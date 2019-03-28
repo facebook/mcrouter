@@ -89,22 +89,15 @@ std::vector<std::vector<size_t>> parseAllShardsJson(
   return allShards;
 }
 
-void parseShardsPerServerJson(
-    const folly::dynamic& jShards,
-    std::function<void(uint32_t)>&& handleShardFunc) {
-  std::vector<size_t> shards;
+std::vector<size_t> parseShardsPerServerJson(const folly::dynamic& jShards) {
   if (jShards.isArray()) {
-    shards = parseShardsJsonArray(jShards);
+    return parseShardsJsonArray(jShards);
   } else if (jShards.isString()) {
-    shards = parseShardsJsonString(jShards);
+    return parseShardsJsonString(jShards);
   } else {
     throwLogic(
-        "EagerShardSelectionRoute: 'shards[{}]' must be an array of "
-        "integers or a string of comma-separated shard ids.",
-        shards);
-  }
-  for (auto shard : shards) {
-    handleShardFunc(shard);
+        "EagerShardSelectionRoute: 'shards[...]' must be an array of "
+        "integers or a string of comma-separated shard ids.");
   }
 }
 

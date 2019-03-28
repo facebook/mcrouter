@@ -1,13 +1,13 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
 #include <memory>
+#include <stack>
 #include <vector>
 
 #include <folly/Range.h>
@@ -75,6 +75,16 @@ class RouteHandleFactory {
     return threadId_;
   }
 
+  /**
+   * Pushes a list of route_handles that will be used the next time this class
+   * sees %children_list% in the config. The list of route handles are kept in
+   * a stack - so the last list pushed will be the first one to be used.
+   *
+   * @param children  The list of route_handles to be used to replace
+   *                  %children_list% in the config.
+   */
+  void pushChildrenList(std::vector<RouteHandlePtr> children);
+
  private:
   RouteHandleProviderIf<RouteHandleIf>& provider_;
 
@@ -84,6 +94,9 @@ class RouteHandleFactory {
   folly::StringKeyedUnorderedMap<std::vector<RouteHandlePtr>> seen_;
   /// Thread where route handles created by this factory will be used
   size_t threadId_;
+
+  // list of servers that should be used to replace "%children_list%" in config.
+  std::stack<std::vector<RouteHandlePtr>> childrenLists_;
 
   const std::vector<RouteHandlePtr>& createNamed(
       folly::StringPiece name,

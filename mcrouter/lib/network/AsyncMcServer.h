@@ -19,16 +19,16 @@
 #include <wangle/ssl/TLSTicketKeySeeds.h>
 
 #include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
-#include "mcrouter/lib/network/CongestionController.h"
+#include "mcrouter/lib/network/CpuController.h"
 
 namespace folly {
 class EventBase;
 class ScopedEventBaseThread;
-} // folly
+} // namespace folly
 
 namespace wangle {
 class TLSCredProcessor;
-} // wangle
+} // namespace wangle
 
 namespace facebook {
 namespace memcache {
@@ -115,6 +115,12 @@ class AsyncMcServer {
     size_t numThreads{1};
 
     /**
+     * Number of threads that will listen for new connections. Must be > 0 &&
+     * <= numThreads.
+     */
+    size_t numListeningSockets{1};
+
+    /**
      * Worker-specific options
      */
     AsyncMcServerWorkerOptions worker;
@@ -122,21 +128,36 @@ class AsyncMcServer {
     /**
      * CPU-based congestion controller.
      */
-    CongestionControllerOptions cpuControllerOpts;
+    CpuControllerOptions cpuControllerOpts;
 
     /**
-     * Memory-based congestion controller.
+     * Sets the maximum number of connections allowed.
+     * Once that number is reached, AsyncMcServer will start closing connections
+     * in a LRU fashion.
+     *
+     * NOTE: When setting globalMaxConns to a specific number (i.e. any
+     *       value larger than 1), we will try to raise the rlimit to that
+     *       number plus a small buffer for other files.
+     *
+     * @param globalMaxConns  The total number of connections allowed globally
+     *                        (for the entire process).
+     *                        NOTE: 0 and 1 have special meanings:
+     *                          0  - do not reap connections;
+     *                          1  - calculate maximum based on rlimits;
+     *                          >1 - set per worker limits to
+     *                               ceil(globalMaxConns / nThreads).
+     *
+     * @param nThreads        The number of threads we are going to run with.
+     *                        Usually the same as numThreads field.
+     *
+     * @return  The actual max number of connections being used.
+     *          This number should usually be equal to the value provided to
+     *          globalMaxConns.
+     *          It can smaller than globalMaxConns if we fail to raise the
+     *          rlimit for some reason.
+     *          NOTE: 0 means that no limit is being used.
      */
-    CongestionControllerOptions memoryControllerOpts;
-
-    /**
-     * @param globalMaxConns
-     *  0  - do not reap connections;
-     *  1  - calculate maximum based on rlimits;
-     *  >1 - set per worker limits to ceil(globalMaxConns / numThreads)
-     * @param numThreads_  usually the same as `numThreads` field.
-     */
-    void setPerThreadMaxConns(size_t globalMaxConns, size_t numThreads_);
+    size_t setMaxConnections(size_t globalMaxConns, size_t nThreads);
   };
 
   /**
@@ -234,5 +255,5 @@ class AsyncMcServer {
   friend class McServerThread;
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

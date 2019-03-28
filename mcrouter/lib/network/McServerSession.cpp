@@ -1,17 +1,18 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "McServerSession.h"
 
 #include <memory>
 
+#include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/small_vector.h>
 
 #include "mcrouter/lib/debug/FifoManager.h"
+#include "mcrouter/lib/network/McFizzServer.h"
 #include "mcrouter/lib/network/McSSLUtil.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/MultiOpParent.h"
@@ -46,6 +47,7 @@ McServerSession& McServerSession::create(
     StateCallback& stateCb,
     const AsyncMcServerWorkerOptions& options,
     void* userCtxt,
+    McServerSession::Queue* queue,
     const CompressionCodecMap* codecMap) {
   auto ptr = new McServerSession(
       std::move(transport),
@@ -56,7 +58,6 @@ McServerSession& McServerSession::create(
       codecMap);
 
   assert(ptr->state_ == STREAMING);
-
   DestructorGuard dg(ptr);
   ptr->transport_->setReadCB(ptr);
   if (ptr->state_ != STREAMING) {
@@ -64,7 +65,28 @@ McServerSession& McServerSession::create(
         "Failed to create McServerSession: setReadCB failed");
   }
 
+  if (queue) {
+    queue->push_front(*ptr);
+  }
+
+  // For secure connections, we need to delay calling the onAccepted client
+  // callback until the handshake is complete.
+  if (ptr->securityMech() == SecurityMech::NONE) {
+    ptr->onAccepted();
+  }
+
   return *ptr;
+}
+
+void McServerSession::applySocketOptions(
+    folly::AsyncSocket& socket,
+    const AsyncMcServerWorkerOptions& opts) {
+  socket.setMaxReadsPerEvent(opts.maxReadsPerEvent);
+  socket.setNoDelay(true);
+  if (opts.tcpZeroCopyThresholdBytes > 0) {
+    socket.setZeroCopy(true);
+  }
+  socket.setSendTimeout(opts.sendTimeout.count());
 }
 
 McServerSession::McServerSession(
@@ -79,18 +101,11 @@ McServerSession::McServerSession(
       eventBase_(*transport_->getEventBase()),
       onRequest_(std::move(cb)),
       stateCb_(stateCb),
-      debugFifo_(getDebugFifo(
-          options_.debugFifoPath,
-          transport_.get(),
-          onRequest_->name())),
       sendWritesCallback_(*this),
       compressionCodecMap_(codecMap),
-      parser_(
-          *this,
-          options_.minBufferSize,
-          options_.maxBufferSize,
-          &debugFifo_),
-      userCtxt_(userCtxt) {
+      parser_(*this, options_.minBufferSize, options_.maxBufferSize),
+      userCtxt_(userCtxt),
+      zeroCopySessionCB_(*this) {
   try {
     transport_->getPeerAddress(&socketAddress_);
   } catch (const std::exception& e) {
@@ -98,10 +113,25 @@ McServerSession::McServerSession(
     LOG(WARNING) << "Failed to get socket address: " << e.what();
   }
 
-  auto socket = transport_->getUnderlyingTransport<folly::AsyncSSLSocket>();
-  if (socket != nullptr) {
-    socket->sslAccept(this, /* timeout = */ std::chrono::milliseconds::zero());
+  if (auto socket = transport_->getUnderlyingTransport<McFizzServer>()) {
+    socket->accept(this);
   }
+}
+
+SecurityMech McServerSession::securityMech() const noexcept {
+  if (!transport_) {
+    return SecurityMech::NONE;
+  }
+  if (transport_->getUnderlyingTransport<McFizzServer>()) {
+    return SecurityMech::TLS13_FIZZ;
+  }
+  if (transport_->getUnderlyingTransport<folly::AsyncSSLSocket>()) {
+    return SecurityMech::TLS;
+  }
+  if (transport_->getSecurityProtocol() == McSSLUtil::kTlsToPlainProtocolName) {
+    return SecurityMech::TLS_TO_PLAINTEXT;
+  }
+  return SecurityMech::NONE;
 }
 
 void McServerSession::pause(PauseReason reason) {
@@ -131,7 +161,8 @@ void McServerSession::onTransactionStarted(bool isSubRequest) {
 }
 
 void McServerSession::checkClosed() {
-  if (!inFlight_) {
+  if (!inFlight_ &&
+      (!isZeroCopyEnabled() || (writeBufs_.zeroCopyQueueSize() == 0))) {
     assert(pendingWrites_.empty());
 
     if (state_ == CLOSING) {
@@ -143,7 +174,7 @@ void McServerSession::checkClosed() {
         transport_->setReadCB(nullptr);
         transport_.reset();
       }
-      stateCb_.onCloseFinish(*this);
+      onCloseFinish();
       destroy();
     }
   }
@@ -225,7 +256,7 @@ void McServerSession::close() {
 
   if (state_ == STREAMING) {
     state_ = CLOSING;
-    stateCb_.onCloseStart(*this);
+    onCloseStart();
   }
 
   checkClosed();
@@ -273,7 +304,7 @@ void McServerSession::onRequest(
   McServerRequestContext ctx(*this, reqid);
 
   if (options_.defaultVersionHandler) {
-    McVersionReply reply(mc_res_ok);
+    McVersionReply reply(carbon::Result::OK);
     reply.value() =
         folly::IOBuf(folly::IOBuf::COPY_BUFFER, options_.versionString);
     McServerRequestContext::reply(std::move(ctx), std::move(reply));
@@ -289,7 +320,8 @@ void McServerSession::onRequest(McShutdownRequest&&, bool) {
     reqid = tailReqid_++;
   }
   McServerRequestContext ctx(*this, reqid, true /* noReply */);
-  McServerRequestContext::reply(std::move(ctx), McShutdownReply(mc_res_ok));
+  McServerRequestContext::reply(
+      std::move(ctx), McShutdownReply(carbon::Result::OK));
   stateCb_.onShutdown();
 }
 
@@ -299,12 +331,13 @@ void McServerSession::onRequest(McQuitRequest&&, bool) {
     reqid = tailReqid_++;
   }
   McServerRequestContext ctx(*this, reqid, true /* noReply */);
-  McServerRequestContext::reply(std::move(ctx), McQuitReply(mc_res_ok));
+  McServerRequestContext::reply(
+      std::move(ctx), McQuitReply(carbon::Result::OK));
   close();
 }
 
 void McServerSession::caretRequestReady(
-    const UmbrellaMessageInfo& headerInfo,
+    const CaretMessageInfo& headerInfo,
     const folly::IOBuf& reqBody) {
   DestructorGuard dg(this);
 
@@ -326,7 +359,7 @@ void McServerSession::caretRequestReady(
 
   if (McVersionRequest::typeId == headerInfo.typeId &&
       options_.defaultVersionHandler) {
-    McVersionReply versionReply(mc_res_ok);
+    McVersionReply versionReply(carbon::Result::OK);
     versionReply.value() =
         folly::IOBuf(folly::IOBuf::COPY_BUFFER, options_.versionString);
     McServerRequestContext::reply(std::move(ctx), std::move(versionReply));
@@ -343,7 +376,7 @@ void McServerSession::caretRequestReady(
 }
 
 void McServerSession::processConnectionControlMessage(
-    const UmbrellaMessageInfo& headerInfo) {
+    const CaretMessageInfo& headerInfo) {
   DestructorGuard dg(this);
   switch (headerInfo.typeId) {
     case GoAwayAcknowledgement::typeId: {
@@ -359,7 +392,7 @@ void McServerSession::processConnectionControlMessage(
 }
 
 void McServerSession::updateCompressionCodecIdRange(
-    const UmbrellaMessageInfo& headerInfo) noexcept {
+    const CaretMessageInfo& headerInfo) noexcept {
   if (headerInfo.supportedCodecsSize == 0 || !compressionCodecMap_) {
     codecIdRange_ = CodecIdRange::Empty;
   } else {
@@ -368,7 +401,9 @@ void McServerSession::updateCompressionCodecIdRange(
   }
 }
 
-void McServerSession::parseError(mc_res_t result, folly::StringPiece reason) {
+void McServerSession::parseError(
+    carbon::Result result,
+    folly::StringPiece reason) {
   DestructorGuard dg(this);
 
   if (state_ != STREAMING) {
@@ -383,6 +418,65 @@ void McServerSession::parseError(mc_res_t result, folly::StringPiece reason) {
   close();
 }
 
+void McServerSession::sendZeroCopyIOBuf(
+    WriteBuffer& wbuf,
+    const struct iovec* iovs,
+    size_t iovsCount) {
+  DestructorGuard dg(this);
+  using BufferContext = std::tuple<
+      std::reference_wrapper<WriteBuffer>,
+      std::reference_wrapper<WriteBufferQueue>,
+      bool /* batch */,
+      DestructorGuard>;
+
+  // IOBuf FreeFn is a function pointer, so cannot use lambdas. Pass in
+  // destructor guard to ensure that McServerSession is not destructed before
+  // this IOBuf is destroyed.
+  auto wbufInfo = std::make_unique<BufferContext>(
+      std::ref(wbuf), std::ref(writeBufs_), !options_.singleWrite, dg);
+
+  std::unique_ptr<folly::IOBuf> chainTail;
+
+  for (size_t i = 0; i < iovsCount; i++) {
+    size_t len = iovs[i].iov_len;
+    if (len > 0) {
+      std::unique_ptr<folly::IOBuf> iobuf;
+      if (!chainTail) {
+        iobuf = folly::IOBuf::takeOwnership(
+            iovs[i].iov_base,
+            len,
+            [](void* /* unused */, void* userData) {
+              auto bufferContext = std::unique_ptr<BufferContext>(
+                  reinterpret_cast<BufferContext*>(userData));
+              auto& q = std::get<1>(*bufferContext).get();
+              auto& wb = std::get<0>(*bufferContext).get();
+              auto batch = std::get<2>(*bufferContext);
+              q.releaseZeroCopyChain(wb, batch);
+            },
+            wbufInfo.release(),
+            true /* freeOnError */);
+        chainTail = std::move(iobuf);
+      } else {
+        // The IOBufs not at the head of chain have a noop free function given
+        // that the head of chain will free the entire chain.
+        iobuf = folly::IOBuf::takeOwnership(
+            iovs[i].iov_base,
+            len,
+            [](void* /* unused */, void* /* unused */) {},
+            nullptr,
+            true /* freeOnError */);
+        chainTail->prependChain(std::move(iobuf));
+      }
+    }
+  }
+
+  zeroCopySessionCB_.incCallbackPending();
+  transport_->writeChain(
+      &zeroCopySessionCB_ /* write cb */,
+      std::move(chainTail),
+      folly::WriteFlags::WRITE_MSG_ZEROCOPY);
+}
+
 void McServerSession::queueWrite(std::unique_ptr<WriteBuffer> wb) {
   if (wb == nullptr) {
     return;
@@ -393,29 +487,47 @@ void McServerSession::queueWrite(std::unique_ptr<WriteBuffer> wb) {
     }
     const struct iovec* iovs = wb->getIovsBegin();
     size_t iovCount = wb->getIovsCount();
-    writeBufs_.push(std::move(wb));
-    transport_->writev(this, iovs, iovCount);
-    if (!writeBufs_.empty()) {
-      /* We only need to pause if the sendmsg() call didn't write everything
-         in one go */
-      pause(PAUSE_WRITE);
+    if (isZeroCopyEnabled() && wb->shouldApplyZeroCopy()) {
+      auto& wbuf = writeBufs_.insertZeroCopy(std::move(wb));
+      // Creates a chain of IOBufs and uses TCP copy avoidance
+      sendZeroCopyIOBuf(wbuf, iovs, iovCount);
+      if (zeroCopySessionCB_.getCallbackPending() > 0) {
+        pause(PAUSE_WRITE);
+      }
+    } else {
+      writeBufs_.push(std::move(wb));
+      transport_->writev(this, iovs, iovCount);
+      if (!writeBufs_.empty()) {
+        /* We only need to pause if the sendmsg() call didn't write everything
+           in one go */
+        pause(PAUSE_WRITE);
+      }
     }
   } else {
-    pendingWrites_.pushBack(std::move(wb));
-
     if (!writeScheduled_) {
       eventBase_.runInLoop(&sendWritesCallback_, /* thisIteration= */ true);
       writeScheduled_ = true;
     }
+    if (isZeroCopyEnabled() && wb->shouldApplyZeroCopy()) {
+      isNextWriteBatchZeroCopy_ = true;
+    }
+    pendingWrites_.pushBack(std::move(wb));
   }
 }
 
 void McServerSession::sendWrites() {
   DestructorGuard dg(this);
 
+  if (pendingWrites_.empty()) {
+    return;
+  }
+
+  bool doZeroCopy = isNextWriteBatchZeroCopy_;
   writeScheduled_ = false;
+  isNextWriteBatchZeroCopy_ = false;
 
   folly::small_vector<struct iovec, kIovecVectorSize> iovs;
+  WriteBuffer* firstBuf = nullptr;
   while (!pendingWrites_.empty()) {
     auto wb = pendingWrites_.popFront();
     if (!wb->noReply()) {
@@ -430,10 +542,23 @@ void McServerSession::sendWrites() {
     if (pendingWrites_.empty()) {
       wb->markEndOfBatch();
     }
-    writeBufs_.push(std::move(wb));
+    if (doZeroCopy) {
+      if (!firstBuf) {
+        firstBuf = &writeBufs_.insertZeroCopy(std::move(wb));
+      } else {
+        writeBufs_.insertZeroCopy(std::move(wb));
+      }
+    } else {
+      writeBufs_.push(std::move(wb));
+    }
   }
 
-  transport_->writev(this, iovs.data(), iovs.size());
+  if (doZeroCopy) {
+    assert(firstBuf != nullptr);
+    sendZeroCopyIOBuf(*firstBuf, iovs.data(), iovs.size());
+  } else {
+    transport_->writev(this, iovs.data(), iovs.size());
+  }
 }
 
 void McServerSession::writeToDebugFifo(const WriteBuffer* wb) noexcept {
@@ -463,7 +588,7 @@ void McServerSession::writeSuccess() noexcept {
   completeWrite();
 
   if (writeBufs_.empty() && state_ == STREAMING) {
-    stateCb_.onWriteQuiescence(*this);
+    onWriteQuiescence();
     /* No-op if not paused */
     resume(PAUSE_WRITE);
   }
@@ -485,24 +610,125 @@ bool McServerSession::handshakeVer(
 }
 
 void McServerSession::handshakeSuc(folly::AsyncSSLSocket* sock) noexcept {
+  DestructorGuard dg(this);
+
   auto cert = sock->getPeerCert();
-  if (cert == nullptr) {
-    return;
-  }
-  auto sub = X509_get_subject_name(cert.get());
-  if (sub != nullptr) {
-    char cn[ub_common_name + 1];
-    const auto res =
-        X509_NAME_get_text_by_NID(sub, NID_commonName, cn, ub_common_name);
-    if (res > 0) {
-      clientCommonName_.assign(std::string(cn, res));
+  if (cert != nullptr) {
+    auto sub = X509_get_subject_name(cert.get());
+    if (sub != nullptr) {
+      char cn[ub_common_name + 1];
+      const auto res =
+          X509_NAME_get_text_by_NID(sub, NID_commonName, cn, ub_common_name);
+      if (res > 0) {
+        clientCommonName_.assign(std::string(cn, res));
+      }
     }
   }
   McSSLUtil::finalizeServerSSL(transport_.get());
+
+  if (McSSLUtil::negotiatedPlaintextFallback(*sock)) {
+    auto fallback = McSSLUtil::moveToPlaintext(*sock);
+    CHECK(fallback);
+    auto asyncSock = fallback->getUnderlyingTransport<folly::AsyncSocket>();
+    CHECK(asyncSock);
+    applySocketOptions(*asyncSock, options_);
+    transport_.reset(fallback.release());
+  }
+
+  // sock is currently wrapped by transport_, but underlying socket may
+  // change by end of this function (mainly due to negotiatedPlaintextFallback).
+  transport_->setReadCB(this);
+
+  onAccepted();
 }
 
 void McServerSession::handshakeErr(
     folly::AsyncSSLSocket*,
-    const folly::AsyncSocketException&) noexcept {}
-} // memcache
-} // facebook
+    const folly::AsyncSocketException& e) noexcept {
+  LOG(ERROR) << "SSL Handshake failure: " << e.what();
+  close();
+}
+
+void McServerSession::fizzHandshakeSuccess(
+    fizz::server::AsyncFizzServer* transport) noexcept {
+  DestructorGuard dg(this);
+
+  auto cert = transport->getPeerCert();
+  if (cert == nullptr) {
+    onAccepted();
+    return;
+  }
+  auto sub = X509_get_subject_name(cert.get());
+  if (sub != nullptr) {
+    std::array<char, ub_common_name + 1> cn{};
+    const auto res = X509_NAME_get_text_by_NID(
+        sub, NID_commonName, cn.data(), ub_common_name);
+    if (res > 0) {
+      clientCommonName_.assign(std::string(cn.data(), res));
+    }
+  }
+  McSSLUtil::finalizeServerSSL(transport);
+  onAccepted();
+}
+
+void McServerSession::fizzHandshakeError(
+    fizz::server::AsyncFizzServer*,
+    folly::exception_wrapper e) noexcept {
+  LOG(ERROR) << "Fizz Handshake failure: " << e.what();
+  close();
+}
+
+void McServerSession::fizzHandshakeAttemptFallback(
+    std::unique_ptr<folly::IOBuf> clientHello) {
+  DestructorGuard dg(this);
+  auto transport = transport_->getUnderlyingTransport<McFizzServer>();
+  CHECK(transport) << " transport should not be nullptr";
+  transport->setReadCB(nullptr);
+  auto evb = transport->getEventBase();
+  auto socket = transport->getUnderlyingTransport<folly::AsyncSocket>();
+  CHECK(socket) << " socket should not be nullptr";
+  auto fd = socket->detachNetworkSocket().toFd();
+  const auto& ctx = transport->getFallbackContext();
+
+  folly::AsyncSSLSocket::UniquePtr sslSocket(new folly::AsyncSSLSocket(
+      ctx, evb, folly::NetworkSocket::fromFd(fd), true /* server */));
+  sslSocket->setPreReceivedData(std::move(clientHello));
+  sslSocket->enableClientHelloParsing();
+  sslSocket->forceCacheAddrOnFailure(true);
+  // need to re apply the socket options
+  applySocketOptions(*sslSocket, options_);
+
+  // We need to reset the transport before calling sslAccept(). The reason is
+  // that sslAccept() may call some callbacks inline (e.g. handshakeSuc()) that
+  // may need to see the actual transport_.
+  transport_.reset(sslSocket.release());
+  auto underlyingSslSocket =
+      transport_->getUnderlyingTransport<folly::AsyncSSLSocket>();
+  DCHECK(underlyingSslSocket) << "Underlying socket should be AsyncSSLSocket";
+  underlyingSslSocket->sslAccept(this);
+}
+
+void McServerSession::onAccepted() {
+  DCHECK(!onAcceptedCalled_);
+  DCHECK(transport_);
+  debugFifo_ = getDebugFifo(
+      options_.debugFifoPath, transport_.get(), onRequest_->name());
+  parser_.setDebugFifo(&debugFifo_);
+  onAcceptedCalled_ = true;
+  stateCb_.onAccepted(*this);
+}
+
+void McServerSession::onCloseStart() {
+  stateCb_.onCloseStart(*this);
+}
+
+void McServerSession::onCloseFinish() {
+  stateCb_.onCloseFinish(*this, onAcceptedCalled_);
+}
+
+void McServerSession::onWriteQuiescence() {
+  stateCb_.onWriteQuiescence(*this);
+}
+
+} // namespace memcache
+} // namespace facebook

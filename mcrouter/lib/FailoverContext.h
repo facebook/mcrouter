@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -11,7 +10,7 @@
 
 #include <folly/Range.h>
 
-#include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/carbon/RequestReplyUtil.h"
 #include "mcrouter/lib/mc/msg.h"
 
@@ -62,12 +61,12 @@ struct FailoverContext {
   /* Normal reply data */
   const folly::IOBuf* normalValue;
   const AccessPoint* normalDestination;
-  const mc_res_t normalResult;
+  const carbon::Result normalResult;
 
   /* Failover reply data */
   const folly::IOBuf* failoverValue;
   const AccessPoint* failoverDestination;
-  const mc_res_t failoverResult;
+  const carbon::Result failoverResult;
 
   const size_t numRetries;
   const size_t maxRetries;

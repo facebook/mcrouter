@@ -142,7 +142,8 @@ SessionTestHarness::SessionTestHarness(
               OnRequest(*this)),
           cb,
           opts,
-          nullptr)) {}
+          /* userCtxt */ nullptr,
+          /* queue */ nullptr)) {}
 
 void SessionTestHarness::inputPacket(folly::StringPiece p) {
   savedInputs_.push_back(p.str());

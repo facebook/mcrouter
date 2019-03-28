@@ -1,4 +1,4 @@
-# Copyright (c) 2015-present, Facebook, Inc.
+# Copyright (c) Facebook, Inc. and its affiliates.
 #
 # This source code is licensed under the MIT license found in the LICENSE
 # file in the root directory of this source tree.
@@ -70,6 +70,8 @@ class TestPoolStats(McrouterTestCase):
                             'east.requests.sum', self.count, 'EQ')
                     self.verify_stat(line,
                             'east.final_result_error.sum', self.count, 'EQ')
+                    self.verify_stat(line,
+                            'east.connections', 1, 'EQ')
                     self.verify_stat(line, 'east.duration_us.avg', 0, 'GR')
                     self.verify_stat(line,
                             'east.total_duration_us.avg', 0, 'GR')
@@ -78,6 +80,8 @@ class TestPoolStats(McrouterTestCase):
                 if self.pool_prefix + 'west' in line:
                     self.verify_stat(line,
                             'west.requests.sum', 2 * self.count, 'EQ')
+                    self.verify_stat(line,
+                            'west.connections', 2, 'EQ')
                     self.verify_stat(line,
                             'west.final_result_error.sum', 0, 'EQ')
                     self.verify_stat(line, 'west.duration_us.avg', 0, 'GR')
@@ -89,6 +93,8 @@ class TestPoolStats(McrouterTestCase):
                     self.verify_stat(line,
                             'north.requests.sum', self.count, 'EQ')
                     self.verify_stat(line,
+                            'north.connections', 1, 'EQ')
+                    self.verify_stat(line,
                             'north.final_result_error.sum', 0, 'EQ')
                     self.verify_stat(line, 'north.duration_us.avg', 0, 'GR')
                     self.verify_stat(line,
@@ -98,6 +104,8 @@ class TestPoolStats(McrouterTestCase):
                 if self.pool_prefix + 'south' in line:
                     self.verify_stat(line,
                             'south.requests.sum', self.count, 'EQ')
+                    self.verify_stat(line,
+                            'south.connections', 1, 'EQ')
                     self.verify_stat(line,
                             'south.final_result_error.sum', 0, 'EQ')
                     self.verify_stat(line, 'south.duration_us.avg', 0, 'GR')
@@ -114,7 +122,7 @@ class TestPoolStats(McrouterTestCase):
                 >= self.durationMap['south.duration_us.avg'])
         # for 'north' pool total_duration would be 0 and duration
         # would be greater than 0. so, the check is already done.
-        self.assertTrue(verifiedStats == 16)
+        self.assertTrue(verifiedStats == 20)
 
     def test_poolstats(self):
         n = 4 * self.count

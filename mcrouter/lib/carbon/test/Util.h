@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -21,6 +21,7 @@ namespace test {
 
 class SimpleStruct;
 class TestRequest;
+class TestCompactRequest;
 
 namespace util {
 
@@ -39,12 +40,18 @@ constexpr folly::StringPiece kShortString = "aaaaaaaaaa";
 std::string longString();
 void expectEqSimpleStruct(const SimpleStruct& a, const SimpleStruct& b);
 void expectEqTestRequest(const TestRequest& a, const TestRequest& b);
+void expectEqTestCompactRequest(
+    const TestCompactRequest& a,
+    const TestCompactRequest& b);
 
-template <class T>
-T serializeAndDeserialize(const T&);
+template <class T, class Out = T>
+Out serializeAndDeserialize(const T&);
 
-template <class T>
-T serializeAndDeserialize(const T&, size_t& bytesWritten);
+template <class T, class Out = T>
+Out serializeCarbonAndDeserializeCompactCompatibility(const T&);
+
+template <class T, class Out = T>
+Out serializeAndDeserialize(const T&, size_t& bytesWritten);
 
 /**
  * Takes a boolean predicate and returns the list of subranges over
@@ -88,8 +95,8 @@ std::vector<std::pair<T, T>> satisfiedSubranges(std::function<bool(T)> pred) {
   return satisfiedRanges;
 }
 
-} // util
-} // test
-} // carbon
+} // namespace util
+} // namespace test
+} // namespace carbon
 
 #include "Util-inl.h"

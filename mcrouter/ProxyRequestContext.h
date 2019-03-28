@@ -15,7 +15,7 @@
 
 #include "mcrouter/ProxyRequestPriority.h"
 #include "mcrouter/config-impl.h"
-#include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/lib/carbon/Result.h"
 
 namespace facebook {
 namespace memcache {
@@ -126,11 +126,11 @@ class ProxyRequestContext {
     requester_ = std::move(requester);
   }
 
-  void setFinalResult(mc_res_t result) {
+  void setFinalResult(carbon::Result result) {
     finalResult_ = result;
   }
 
-  mc_res_t finalResult() const {
+  carbon::Result finalResult() const {
     return finalResult_;
   }
 
@@ -141,7 +141,7 @@ class ProxyRequestContext {
    * Guaranteed to be called after enqueueReply_ (right after in sync mode).
    */
   void (*reqComplete_)(ProxyRequestContext& preq){nullptr};
-  mc_res_t finalResult_{mc_res_unknown};
+  carbon::Result finalResult_{carbon::Result::UNKNOWN};
   int32_t poolStatIndex_{-1};
   bool replied_{false};
 

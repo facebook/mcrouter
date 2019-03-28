@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 namespace facebook {
 namespace memcache {
@@ -23,24 +22,25 @@ inline void AsyncMcClient::closeNow() {
 }
 
 inline void AsyncMcClient::setStatusCallbacks(
-    std::function<void(const folly::AsyncTransportWrapper&)> onUp,
-    std::function<void(ConnectionDownReason)> onDown) {
+    std::function<void(const folly::AsyncTransportWrapper&, int64_t)> onUp,
+    std::function<void(ConnectionDownReason, int64_t)> onDown) {
   base_->setStatusCallbacks(std::move(onUp), std::move(onDown));
 }
 
 inline void AsyncMcClient::setRequestStatusCallbacks(
     std::function<void(int pendingDiff, int inflightDiff)> onStateChange,
-    std::function<void(int numToSend)> onWrite) {
+    std::function<void(size_t numToSend)> onWrite,
+    std::function<void()> onPartialWrite) {
   base_->setRequestStatusCallbacks(
-      std::move(onStateChange), std::move(onWrite));
+      std::move(onStateChange), std::move(onWrite), std::move(onPartialWrite));
 }
 
 template <class Request>
 ReplyT<Request> AsyncMcClient::sendSync(
     const Request& request,
     std::chrono::milliseconds timeout,
-    ReplyStatsContext* replyContext) {
-  return base_->sendSync(request, timeout, replyContext);
+    RpcStatsContext* rpcContext) {
+  return base_->sendSync(request, timeout, rpcContext);
 }
 
 inline void AsyncMcClient::setThrottle(size_t maxInflight, size_t maxPending) {
@@ -55,9 +55,10 @@ inline size_t AsyncMcClient::getInflightRequestCount() const {
   return base_->getInflightRequestCount();
 }
 
-inline void AsyncMcClient::updateWriteTimeout(
-    std::chrono::milliseconds timeout) {
-  base_->updateWriteTimeout(timeout);
+inline void AsyncMcClient::updateTimeoutsIfShorter(
+    std::chrono::milliseconds connectTimeout,
+    std::chrono::milliseconds writeTimeout) {
+  base_->updateTimeoutsIfShorter(connectTimeout, writeTimeout);
 }
 
 inline const folly::AsyncTransportWrapper* AsyncMcClient::getTransport() {
@@ -66,11 +67,6 @@ inline const folly::AsyncTransportWrapper* AsyncMcClient::getTransport() {
 
 inline double AsyncMcClient::getRetransmissionInfo() {
   return base_->getRetransmissionInfo();
-}
-
-template <class Request>
-double AsyncMcClient::getDropProbability() const {
-  return base_->getDropProbability<Request>();
 }
 } // memcache
 } // facebook

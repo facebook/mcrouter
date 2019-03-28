@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "stats.h"
 
@@ -50,23 +49,23 @@ char* gStandaloneArgs = nullptr;
 
 const char* clientStateToStr(ProxyDestination::State state) {
   switch (state) {
-    case ProxyDestination::State::kUp:
+    case ProxyDestination::State::Up:
       return "up";
-    case ProxyDestination::State::kNew:
+    case ProxyDestination::State::New:
       return "new";
-    case ProxyDestination::State::kClosed:
+    case ProxyDestination::State::Closed:
       return "closed";
-    case ProxyDestination::State::kDown:
+    case ProxyDestination::State::Down:
       return "down";
-    case ProxyDestination::State::kNumStates:
+    case ProxyDestination::State::NumStates:
       assert(false);
   }
   return "unknown";
 }
 
 struct ServerStat {
-  uint64_t results[mc_nres] = {0};
-  size_t states[(size_t)ProxyDestination::State::kNumStates] = {0};
+  uint64_t results[static_cast<size_t>(carbon::Result::NUM_RESULTS)] = {0};
+  size_t states[(size_t)ProxyDestination::State::NumStates] = {0};
   bool isHardTko{false};
   bool isSoftTko{false};
   double sumLatencies{0.0};
@@ -97,16 +96,18 @@ struct ServerStat {
           minRetransPerKByte)
           .appendTo(res);
     }
-    for (size_t i = 0; i < (size_t)ProxyDestination::State::kNumStates; ++i) {
+    for (size_t i = 0; i < (size_t)ProxyDestination::State::NumStates; ++i) {
       if (states[i] > 0) {
         auto state = clientStateToStr(static_cast<ProxyDestination::State>(i));
         folly::format(" {}:{}", state, states[i]).appendTo(res);
       }
     }
     bool firstResult = true;
-    for (size_t i = 0; i < mc_nres; ++i) {
+    for (size_t i = 0; i < static_cast<size_t>(carbon::Result::NUM_RESULTS);
+         ++i) {
       if (results[i] > 0) {
-        folly::StringPiece result(mc_res_to_string(static_cast<mc_res_t>(i)));
+        folly::StringPiece result(
+            carbon::resultToString(static_cast<carbon::Result>(i)));
         result.removePrefix("mc_res_");
         folly::format("{} {}:{}", firstResult ? ";" : "", result, results[i])
             .appendTo(res);
@@ -377,6 +378,8 @@ void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
   uint64_t outstandingUpdateWaitTimeSumUs = 0;
   uint64_t retransPerKByteSum = 0;
   uint64_t retransNumTotal = 0;
+  uint64_t destinationRequestsDirtyBufferSum = 0;
+  uint64_t destinationRequestsTotalSum = 0;
 
   for (size_t i = 0; i < router.opts().num_proxies; ++i) {
     auto proxy = router.getProxyBase(i);
@@ -404,6 +407,12 @@ void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
         proxy->stats().getStatValueWithinWindow(retrans_per_kbyte_sum_stat);
     retransNumTotal +=
         proxy->stats().getStatValueWithinWindow(retrans_num_total_stat);
+
+    destinationRequestsDirtyBufferSum +=
+        proxy->stats().getStatValueWithinWindow(
+            destination_reqs_dirty_buffer_sum_stat);
+    destinationRequestsTotalSum += proxy->stats().getStatValueWithinWindow(
+        destination_reqs_total_sum_stat);
   }
 
   stat_set_uint64(
@@ -422,6 +431,14 @@ void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
     avgRetransPerKByte = retransPerKByteSum / (double)retransNumTotal;
   }
   stats[retrans_per_kbyte_avg_stat].data.dbl = avgRetransPerKByte;
+
+  double reqsDirtyBufferRatio = 0.0;
+  if (destinationRequestsTotalSum != 0) {
+    reqsDirtyBufferRatio =
+        destinationRequestsDirtyBufferSum / (double)destinationRequestsTotalSum;
+  }
+  stats[destination_reqs_dirty_buffer_ratio_stat].data.dbl =
+      reqsDirtyBufferRatio;
 
   stats[outstanding_route_get_avg_queue_size_stat].data.dbl = 0.0;
   stats[outstanding_route_get_avg_wait_time_sec_stat].data.dbl = 0.0;
@@ -448,7 +465,6 @@ void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
   stats[time_stat].data.uint64 = now;
 
   uint64_t start_time = router.startTime();
-  stats[start_time_stat].data.uint64 = start_time;
   stats[uptime_stat].data.uint64 = now - start_time;
 
   stats[config_age_stat].data.uint64 = now - config_last_success;
@@ -562,7 +578,7 @@ static stat_group_t stat_parse_group_str(folly::StringPiece str) {
   } else if (str == "count") {
     return count_stats;
   } else if (str.empty()) {
-    return mcproxy_stats;
+    return basic_stats;
   } else {
     return unknown_stats;
   }
@@ -583,7 +599,7 @@ McStatsReply stats_reply(ProxyBase* proxy, folly::StringPiece group_str) {
 
   auto groups = stat_parse_group_str(group_str);
   if (groups == unknown_stats) {
-    McStatsReply errorReply(mc_res_client_error);
+    McStatsReply errorReply(carbon::Result::CLIENT_ERROR);
     errorReply.message() = "bad stats command";
     return errorReply;
   }
@@ -608,7 +624,7 @@ McStatsReply stats_reply(ProxyBase* proxy, folly::StringPiece group_str) {
   }
   append_pool_stats(proxy->router(), stats);
 
-  if (groups & (mcproxy_stats | all_stats | detailed_stats | ods_stats)) {
+  if (groups & (basic_stats | all_stats | detailed_stats | ods_stats)) {
     folly::dynamic requestStats(folly::dynamic::object());
     const auto& router = proxy->router();
     for (size_t i = 0; i < router.opts().num_proxies; ++i) {
@@ -641,12 +657,14 @@ McStatsReply stats_reply(ProxyBase* proxy, folly::StringPiece group_str) {
     for (size_t i = 0; i < router.opts().num_proxies; ++i) {
       router.getProxyBase(i)->destinationMap()->foreachDestinationSynced(
           [&serverStats](
-              folly::StringPiece key, const ProxyDestination& pdstn) {
+              folly::StringPiece key, const ProxyDestinationBase& pdstn) {
             auto& stat = serverStats[key];
-            stat.isHardTko = pdstn.tracker->isHardTko();
-            stat.isSoftTko = pdstn.tracker->isSoftTko();
+            stat.isHardTko = pdstn.tracker()->isHardTko();
+            stat.isSoftTko = pdstn.tracker()->isSoftTko();
             if (pdstn.stats().results) {
-              for (size_t j = 0; j < mc_nres; ++j) {
+              for (size_t j = 0;
+                   j < static_cast<size_t>(carbon::Result::NUM_RESULTS);
+                   ++j) {
                 stat.results[j] += (*pdstn.stats().results)[j];
               }
             }
@@ -664,8 +682,9 @@ McStatsReply stats_reply(ProxyBase* proxy, folly::StringPiece group_str) {
               stat.minRetransPerKByte = std::min(stat.minRetransPerKByte, val);
               ++stat.cntRetransPerKByte;
             }
-            stat.pendingRequestsCount += pdstn.getPendingRequestCount();
-            stat.inflightRequestsCount += pdstn.getInflightRequestCount();
+            auto reqStats = pdstn.getRequestStats();
+            stat.pendingRequestsCount += reqStats.numPending;
+            stat.inflightRequestsCount += reqStats.numInflight;
           });
     }
     for (const auto& it : serverStats) {

@@ -12,6 +12,7 @@
 
 #include <folly/Optional.h>
 #include <folly/io/IOBuf.h>
+#include <thrift/lib/cpp2/FieldRef.h>
 
 namespace folly {
 class IOBuf;
@@ -29,10 +30,8 @@ folly::StringPiece getRange(const folly::IOBuf& buf);
 folly::StringPiece coalesceAndGetRange(std::unique_ptr<folly::IOBuf>& buf);
 folly::StringPiece coalesceAndGetRange(folly::IOBuf& buf);
 folly::StringPiece coalesceAndGetRange(folly::Optional<folly::IOBuf>& buf);
-
-bool hasSameMemoryRegion(const folly::IOBuf& buf, folly::StringPiece range);
-
-bool hasSameMemoryRegion(const folly::IOBuf& a, const folly::IOBuf& b);
+folly::StringPiece coalesceAndGetRange(
+    apache::thrift::optional_field_ref<folly::IOBuf&> buf);
 
 void copyInto(char* raw, const folly::IOBuf& buf);
 

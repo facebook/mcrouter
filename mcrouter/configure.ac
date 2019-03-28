@@ -9,6 +9,17 @@ m4_append([mcrouter_version], [.0])
 m4_append([mcrouter_version], [mcrouter_version_suffix])
 AC_INIT([mcrouter], [mcrouter_version], mcrouter@fb.com)
 
+AC_ARG_VAR([FBTHRIFT_BIN], [Path to FBThrift compiler])
+AC_ARG_VAR([FBTHRIFT_TEMPLATES], [Path to FBThrift mustache templates folder])
+AC_CHECK_PROG(have_fbthrift, thrift1, yes, no, path = $FBTHRIFT_BIN)
+AS_IF(
+  [test "x$have_fbthrift" = "xyes"],
+  [FBTHRIFT="$FBTHRIFT_BIN/thrift1 --templates $FBTHRIFT_TEMPLATES "],
+  [AC_MSG_ERROR([Unable to find FBThrift Compiler])]
+)
+AC_SUBST([FBTHRIFT])
+
+
 AC_DEFINE_UNQUOTED([MCROUTER_PACKAGE_STRING], ["AC_PACKAGE_VERSION AC_PACKAGE_NAME"], [Full name and version of this package, with version coming first for libmemcached compatibility])
 
 AC_CONFIG_SRCDIR([CarbonRouterInstance.h])
@@ -107,16 +118,21 @@ AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h netdb.h stdint.h string.h sys/fil
 
 AC_CHECK_LIB([event], [event_set], [], [AC_MSG_ERROR([Unable to find libevent])])
 AC_CHECK_LIB([crypto], [MD5_Init], [], [AC_MSG_ERROR([Unable to find libcrypto])])
-AC_CHECK_LIB([ssl], [SSL_library_init], [], [AC_MSG_ERROR([Unable to find ssl])])
+AC_CHECK_LIB([ssl], [SSL_CTX_new], [], [AC_MSG_ERROR([Unable to find ssl])])
 AC_CHECK_LIB([z], [gzread], [], [AC_MSG_ERROR([Unable to find zlib])])
 AC_CHECK_LIB([double-conversion],[ceil],[],[AC_MSG_ERROR(
              [Please install double-conversion library])])
 AC_CHECK_LIB([dl], [dlopen], [])
+AC_CHECK_LIB([iberty], [cplus_demangle_v3_callback], [])
 AC_CHECK_LIB([folly],[getenv],[],[AC_MSG_ERROR(
              [Please install the folly library])])
+AC_CHECK_LIB([sodium],[sodium_init],[],[AC_MSG_ERROR(
+             [Please install the libsodium library])])
+AC_CHECK_LIB([fizz],[getenv],[],[AC_MSG_ERROR(
+             [Please install the fizz library])])
 AC_CHECK_HEADER([folly/Likely.h], [], [AC_MSG_ERROR(
-[Couldn't find folly, please download from https://github.com/facebook/folly]
-)], [])
+                [Could not find folly, please download from https://github.com/facebook/folly])], [])
+
 # Commenting out the wangle dependency from here, because there is a tricky
 # inter-library dependency that resolves with the right order of LDFLAGS, and
 # this dependency here messes the order.
@@ -158,7 +174,7 @@ AC_CHECK_FUNCS([gettimeofday \
 
 LIBS="$LIBS $BOOST_LDFLAGS $BOOST_CONTEXT_LIB $BOOST_FILESYSTEM_LIB \
       $BOOST_PROGRAM_OPTIONS_LIB $BOOST_SYSTEM_LIB $BOOST_REGEX_LIB \
-      $BOOST_THREAD_LIB -lpthread -pthread"
+      $BOOST_THREAD_LIB -lpthread -pthread -ldl -lunwind -lzstd"
 
 AM_PATH_PYTHON([2.6],, [:])
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
@@ -170,6 +186,7 @@ AH_BOTTOM([#include "RouterRegistry.h"])
 AC_CONFIG_FILES([Makefile
                  lib/Makefile
                  lib/test/Makefile
+                 lib/carbon/Makefile
                  lib/config/Makefile
                  lib/config/test/Makefile
                  lib/fbi/Makefile
@@ -177,6 +194,7 @@ AC_CONFIG_FILES([Makefile
                  lib/fbi/cpp/Makefile
                  lib/fbi/cpp/test/Makefile
                  lib/network/Makefile
+                 lib/network/gen/Makefile
                  lib/network/test/Makefile
                  routes/Makefile
                  routes/test/Makefile

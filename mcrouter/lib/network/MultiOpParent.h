@@ -56,7 +56,8 @@ class MultiOpParent {
    * @return true if the parent assumed ownership of reporting an error.
    *         On true, errorMessage is moved out of.
    */
-  bool reply(mc_res_t result, uint32_t errorCode, std::string&& errorMessage);
+  bool
+  reply(carbon::Result result, uint32_t errorCode, std::string&& errorMessage);
 
   /**
    * Notify that a sub request is waiting for a reply.

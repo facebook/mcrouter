@@ -19,13 +19,6 @@ namespace memcache {
 
 constexpr const char* const McVersionRequest::name;
 
-void McVersionRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
-}
-
 void McVersionRequest::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructBegin();
   while (true) {
@@ -49,16 +42,6 @@ void McVersionRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
   }
   reader.readStructEnd();
-}
-
-void McVersionReply::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, value());
-  writer.writeField(3 /* field id */, message());
-  writer.writeField(4 /* field id */, appSpecificErrorCode());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
 }
 
 void McVersionReply::deserialize(carbon::CarbonProtocolReader& reader) {
@@ -100,13 +83,6 @@ void McVersionReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
 constexpr const char* const McStatsRequest::name;
 
-void McStatsRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
-}
-
 void McStatsRequest::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructBegin();
   while (true) {
@@ -130,16 +106,6 @@ void McStatsRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
   }
   reader.readStructEnd();
-}
-
-void McStatsReply::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, message());
-  writer.writeField(3 /* field id */, stats());
-  writer.writeField(4 /* field id */, appSpecificErrorCode());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
 }
 
 void McStatsReply::deserialize(carbon::CarbonProtocolReader& reader) {
@@ -181,13 +147,6 @@ void McStatsReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
 constexpr const char* const McShutdownRequest::name;
 
-void McShutdownRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
-}
-
 void McShutdownRequest::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructBegin();
   while (true) {
@@ -211,15 +170,6 @@ void McShutdownRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
   }
   reader.readStructEnd();
-}
-
-void McShutdownReply::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, message());
-  writer.writeField(3 /* field id */, appSpecificErrorCode());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
 }
 
 void McShutdownReply::deserialize(carbon::CarbonProtocolReader& reader) {
@@ -257,13 +207,6 @@ void McShutdownReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
 constexpr const char* const McQuitRequest::name;
 
-void McQuitRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
-}
-
 void McQuitRequest::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructBegin();
   while (true) {
@@ -287,15 +230,6 @@ void McQuitRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
   }
   reader.readStructEnd();
-}
-
-void McQuitReply::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, message());
-  writer.writeField(3 /* field id */, appSpecificErrorCode());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
 }
 
 void McQuitReply::deserialize(carbon::CarbonProtocolReader& reader) {
@@ -333,13 +267,6 @@ void McQuitReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
 constexpr const char* const McExecRequest::name;
 
-void McExecRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
-}
-
 void McExecRequest::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructBegin();
   while (true) {
@@ -363,16 +290,6 @@ void McExecRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
   }
   reader.readStructEnd();
-}
-
-void McExecReply::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, response());
-  writer.writeField(3 /* field id */, message());
-  writer.writeField(4 /* field id */, appSpecificErrorCode());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
 }
 
 void McExecReply::deserialize(carbon::CarbonProtocolReader& reader) {
@@ -414,14 +331,6 @@ void McExecReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
 constexpr const char* const GoAwayAcknowledgement::name;
 
-void GoAwayAcknowledgement::serialize(
-    carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-
-  writer.writeFieldStop();
-  writer.writeStructEnd();
-}
-
 void GoAwayAcknowledgement::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructBegin();
   while (true) {
@@ -434,6 +343,7 @@ void GoAwayAcknowledgement::deserialize(carbon::CarbonProtocolReader& reader) {
     }
 
     switch (fieldId) {
+
       default: {
         reader.skip(fieldType);
         break;
@@ -441,14 +351,6 @@ void GoAwayAcknowledgement::deserialize(carbon::CarbonProtocolReader& reader) {
     }
   }
   reader.readStructEnd();
-}
-
-void GoAwayRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, reason());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
 }
 
 void GoAwayRequest::deserialize(carbon::CarbonProtocolReader& reader) {

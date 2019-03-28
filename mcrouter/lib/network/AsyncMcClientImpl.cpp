@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "AsyncMcClientImpl.h"
 
@@ -18,6 +17,7 @@
 
 #include "mcrouter/lib/debug/FifoManager.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
+#include "mcrouter/lib/network/McFizzClient.h"
 #include "mcrouter/lib/network/McSSLUtil.h"
 #include "mcrouter/lib/network/SocketConnector.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
@@ -31,12 +31,13 @@ constexpr size_t kStackIovecs = 128;
 constexpr size_t kMaxBatchSize = 24576 /* 24KB */;
 
 namespace {
-class OnEventBaseDestructionCallback : public folly::EventBase::LoopCallback {
+class OnEventBaseDestructionCallback
+    : public folly::EventBase::OnDestructionCallback {
  public:
   explicit OnEventBaseDestructionCallback(AsyncMcClientImpl& client)
       : client_(client) {}
-  ~OnEventBaseDestructionCallback() override {}
-  void runLoopCallback() noexcept final {
+  ~OnEventBaseDestructionCallback() final = default;
+  void onEventBaseDestruction() noexcept final {
     client_.closeNow();
   }
 
@@ -49,8 +50,10 @@ struct GoAwayContext : public folly::AsyncTransportWrapper::WriteCallback {
   McSerializedRequest data;
   std::unique_ptr<GoAwayContext> selfPtr;
 
-  explicit GoAwayContext(const CodecIdRange& supportedCodecs)
-      : data(message, 0, mc_caret_protocol, supportedCodecs) {}
+  explicit GoAwayContext(
+      const CodecIdRange& supportedCodecs,
+      PayloadFormat payloadFormat)
+      : data(message, 0, mc_caret_protocol, supportedCodecs, payloadFormat) {}
 
   void writeSuccess() noexcept final {
     auto self = std::move(selfPtr);
@@ -73,10 +76,11 @@ inline size_t calculateIovecsTotalSize(const struct iovec* iovecs, size_t num) {
 }
 
 std::string getServiceIdentity(const ConnectionOptions& opts) {
-  return opts.sslServiceIdentity.empty() ? opts.accessPoint->toHostPortString()
-                                         : opts.sslServiceIdentity;
+  const auto& svcIdentity = opts.securityOpts.sslServiceIdentity;
+  return svcIdentity.empty() ? opts.accessPoint->toHostPortString()
+                             : svcIdentity;
 }
-} // anonymous
+} // namespace
 
 void AsyncMcClientImpl::WriterLoop::runLoopCallback() noexcept {
   // Delay this write until the end of current loop (e.g. after
@@ -95,13 +99,14 @@ AsyncMcClientImpl::AsyncMcClientImpl(
     folly::VirtualEventBase& eventBase,
     ConnectionOptions options)
     : eventBase_(eventBase.getEventBase()),
+      numConnectTimeoutRetriesLeft_(options.numConnectTimeoutRetries),
       queue_(options.accessPoint->getProtocol() != mc_ascii_protocol),
       outOfOrder_(options.accessPoint->getProtocol() != mc_ascii_protocol),
       writer_(*this),
       connectionOptions_(std::move(options)),
       eventBaseDestructionCallback_(
           std::make_unique<OnEventBaseDestructionCallback>(*this)) {
-  eventBase.runOnDestruction(eventBaseDestructionCallback_.get());
+  eventBase.runOnDestruction(*eventBaseDestructionCallback_);
   if (connectionOptions_.compressionCodecMap) {
     supportedCompressionCodecs_ =
         connectionOptions_.compressionCodecMap->getIdRange();
@@ -131,25 +136,26 @@ void AsyncMcClientImpl::closeNow() {
 }
 
 void AsyncMcClientImpl::setStatusCallbacks(
-    std::function<void(const folly::AsyncTransportWrapper&)> onUp,
-    std::function<void(ConnectionDownReason)> onDown) {
+    std::function<void(const folly::AsyncTransportWrapper&, int64_t)> onUp,
+    std::function<void(ConnectionDownReason, int64_t)> onDown) {
   DestructorGuard dg(this);
 
   statusCallbacks_ =
       ConnectionStatusCallbacks{std::move(onUp), std::move(onDown)};
 
   if (connectionState_ == ConnectionState::UP && statusCallbacks_.onUp) {
-    statusCallbacks_.onUp(*socket_);
+    statusCallbacks_.onUp(*socket_, getNumConnectRetries());
   }
 }
 
 void AsyncMcClientImpl::setRequestStatusCallbacks(
     std::function<void(int pendingDiff, int inflightDiff)> onStateChange,
-    std::function<void(int numToSend)> onWrite) {
+    std::function<void(size_t numToSend)> onWrite,
+    std::function<void()> onPartialWrite) {
   DestructorGuard dg(this);
 
-  requestStatusCallbacks_ =
-      RequestStatusCallbacks{std::move(onStateChange), std::move(onWrite)};
+  requestStatusCallbacks_ = RequestStatusCallbacks{
+      std::move(onStateChange), std::move(onWrite), std::move(onPartialWrite)};
 }
 
 AsyncMcClientImpl::~AsyncMcClientImpl() {
@@ -160,7 +166,7 @@ AsyncMcClientImpl::~AsyncMcClientImpl() {
     // readEOF and connectError, before we exit destructor.
     socket_->closeNow();
   }
-  eventBaseDestructionCallback_.reset();
+  eventBaseDestructionCallback_->cancel();
 }
 
 size_t AsyncMcClientImpl::getPendingRequestCount() const {
@@ -188,10 +194,11 @@ void AsyncMcClientImpl::sendCommon(McClientRequestContextBase& req) {
       }
       return;
     case McSerializedRequest::Result::BAD_KEY:
-      req.replyError(mc_res_bad_key, "The key provided is invalid");
+      req.replyError(carbon::Result::BAD_KEY, "The key provided is invalid");
       return;
     case McSerializedRequest::Result::ERROR:
-      req.replyError(mc_res_local_error, "Error when serializing the request.");
+      req.replyError(
+          carbon::Result::LOCAL_ERROR, "Error when serializing the request.");
       return;
   }
 }
@@ -322,7 +329,8 @@ void AsyncMcClientImpl::pushMessages() {
 }
 
 void AsyncMcClientImpl::sendGoAwayReply() {
-  auto ctxPtr = std::make_unique<GoAwayContext>(supportedCompressionCodecs_);
+  auto ctxPtr = std::make_unique<GoAwayContext>(
+      supportedCompressionCodecs_, connectionOptions_.payloadFormat);
   auto& ctx = *ctxPtr;
   switch (ctx.data.serializationResult()) {
     case McSerializedRequest::Result::OK: {
@@ -482,6 +490,74 @@ folly::AsyncSocket::OptionMap createSocketOptions(
 }
 } // anonymous namespace
 
+folly::AsyncTransportWrapper::UniquePtr AsyncMcClientImpl::createTransport() {
+  const auto mech = connectionOptions_.accessPoint->getSecurityMech();
+  folly::AsyncTransportWrapper::UniquePtr result;
+  if (mech == SecurityMech::NONE) {
+    result.reset(new folly::AsyncSocket(&eventBase_));
+    return result;
+  }
+  // creating a secure transport - make sure it isn't over a unix domain sock
+  if (connectionOptions_.accessPoint->isUnixDomainSocket()) {
+    connectErr(folly::AsyncSocketException(
+        folly::AsyncSocketException::BAD_ARGS,
+        "SSL protocol is not applicable for Unix Domain Sockets"));
+    return nullptr;
+  }
+  const auto& securityOpts = connectionOptions_.securityOpts;
+  const auto& serviceId = getServiceIdentity(connectionOptions_);
+  if (mech == SecurityMech::TLS || mech == SecurityMech::TLS_TO_PLAINTEXT) {
+    // openssl based tls
+    auto sslContext = getClientContext(securityOpts, mech);
+    if (!sslContext) {
+      connectErr(folly::AsyncSocketException(
+          folly::AsyncSocketException::SSL_ERROR,
+          "SSLContext provider returned nullptr, "
+          "check SSL certificates"));
+      return nullptr;
+    }
+
+    auto sslSocket = new folly::AsyncSSLSocket(sslContext, &eventBase_);
+    if (securityOpts.sessionCachingEnabled) {
+      if (auto clientCtx =
+              std::dynamic_pointer_cast<ClientSSLContext>(sslContext)) {
+        sslSocket->setSessionKey(serviceId);
+        auto session = clientCtx->getCache().getSSLSession(serviceId);
+        if (session) {
+          sslSocket->setSSLSession(session.release(), true);
+        }
+      }
+    }
+    if (securityOpts.tfoEnabledForSsl) {
+      sslSocket->enableTFO();
+    }
+    result.reset(sslSocket);
+  } else {
+    // tls 13 fizz
+    auto fizzContextAndVerifier = getFizzClientConfig(securityOpts);
+    if (!fizzContextAndVerifier.first) {
+      connectErr(folly::AsyncSocketException(
+          folly::AsyncSocketException::SSL_ERROR,
+          "Fizz context provider returned nullptr, "
+          "check SSL certificates"));
+      return nullptr;
+    }
+    auto fizzClient = new McFizzClient(
+        &eventBase_,
+        std::move(fizzContextAndVerifier.first),
+        std::move(fizzContextAndVerifier.second));
+    fizzClient->setSessionKey(serviceId);
+    if (securityOpts.tfoEnabledForSsl) {
+      if (auto socket =
+              fizzClient->getUnderlyingTransport<folly::AsyncSocket>()) {
+        socket->enableTFO();
+      }
+    }
+    result.reset(fizzClient);
+  }
+  return result;
+}
+
 void AsyncMcClientImpl::attemptConnection() {
   // We may use a lot of stack memory (e.g. hostname resolution) or some
   // expensive SSL code. This should be always executed on main context.
@@ -490,52 +566,11 @@ void AsyncMcClientImpl::attemptConnection() {
     connectionState_ = ConnectionState::CONNECTING;
     pendingGoAwayReply_ = false;
 
-    folly::AsyncSSLSocket* sslSocket = nullptr;
-    if (connectionOptions_.securityMech ==
-        ConnectionOptions::SecurityMech::TLS) {
-      // Unix Domain Sockets do not work with SSL because
-      // the protocol is not implemented for Unix Domain
-      // Sockets. Trying to use SSL with Unix Domain Sockets
-      // will result in protocol error.
-      if (connectionOptions_.accessPoint->isUnixDomainSocket()) {
-        connectErr(folly::AsyncSocketException(
-            folly::AsyncSocketException::BAD_ARGS,
-            "SSL protocol is not applicable for Unix Domain Sockets"));
-        return;
-      }
-
-      auto sslContext = getClientContext(
-          connectionOptions_.sslPemCertPath,
-          connectionOptions_.sslPemKeyPath,
-          connectionOptions_.sslPemCaPath);
-
-      if (!sslContext) {
-        connectErr(folly::AsyncSocketException(
-            folly::AsyncSocketException::SSL_ERROR,
-            "SSLContext provider returned nullptr, "
-            "check SSL certificates"));
-        return;
-      }
-
-      sslSocket = new folly::AsyncSSLSocket(sslContext, &eventBase_);
-      if (connectionOptions_.sessionCachingEnabled) {
-        auto clientCtx =
-            std::dynamic_pointer_cast<ClientSSLContext>(sslContext);
-        if (clientCtx) {
-          const auto& serviceId = getServiceIdentity(connectionOptions_);
-          sslSocket->setSessionKey(serviceId);
-          auto session = clientCtx->getCache().getSSLSession(serviceId);
-          if (session) {
-            sslSocket->setSSLSession(session.release(), true);
-          }
-        }
-      }
-      if (connectionOptions_.tfoEnabledForSsl) {
-        sslSocket->enableTFO();
-      }
-      socket_.reset(sslSocket);
-    } else {
-      socket_.reset(new folly::AsyncSocket(&eventBase_));
+    const auto mech = connectionOptions_.accessPoint->getSecurityMech();
+    socket_ = createTransport();
+    if (!socket_) {
+      // connect err was invoked
+      return;
     }
 
     folly::SocketAddress address;
@@ -559,18 +594,22 @@ void AsyncMcClientImpl::attemptConnection() {
     auto socketOptions = createSocketOptions(address, connectionOptions_);
 
     socket_->setSendTimeout(connectionOptions_.writeTimeout.count());
-    if (sslSocket && connectionOptions_.sslHandshakeOffload) {
+    if ((mech == SecurityMech::TLS || mech == SecurityMech::TLS_TO_PLAINTEXT) &&
+        connectionOptions_.securityOpts.sslHandshakeOffload &&
+        // we must make sure that contexts are threadsafe before doing this!
+        sslContextsAreThreadSafe()) {
       // we keep ourself alive during connection.
       auto self = selfPtr_.lock();
+      auto sslSocket = socket_->getUnderlyingTransport<folly::AsyncSSLSocket>();
       socket_.release();
       folly::AsyncSSLSocket::UniquePtr sslSockPtr(sslSocket);
       // offload the handshake
       connectSSLSocketWithAuxIO(
           std::move(sslSockPtr),
           std::move(address),
-          connectionOptions_.writeTimeout.count(),
+          connectionOptions_.connectTimeout.count(),
           std::move(socketOptions))
-          .then([self](folly::AsyncSocket::UniquePtr socket) {
+          .thenValue([self](folly::AsyncSocket::UniquePtr socket) {
             CHECK(self->eventBase_.isInEventBaseThread());
             if (self->isAborting_) {
               // closeNow was called before we connected, so we need to fail
@@ -593,13 +632,22 @@ void AsyncMcClientImpl::attemptConnection() {
             }
           });
     } else {
-      auto asyncSock = socket_->getUnderlyingTransport<folly::AsyncSocket>();
       // connect inline on the current evb
-      asyncSock->connect(
-          this,
-          address,
-          connectionOptions_.writeTimeout.count(),
-          socketOptions);
+      if (mech == SecurityMech::TLS13_FIZZ) {
+        auto fizzClient = socket_->getUnderlyingTransport<McFizzClient>();
+        fizzClient->connect(
+            this,
+            address,
+            connectionOptions_.connectTimeout.count(),
+            socketOptions);
+      } else {
+        auto asyncSock = socket_->getUnderlyingTransport<folly::AsyncSocket>();
+        asyncSock->connect(
+            this,
+            address,
+            connectionOptions_.connectTimeout.count(),
+            socketOptions);
+      }
     }
   });
 }
@@ -614,13 +662,16 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
     socket_->getPeerAddress(&address);
     auto asyncSock = socket_->getUnderlyingTransport<folly::AsyncSocket>();
     if (asyncSock) {
-      checkWhetherQoSIsApplied(address, asyncSock->getFd(), connectionOptions_);
+      checkWhetherQoSIsApplied(
+          address, asyncSock->getNetworkSocket().toFd(), connectionOptions_);
     }
   }
 
   if (statusCallbacks_.onUp) {
-    statusCallbacks_.onUp(*socket_);
+    statusCallbacks_.onUp(*socket_, getNumConnectRetries());
   }
+
+  numConnectTimeoutRetriesLeft_ = connectionOptions_.numConnectTimeoutRetries;
 
   if (!connectionOptions_.debugFifoPath.empty()) {
     if (auto fifoManager = FifoManager::getInstance()) {
@@ -632,11 +683,31 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
     }
   }
 
-  if (connectionOptions_.securityMech == ConnectionOptions::SecurityMech::TLS &&
-      connectionOptions_.sessionCachingEnabled) {
+  const auto mech = connectionOptions_.accessPoint->getSecurityMech();
+  if (mech == SecurityMech::TLS || mech == SecurityMech::TLS_TO_PLAINTEXT) {
     auto* sslSocket = socket_->getUnderlyingTransport<folly::AsyncSSLSocket>();
     assert(sslSocket != nullptr);
     McSSLUtil::finalizeClientSSL(sslSocket);
+    if (mech == SecurityMech::TLS_TO_PLAINTEXT) {
+      // if we negotiated the right alpn, then server also supports this and we
+      // can fall back to plaintext.
+      auto fallback = McSSLUtil::moveToPlaintext(*sslSocket);
+      if (!fallback) {
+        // configured to use this but failed to negotiate.  will end up doing
+        // ssl anyway
+        auto errorMessage = folly::to<std::string>(
+            "Failed to negotiate TLS to plaintext.  SSL will be used for ",
+            connectionOptions_.accessPoint->toHostPortString());
+        LOG_FAILURE(
+            "AsyncMcClient", failure::Category::kBadEnvironment, errorMessage);
+      } else {
+        // replace socket with this
+        socket_.reset(fallback.release());
+        // we need to set timeout options here.  things like tcp opts and
+        // qos are sock opts and don't change on the FD.
+        socket_->setSendTimeout(connectionOptions_.writeTimeout.count());
+      }
+    }
   }
 
   assert(getInflightRequestCount() == 0);
@@ -668,26 +739,37 @@ void AsyncMcClientImpl::connectErr(
         "AsyncMcClient", failure::Category::kBadEnvironment, errorMessage);
   }
 
-  mc_res_t error = mc_res_connect_error;
+  carbon::Result error = carbon::Result::CONNECT_ERROR;
   ConnectionDownReason reason = ConnectionDownReason::CONNECT_ERROR;
   if (ex.getType() == folly::AsyncSocketException::TIMED_OUT) {
-    error = mc_res_connect_timeout;
+    error = carbon::Result::CONNECT_TIMEOUT;
     reason = ConnectionDownReason::CONNECT_TIMEOUT;
-    errorMessage = "Timed out when trying to connect to server";
+    errorMessage = folly::to<std::string>(
+        "Timed out when trying to connect to server. Ex: ", ex.what());
   } else if (isAborting_) {
-    error = mc_res_aborted;
+    error = carbon::Result::ABORTED;
     reason = ConnectionDownReason::ABORTED;
-    errorMessage = "Connection aborted";
+    errorMessage =
+        folly::to<std::string>("Connection aborted. Ex: ", ex.what());
+  } else {
+    errorMessage = ex.what();
   }
 
   assert(getInflightRequestCount() == 0);
-  queue_.failAllPending(error, errorMessage);
   connectionState_ = ConnectionState::DOWN;
   // We don't need it anymore, so let it perform complete cleanup.
   socket_.reset();
 
-  if (statusCallbacks_.onDown) {
-    statusCallbacks_.onDown(reason);
+  if (ex.getType() == folly::AsyncSocketException::TIMED_OUT &&
+      numConnectTimeoutRetriesLeft_ > 0) {
+    --numConnectTimeoutRetriesLeft_;
+    attemptConnection();
+  } else {
+    queue_.failAllPending(error, errorMessage);
+    if (statusCallbacks_.onDown) {
+      statusCallbacks_.onDown(reason, getNumConnectRetries());
+    }
+    numConnectTimeoutRetriesLeft_ = connectionOptions_.numConnectTimeoutRetries;
   }
 }
 
@@ -704,15 +786,16 @@ void AsyncMcClientImpl::processShutdown(folly::StringPiece errorMessage) {
       // We can safely close connection, it will stop all writes.
       socket_->close();
 
-    /* fallthrough */
+      /* fallthrough */
 
     case ConnectionState::ERROR:
       queue_.failAllSent(
-          isAborting_ ? mc_res_aborted : mc_res_remote_error, errorMessage);
+          isAborting_ ? carbon::Result::ABORTED : carbon::Result::REMOTE_ERROR,
+          errorMessage);
       if (queue_.getInflightRequestCount() == 0) {
         // No need to send any of remaining requests if we're aborting.
         if (isAborting_) {
-          queue_.failAllPending(mc_res_aborted, errorMessage);
+          queue_.failAllPending(carbon::Result::ABORTED, errorMessage);
         }
 
         // This is a last processShutdown() for this error and it is safe
@@ -720,7 +803,8 @@ void AsyncMcClientImpl::processShutdown(folly::StringPiece errorMessage) {
         if (statusCallbacks_.onDown) {
           statusCallbacks_.onDown(
               isAborting_ ? ConnectionDownReason::ABORTED
-                          : ConnectionDownReason::ERROR);
+                          : ConnectionDownReason::ERROR,
+              getNumConnectRetries());
         }
 
         connectionState_ = ConnectionState::DOWN;
@@ -817,6 +901,14 @@ void AsyncMcClientImpl::writeErr(
   processShutdown(errorMessage);
 }
 
+void AsyncMcClientImpl::onEgressBuffered() {
+  if (requestStatusCallbacks_.onPartialWrite) {
+    requestStatusCallbacks_.onPartialWrite();
+  }
+}
+
+void AsyncMcClientImpl::onEgressBufferCleared() {}
+
 folly::StringPiece AsyncMcClientImpl::clientStateToStr() const {
   switch (connectionState_) {
     case ConnectionState::UP:
@@ -846,7 +938,7 @@ void AsyncMcClientImpl::logErrorWithContext(folly::StringPiece reason) {
 }
 
 void AsyncMcClientImpl::handleConnectionControlMessage(
-    const UmbrellaMessageInfo& headerInfo) {
+    const CaretMessageInfo& headerInfo) {
   DestructorGuard dg(this);
   // Handle go away request.
   switch (headerInfo.typeId) {
@@ -856,7 +948,8 @@ void AsyncMcClientImpl::handleConnectionControlMessage(
         break;
       }
       if (statusCallbacks_.onDown) {
-        statusCallbacks_.onDown(ConnectionDownReason::SERVER_GONE_AWAY);
+        statusCallbacks_.onDown(
+            ConnectionDownReason::SERVER_GONE_AWAY, getNumConnectRetries());
       }
       pendingGoAwayReply_ = true;
       scheduleNextWriterLoop();
@@ -869,7 +962,7 @@ void AsyncMcClientImpl::handleConnectionControlMessage(
 }
 
 void AsyncMcClientImpl::parseError(
-    mc_res_t /* result */,
+    carbon::Result /* result */,
     folly::StringPiece reason) {
   logErrorWithContext(reason);
   // mc_parser can call the parseError multiple times, process only first.
@@ -897,16 +990,23 @@ void AsyncMcClientImpl::incMsgId(uint32_t& msgId) {
   msgId += 2;
 }
 
-void AsyncMcClientImpl::updateWriteTimeout(std::chrono::milliseconds timeout) {
-  if (!timeout.count()) {
+void AsyncMcClientImpl::updateTimeoutsIfShorter(
+    std::chrono::milliseconds connectTimeout,
+    std::chrono::milliseconds writeTimeout) {
+  if (!connectTimeout.count() && !writeTimeout.count()) {
     return;
   }
   auto selfWeak = selfPtr_;
-  eventBase_.runInEventBaseThread([selfWeak, timeout]() {
+  eventBase_.runInEventBaseThread([selfWeak, connectTimeout, writeTimeout]() {
     if (auto self = selfWeak.lock()) {
+      if (!self->connectionOptions_.connectTimeout.count() ||
+          self->connectionOptions_.connectTimeout > connectTimeout) {
+        self->connectionOptions_.connectTimeout = connectTimeout;
+      }
+
       if (!self->connectionOptions_.writeTimeout.count() ||
-          self->connectionOptions_.writeTimeout > timeout) {
-        self->connectionOptions_.writeTimeout = timeout;
+          self->connectionOptions_.writeTimeout > writeTimeout) {
+        self->connectionOptions_.writeTimeout = writeTimeout;
       }
 
       if (self->socket_) {
@@ -938,5 +1038,11 @@ double AsyncMcClientImpl::getRetransmissionInfo() {
   }
   return -1.0;
 }
-} // memcache
-} // facebook
+
+int64_t AsyncMcClientImpl::getNumConnectRetries() noexcept {
+  return connectionOptions_.numConnectTimeoutRetries -
+      numConnectTimeoutRetriesLeft_;
+}
+
+} // namespace memcache
+} // namespace facebook

@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2015-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "AsciiSerialized.h"
 
@@ -13,11 +12,64 @@
 namespace facebook {
 namespace memcache {
 
+namespace {
+const char* errorResultStr(const carbon::Result result) {
+  switch (result) {
+    case carbon::Result::OOO:
+      return "SERVER_ERROR out of order\r\n";
+    case carbon::Result::TIMEOUT:
+      return "SERVER_ERROR timeout\r\n";
+    case carbon::Result::CONNECT_TIMEOUT:
+      return "SERVER_ERROR connection timeout\r\n";
+    case carbon::Result::CONNECT_ERROR:
+      return "SERVER_ERROR connection error\r\n";
+    case carbon::Result::BUSY:
+      return "SERVER_ERROR 307 busy\r\n";
+    case carbon::Result::RES_TRY_AGAIN:
+      return "SERVER_ERROR 302 try again\r\n";
+    case carbon::Result::SHUTDOWN:
+      return "SERVER_ERROR 301 shutdown\r\n";
+    case carbon::Result::TKO:
+      return "SERVER_ERROR unavailable\r\n";
+    case carbon::Result::BAD_COMMAND:
+      return "CLIENT_ERROR bad command\r\n";
+    case carbon::Result::BAD_KEY:
+      return "CLIENT_ERROR bad key\r\n";
+    case carbon::Result::BAD_FLAGS:
+      return "CLIENT_ERROR bad flags\r\n";
+    case carbon::Result::BAD_EXPTIME:
+      return "CLIENT_ERROR bad exptime\r\n";
+    case carbon::Result::BAD_LEASE_ID:
+      return "CLIENT_ERROR bad lease_id\r\n";
+    case carbon::Result::BAD_CAS_ID:
+      return "CLIENT_ERROR bad cas_id\r\n";
+    case carbon::Result::BAD_VALUE:
+      return "SERVER_ERROR bad value\r\n";
+    case carbon::Result::ABORTED:
+      return "SERVER_ERROR aborted\r\n";
+    case carbon::Result::CLIENT_ERROR:
+      return "CLIENT_ERROR\r\n";
+    case carbon::Result::LOCAL_ERROR:
+      return "SERVER_ERROR local error\r\n";
+    case carbon::Result::REMOTE_ERROR:
+      return "SERVER_ERROR remote error\r\n";
+    default:
+      return "SERVER_ERROR unknown result\r\n";
+  }
+}
+} // anonymous namespace
+
+size_t AsciiSerializedRequest::getSize() const {
+  return iovsTotalLen_;
+}
+
 void AsciiSerializedRequest::addString(folly::ByteRange range) {
   assert(iovsCount_ < kMaxIovs);
+  auto bufLen = range.size();
   iovs_[iovsCount_].iov_base = const_cast<unsigned char*>(range.begin());
-  iovs_[iovsCount_].iov_len = range.size();
+  iovs_[iovsCount_].iov_len = bufLen;
   ++iovsCount_;
+  iovsTotalLen_ += bufLen;
 }
 
 void AsciiSerializedRequest::addString(folly::StringPiece str) {
@@ -61,6 +113,24 @@ void AsciiSerializedRequest::prepareImpl(const McMetagetRequest& request) {
 
 void AsciiSerializedRequest::prepareImpl(const McLeaseGetRequest& request) {
   addStrings("lease-get ", request.key().fullKey(), "\r\n");
+}
+
+void AsciiSerializedRequest::prepareImpl(const McGatRequest& request) {
+  auto len = snprintf(printBuffer_, kMaxBufferLength, "%d ", request.exptime());
+  addStrings(
+      "gat ",
+      folly::StringPiece(printBuffer_, static_cast<size_t>(len)),
+      request.key().fullKey(),
+      "\r\n");
+}
+
+void AsciiSerializedRequest::prepareImpl(const McGatsRequest& request) {
+  auto len = snprintf(printBuffer_, kMaxBufferLength, "%d ", request.exptime());
+  addStrings(
+      "gats ",
+      folly::StringPiece(printBuffer_, static_cast<size_t>(len)),
+      request.key().fullKey(),
+      "\r\n");
 }
 
 // Update-like ops.
@@ -203,13 +273,13 @@ void AsciiSerializedReply::addString(folly::StringPiece str) {
 }
 
 void AsciiSerializedReply::handleError(
-    mc_res_t result,
+    carbon::Result result,
     uint16_t errorCode,
     std::string&& message) {
   assert(isErrorResult(result));
 
   if (!message.empty()) {
-    if (result == mc_res_client_error) {
+    if (result == carbon::Result::CLIENT_ERROR) {
       addString("CLIENT_ERROR ");
     } else {
       addString("SERVER_ERROR ");
@@ -224,12 +294,12 @@ void AsciiSerializedReply::handleError(
     auxString_ = std::move(message);
     addStrings(*auxString_, "\r\n");
   } else {
-    addString(mc_res_to_response_string(result));
+    addString(errorResultStr(result));
   }
 }
 
 void AsciiSerializedReply::handleUnexpected(
-    mc_res_t result,
+    carbon::Result result,
     const char* requestName) {
   assert(iovsCount_ == 0);
 
@@ -239,8 +309,8 @@ void AsciiSerializedReply::handleUnexpected(
       printBuffer_,
       kMaxBufferLength,
       "SERVER_ERROR unexpected result %s (%d) for %s\r\n",
-      mc_res_to_string(result),
-      result,
+      carbon::resultToString(result),
+      static_cast<int32_t>(result),
       requestName);
   assert(len > 0);
   assert(static_cast<size_t>(len) < kMaxBufferLength);
@@ -279,7 +349,9 @@ void AsciiSerializedReply::prepareImpl(
           folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
       assert(!iobuf_.hasValue());
       // value was coalesced in coalesceAndGetRange()
-      iobuf_ = std::move(reply.value());
+      if (reply.value().has_value()) {
+        iobuf_ = std::move(reply.value().value());
+      }
       addStrings(valueStr, "\r\n");
     }
   } else if (isErrorResult(reply.result())) {
@@ -313,7 +385,9 @@ void AsciiSerializedReply::prepareImpl(
         folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
     assert(!iobuf_.hasValue());
     // value was coalesced in coalescedAndGetRange()
-    iobuf_ = std::move(reply.value());
+    if (reply.value().has_value()) {
+      iobuf_ = std::move(reply.value().value());
+    }
     addStrings(valueStr, "\r\n");
   } else if (isErrorResult(reply.result())) {
     handleError(
@@ -337,7 +411,7 @@ void AsciiSerializedReply::prepareImpl(
    * IP6 address is at most 39 characters.
    * To be safe, we set kMaxBufferLength = 100 bytes.
    */
-  if (reply.result() == mc_res_found) {
+  if (reply.result() == carbon::Result::FOUND) {
     // age
     std::string ageStr("unknown");
     if (reply.age() != -1) {
@@ -361,6 +435,9 @@ void AsciiSerializedReply::prepareImpl(
     assert(len > 0);
     assert(static_cast<size_t>(len) < kMaxBufferLength);
 
+    /* TODO(stuclar): Once mcrouter change to make ascii parsing of
+     *  is_transient is deployed everywhere, remove is_transient.
+     */
     addStrings(
         "META ",
         key,
@@ -382,7 +459,7 @@ void AsciiSerializedReply::prepareImpl(
     folly::StringPiece key) {
   const auto valueStr = coalesceAndGetRange(reply.value());
 
-  if (reply.result() == mc_res_found) {
+  if (reply.result() == carbon::Result::FOUND) {
     const auto len = snprintf(
         printBuffer_,
         kMaxBufferLength,
@@ -398,9 +475,11 @@ void AsciiSerializedReply::prepareImpl(
         folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
     assert(!iobuf_.hasValue());
     // value was coalesced in coalescedAndGetRange()
-    iobuf_ = std::move(reply.value());
+    if (reply.value().has_value()) {
+      iobuf_ = std::move(reply.value().value());
+    }
     addStrings(valueStr, "\r\n");
-  } else if (reply.result() == mc_res_notfound) {
+  } else if (reply.result() == carbon::Result::NOTFOUND) {
     const auto len = snprintf(
         printBuffer_,
         kMaxBufferLength,
@@ -412,25 +491,109 @@ void AsciiSerializedReply::prepareImpl(
         "LVALUE ",
         key,
         folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
-    iobuf_ = std::move(reply.value());
+    if (reply.value().has_value()) {
+      iobuf_ = std::move(reply.value().value());
+    }
     addStrings(valueStr, "\r\n");
-  } else if (reply.result() == mc_res_notfoundhot) {
+  } else if (reply.result() == carbon::Result::NOTFOUNDHOT) {
     addString("NOT_FOUND_HOT\r\n");
   } else if (isErrorResult(reply.result())) {
-    LOG(ERROR) << "Got reply result " << reply.result();
+    LOG(ERROR) << "Got reply result " << static_cast<size_t>(reply.result());
     handleError(
         reply.result(),
         reply.appSpecificErrorCode(),
         std::move(reply.message()));
   } else {
-    LOG(ERROR) << "Got unexpected reply result " << reply.result();
+    LOG(ERROR) << "Got unexpected reply result "
+               << static_cast<size_t>(reply.result());
     handleUnexpected(reply.result(), "lease-get");
+  }
+}
+
+void AsciiSerializedReply::prepareImpl(
+    McGatReply&& reply,
+    folly::StringPiece key) {
+  if (isHitResult(reply.result())) {
+    if (key.empty()) {
+      // Multi-op hack: if key is empty, this is the END context
+      if (isErrorResult(reply.result())) {
+        handleError(
+            reply.result(),
+            reply.appSpecificErrorCode(),
+            std::move(reply.message()));
+      }
+      addString("END\r\n");
+    } else {
+      const auto valueStr = coalesceAndGetRange(reply.value());
+
+      const auto len = snprintf(
+          printBuffer_,
+          kMaxBufferLength,
+          " %lu %zu\r\n",
+          reply.flags(),
+          valueStr.size());
+      assert(len > 0);
+      assert(static_cast<size_t>(len) < kMaxBufferLength);
+
+      addStrings(
+          "VALUE ",
+          key,
+          folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
+      assert(!iobuf_.hasValue());
+      // value was coalesced in coalesceAndGetRange()
+      if (reply.value().has_value()) {
+        iobuf_ = std::move(reply.value().value());
+      }
+      addStrings(valueStr, "\r\n");
+    }
+  } else if (isErrorResult(reply.result())) {
+    handleError(
+        reply.result(),
+        reply.appSpecificErrorCode(),
+        std::move(reply.message()));
+  } else {
+    handleUnexpected(reply.result(), "gat");
+  }
+}
+
+void AsciiSerializedReply::prepareImpl(
+    McGatsReply&& reply,
+    folly::StringPiece key) {
+  if (isHitResult(reply.result())) {
+    const auto valueStr = coalesceAndGetRange(reply.value());
+    const auto len = snprintf(
+        printBuffer_,
+        kMaxBufferLength,
+        " %lu %zu %lu\r\n",
+        reply.flags(),
+        valueStr.size(),
+        reply.casToken());
+    assert(len > 0);
+    assert(static_cast<size_t>(len) < kMaxBufferLength);
+
+    addStrings(
+        "VALUE ",
+        key,
+        folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
+    assert(!iobuf_.hasValue());
+    // value was coalesced in coalescedAndGetRange()
+    if (reply.value().has_value()) {
+      iobuf_ = std::move(reply.value().value());
+    }
+    addStrings(valueStr, "\r\n");
+  } else if (isErrorResult(reply.result())) {
+    handleError(
+        reply.result(),
+        reply.appSpecificErrorCode(),
+        std::move(reply.message()));
+  } else {
+    handleUnexpected(reply.result(), "gats");
   }
 }
 
 // Update-like ops
 void AsciiSerializedReply::prepareUpdateLike(
-    mc_res_t result,
+    carbon::Result result,
     uint16_t errorCode,
     std::string&& message,
     const char* requestName) {
@@ -439,21 +602,30 @@ void AsciiSerializedReply::prepareUpdateLike(
     return;
   }
 
-  if (UNLIKELY(result == mc_res_ok)) {
-    addString(mc_res_to_response_string(mc_res_stored));
+  if (UNLIKELY(result == carbon::Result::OK)) {
+    addString("STORED\r\n");
     return;
   }
 
   switch (result) {
-    case mc_res_stored:
-    case mc_res_stalestored:
-    case mc_res_found:
-    case mc_res_notstored:
-    case mc_res_notfound:
-    case mc_res_exists:
-      addString(mc_res_to_response_string(result));
+    case carbon::Result::STORED:
+      addString("STORED\r\n");
       break;
-
+    case carbon::Result::STALESTORED:
+      addString("STALE_STORED\r\n");
+      break;
+    case carbon::Result::FOUND:
+      addString("FOUND\r\n");
+      break;
+    case carbon::Result::NOTSTORED:
+      addString("NOT_STORED\r\n");
+      break;
+    case carbon::Result::NOTFOUND:
+      addString("NOT_FOUND\r\n");
+      break;
+    case carbon::Result::EXISTS:
+      addString("EXISTS\r\n");
+      break;
     default:
       handleUnexpected(result, requestName);
       break;
@@ -517,7 +689,7 @@ void AsciiSerializedReply::prepareImpl(McLeaseSetReply&& reply) {
 }
 
 void AsciiSerializedReply::prepareArithmeticLike(
-    mc_res_t result,
+    carbon::Result result,
     const uint64_t delta,
     uint16_t errorCode,
     std::string&& message,
@@ -557,9 +729,9 @@ void AsciiSerializedReply::prepareImpl(McDecrReply&& reply) {
 
 // Delete
 void AsciiSerializedReply::prepareImpl(McDeleteReply&& reply) {
-  if (reply.result() == mc_res_deleted) {
+  if (reply.result() == carbon::Result::DELETED) {
     addString("DELETED\r\n");
-  } else if (reply.result() == mc_res_notfound) {
+  } else if (reply.result() == carbon::Result::NOTFOUND) {
     addString("NOT_FOUND\r\n");
   } else if (isErrorResult(reply.result())) {
     handleError(
@@ -573,9 +745,9 @@ void AsciiSerializedReply::prepareImpl(McDeleteReply&& reply) {
 
 // Touch
 void AsciiSerializedReply::prepareImpl(McTouchReply&& reply) {
-  if (reply.result() == mc_res_touched) {
+  if (reply.result() == carbon::Result::TOUCHED) {
     addString("TOUCHED\r\n");
-  } else if (reply.result() == mc_res_notfound) {
+  } else if (reply.result() == carbon::Result::NOTFOUND) {
     addString("NOT_FOUND\r\n");
   } else if (isErrorResult(reply.result())) {
     handleError(
@@ -589,7 +761,7 @@ void AsciiSerializedReply::prepareImpl(McTouchReply&& reply) {
 
 // Version
 void AsciiSerializedReply::prepareImpl(McVersionReply&& reply) {
-  if (reply.result() == mc_res_ok) {
+  if (reply.result() == carbon::Result::OK) {
     // TODO(jmswen) Do something sane when version is empty
     addString("VERSION ");
     if (!reply.value().empty()) {
@@ -612,7 +784,7 @@ void AsciiSerializedReply::prepareImpl(McVersionReply&& reply) {
 
 // Stats
 void AsciiSerializedReply::prepareImpl(McStatsReply&& reply) {
-  if (reply.result() == mc_res_ok) {
+  if (reply.result() == carbon::Result::OK) {
     if (!reply.stats().empty()) {
       auxString_ = folly::join("\r\n", reply.stats());
       addStrings(*auxString_, "\r\n");
@@ -654,7 +826,7 @@ void AsciiSerializedReply::prepareImpl(McFlushReReply&& reply) {
 
 // Exec
 void AsciiSerializedReply::prepareImpl(McExecReply&& reply) {
-  if (reply.result() == mc_res_ok) {
+  if (reply.result() == carbon::Result::OK) {
     if (!reply.response().empty()) {
       auxString_ = std::move(reply.response());
       addStrings(*auxString_, "\r\n");
@@ -673,7 +845,7 @@ void AsciiSerializedReply::prepareImpl(McExecReply&& reply) {
 
 // Shutdown
 void AsciiSerializedReply::prepareImpl(McShutdownReply&& reply) {
-  if (reply.result() == mc_res_ok) {
+  if (reply.result() == carbon::Result::OK) {
     addString("OK\r\n");
   } else if (isErrorResult(reply.result())) {
     handleError(
@@ -684,5 +856,5 @@ void AsciiSerializedReply::prepareImpl(McShutdownReply&& reply) {
     handleUnexpected(reply.result(), "shutdown");
   }
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

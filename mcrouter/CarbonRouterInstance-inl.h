@@ -120,6 +120,12 @@ CarbonRouterInstance<RouterInfo>* CarbonRouterInstance<RouterInfo>::get(
 }
 
 template <class RouterInfo>
+bool CarbonRouterInstance<RouterInfo>::hasInstance(
+    folly::StringPiece persistenceId) {
+  return get(persistenceId) != nullptr;
+}
+
+template <class RouterInfo>
 CarbonRouterInstance<RouterInfo>* CarbonRouterInstance<RouterInfo>::createRaw(
     McrouterOptions input_options,
     const std::vector<folly::EventBase*>& evbs) {
@@ -262,6 +268,7 @@ CarbonRouterInstance<RouterInfo>::spinUp(
       }
     }
 
+    VLOG(2) << "spinning up proxy threads";
     for (size_t i = 0; i < opts_.num_proxies; i++) {
       if (evbs.empty()) {
         try {
@@ -506,6 +513,7 @@ CarbonRouterInstance<RouterInfo>::configure(const ProxyConfigBuilder& builder) {
 template <class RouterInfo>
 folly::Expected<ProxyConfigBuilder, std::string>
 CarbonRouterInstance<RouterInfo>::createConfigBuilder() {
+  VLOG_IF(0, !opts_.constantly_reload_configs) << "creating config builder";
   /* mark config attempt before, so that
      successful config is always >= last config attempt. */
   lastConfigAttempt_ = time(nullptr);

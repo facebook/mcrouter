@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2015-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <folly/Range.h>
 #include <folly/fibers/EventBaseLoopController.h>
@@ -64,7 +63,7 @@ void Proxy<RouterInfo>::WaitingRequest<Request>::process(
     if (durationInQueueUs >
         1000 * static_cast<int64_t>(
                    proxy->getRouterOptions().waiting_request_timeout_ms)) {
-      ctx_->sendReply(mc_res_busy);
+      ctx_->sendReply(carbon::Result::BUSY);
       return;
     }
   }
@@ -95,7 +94,7 @@ Proxy<RouterInfo>::addRouteTask(
               " Exception: {}",
               typeid(Request).name(),
               e.what());
-          ReplyT<Request> reply(mc_res_local_error);
+          ReplyT<Request> reply(carbon::Result::LOCAL_ERROR);
           carbon::setMessageIfPresent(reply, std::move(err));
           return reply;
         }
@@ -112,7 +111,7 @@ typename std::enable_if_t<
 Proxy<RouterInfo>::addRouteTask(
     const Request&,
     std::shared_ptr<ProxyRequestContextTyped<RouterInfo, Request>> sharedCtx) {
-  ReplyT<Request> reply(mc_res_local_error);
+  ReplyT<Request> reply(carbon::Result::LOCAL_ERROR);
   carbon::setMessageIfPresent(
       reply,
       folly::sformat(
@@ -159,7 +158,7 @@ void Proxy<RouterInfo>::dispatchRequest(
     if (getRouterOptions().proxy_max_throttled_requests > 0 &&
         numRequestsWaiting_ >=
             getRouterOptions().proxy_max_throttled_requests) {
-      ctx->sendReply(mc_res_busy);
+      ctx->sendReply(carbon::Result::BUSY);
       return;
     }
     auto& queue = waitingRequests_[static_cast<int>(ctx->priority())];
@@ -237,11 +236,10 @@ Proxy<RouterInfo>* Proxy<RouterInfo>::createProxy(
   });
 
   // We want proxy life-time to be tied to VirtualEventBase.
-  eventBase.runOnDestruction(new folly::EventBase::FunctionLoopCallback(
-      [proxy = std::move(proxy)]() mutable {
-        /* make sure proxy is deleted on the proxy thread */
-        proxy.reset();
-      }));
+  eventBase.runOnDestruction([proxy = std::move(proxy)]() mutable {
+    /* make sure proxy is deleted on the proxy thread */
+    proxy.reset();
+  });
 
   return proxyPtr;
 }
@@ -328,7 +326,7 @@ void Proxy<RouterInfo>::routeHandlesProcessRequest(
   try {
     reply = stats_reply(this, req.key().fullKey());
   } catch (const std::exception& e) {
-    reply.result() = mc_res_local_error;
+    reply.result() = carbon::Result::LOCAL_ERROR;
     reply.message() =
         folly::to<std::string>("Error processing stats request: ", e.what());
   }
@@ -340,7 +338,7 @@ void Proxy<RouterInfo>::routeHandlesProcessRequest(
     const McVersionRequest&,
     std::unique_ptr<ProxyRequestContextTyped<RouterInfo, McVersionRequest>>
         ctx) {
-  McVersionReply reply(mc_res_ok);
+  McVersionReply reply(carbon::Result::OK);
   reply.value() =
       folly::IOBuf(folly::IOBuf::COPY_BUFFER, MCROUTER_PACKAGE_STRING);
   ctx->sendReply(std::move(reply));

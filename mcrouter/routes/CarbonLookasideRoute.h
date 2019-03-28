@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2018-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -19,7 +18,8 @@
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/config.h"
 #include "mcrouter/flavor.h"
-#include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/McResUtil.h"
+#include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/lib/routes/NullRoute.h"
@@ -59,11 +59,26 @@ LeaseSettings parseLeaseSettings(const folly::dynamic& json);
  *
  *    std::string name();
  *
+ *    // Tells whether or not we should consider the given request for caching.
  *    template <typename Request>
  *    bool cacheCandidate(const Request& req);
  *
+ *   // Constructs a key for a Request.
+ *   // Note: Just called for cache candidates.
  *   template <typename Request>
  *   std::string buildKey(const Request& req);
+ *
+ *    // Whether or not we should cache the reply we received.
+ *    // Note:
+ *    //  - Just called for cache candidates.
+ *    //  - Just called if non-error. Errors are not considered for caching.
+ *    template <typename Reply>
+ *    bool shouldCacheReply(const Reply& reply);
+ *
+ *   // Method to do any post processing necessary to replies retrieved
+ *   // from cache.
+ *   template <typename Reply>
+ *   void postProcessCachedReply(Reply& reply);
  * };
  *
  * @tparam RouterInfo            The Router
@@ -78,9 +93,10 @@ class CarbonLookasideRoute {
  public:
   std::string routeName() const {
     return folly::sformat(
-        "lookaside-cache|name={}|ttl={}s|leases={}",
+        "lookaside-cache|name={}|ttl={}{}s|leases={}",
         carbonLookasideHelper_.name(),
         ttl_,
+        subSecTTL_ ? "m" : "",
         leaseSettings_.enableLeases ? "true" : "false");
   }
 
@@ -97,8 +113,11 @@ class CarbonLookasideRoute {
    *                      helper.
    * @param keySplitSize  Tells how many different keys we want to have for
    *                      the same request. Useful for dealing with hot keys.
-   * @param ttl           TTL of items stored in memcache by this route handle,
-   *                      in seconds.
+   * @param ttl           TTL of items stored in memcache by this route handle.
+   *                      Defaults to use seconds but can be milliseconds when
+   *                      the subSecTTL parameter is configured.
+   * @param subSecTTL     TTL specified in ttl parameter is in units of ms.
+   *                      The ttl can be {100,200,500}.
    * @param helper        The helper used to build keys and see if we should
    *                      cache a given request. This helper is use-case
    *                      specific.
@@ -111,6 +130,7 @@ class CarbonLookasideRoute {
       std::string prefix,
       size_t keySplitSize,
       int32_t ttl,
+      bool subSecTTL,
       CarbonLookasideHelper helper,
       LeaseSettings leaseSettings)
       : child_(std::move(child)),
@@ -119,6 +139,7 @@ class CarbonLookasideRoute {
         keyPrefix_(std::move(prefix)),
         keySuffix_(buildKeySuffix(keySplitSize)),
         ttl_(ttl),
+        subSecTTL_(subSecTTL),
         carbonLookasideHelper_(std::move(helper)),
         leaseSettings_(std::move(leaseSettings)) {
     assert(router_);
@@ -140,13 +161,15 @@ class CarbonLookasideRoute {
     if (cacheCandidate) {
       key = buildKey(req);
       if (auto optReply = carbonLookasideGet<Request>(key, leaseToken)) {
+        carbonLookasideHelper_.postProcessCachedReply(optReply.value());
         return optReply.value();
       }
     }
 
     auto reply = child_->route(req);
 
-    if (cacheCandidate) {
+    if (cacheCandidate && !isErrorResult(reply.result()) &&
+        carbonLookasideHelper_.shouldCacheReply(reply)) {
       carbonLookasideSet(key, reply, leaseToken);
     }
     return reply;
@@ -159,6 +182,7 @@ class CarbonLookasideRoute {
   const std::string keyPrefix_;
   const std::string keySuffix_;
   const int32_t ttl_;
+  const bool subSecTTL_;
   CarbonLookasideHelper carbonLookasideHelper_;
   const LeaseSettings leaseSettings_;
 
@@ -183,8 +207,8 @@ class CarbonLookasideRoute {
         cacheRequest,
         [&baton, &ret](const McGetRequest&, McGetReply&& cacheReply) {
           if (isHitResult(cacheReply.result()) &&
-              cacheReply.value().hasValue()) {
-            folly::io::Cursor cur(cacheReply.value().get_pointer());
+              cacheReply.value().has_value()) {
+            folly::io::Cursor cur(&cacheReply.value().value());
             carbon::CarbonProtocolReader reader(cur);
             ReplyT<Request> reply;
             reply.deserialize(reader);
@@ -220,8 +244,8 @@ class CarbonLookasideRoute {
               const McLeaseGetRequest&, McLeaseGetReply&& cacheReply) {
             retry = false;
             if (isHitResult(cacheReply.result()) &&
-                cacheReply.value().hasValue()) {
-              folly::io::Cursor cur(cacheReply.value().get_pointer());
+                cacheReply.value().has_value()) {
+              folly::io::Cursor cur(&cacheReply.value().value());
               carbon::CarbonProtocolReader reader(cur);
               ReplyT<Request> reply;
               reply.deserialize(reader);
@@ -279,7 +303,13 @@ class CarbonLookasideRoute {
   template <typename Reply>
   void carbonLookasideSet(folly::StringPiece key, const Reply& reply) {
     McSetRequest req(key);
-    req.exptime() = ttl_;
+    if (subSecTTL_) {
+      // ms ttl translates to a 1 second ttl on the server. Sub-second
+      // ttl is acheived by appending a time based suffix to the key.
+      req.exptime() = 1;
+    } else {
+      req.exptime() = ttl_;
+    }
     req.value() = serializeOffFiber(reply);
     folly::fibers::addTask([this, req = std::move(req)]() {
       folly::fibers::Baton baton;
@@ -297,7 +327,13 @@ class CarbonLookasideRoute {
       const Reply& reply,
       const int64_t leaseToken) {
     McLeaseSetRequest req(key);
-    req.exptime() = ttl_;
+    if (subSecTTL_) {
+      // ms ttl translates to a 1 second ttl on the server. Sub-second
+      // ttl is acheived by appending a time based suffix to the key.
+      req.exptime() = 1;
+    } else {
+      req.exptime() = ttl_;
+    }
     req.leaseToken() = leaseToken;
     req.value() = serializeOffFiber(reply);
     folly::fibers::addTask([this, req = std::move(req)]() {
@@ -309,8 +345,41 @@ class CarbonLookasideRoute {
     });
   }
 
+  /**
+   * Generates a suffix for sub-second TTL requests.
+   * The idea is to return the bucket ID based on the TTL.
+   * For example: if the TTL is 50ms, we would generate TTLs based on the
+   * following pattern:
+   *  -----------------------------
+   *  | current_time_ms  | suffix |
+   *  -----------------------------
+   *  | 0-49             |      0 |
+   *  | 50-99            |      1 |
+   *  | 100-149          |      2 |
+   *  | 150-199          |      3 |
+   *  ...
+   *  | 950-999          |     19 |
+   *  -----------------------------
+   */
+  size_t getSubSecondTtlKeySuffix() {
+    assert(subSecTTL_);
+
+    // Get the milliseconds part of the current time.
+    size_t currentMs = (nowUs() / 1000) % 1000;
+
+    return currentMs / ttl_;
+  }
+
   template <typename Request>
   std::string buildKey(const Request& req) {
+    if (subSecTTL_) {
+      return folly::to<std::string>(
+          keyPrefix_,
+          carbonLookasideHelper_.buildKey(req),
+          keySuffix_,
+          ":",
+          getSubSecondTtlKeySuffix());
+    }
     return folly::to<std::string>(
         keyPrefix_, carbonLookasideHelper_.buildKey(req), keySuffix_);
   }
@@ -353,11 +422,28 @@ typename RouterInfo::RouteHandlePtr createCarbonLookasideRoute(
       child != nullptr,
       "CarbonLookasideRoute: cannot create route handle from 'child'");
 
+  bool subSecTTL = false;
+  if (auto jTtlUnit = json.get_ptr("ttl_unit_ms")) {
+    checkLogic(
+        jTtlUnit->isBool(),
+        "CarbonLookasideRoute: 'ttl_unit_ms' is not a bool");
+    if (jTtlUnit->getBool()) {
+      subSecTTL = true;
+    }
+  }
+
   auto jTtl = json.get_ptr("ttl");
   checkLogic(
       jTtl != nullptr, "CarbonLookasideRoute: 'ttl' property is missing");
   checkLogic(jTtl->isInt(), "CarbonLookasideRoute: 'ttl' is not an integer");
   int32_t ttl = jTtl->getInt();
+
+  if (subSecTTL) {
+    checkLogic(
+        ttl >= 10 && ttl < 1000 && (1000 % ttl == 0),
+        "CarbonLookasideRoute: for sub-second ttl, you must use a number "
+        "that is >= 10, < 1000, and 1000 must be a multiple of ttl.");
+  }
 
   std::string prefix = ""; // Defaults to no prefix.
   if (auto jPrefix = json.get_ptr("prefix")) {
@@ -432,6 +518,7 @@ typename RouterInfo::RouteHandlePtr createCarbonLookasideRoute(
       std::move(prefix),
       keySplitSize,
       ttl,
+      subSecTTL,
       std::move(helper),
       std::move(leaseSettings));
 }

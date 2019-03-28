@@ -21,7 +21,6 @@
 #include <folly/Optional.h>
 #include <folly/io/IOBuf.h>
 #include <mcrouter/lib/carbon/CarbonProtocolReader.h>
-#include <mcrouter/lib/carbon/CarbonProtocolWriter.h>
 #include <mcrouter/lib/carbon/CommonSerializationTraits.h>
 #include <mcrouter/lib/carbon/Keys.h>
 #include <mcrouter/lib/carbon/ReplyCommon.h>
@@ -70,7 +69,8 @@ class SimpleStruct {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -91,14 +91,21 @@ class SimpleUnion {
       facebook::memcache::KV<3, std::string>>;
 
  public:
+  enum class ValueType : uint32_t {
+    EMPTY = 0,
+    UMEMBER1 = 1,
+    UMEMBER2 = 2,
+    UMEMBER3 = 3
+  };
+
   SimpleUnion() = default;
   SimpleUnion(const SimpleUnion&) = default;
   SimpleUnion& operator=(const SimpleUnion&) = default;
   SimpleUnion(SimpleUnion&&) = default;
   SimpleUnion& operator=(SimpleUnion&&) = default;
 
-  uint32_t which() const {
-    return _which_;
+  ValueType which() const {
+    return static_cast<ValueType>(_which_);
   }
 
   int64_t& umember1() {
@@ -116,7 +123,6 @@ class SimpleUnion {
     }
     return _carbon_variant.get<int64_t>();
   }
-
   bool& umember2() {
     if (_which_ == 0) {
       return emplace<2>();
@@ -132,7 +138,6 @@ class SimpleUnion {
     }
     return _carbon_variant.get<bool>();
   }
-
   std::string& umember3() {
     if (_which_ == 0) {
       return emplace<3>();
@@ -181,7 +186,17 @@ class SimpleUnion {
     return _carbon_variant.emplace<C>(std::forward<Args>(args)...);
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <
+      ValueType id,
+      class... Args,
+      class C = typename carbon::
+          FindByKey<static_cast<uint32_t>(id), _IdTypeMap>::type>
+  C& emplace(Args&&... args) {
+    _which_ = static_cast<uint32_t>(id);
+    return _carbon_variant.emplace<C>(std::forward<Args>(args)...);
+  }
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -195,8 +210,10 @@ class SimpleUnion {
   void foreachMember(V&& v) const;
 
  private:
-  carbon::Variant<int64_t, bool, std::string> _carbon_variant;
-
+  carbon::Variant<
+      int64_t,
+      bool,
+      std::string> _carbon_variant;
   uint32_t _which_{0};
 };
 
@@ -217,7 +234,8 @@ class YetAnotherRequest : public carbon::RequestCommon {
   YetAnotherRequest& operator=(const YetAnotherRequest&) = default;
   YetAnotherRequest(YetAnotherRequest&&) = default;
   YetAnotherRequest& operator=(YetAnotherRequest&&) = default;
-  explicit YetAnotherRequest(folly::StringPiece sp) : key_(sp) {}
+  explicit YetAnotherRequest(folly::StringPiece sp)
+      : key_(sp) {}
   explicit YetAnotherRequest(folly::IOBuf&& carbonKey)
       : key_(std::move(carbonKey)) {}
 
@@ -225,6 +243,7 @@ class YetAnotherRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   uint64_t flags() const {
@@ -233,8 +252,8 @@ class YetAnotherRequest : public carbon::RequestCommon {
   int32_t exptime() const {
     return 0;
   }
-
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -276,7 +295,8 @@ class YetAnotherReply : public carbon::ReplyCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -286,7 +306,7 @@ class YetAnotherReply : public carbon::ReplyCommon {
   void visitFields(V&& v) const;
 
  private:
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
 };
 } // namespace util
 } // namespace test2

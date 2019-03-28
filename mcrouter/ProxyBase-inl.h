@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <memory>
 
@@ -35,6 +34,7 @@ ProxyBase::ProxyBase(
       stats_(router_.getStatsEnabledPools()),
       flushCallback_(*this),
       destinationMap_(std::make_unique<ProxyDestinationMap>(this)) {
+  eventBase_.runInEventBaseThread([]() { isProxyThread_ = true; });
   // Setup a full random seed sequence
   folly::Random::seed(randomGenerator_);
 

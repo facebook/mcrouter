@@ -17,18 +17,49 @@ namespace carbon {
 namespace test2 {
 namespace util {
 
+template <class Writer>
+void SimpleStruct::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, member1());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void SimpleStruct::visitFields(V&& v) {
-  if (!v.visitField(1, "member1", member1_)) {
+  if (!v.visitField(1, "member1", this->member1())) {
     return;
   }
 }
 
 template <class V>
 void SimpleStruct::visitFields(V&& v) const {
-  if (!v.visitField(1, "member1", member1_)) {
+  if (!v.visitField(1, "member1", this->member1())) {
     return;
   }
+}
+
+template <class Writer>
+void SimpleUnion::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  switch (_which_) {
+    case 1: {
+      writer.writeFieldAlways(1 /* field id */, umember1());
+      break;
+    }
+    case 2: {
+      writer.writeFieldAlways(2 /* field id */, umember2());
+      break;
+    }
+    case 3: {
+      writer.writeFieldAlways(3 /* field id */, umember3());
+      break;
+    }
+    default:
+      break;
+  }
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>
@@ -37,15 +68,12 @@ void SimpleUnion::visitFields(V&& v) {
     case 1:
       v.visitField(1, "umember1", umember1());
       break;
-
     case 2:
       v.visitField(2, "umember2", umember2());
       break;
-
     case 3:
       v.visitField(3, "umember3", umember3());
       break;
-
     default:
       break;
   }
@@ -57,15 +85,12 @@ void SimpleUnion::visitFields(V&& v) const {
     case 1:
       v.visitField(1, "umember1", umember1());
       break;
-
     case 2:
       v.visitField(2, "umember2", umember2());
       break;
-
     case 3:
       v.visitField(3, "umember3", umember3());
       break;
-
     default:
       break;
   }
@@ -76,11 +101,9 @@ void SimpleUnion::foreachMember(V&& v) {
   if (!v.template visitUnionMember<1, int64_t>("umember1", *this)) {
     return;
   }
-
   if (!v.template visitUnionMember<2, bool>("umember2", *this)) {
     return;
   }
-
   if (!v.template visitUnionMember<3, std::string>("umember3", *this)) {
     return;
   }
@@ -91,40 +114,54 @@ void SimpleUnion::foreachMember(V&& v) const {
   if (!v.template visitUnionMember<1, int64_t>("umember1", *this)) {
     return;
   }
-
   if (!v.template visitUnionMember<2, bool>("umember2", *this)) {
     return;
   }
-
   if (!v.template visitUnionMember<3, std::string>("umember3", *this)) {
     return;
   }
 }
 
+template <class Writer>
+void YetAnotherRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void YetAnotherRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
 
 template <class V>
 void YetAnotherRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
 
+template <class Writer>
+void YetAnotherReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void YetAnotherReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
 }
 
 template <class V>
 void YetAnotherReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
 }

@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -15,6 +14,7 @@
 #include "mcrouter/lib/RendezvousHashFunc.h"
 #include "mcrouter/lib/SelectionRouteFactory.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
+#include "mcrouter/lib/WeightedCh4HashFunc.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/lib/routes/SelectionRoute.h"
@@ -77,6 +77,10 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> createHashRoute(
   } else if (funcType == WeightedCh3HashFunc::type()) {
     WeightedCh3HashFunc func{json, n};
     return createHashRoute<RouterInfo, WeightedCh3HashFunc>(
+        std::move(rh), std::move(salt), std::move(func));
+  } else if (funcType == WeightedCh4HashFunc::type()) {
+    WeightedCh4HashFunc func{json, n};
+    return createHashRoute<RouterInfo, WeightedCh4HashFunc>(
         std::move(rh), std::move(salt), std::move(func));
   } else if (funcType == ConstShardHashFunc::type()) {
     return createHashRoute<RouterInfo, ConstShardHashFunc>(

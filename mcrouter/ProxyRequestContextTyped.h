@@ -116,7 +116,7 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
       const int64_t startTimeUs,
       const int64_t endTimeUs,
       const int32_t poolStatIndex,
-      const ReplyStatsContext replyStatsContext) {
+      const RpcStatsContext rpcStatsContext) {
     if (recording()) {
       return;
     }
@@ -133,7 +133,7 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
         startTimeUs,
         endTimeUs,
         reply.result(),
-        replyStatsContext);
+        rpcStatsContext);
     assert(logger_.hasValue());
     logger_->template log<Request>(loggerContext);
     assert(additionalLogger_.hasValue());
@@ -191,9 +191,9 @@ class ProxyRequestContextTyped
    *
    * WARNING: This function can be dangerous with new typed requests.
    * For typed requests,
-   *   ctx->sendReply(mc_res_local_error, "Error message")
+   *   ctx->sendReply(carbon::Result::LOCAL_ERROR, "Error message")
    * does the right thing, while
-   *   ctx->sendReply(mc_res_found, "value")
+   *   ctx->sendReply(carbon::Result::FOUND, "value")
    * does the wrong thing.
    */
   template <class... Args>

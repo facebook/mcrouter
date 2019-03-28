@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Facebook, Inc.
+# Copyright (c) Facebook, Inc. and its affiliates.
 #
 # This source code is licensed under the MIT license found in the LICENSE
 # file in the root directory of this source tree.
@@ -38,7 +38,7 @@ class TestAsyncFiles(McrouterTestCase):
     def test_stats_no_requests(self):
         mcrouter = self.add_mcrouter(self.config, extra_args=self.extra_args)
         # wait for files
-        time.sleep(2)
+        time.sleep(3)
         self.check_stats(mcrouter.stats_dir)
 
     def test_async_files(self):
@@ -50,7 +50,7 @@ class TestAsyncFiles(McrouterTestCase):
 
         # check async spool for failed delete
         asynclog_files = []
-        for root, dirs, files in os.walk(mcrouter.get_async_spool_dir()):
+        for root, _dirs, files in os.walk(mcrouter.get_async_spool_dir()):
             for f in files:
                 asynclog_files.append(os.path.join(root, f))
 

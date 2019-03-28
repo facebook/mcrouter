@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2015-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -13,8 +12,8 @@
 #include "mcrouter/CarbonRouterInstanceBase.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyRequestContext.h"
-#include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/carbon/CarbonMessageConversionUtils.h"
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 
@@ -76,21 +75,13 @@ class LoggingRoute {
 
     auto& callback = ctx->proxy().router().postprocessCallback();
     if (callback) {
-      if (isHitResult(reply.result())) {
+      if (isHitResult(reply.result()) || isStoredResult(reply.result())) {
         callback(
-            req.key().fullKey(),
-            carbon::getFlags(reply),
-            carbon::valueRangeSlow(reply),
+            carbon::convertToFollyDynamic(req),
+            carbon::convertToFollyDynamic(reply),
             Request::name,
             userIp);
       }
-    } else {
-      const auto replyLength = carbon::valuePtrUnsafe(reply)
-          ? carbon::valuePtrUnsafe(reply)->computeChainDataLength()
-          : 0;
-      LOG(INFO) << "request key: " << req.key().fullKey()
-                << " response: " << mc_res_to_string(reply.result())
-                << " responseLength: " << replyLength << " user ip: " << userIp;
     }
     return reply;
   }

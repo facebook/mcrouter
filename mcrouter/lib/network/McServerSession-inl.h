@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -19,7 +18,7 @@ namespace memcache {
 template <class Request>
 void McServerSession::asciiRequestReady(
     Request&& req,
-    mc_res_t result,
+    carbon::Result result,
     bool noreply) {
   DestructorGuard dg(this);
 
@@ -42,68 +41,18 @@ void McServerSession::asciiRequestReady(
 
   ctx.asciiKey().emplace(req.key().raw().cloneOneAsValue());
 
-  if (result == mc_res_bad_key) {
-    McServerRequestContext::reply(std::move(ctx), Reply(mc_res_bad_key));
+  if (result == carbon::Result::BAD_KEY) {
+    McServerRequestContext::reply(
+        std::move(ctx), Reply(carbon::Result::BAD_KEY));
   } else {
     try {
       onRequest_->requestReady(std::move(ctx), std::move(req));
     } catch (...) {
-      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_remote_error));
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::REMOTE_ERROR));
     }
   }
 }
 
-template <class Request>
-void McServerSession::umbrellaRequestReady(Request&& req, uint64_t reqid) {
-  DestructorGuard dg(this);
-
-  assert(parser_.protocol() == mc_umbrella_protocol_DONOTUSE);
-  assert(parser_.outOfOrder());
-
-  if (state_ != STREAMING) {
-    return;
-  }
-
-  McServerRequestContext ctx(*this, reqid);
-
-  umbrellaRequestReadyImpl(std::move(ctx), std::move(req));
-}
-
-template <class Request>
-void McServerSession::umbrellaRequestReadyImpl(
-    McServerRequestContext&& ctx,
-    Request&& req) {
-  onRequest_->requestReady(std::move(ctx), std::move(req));
-}
-
-template <>
-inline void McServerSession::umbrellaRequestReadyImpl(
-    McServerRequestContext&& ctx,
-    McVersionRequest&& req) {
-  if (options_.defaultVersionHandler) {
-    McVersionReply versionReply(mc_res_ok);
-    versionReply.value() =
-        folly::IOBuf(folly::IOBuf::COPY_BUFFER, options_.versionString);
-    McServerRequestContext::reply(std::move(ctx), std::move(versionReply));
-  } else {
-    onRequest_->requestReady(std::move(ctx), std::move(req));
-  }
-}
-
-template <>
-inline void McServerSession::umbrellaRequestReadyImpl(
-    McServerRequestContext&& ctx,
-    McQuitRequest&& /* req */) {
-  McServerRequestContext::reply(std::move(ctx), McQuitReply(mc_res_ok));
-  close();
-}
-
-template <>
-inline void McServerSession::umbrellaRequestReadyImpl(
-    McServerRequestContext&& ctx,
-    McShutdownRequest&& /* req */) {
-  McServerRequestContext::reply(std::move(ctx), McShutdownReply(mc_res_ok));
-  stateCb_.onShutdown();
-}
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

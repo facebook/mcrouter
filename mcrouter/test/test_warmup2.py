@@ -1,4 +1,4 @@
-# Copyright (c) 2016-present, Facebook, Inc.
+# Copyright (c) Facebook, Inc. and its affiliates.
 #
 # This source code is licensed under the MIT license found in the LICENSE
 # file in the root directory of this source tree.
@@ -41,15 +41,17 @@ class TestWarmup2(McrouterTestCase):
 
         k = 'key2'
         v = 'value2'
-        self.assertTrue(self.mc_warm.set(k, v))
+        key_set_time = int(time.time())
+        self.assertTrue(self.mc_warm.set(k, v, exptime=100))
+        key_after_set_time = int(time.time())
         self.assertEqual(self.mcrouter.get(k), v)
         # warmup request is async
         time.sleep(1)
         self.assertTrue(self.mc_cold.get(k), v)
         cold_exptime = int(self.mc_cold.metaget(k)['exptime'])
         warm_exptime = int(self.mc_warm.metaget(k)['exptime'])
-        self.assertEqual(cold_exptime, 0)
-        self.assertEqual(warm_exptime, 0)
+
+        self.assertIn(warm_exptime, range(key_set_time + 100, key_after_set_time + 101))
 
         # you should keep warm consistent by yourself
         self.assertTrue(self.mcrouter.delete(k))
@@ -91,12 +93,17 @@ class TestWarmup2(McrouterTestCase):
 
         self.assertEqual(len(self.mcrouter.metaget(k)), 0)
 
-        self.assertTrue(self.mc_warm.set(k, v))
-        self.assertEqual(self.mcrouter.metaget(k)['exptime'], '0')
+        key_set_time = int(time.time())
+        self.assertTrue(self.mc_warm.set(k, v, exptime=100))
+        key_after_set_time = int(time.time())
+
+        self.assertIn(int(self.mcrouter.metaget(k)['exptime']),
+                range(key_set_time + 100, key_after_set_time + 101))
         self.assertTrue(self.mc_warm.delete(k))
         self.assertEqual(len(self.mcrouter.metaget(k)), 0)
-        self.assertTrue(self.mc_cold.set(k, v))
-        self.assertEqual(self.mcrouter.metaget(k)['exptime'], '0')
+        self.assertTrue(self.mc_cold.set(k, v, exptime=100))
+        self.assertIn(int(self.mcrouter.metaget(k)['exptime']),
+                range(key_set_time + 100, key_after_set_time + 101))
 
 
 class TestWarmup2AppendPrependTouch(TestWarmup2):

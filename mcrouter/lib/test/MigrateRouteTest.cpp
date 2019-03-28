@@ -34,13 +34,13 @@ TEST(migrateRouteTest, migrate) {
 
   vector<std::shared_ptr<TestHandle>> test_handles{
       make_shared<TestHandle>(
-          GetRouteTestData(mc_res_found, "a"),
+          GetRouteTestData(carbon::Result::FOUND, "a"),
           UpdateRouteTestData(),
-          DeleteRouteTestData(mc_res_deleted)),
+          DeleteRouteTestData(carbon::Result::DELETED)),
       make_shared<TestHandle>(
-          GetRouteTestData(mc_res_found, "b"),
+          GetRouteTestData(carbon::Result::FOUND, "b"),
           UpdateRouteTestData(),
-          DeleteRouteTestData(mc_res_notfound)),
+          DeleteRouteTestData(carbon::Result::NOTFOUND)),
   };
   auto route_handles = get_route_handles(test_handles);
 
@@ -86,7 +86,7 @@ TEST(migrateRouteTest, migrate) {
          EXPECT_EQ(1, cnt);
 
          auto reply_del = rh.route(req_del);
-         EXPECT_EQ(mc_res_deleted, reply_del.result());
+         EXPECT_EQ(carbon::Result::DELETED, reply_del.result());
          EXPECT_EQ(vector<string>{key_del}, test_handles[0]->saw_keys);
          EXPECT_NE(vector<string>{key_del}, test_handles[1]->saw_keys);
        },
@@ -94,13 +94,13 @@ TEST(migrateRouteTest, migrate) {
        [&]() { // case 2: start_time < now < migration_time
          vector<std::shared_ptr<TestHandle>> test_handles_2{
              make_shared<TestHandle>(
-                 GetRouteTestData(mc_res_found, "a"),
+                 GetRouteTestData(carbon::Result::FOUND, "a"),
                  UpdateRouteTestData(),
-                 DeleteRouteTestData(mc_res_deleted)),
+                 DeleteRouteTestData(carbon::Result::DELETED)),
              make_shared<TestHandle>(
-                 GetRouteTestData(mc_res_notfound, "b"),
+                 GetRouteTestData(carbon::Result::NOTFOUND, "b"),
                  UpdateRouteTestData(),
-                 DeleteRouteTestData(mc_res_notfound)),
+                 DeleteRouteTestData(carbon::Result::NOTFOUND)),
          };
          auto route_handles_c2 = get_route_handles(test_handles_2);
          TestRouteHandle<MigrateRoute<TestRouteHandleIf, TimeProviderFunc>> rh(
@@ -130,7 +130,7 @@ TEST(migrateRouteTest, migrate) {
          EXPECT_EQ(cnt, 2);
 
          auto reply_del = rh.route(req_del);
-         EXPECT_EQ(mc_res_notfound, reply_del.result());
+         EXPECT_EQ(carbon::Result::NOTFOUND, reply_del.result());
          EXPECT_EQ(vector<string>{key_del}, test_handles_2[0]->saw_keys);
          EXPECT_EQ(vector<string>{key_del}, test_handles_2[1]->saw_keys);
        },
@@ -138,13 +138,13 @@ TEST(migrateRouteTest, migrate) {
        [&]() { // case 3: migration_time < curr_time < end_time
          vector<std::shared_ptr<TestHandle>> test_handles_3{
              make_shared<TestHandle>(
-                 GetRouteTestData(mc_res_notfound, "a"),
+                 GetRouteTestData(carbon::Result::NOTFOUND, "a"),
                  UpdateRouteTestData(),
-                 DeleteRouteTestData(mc_res_notfound)),
+                 DeleteRouteTestData(carbon::Result::NOTFOUND)),
              make_shared<TestHandle>(
-                 GetRouteTestData(mc_res_found, "b"),
+                 GetRouteTestData(carbon::Result::FOUND, "b"),
                  UpdateRouteTestData(),
-                 DeleteRouteTestData(mc_res_deleted)),
+                 DeleteRouteTestData(carbon::Result::DELETED)),
          };
          auto route_handles_c3 = get_route_handles(test_handles_3);
          TestRouteHandle<MigrateRoute<TestRouteHandleIf, TimeProviderFunc>> rh(
@@ -174,7 +174,7 @@ TEST(migrateRouteTest, migrate) {
          EXPECT_EQ(2, cnt);
 
          auto reply_del = rh.route(req_del);
-         EXPECT_EQ(mc_res_notfound, reply_del.result());
+         EXPECT_EQ(carbon::Result::NOTFOUND, reply_del.result());
          EXPECT_EQ(vector<string>{key_del}, test_handles_3[0]->saw_keys);
          EXPECT_EQ(vector<string>{key_del}, test_handles_3[1]->saw_keys);
        },
@@ -205,7 +205,7 @@ TEST(migrateRouteTest, migrate) {
          EXPECT_EQ(1, cnt);
 
          auto reply_del = rh.route(req_del);
-         EXPECT_EQ(mc_res_notfound, reply_del.result());
+         EXPECT_EQ(carbon::Result::NOTFOUND, reply_del.result());
          EXPECT_NE(vector<string>{key_del}, test_handles[0]->saw_keys);
          EXPECT_EQ(vector<string>{key_del}, test_handles[1]->saw_keys);
        }});
@@ -214,13 +214,13 @@ TEST(migrateRouteTest, migrate) {
 TEST(migrateRouteTest, leases) {
   vector<std::shared_ptr<TestHandle>> test_handles{
       make_shared<TestHandle>(
-          GetRouteTestData(mc_res_found, "a"),
+          GetRouteTestData(carbon::Result::FOUND, "a"),
           UpdateRouteTestData(),
-          DeleteRouteTestData(mc_res_deleted)),
+          DeleteRouteTestData(carbon::Result::DELETED)),
       make_shared<TestHandle>(
-          GetRouteTestData(mc_res_found, "b"),
-          UpdateRouteTestData(mc_res_bad_key),
-          DeleteRouteTestData(mc_res_notfound)),
+          GetRouteTestData(carbon::Result::FOUND, "b"),
+          UpdateRouteTestData(carbon::Result::BAD_KEY),
+          DeleteRouteTestData(carbon::Result::NOTFOUND)),
   };
   auto route_handles = get_route_handles(test_handles);
 

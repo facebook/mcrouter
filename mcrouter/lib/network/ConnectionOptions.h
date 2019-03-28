@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -15,28 +15,45 @@
 #include "mcrouter/lib/CompressionCodecManager.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/network/AccessPoint.h"
+#include "mcrouter/lib/network/SecurityOptions.h"
 
 namespace facebook {
 namespace memcache {
+enum class PayloadFormat {
+  /**
+   * Carbon protocol serialization format.
+   */
+  Carbon = 0,
+
+  /**
+   * Thrift's compact protocol format.
+   * NOTE: Not supported yet.
+   */
+  // CompactProtocol = 1
+
+  /**
+   * A cusotmized version of thrift's compact protocol that is compatible with
+   * the carbon serialization format (i.e. it's possible to serialize with
+   * "Carbon" and deserialize with "CompactProtocolCompatibility").
+   */
+  CompactProtocolCompatibility = 2,
+};
 
 /**
  * A struct for storing all connection related options.
  */
 struct ConnectionOptions {
-  // an enum to determine which security protocol to use to connect to the
-  // endpoint.
-  enum class SecurityMech {
-    NONE,
-    TLS,
-  };
-
   using SocketOptions = folly::AsyncSocket::OptionMap;
 
   ConnectionOptions(
       folly::StringPiece host_,
       uint16_t port_,
-      mc_protocol_t protocol_)
-      : accessPoint(std::make_shared<AccessPoint>(host_, port_, protocol_)) {}
+      mc_protocol_t protocol_,
+      SecurityMech mech_ = SecurityMech::NONE,
+      PayloadFormat payloadFormat_ = PayloadFormat::Carbon)
+      : accessPoint(
+            std::make_shared<AccessPoint>(host_, port_, protocol_, mech_)),
+        payloadFormat(payloadFormat_) {}
 
   explicit ConnectionOptions(std::shared_ptr<const AccessPoint> ap)
       : accessPoint(std::move(ap)) {}
@@ -65,7 +82,19 @@ struct ConnectionOptions {
   int tcpKeepAliveInterval{0};
 
   /**
-   * Write/connect timeout in ms.
+   * The number of times to retry establishing a connection in case of a
+   * connect timeout. We will just return the result back to the client after
+   * either the connection is esblished, or we exhausted all retries.
+   */
+  unsigned int numConnectTimeoutRetries{0};
+
+  /**
+   * Connect timeout in ms.
+   */
+  std::chrono::milliseconds connectTimeout{0};
+
+  /**
+   * Write timeout in ms.
    */
   std::chrono::milliseconds writeTimeout{0};
 
@@ -98,38 +127,9 @@ struct ConnectionOptions {
   folly::StringPiece routerInfoName;
 
   /**
-   * Security mech to use
+   * Security options for this connection
    */
-  SecurityMech securityMech{SecurityMech::NONE};
-
-  /**
-   * Certificate paths for mutual auth or server cert verification.
-   * If cert and key paths are empty, then no client cert is presented
-   * If ca path is empty, then no server cert verification is attempted
-   */
-  std::string sslPemCertPath;
-  std::string sslPemKeyPath;
-  std::string sslPemCaPath;
-
-  /**
-   * enable ssl session caching
-   */
-  bool sessionCachingEnabled{false};
-
-  /**
-   * enable ssl handshake offload to a separate thread pool
-   */
-  bool sslHandshakeOffload{false};
-
-  /**
-   * Service identity of the destination service when SSL is used.
-   */
-  std::string sslServiceIdentity;
-
-  /**
-   * Whether TFO is enabled for SSL connections
-   */
-  bool tfoEnabledForSsl{false};
+  SecurityOptions securityOpts;
 
   /**
    * Use JemallocNodumpAllocator
@@ -141,6 +141,11 @@ struct ConnectionOptions {
    * If nullptr, compression will be disabled.
    */
   const CompressionCodecMap* compressionCodecMap{nullptr};
+
+  /**
+   * The payload format.
+   */
+  PayloadFormat payloadFormat{PayloadFormat::Carbon};
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

@@ -1,17 +1,14 @@
-/*
- *  Copyright (c) 2015-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
 #include "mcrouter/lib/network/CaretSerializedMessage.h"
 #include "mcrouter/lib/network/CpuController.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
-#include "mcrouter/lib/network/MemoryController.h"
-#include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook {
 namespace memcache {
@@ -27,7 +24,8 @@ WriteBuffer::prepareTyped(
     Reply&& reply,
     Destructor destructor,
     const CompressionCodecMap* compressionCodecMap,
-    const CodecIdRange& codecIdRange) {
+    const CodecIdRange& codecIdRange,
+    size_t tcpZeroCopyThreshold) {
   ctx_.emplace(std::move(ctx));
   assert(!destructor_.hasValue());
   if (destructor) {
@@ -43,17 +41,13 @@ WriteBuffer::prepareTyped(
       return asciiReply_.prepare(
           std::move(reply), ctx_->asciiKey(), iovsBegin_, iovsCount_);
 
-    case mc_umbrella_protocol_DONOTUSE:
-      return umbrellaReply_.prepare(
-          std::move(reply), ctx_->reqid_, iovsBegin_, iovsCount_);
-
     case mc_caret_protocol:
+      caretReply_.setTCPZeroCopyThreshold(tcpZeroCopyThreshold);
       return caretReply_.prepare(
           std::move(reply),
           ctx_->reqid_,
           codecIdRange,
           compressionCodecMap,
-          ctx_->getDropProbability(),
           ctx_->getServerLoad(),
           iovsBegin_,
           iovsCount_);
@@ -75,7 +69,8 @@ WriteBuffer::prepareTyped(
     Reply&& reply,
     Destructor destructor,
     const CompressionCodecMap* compressionCodecMap,
-    const CodecIdRange& codecIdRange) {
+    const CodecIdRange& codecIdRange,
+    size_t tcpZeroCopyThreshold) {
   assert(protocol_ == mc_caret_protocol);
   ctx_.emplace(std::move(ctx));
   assert(!destructor_.hasValue());
@@ -85,16 +80,17 @@ WriteBuffer::prepareTyped(
 
   typeId_ = static_cast<uint32_t>(Reply::typeId);
 
+  caretReply_.setTCPZeroCopyThreshold(tcpZeroCopyThreshold);
+
   return caretReply_.prepare(
       std::move(reply),
       ctx_->reqid_,
       codecIdRange,
       compressionCodecMap,
-      ctx_->getDropProbability(),
       ctx_->getServerLoad(),
       iovsBegin_,
       iovsCount_);
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

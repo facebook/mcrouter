@@ -86,7 +86,7 @@ class ExternalCarbonConnectionImpl::Impl {
     assert(client);
 
     if (client->limitRequests(1) == 0) {
-      f(req, facebook::memcache::ReplyT<Request>(mc_res_local_error));
+      f(req, facebook::memcache::ReplyT<Request>(carbon::Result::LOCAL_ERROR));
       return;
     }
 
@@ -94,10 +94,11 @@ class ExternalCarbonConnectionImpl::Impl {
         [ clientWeak = client_, &req, f = std::forward<F>(f) ]() mutable {
           auto cl = clientWeak.lock();
           if (!cl) {
-            folly::fibers::runInMainContext(
-                [&req, f = std::forward<F>(f) ]() mutable {
-                  f(req, facebook::memcache::ReplyT<Request>(mc_res_unknown));
-                });
+            folly::fibers::runInMainContext([&req,
+                                             f = std::forward<F>(f)]() mutable {
+              f(req,
+                facebook::memcache::ReplyT<Request>(carbon::Result::UNKNOWN));
+            });
             return;
           }
 
@@ -133,7 +134,7 @@ class ExternalCarbonConnectionImpl::Impl {
         // Hit outstanding limit.
         for (; i < ctx->size(); ++i) {
           f((*ctx)[i].get(),
-            facebook::memcache::ReplyT<Request>(mc_res_local_error));
+            facebook::memcache::ReplyT<Request>(carbon::Result::LOCAL_ERROR));
         }
         break;
       }
@@ -145,7 +146,8 @@ class ExternalCarbonConnectionImpl::Impl {
               folly::fibers::runInMainContext([&ctx, i, num, &f]() mutable {
                 for (size_t cnt = 0; cnt < num; ++cnt, ++i) {
                   f((*ctx)[i].get(),
-                    facebook::memcache::ReplyT<Request>(mc_res_unknown));
+                    facebook::memcache::ReplyT<Request>(
+                        carbon::Result::UNKNOWN));
                 }
               });
               return;
@@ -158,7 +160,8 @@ class ExternalCarbonConnectionImpl::Impl {
                     if (auto c = clientWeak.lock()) {
                       return c->sendRequest(req);
                     }
-                    return facebook::memcache::ReplyT<Request>(mc_res_unknown);
+                    return facebook::memcache::ReplyT<Request>(
+                        carbon::Result::UNKNOWN);
                   },
                   [f, &req](folly::Try<facebook::memcache::ReplyT<Request>>&&
                                 r) mutable { f(req, std::move(r.value())); });

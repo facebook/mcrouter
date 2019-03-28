@@ -28,13 +28,13 @@ using std::vector;
 
 TEST(shadowRouteTest, defaultPolicy) {
   vector<std::shared_ptr<TestHandle>> normalHandle{
-      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::FOUND, "a")),
   };
   auto normalRh = get_route_handles(normalHandle)[0];
 
   vector<std::shared_ptr<TestHandle>> shadowHandles{
-      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
-      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::FOUND, "b")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::FOUND, "c")),
   };
 
   TestFiberManager fm{fiber_local<McrouterRouterInfo>::ContextTypeTag()};
@@ -55,7 +55,7 @@ TEST(shadowRouteTest, defaultPolicy) {
     mockFiberContext();
     auto reply = rh.route(McGetRequest("key"));
 
-    EXPECT_EQ(mc_res_found, reply.result());
+    EXPECT_EQ(carbon::Result::FOUND, reply.result());
     EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
   });
 
@@ -67,7 +67,7 @@ TEST(shadowRouteTest, defaultPolicy) {
     mockFiberContext();
     auto reply = rh.route(McGetRequest("key"));
 
-    EXPECT_EQ(mc_res_found, reply.result());
+    EXPECT_EQ(carbon::Result::FOUND, reply.result());
     EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
   });
 

@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <gtest/gtest.h>
 
@@ -12,6 +11,8 @@
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/carbon/CarbonMessageConversionUtils.h"
 #include "mcrouter/lib/carbon/test/gen/CarbonTest.h"
+
+using carbon::test2::util::SimpleUnion;
 
 TEST(CarbonMessageConversionUtils, toFollyDynamic_Complex) {
   carbon::test::TestRequest r;
@@ -48,15 +49,29 @@ TEST(CarbonMessageConversionUtils, toFollyDynamic_Complex) {
   r.testEnumVec() = std::vector<carbon::test2::util::SimpleEnum>(
       {carbon::test2::util::SimpleEnum::One,
        carbon::test2::util::SimpleEnum::Twenty});
-  r.testUnion().emplace<2>(true);
+  r.testUnion().emplace<SimpleUnion::ValueType::UMEMBER2>(true);
   r.testNestedVec() = {{1, 1, 1}, {2, 2, 2}};
   r.testUMap() = std::unordered_map<std::string, std::string>(
       {{"key", "value"}, {"adele", "beyonce"}});
   r.testMap() = std::map<double, double>({{3.14, 2.7}, {0.577, 0.2}});
+  r.testF14FastMap() = folly::F14FastMap<std::string, std::string>(
+      {{"hello", "F14"}, {"Fast", "Map"}});
+  r.testF14NodeMap() = folly::F14NodeMap<std::string, std::string>(
+      {{"hello", "F14"}, {"Node", "Map"}});
+  r.testF14ValueMap() = folly::F14ValueMap<std::string, std::string>(
+      {{"hello", "F14"}, {"Value", "Map"}});
+  r.testF14VectorMap() = folly::F14VectorMap<std::string, std::string>(
+      {{"hello", "F14"}, {"Vector", "Map"}});
   r.testComplexMap() = std::map<std::string, std::vector<uint16_t>>(
       {{"hello", {1, 1, 1}}, {"world", {2, 2, 2}}});
   r.testUSet() = std::unordered_set<std::string>({"hello", "world"});
   r.testSet() = std::set<uint64_t>({123, 456});
+  r.testF14FastSet() = folly::F14FastSet<std::string>({"hello", "F14FastSet"});
+  r.testF14NodeSet() = folly::F14NodeSet<std::string>({"hello", "F14NodeSet"});
+  r.testF14ValueSet() =
+      folly::F14ValueSet<std::string>({"hello", "F14ValueSet"});
+  r.testF14VectorSet() =
+      folly::F14VectorSet<std::string>({"hello", "F14VectorSet"});
   r.testIOBufList() =
       std::vector<folly::IOBuf>({folly::IOBuf(), folly::IOBuf()});
 
@@ -92,18 +107,33 @@ TEST(CarbonMessageConversionUtils, toFollyDynamic_Complex) {
           folly::dynamic::array(1, 1, 1), folly::dynamic::array(2, 2, 2)))(
       "testUMap", folly::dynamic::object("key", "value")("adele", "beyonce"))(
       "testMap", folly::dynamic::object("3.14", 2.7)("0.577", 0.2))(
+      "testF14FastMap", folly::dynamic::object("Fast", "Map")("hello", "F14"))(
+      "testF14NodeMap", folly::dynamic::object("Node", "Map")("hello", "F14"))(
+      "testF14ValueMap",
+      folly::dynamic::object("Value", "Map")("hello", "F14"))(
+      "testF14VectorMap",
+      folly::dynamic::object("Vector", "Map")("hello", "F14"))(
       "testComplexMap",
       folly::dynamic::object("hello", folly::dynamic::array(1, 1, 1))(
           "world", folly::dynamic::array(2, 2, 2)))(
       "testUSet", folly::dynamic::array("hello", "world"))(
+      "testF14FastSet", folly::dynamic::array("F14FastSet", "hello"))(
+      "testF14NodeSet", folly::dynamic::array("F14NodeSet", "hello"))(
+      "testF14ValueSet", folly::dynamic::array("F14ValueSet", "hello"))(
+      "testF14VectorSet", folly::dynamic::array("F14VectorSet", "hello"))(
       "testSet", folly::dynamic::array(123, 456))("testType", "(user type)")(
       "testOptionalVec", folly::dynamic::array())(
       "testIOBufList", folly::dynamic::array("", ""));
 
   auto dynamic = carbon::convertToFollyDynamic(r);
+
   auto set = dynamic.at("testUSet");
   std::sort(set.begin(), set.end());
   dynamic.at("testUSet") = set;
+
+  auto fastset = dynamic.at("testF14FastSet");
+  std::sort(fastset.begin(), fastset.end());
+  dynamic.at("testF14FastSet") = fastset;
 
   EXPECT_EQ(expected, dynamic);
 }
@@ -248,9 +278,42 @@ TEST(CarbonMessageConversionUtils, fromFollyDynamic_Complex) {
         [ 32 ]
       ],
 
+      "testF14FastSet": [
+        "hello",
+        "F14FastSet"
+      ],
+      "testF14NodeSet": [
+        "hello",
+        "F14NodeSet"
+      ],
+      "testF14ValueSet": [
+        "hello",
+        "F14ValueSet"
+      ],
+      "testF14VectorSet": [
+        "hello",
+        "F14VectorSet"
+      ],
+
       "testMap": {
         10.7: 11.8,
         30.567: 31.789
+      },
+      "testF14FastMap": {
+        "hello": "F14",
+        "Fast": "Map"
+      },
+      "testF14NodeMap": {
+        "hello": "F14",
+        "Node": "Map"
+      },
+      "testF14ValueMap": {
+        "hello": "F14",
+        "Value": "Map"
+      },
+      "testF14VectorMap": {
+        "hello": "F14",
+        "Vector": "Map"
       },
 
       "testComplexMap": {
@@ -317,7 +380,7 @@ TEST(CarbonMessageConversionUtils, fromFollyDynamic_Complex) {
   ASSERT_TRUE(r.testOptionalString().hasValue());
   EXPECT_EQ("I exist!", r.testOptionalString().value());
 
-  ASSERT_EQ(3, r.testUnion().which());
+  ASSERT_EQ(SimpleUnion::ValueType::UMEMBER3, r.testUnion().which());
   EXPECT_EQ("abc def ghi", r.testUnion().umember3());
 
   ASSERT_EQ(3, r.testNestedVec().size());
@@ -328,9 +391,42 @@ TEST(CarbonMessageConversionUtils, fromFollyDynamic_Complex) {
   EXPECT_EQ(26, r.testNestedVec()[0][1]);
   EXPECT_EQ(32, r.testNestedVec()[2][0]);
 
+  ASSERT_EQ(2, r.testF14FastSet().size());
+  EXPECT_NE(r.testF14FastSet().find("hello"), r.testF14FastSet().end());
+  EXPECT_NE(r.testF14FastSet().find("F14FastSet"), r.testF14FastSet().end());
+
+  ASSERT_EQ(2, r.testF14NodeSet().size());
+  EXPECT_NE(r.testF14NodeSet().find("hello"), r.testF14NodeSet().end());
+  EXPECT_NE(r.testF14NodeSet().find("F14NodeSet"), r.testF14NodeSet().end());
+
+  ASSERT_EQ(2, r.testF14ValueSet().size());
+  EXPECT_NE(r.testF14ValueSet().find("hello"), r.testF14ValueSet().end());
+  EXPECT_NE(r.testF14ValueSet().find("F14ValueSet"), r.testF14ValueSet().end());
+
+  ASSERT_EQ(2, r.testF14VectorSet().size());
+  EXPECT_NE(r.testF14VectorSet().find("hello"), r.testF14VectorSet().end());
+  EXPECT_NE(
+      r.testF14VectorSet().find("F14VectorSet"), r.testF14VectorSet().end());
+
   ASSERT_EQ(2, r.testMap().size());
   EXPECT_EQ(11.8, r.testMap()[10.7]);
   EXPECT_EQ(31.789, r.testMap()[30.567]);
+
+  ASSERT_EQ(2, r.testF14FastMap().size());
+  EXPECT_EQ("F14", r.testF14FastMap()["hello"]);
+  EXPECT_EQ("Map", r.testF14FastMap()["Fast"]);
+
+  ASSERT_EQ(2, r.testF14NodeMap().size());
+  EXPECT_EQ("F14", r.testF14NodeMap()["hello"]);
+  EXPECT_EQ("Map", r.testF14NodeMap()["Node"]);
+
+  ASSERT_EQ(2, r.testF14ValueMap().size());
+  EXPECT_EQ("F14", r.testF14ValueMap()["hello"]);
+  EXPECT_EQ("Map", r.testF14ValueMap()["Value"]);
+
+  ASSERT_EQ(2, r.testF14VectorMap().size());
+  EXPECT_EQ("F14", r.testF14VectorMap()["hello"]);
+  EXPECT_EQ("Map", r.testF14VectorMap()["Vector"]);
 
   ASSERT_EQ(3, r.testComplexMap().size());
   ASSERT_EQ(1, r.testComplexMap()["v1"].size());
@@ -377,7 +473,7 @@ TEST(CarbonMessageConversionUtils, fromFollyDynamic_Errors) {
 
   size_t numErrors = 0;
   auto onError = [&numErrors](
-      folly::StringPiece fieldName, folly::StringPiece msg) {
+                     folly::StringPiece fieldName, folly::StringPiece msg) {
     numErrors++;
     std::cerr << fieldName << ": " << msg << std::endl;
   };

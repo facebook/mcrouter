@@ -94,11 +94,11 @@ class UniqueIntrusiveList {
 
   /**
    * Remove the element pointed to by `it` from the list,
-   * and return the unique_ptr to it.
+   * moves the iterator to the next element and returns the unique_ptr to it.
    */
-  std::unique_ptr<T, TDeleter> extract(iterator it) {
+  std::unique_ptr<T, TDeleter> extractAndAdvanceIterator(iterator& it) {
     std::unique_ptr<T, TDeleter> t(&(*it), TDeleter());
-    list_.erase(it);
+    it = list_.erase(it);
     return t;
   }
 

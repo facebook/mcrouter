@@ -72,6 +72,12 @@ class CarbonRouterInstance
       folly::StringPiece persistenceId);
 
   /**
+   * If an instance with the given persistenceId already exists,
+   * returns true. Otherwise returns false.
+   */
+  static bool hasInstance(folly::StringPiece persistenceId);
+
+  /**
    * Intended for short-lived instances with unusual configs
    * (i.e. for debugging).
    *

@@ -13,7 +13,9 @@ mcrouter_lib_test_SOURCES = \
   RandomRouteTest.cpp \
   RendezvousHashTest.cpp \
   RouteHandleTest.cpp \
+  WeightedChHashFuncBaseTest.cpp \
   WeightedCh3HashFuncTest.cpp \
+  WeightedCh4HashFuncTest.cpp \
   WeightedRendezvousHashTest.cpp
 
 mcrouter_lib_test_CPPFLAGS = \

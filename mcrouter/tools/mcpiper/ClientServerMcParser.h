@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2015-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -12,12 +11,11 @@
 #include <folly/Range.h>
 #include <folly/io/IOBuf.h>
 
-#include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/network/CarbonMessageDispatcher.h"
 #include "mcrouter/lib/network/ClientMcParser.h"
 #include "mcrouter/lib/network/McParser.h"
 #include "mcrouter/lib/network/ServerMcParser.h"
-#include "mcrouter/lib/network/UmbrellaProtocol.h"
 #include "mcrouter/tools/mcpiper/Config.h"
 
 namespace folly {
@@ -66,34 +64,33 @@ class ClientServerMcParser {
     explicit ReplyCallback(Callback& callback) : callback_(callback) {}
 
     template <class Reply>
-    void replyReady(
-        Reply&& reply,
-        uint64_t msgId,
-        ReplyStatsContext replyStatsContext) {
+    void
+    replyReady(Reply&& reply, uint64_t msgId, RpcStatsContext rpcStatsContext) {
       callback_.template replyReady<Reply>(
-          msgId, std::move(reply), replyStatsContext);
+          msgId, std::move(reply), rpcStatsContext);
     }
 
     bool nextReplyAvailable(uint64_t) {
       return true;
     }
 
-    void parseError(mc_res_t, folly::StringPiece) {}
+    void parseError(carbon::Result, folly::StringPiece) {}
 
     void handleConnectionControlMessage(
-        const UmbrellaMessageInfo& /* headerInfo */) {}
+        const CaretMessageInfo& /* headerInfo */) {}
 
    private:
     Callback& callback_;
   };
 
-  struct RequestCallback : public CarbonMessageDispatcher<
-                               RequestList,
-                               RequestCallback,
-                               const UmbrellaMessageInfo&> {
+  struct RequestCallback
+      : public CarbonMessageDispatcher<RequestList, RequestCallback> {
    public:
     template <class M>
-    void onTypedMessage(M&& req, const UmbrellaMessageInfo& headerInfo) {
+    void onTypedMessage(
+        const CaretMessageInfo& headerInfo,
+        const folly::IOBuf& /* reqBuffer */,
+        M&& req) {
       callback_.requestReady(headerInfo.reqId, std::move(req));
     }
 
@@ -104,19 +101,14 @@ class ClientServerMcParser {
       callback_.requestReady(0, std::move(req));
     }
 
-    template <class Request>
-    void umbrellaRequestReady(Request&& req, uint64_t msgId) {
-      callback_.requestReady(msgId, std::move(req));
-    }
-
     void caretRequestReady(
-        const UmbrellaMessageInfo& headerInfo,
+        const CaretMessageInfo& headerInfo,
         const folly::IOBuf& buffer) {
-      this->dispatchTypedRequest(headerInfo, buffer, headerInfo);
+      this->dispatchTypedRequest(headerInfo, buffer);
     }
 
     void multiOpEnd() {}
-    void parseError(mc_res_t, folly::StringPiece) {}
+    void parseError(carbon::Result, folly::StringPiece) {}
 
    private:
     Callback& callback_;

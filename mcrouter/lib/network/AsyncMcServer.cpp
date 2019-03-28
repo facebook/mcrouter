@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "AsyncMcServer.h"
 
@@ -45,13 +44,13 @@ facebook::memcache::AsyncMcServer* gServer;
 class ShutdownPipe : public folly::EventHandler {
  public:
   ShutdownPipe(AsyncMcServer& server, folly::EventBase& evb)
-      : folly::EventHandler(&evb), server_(server) {
+      : folly::EventHandler(&evb), evb_(evb), server_(server) {
     fd_ = eventfd(0, 0);
     if (UNLIKELY(fd_ == -1)) {
       throw std::runtime_error(
           "Unexpected file descriptor (-1) in ShutdownPipe");
     }
-    changeHandlerFD(fd_);
+    changeHandlerFD(folly::NetworkSocket::fromFd(fd_));
     registerHandler(EV_READ);
   }
 
@@ -67,12 +66,13 @@ class ShutdownPipe : public folly::EventHandler {
   }
 
  private:
+  folly::EventBase& evb_;
   AsyncMcServer& server_;
   int fd_;
 
   void handlerReady(uint16_t /* events */) noexcept final {
-    LOG(INFO) << "Shutting down on signal";
-    server_.shutdown();
+    evb_.runInEventBaseThreadAlwaysEnqueue(
+        [&, s = &server_] { s->shutdown(); });
   }
 };
 
@@ -83,6 +83,9 @@ class ShutdownPipe : public folly::EventHandler {
  */
 class McServerThreadSpawnController {
  public:
+  explicit McServerThreadSpawnController(size_t numListeningSockets)
+      : numListeningSockets_(numListeningSockets) {}
+
   /**
    * Blocks the current thread until it's ready to start running.
    */
@@ -130,7 +133,12 @@ class McServerThreadSpawnController {
     if (isAcceptorThread) {
       try {
         acceptorFn();
-        acceptorPromise_.set_value();
+        if (++listeningThreadCount == numListeningSockets_) {
+          acceptorPromise_.set_value();
+        } else {
+          // Last listening socket fulfills the promise, the others wait
+          waitForAcceptor();
+        }
       } catch (...) {
         auto exception = std::current_exception();
         acceptorPromise_.set_exception(exception);
@@ -142,6 +150,9 @@ class McServerThreadSpawnController {
   }
 
  private:
+  std::atomic<size_t> listeningThreadCount{0};
+  size_t numListeningSockets_{1};
+
   std::promise<void> runningPromise_;
   std::shared_future<void> runningFuture_{runningPromise_.get_future()};
 
@@ -165,7 +176,7 @@ class McServerThread {
 
   enum AcceptorT { Acceptor };
 
-  McServerThread(AcceptorT, AsyncMcServer& server, size_t id)
+  McServerThread(AcceptorT, AsyncMcServer& server, size_t id, bool reusePort)
       : server_(server),
         evb_(std::make_unique<folly::EventBase>(
             server.opts_.worker.enableEventBaseTimeMeasurement)),
@@ -174,6 +185,7 @@ class McServerThread {
         acceptCallback_(this, false),
         sslAcceptCallback_(this, true),
         accepting_(true),
+        reusePort_(reusePort),
         shutdownPipe_(std::make_unique<ShutdownPipe>(server, *evb_)) {
     startThread();
   }
@@ -227,7 +239,7 @@ class McServerThread {
 
   /* Safe to call from other threads */
   void shutdown() {
-    auto result = evb_->runInEventBaseThread([&]() {
+    evb_->runInEventBaseThread([&]() {
       if (accepting_) {
         socket_.reset();
         sslSocket_.reset();
@@ -242,10 +254,6 @@ class McServerThread {
       }
       worker_.shutdown();
     });
-
-    if (!result) {
-      throw std::runtime_error("error calling runInEventBaseThread");
-    }
   }
 
   void shutdownFromSignalHandler() {
@@ -275,15 +283,16 @@ class McServerThread {
       if (secure_) {
         const auto& server = mcServerThread_->server_;
         auto& opts = server.opts_;
-        auto sslCtx = getServerContext(
+        auto contextPair = getServerContexts(
             opts.pemCertPath,
             opts.pemKeyPath,
             opts.pemCaPath,
             opts.sslRequirePeerCerts,
             server.getTicketKeySeeds());
 
-        if (sslCtx) {
-          mcServerThread_->worker_.addSecureClientSocket(fd, std::move(sslCtx));
+        if (contextPair.first) {
+          mcServerThread_->worker_.addSecureClientSocket(
+              fd, std::move(contextPair));
         } else {
           ::close(fd);
         }
@@ -307,6 +316,7 @@ class McServerThread {
   AcceptCallback acceptCallback_;
   AcceptCallback sslAcceptCallback_;
   bool accepting_{false};
+  bool reusePort_{false};
   std::thread thread_;
 
   folly::AsyncServerSocket::UniquePtr socket_;
@@ -329,6 +339,21 @@ class McServerThread {
       checkLogic(
           opts.ports.empty() && opts.sslPorts.empty(),
           "Can't use ports if using existing socket");
+      checkLogic(
+          !reusePort_,
+          "Can't use multiple listening sockets option if using existing socket");
+
+      // Don't enable tcpZeroCopy here as it will be inherited. It has to be
+      // enabled when the socket is in a TCP_CLOSE state, afterwards its too
+      // late.
+      if (opts.worker.tcpZeroCopyThresholdBytes > 0) {
+        int val = 0;
+        socklen_t optlen = sizeof(val);
+        int ret = getsockopt(
+            opts.existingSocketFd, SOL_SOCKET, SO_ZEROCOPY, &val, &optlen);
+        checkLogic(!ret, "Failed to getsockopt existing FD");
+        checkLogic(val, "SO_ZEROCOPY must be enabled on existing socket.");
+      }
       if (!opts.pemCertPath.empty() || !opts.pemKeyPath.empty() ||
           !opts.pemCaPath.empty()) {
         checkLogic(
@@ -338,16 +363,24 @@ class McServerThread {
             "if at least one of them set");
 
         sslSocket_.reset(new folly::AsyncServerSocket());
-        sslSocket_->useExistingSocket(opts.existingSocketFd);
+        sslSocket_->useExistingSocket(
+            folly::NetworkSocket::fromFd(opts.existingSocketFd));
       } else {
         socket_.reset(new folly::AsyncServerSocket());
-        socket_->useExistingSocket(opts.existingSocketFd);
+        socket_->useExistingSocket(
+            folly::NetworkSocket::fromFd(opts.existingSocketFd));
       }
     } else if (!opts.unixDomainSockPath.empty()) {
       checkLogic(
           opts.ports.empty() && opts.sslPorts.empty() &&
               (opts.existingSocketFd == -1),
           "Can't listen on port and unix domain socket at the same time");
+      checkLogic(
+          !reusePort_,
+          "Can't use multiple listening sockets option with unix domain sockets.");
+      checkLogic(
+          !opts.worker.tcpZeroCopyThresholdBytes,
+          "Can't use tcp zero copy with unix domain sockets.");
       std::remove(opts.unixDomainSockPath.c_str());
       socket_.reset(new folly::AsyncServerSocket());
       folly::SocketAddress serverAddress;
@@ -359,6 +392,7 @@ class McServerThread {
           "At least one port (plain or SSL) must be speicified");
       if (!server_.opts_.ports.empty()) {
         socket_.reset(new folly::AsyncServerSocket());
+        socket_->setReusePortEnabled(reusePort_);
         for (auto port : server_.opts_.ports) {
           if (server_.opts_.listenAddresses.empty()) {
             socket_->bind(port);
@@ -373,9 +407,12 @@ class McServerThread {
               auto ip = std::move(maybeIp).value();
               ipAddresses.push_back(std::move(ip));
             }
-
             socket_->bind(ipAddresses, port);
           }
+        }
+        if (opts.worker.tcpZeroCopyThresholdBytes > 0) {
+          bool zeroCopyApplied = socket_->setZeroCopy(true);
+          checkLogic(zeroCopyApplied, "Failed to set TCP zero copy on socket");
         }
       }
       if (!server_.opts_.sslPorts.empty()) {
@@ -387,8 +424,14 @@ class McServerThread {
             " with sslPorts");
 
         sslSocket_.reset(new folly::AsyncServerSocket());
+        sslSocket_->setReusePortEnabled(reusePort_);
         for (auto sslPort : server_.opts_.sslPorts) {
           sslSocket_->bind(sslPort);
+        }
+        if (opts.worker.tcpZeroCopyThresholdBytes > 0) {
+          bool zeroCopyApplied = sslSocket_->setZeroCopy(true);
+          checkLogic(
+              zeroCopyApplied, "Failed to set TCP zero copy on ssl socket");
         }
       }
     }
@@ -423,47 +466,99 @@ class McServerThread {
   }
 };
 
-void AsyncMcServer::Options::setPerThreadMaxConns(
+size_t AsyncMcServer::Options::setMaxConnections(
     size_t globalMaxConns,
-    size_t numThreads_) {
+    size_t nThreads) {
   if (globalMaxConns == 0) {
     worker.maxConns = 0;
-    return;
+    return 0;
   }
-  assert(numThreads_ > 0);
+  assert(nThreads > 0);
+
+  // reserve some FDs for things like file, pipes (mcpiper uses pipes), etc.
+  constexpr size_t kReservedFDs = 2048;
+
+  rlimit rlim;
+  auto rlimRes = getrlimit(RLIMIT_NOFILE, &rlim);
+
   if (globalMaxConns == 1) {
-    rlimit rlim;
-    if (getrlimit(RLIMIT_NOFILE, &rlim) != 0) {
+    if (rlimRes != 0) {
       LOG(ERROR) << "getrlimit failed. Errno: " << folly::errnoStr(errno)
                  << ". Disabling connection limits.";
       worker.maxConns = 0;
-      return;
+      return 0;
     }
 
     size_t softLimit = rlim.rlim_cur;
-    globalMaxConns = std::max<size_t>(softLimit, 3) - 3;
-    VLOG(1) << "Setting max conns to " << globalMaxConns
+    globalMaxConns = std::max<size_t>(softLimit, kReservedFDs) - kReservedFDs;
+    VLOG(2) << "Setting max conns to " << globalMaxConns
             << " based on soft resource limit of " << softLimit;
+
+    worker.maxConns = globalMaxConns / nThreads;
+    return globalMaxConns;
   }
-  worker.maxConns = (globalMaxConns + numThreads_ - 1) / numThreads_;
+
+  // globalMaxConns > 1
+
+  if (rlimRes != 0) {
+    // if the call to getrlimit fails, just set maxConns to what was specified.
+    LOG(ERROR) << "getrlimit failed. Errno: " << folly::errnoStr(errno)
+               << ". Using the number provided by the user"
+               << " without raising rlimit";
+    worker.maxConns = globalMaxConns / nThreads;
+    return globalMaxConns;
+  }
+
+  size_t desiredRlim = globalMaxConns + kReservedFDs;
+
+  // if the hard rlimit is not large enough, try and raise it.
+  // this call will fail for unprivileged services.
+  if (rlim.rlim_max < desiredRlim) {
+    rlimit newRlim;
+    newRlim.rlim_cur = desiredRlim;
+    newRlim.rlim_max = desiredRlim;
+    if (setrlimit(RLIMIT_NOFILE, &newRlim) == 0) {
+      VLOG(2) << "Successfully updated hard and soft rlimit to " << desiredRlim;
+      rlim = newRlim;
+    } else {
+      LOG(WARNING) << "Setting hard rlimit failed. Errno: "
+                   << folly::errnoStr(errno);
+      // we failed to set hard limt, lower the globalMaxConns to the current
+      // hard limit.
+      globalMaxConns =
+          std::max<size_t>(rlim.rlim_max, kReservedFDs) - kReservedFDs;
+    }
+  }
+
+  // if the soft limit is not large enough, increase it.
+  if (rlim.rlim_cur < desiredRlim && rlim.rlim_cur < rlim.rlim_max) {
+    auto newRlim = rlim;
+    newRlim.rlim_cur = std::min(rlim.rlim_max, desiredRlim);
+    if (setrlimit(RLIMIT_NOFILE, &newRlim) == 0) {
+      VLOG(2) << "Successfully updated soft rlimit to " << newRlim.rlim_cur;
+      // setrlimit succeeded, update globalMaxConns.
+      globalMaxConns =
+          std::max<size_t>(newRlim.rlim_cur, kReservedFDs) - kReservedFDs;
+    } else {
+      LOG(ERROR) << "setrlimit for soft limit failed. "
+                 << "Errno: " << folly::errnoStr(errno)
+                 << ". Disabling connection limits.";
+      worker.maxConns = 0;
+      return 0;
+    }
+  }
+
+  worker.maxConns = globalMaxConns / nThreads;
+  return globalMaxConns;
 }
 
 AsyncMcServer::AsyncMcServer(Options opts) : opts_(std::move(opts)) {
-  if (opts_.cpuControllerOpts.shouldEnable() ||
-      opts_.memoryControllerOpts.shouldEnable()) {
+  if (opts_.cpuControllerOpts.shouldEnable()) {
     auxiliaryEvbThread_ = std::make_unique<folly::ScopedEventBaseThread>();
 
-    if (opts_.cpuControllerOpts.shouldEnable()) {
-      opts_.worker.cpuController = std::make_shared<CpuController>(
-          opts_.cpuControllerOpts, *auxiliaryEvbThread_->getEventBase());
-      opts_.worker.cpuController->start();
-    }
-
-    if (opts_.memoryControllerOpts.shouldEnable()) {
-      opts_.worker.memController = std::make_shared<MemoryController>(
-          opts_.memoryControllerOpts, *auxiliaryEvbThread_->getEventBase());
-      opts_.worker.memController->start();
-    }
+    opts_.worker.cpuController = std::make_shared<CpuController>(
+        opts_.cpuControllerOpts, *auxiliaryEvbThread_->getEventBase());
+    opts_.worker.cpuController->start();
   }
 
   if (!opts_.tlsTicketKeySeedPath.empty()) {
@@ -484,10 +579,27 @@ AsyncMcServer::AsyncMcServer(Options opts) : opts_(std::move(opts)) {
     throw std::invalid_argument(folly::sformat(
         "Unexpected option: opts_.numThreads={}", opts_.numThreads));
   }
-  threadsSpawnController_ = std::make_unique<McServerThreadSpawnController>();
-  threads_.emplace_back(std::make_unique<McServerThread>(
-      McServerThread::Acceptor, *this, /*id*/ 0));
-  for (size_t id = 1; id < opts_.numThreads; ++id) {
+
+  if (opts_.numListeningSockets == 0 ||
+      opts_.numListeningSockets > opts_.numThreads) {
+    throw std::invalid_argument(folly::sformat(
+        "Unexpected option: opts_.numListeningSockets={}",
+        opts_.numListeningSockets));
+  }
+
+  threadsSpawnController_ = std::make_unique<McServerThreadSpawnController>(
+      opts_.numListeningSockets);
+  size_t id;
+  // First construct the McServerThreads with listening sockets.
+  for (id = 0; id < opts_.numListeningSockets; id++) {
+    threads_.emplace_back(std::make_unique<McServerThread>(
+        McServerThread::Acceptor,
+        *this,
+        /*id*/ id,
+        (opts_.numListeningSockets > 1)));
+  }
+  // Now the rest
+  for (; id < opts_.numThreads; ++id) {
     threads_.emplace_back(std::make_unique<McServerThread>(*this, id));
   }
 }
@@ -505,9 +617,6 @@ AsyncMcServer::~AsyncMcServer() {
      translation unit that knows about McServerThread */
   if (opts_.worker.cpuController) {
     opts_.worker.cpuController->stop();
-  }
-  if (opts_.worker.memController) {
-    opts_.worker.memController->stop();
   }
 
   /* In case some signal handlers are still registered */
@@ -627,5 +736,5 @@ void AsyncMcServer::startPollingTicketKeySeeds() {
       });
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <signal.h>
 
@@ -16,7 +15,6 @@
 #include <folly/Singleton.h>
 #include <folly/logging/Init.h>
 
-#include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/CarbonMessageDispatcher.h"
@@ -52,11 +50,12 @@ class MockMcOnRequest {
 
     auto item = mc_.get(key);
     if (!item) {
-      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notfound));
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::NOTFOUND));
       return;
     }
 
-    Reply reply(mc_res_found);
+    Reply reply(carbon::Result::FOUND);
     reply.exptime() = item->exptime;
     if (key == "unknown_age") {
       reply.age() = -1;
@@ -75,13 +74,14 @@ class MockMcOnRequest {
     auto key = req.key().fullKey();
 
     if (key == "__mockmc__.want_busy") {
-      Reply reply(mc_res_busy);
+      Reply reply(carbon::Result::BUSY);
       reply.appSpecificErrorCode() = SERVER_ERROR_BUSY;
       reply.message() = "busy";
       McServerRequestContext::reply(std::move(ctx), std::move(reply));
       return;
     } else if (key == "__mockmc__.want_try_again") {
-      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_try_again));
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::RES_TRY_AGAIN));
       return;
     } else if (key.startsWith("__mockmc__.want_timeout")) {
       size_t timeout = 500;
@@ -91,15 +91,57 @@ class MockMcOnRequest {
             key.subpiece(argStart + 1, key.size() - argStart - 2));
       }
       std::this_thread::sleep_for(std::chrono::milliseconds(timeout));
-      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_timeout));
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::TIMEOUT));
       return;
     }
 
     auto item = mc_.get(key);
     if (!item) {
-      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notfound));
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::NOTFOUND));
     } else {
-      Reply reply(mc_res_found);
+      Reply reply(carbon::Result::FOUND);
+      reply.value() = item->value->cloneAsValue();
+      reply.flags() = item->flags;
+      McServerRequestContext::reply(std::move(ctx), std::move(reply));
+    }
+  }
+
+  void onRequest(McServerRequestContext&& ctx, McGatRequest&& req) {
+    using Reply = McGatReply;
+
+    auto key = req.key().fullKey();
+
+    if (key == "__mockmc__.want_busy") {
+      Reply reply(carbon::Result::BUSY);
+      reply.appSpecificErrorCode() = SERVER_ERROR_BUSY;
+      reply.message() = "busy";
+      McServerRequestContext::reply(std::move(ctx), std::move(reply));
+      return;
+    } else if (key == "__mockmc__.want_try_again") {
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::RES_TRY_AGAIN));
+      return;
+    } else if (key.startsWith("__mockmc__.want_timeout")) {
+      size_t timeout = 500;
+      auto argStart = key.find('(');
+      if (argStart != std::string::npos) {
+        timeout = folly::to<size_t>(
+            key.subpiece(argStart + 1, key.size() - argStart - 2));
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(timeout));
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::TIMEOUT));
+      return;
+    }
+
+    auto item = mc_.gat(req.exptime(), key);
+    if (!item) {
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::NOTFOUND));
+    } else {
+      Reply reply(carbon::Result::FOUND);
       reply.value() = item->value->cloneAsValue();
       reply.flags() = item->flags;
       McServerRequestContext::reply(std::move(ctx), std::move(reply));
@@ -112,12 +154,12 @@ class MockMcOnRequest {
     auto key = req.key().fullKey().str();
 
     auto out = mc_.leaseGet(key);
-    Reply reply(mc_res_found);
+    Reply reply(carbon::Result::FOUND);
     reply.value() = out.first->value->cloneAsValue();
     reply.leaseToken() = out.second;
     reply.flags() = out.first->flags;
     if (out.second) {
-      reply.result() = mc_res_notfound;
+      reply.result() = carbon::Result::NOTFOUND;
     }
     McServerRequestContext::reply(std::move(ctx), std::move(reply));
   }
@@ -129,16 +171,18 @@ class MockMcOnRequest {
 
     switch (mc_.leaseSet(key, MockMc::Item(req), req.leaseToken())) {
       case MockMc::LeaseSetResult::NOT_STORED:
-        McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notstored));
+        McServerRequestContext::reply(
+            std::move(ctx), Reply(carbon::Result::NOTSTORED));
         return;
 
       case MockMc::LeaseSetResult::STORED:
-        McServerRequestContext::reply(std::move(ctx), Reply(mc_res_stored));
+        McServerRequestContext::reply(
+            std::move(ctx), Reply(carbon::Result::STORED));
         return;
 
       case MockMc::LeaseSetResult::STALE_STORED:
         McServerRequestContext::reply(
-            std::move(ctx), Reply(mc_res_stalestored));
+            std::move(ctx), Reply(carbon::Result::STALESTORED));
         return;
     }
   }
@@ -147,11 +191,11 @@ class MockMcOnRequest {
     McSetReply reply;
     auto key = req.key().fullKey().str();
     if (key == "__mockmc__.trigger_server_error") {
-      reply.result() = mc_res_remote_error;
+      reply.result() = carbon::Result::REMOTE_ERROR;
       reply.message() = "returned error msg with binary data \xdd\xab";
     } else {
       mc_.set(key, MockMc::Item(req));
-      reply.result() = mc_res_stored;
+      reply.result() = carbon::Result::STORED;
     }
 
     McServerRequestContext::reply(std::move(ctx), std::move(reply));
@@ -163,9 +207,11 @@ class MockMcOnRequest {
     auto key = req.key().fullKey().str();
 
     if (mc_.add(key, MockMc::Item(req))) {
-      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_stored));
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::STORED));
     } else {
-      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notstored));
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::NOTSTORED));
     }
   }
 
@@ -175,9 +221,11 @@ class MockMcOnRequest {
     auto key = req.key().fullKey().str();
 
     if (mc_.replace(key, MockMc::Item(req))) {
-      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_stored));
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::STORED));
     } else {
-      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notstored));
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::NOTSTORED));
     }
   }
 
@@ -187,9 +235,11 @@ class MockMcOnRequest {
     auto key = req.key().fullKey().str();
 
     if (mc_.append(key, MockMc::Item(req))) {
-      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_stored));
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::STORED));
     } else {
-      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notstored));
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::NOTSTORED));
     }
   }
 
@@ -199,9 +249,11 @@ class MockMcOnRequest {
     auto key = req.key().fullKey().str();
 
     if (mc_.prepend(key, MockMc::Item(req))) {
-      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_stored));
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::STORED));
     } else {
-      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notstored));
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::NOTSTORED));
     }
   }
 
@@ -211,9 +263,11 @@ class MockMcOnRequest {
     auto key = req.key().fullKey().str();
 
     if (mc_.del(key)) {
-      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_deleted));
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::DELETED));
     } else {
-      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notfound));
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::NOTFOUND));
     }
   }
 
@@ -223,9 +277,11 @@ class MockMcOnRequest {
     auto key = req.key().fullKey().str();
 
     if (mc_.touch(key, req.exptime())) {
-      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_touched));
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::TOUCHED));
     } else {
-      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notfound));
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::NOTFOUND));
     }
   }
 
@@ -235,9 +291,10 @@ class MockMcOnRequest {
     auto key = req.key().fullKey().str();
     auto p = mc_.arith(key, req.delta());
     if (!p.first) {
-      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notfound));
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::NOTFOUND));
     } else {
-      Reply reply(mc_res_stored);
+      Reply reply(carbon::Result::STORED);
       reply.delta() = p.second;
       McServerRequestContext::reply(std::move(ctx), std::move(reply));
     }
@@ -249,9 +306,10 @@ class MockMcOnRequest {
     auto key = req.key().fullKey().str();
     auto p = mc_.arith(key, -req.delta());
     if (!p.first) {
-      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notfound));
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::NOTFOUND));
     } else {
-      Reply reply(mc_res_stored);
+      Reply reply(carbon::Result::STORED);
       reply.delta() = p.second;
       McServerRequestContext::reply(std::move(ctx), std::move(reply));
     }
@@ -262,7 +320,7 @@ class MockMcOnRequest {
 
     std::this_thread::sleep_for(std::chrono::seconds(req.delay()));
     mc_.flushAll();
-    McServerRequestContext::reply(std::move(ctx), Reply(mc_res_ok));
+    McServerRequestContext::reply(std::move(ctx), Reply(carbon::Result::OK));
   }
 
   void onRequest(McServerRequestContext&& ctx, McGetsRequest&& req) {
@@ -271,9 +329,27 @@ class MockMcOnRequest {
     auto key = req.key().fullKey().str();
     auto p = mc_.gets(key);
     if (!p.first) {
-      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notfound));
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::NOTFOUND));
     } else {
-      Reply reply(mc_res_found);
+      Reply reply(carbon::Result::FOUND);
+      reply.value() = p.first->value->cloneAsValue();
+      reply.flags() = p.first->flags;
+      reply.casToken() = p.second;
+      McServerRequestContext::reply(std::move(ctx), std::move(reply));
+    }
+  }
+
+  void onRequest(McServerRequestContext&& ctx, McGatsRequest&& req) {
+    using Reply = McGatsReply;
+
+    auto key = req.key().fullKey().str();
+    auto p = mc_.gats(req.exptime(), key);
+    if (!p.first) {
+      McServerRequestContext::reply(
+          std::move(ctx), Reply(carbon::Result::NOTFOUND));
+    } else {
+      Reply reply(carbon::Result::FOUND);
       reply.value() = p.first->value->cloneAsValue();
       reply.flags() = p.first->flags;
       reply.casToken() = p.second;
@@ -288,13 +364,16 @@ class MockMcOnRequest {
     auto ret = mc_.cas(key, MockMc::Item(req), req.casToken());
     switch (ret) {
       case MockMc::CasResult::NOT_FOUND:
-        McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notfound));
+        McServerRequestContext::reply(
+            std::move(ctx), Reply(carbon::Result::NOTFOUND));
         break;
       case MockMc::CasResult::EXISTS:
-        McServerRequestContext::reply(std::move(ctx), Reply(mc_res_exists));
+        McServerRequestContext::reply(
+            std::move(ctx), Reply(carbon::Result::EXISTS));
         break;
       case MockMc::CasResult::STORED:
-        McServerRequestContext::reply(std::move(ctx), Reply(mc_res_stored));
+        McServerRequestContext::reply(
+            std::move(ctx), Reply(carbon::Result::STORED));
         break;
     }
   }
@@ -304,7 +383,7 @@ class MockMcOnRequest {
     const std::string errorMessage = folly::sformat(
         "MockMcServer does not support {}", typeid(Unsupported).name());
     LOG(ERROR) << errorMessage;
-    ReplyT<Unsupported> reply(mc_res_remote_error);
+    ReplyT<Unsupported> reply(carbon::Result::REMOTE_ERROR);
     reply.message() = std::move(errorMessage);
     McServerRequestContext::reply(std::move(ctx), std::move(reply));
   }
@@ -326,6 +405,7 @@ void serverLoop(
                "  -P <port>      TCP port on which to listen\n"
                "  -t <fd>        TCP listen sock fd\n"
                "  -s             Use ssl\n"
+               "  -z             Zero Copy Threshold (Default disabled)\n"
                "Usage:\n"
                "  $ "
             << argv[0] << " -p 15213\n";
@@ -347,7 +427,7 @@ int main(int argc, char** argv) {
   uint16_t port = 0;
 
   int c;
-  while ((c = getopt(argc, argv, "P:t:sh")) >= 0) {
+  while ((c = getopt(argc, argv, "P:t:z:sh")) >= 0) {
     switch (c) {
       case 's':
         ssl = true;
@@ -357,6 +437,9 @@ int main(int argc, char** argv) {
         break;
       case 't':
         opts.existingSocketFd = folly::to<int>(optarg);
+        break;
+      case 'z':
+        opts.worker.tcpZeroCopyThresholdBytes = folly::to<int>(optarg);
         break;
       default:
         usage(argv);

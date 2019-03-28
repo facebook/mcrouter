@@ -29,17 +29,17 @@ using TestHandle = TestHandleImpl<TestRouteHandleIf>;
 TEST(warmUpRouteTest, warmUp) {
   vector<std::shared_ptr<TestHandle>> test_handles{
       make_shared<TestHandle>(
-          GetRouteTestData(mc_res_found, "a"),
-          UpdateRouteTestData(mc_res_stored),
-          DeleteRouteTestData(mc_res_deleted)),
+          GetRouteTestData(carbon::Result::FOUND, "a"),
+          UpdateRouteTestData(carbon::Result::STORED),
+          DeleteRouteTestData(carbon::Result::DELETED)),
       make_shared<TestHandle>(
-          GetRouteTestData(mc_res_found, "b"),
-          UpdateRouteTestData(mc_res_stored),
-          DeleteRouteTestData(mc_res_notfound)),
+          GetRouteTestData(carbon::Result::FOUND, "b"),
+          UpdateRouteTestData(carbon::Result::STORED),
+          DeleteRouteTestData(carbon::Result::NOTFOUND)),
       make_shared<TestHandle>(
-          GetRouteTestData(mc_res_notfound, ""),
-          UpdateRouteTestData(mc_res_notstored),
-          DeleteRouteTestData(mc_res_notfound)),
+          GetRouteTestData(carbon::Result::NOTFOUND, ""),
+          UpdateRouteTestData(carbon::Result::NOTSTORED),
+          DeleteRouteTestData(carbon::Result::NOTFOUND)),
   };
   auto route_handles = get_route_handles(test_handles);
 
@@ -57,7 +57,7 @@ TEST(warmUpRouteTest, warmUp) {
     (test_handles[1]->saw_keys).clear();
 
     auto reply_del = rh.route(McDeleteRequest("key_del"));
-    EXPECT_EQ(mc_res_notfound, reply_del.result());
+    EXPECT_EQ(carbon::Result::NOTFOUND, reply_del.result());
     EXPECT_NE(vector<string>{"key_del"}, test_handles[0]->saw_keys);
     EXPECT_EQ(vector<string>{"key_del"}, test_handles[1]->saw_keys);
   });
@@ -82,7 +82,7 @@ TEST(warmUpRouteTest, warmUp) {
         route_handles[0], route_handles[2], 1);
 
     auto reply_del = rh.route(McDeleteRequest("key_del"));
-    EXPECT_EQ(mc_res_notfound, reply_del.result());
+    EXPECT_EQ(carbon::Result::NOTFOUND, reply_del.result());
     EXPECT_NE(vector<string>{"key_del"}, test_handles[0]->saw_keys);
     EXPECT_EQ(vector<string>{"key_del"}, test_handles[2]->saw_keys);
   });

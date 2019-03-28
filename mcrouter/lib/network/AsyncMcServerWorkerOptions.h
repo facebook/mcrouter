@@ -94,9 +94,19 @@ struct AsyncMcServerWorkerOptions {
   std::shared_ptr<CpuController> cpuController;
 
   /**
-   * The congestion controller for memory utilization at the server.
+   * Payloads >= tcpZeroCopyThresholdBytes will undergo copy avoidance and
+   * the kernel will queue a completion notification once transmission is
+   * complete.
+   *
+   * Note that here we are replacing the per byte copy cost with page
+   * accounting and the overhead of notification completion. This will
+   * typically only be effective at writes > 10K and should be tuned on a per
+   * use-case basis.
+   *
+   * Default tcpZeroCopyThresholdBytes of 0 means that tcpZeroCopy is
+   * disabled.
    */
-  std::shared_ptr<MemoryController> memController;
+  size_t tcpZeroCopyThresholdBytes{0};
 
   /**
    * EXPERIMENTAL FEATURE!
@@ -107,5 +117,5 @@ struct AsyncMcServerWorkerOptions {
    */
   std::chrono::milliseconds goAwayTimeout{0};
 };
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

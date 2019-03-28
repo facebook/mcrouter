@@ -1,57 +1,56 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
-#include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/lib/carbon/Result.h"
 
 namespace facebook {
 namespace memcache {
 
-inline int resultSeverity(mc_res_t result) {
+inline int resultSeverity(carbon::Result result) {
   switch (result) {
-    case mc_res_ok:
-    case mc_res_stored:
-    case mc_res_stalestored:
-    case mc_res_exists:
-    case mc_res_deleted:
-    case mc_res_found:
+    case carbon::Result::OK:
+    case carbon::Result::STORED:
+    case carbon::Result::STALESTORED:
+    case carbon::Result::EXISTS:
+    case carbon::Result::DELETED:
+    case carbon::Result::FOUND:
       return 1;
 
-    case mc_res_waiting:
+    case carbon::Result::WAITING:
       return 2;
 
-    case mc_res_notfound:
-    case mc_res_notstored:
+    case carbon::Result::NOTFOUND:
+    case carbon::Result::NOTSTORED:
       return 4;
 
-    case mc_res_ooo:
-    case mc_res_timeout:
-    case mc_res_connect_timeout:
-    case mc_res_connect_error:
-    case mc_res_busy:
-    case mc_res_shutdown:
-    case mc_res_try_again:
-    case mc_res_tko:
+    case carbon::Result::OOO:
+    case carbon::Result::TIMEOUT:
+    case carbon::Result::CONNECT_TIMEOUT:
+    case carbon::Result::CONNECT_ERROR:
+    case carbon::Result::BUSY:
+    case carbon::Result::SHUTDOWN:
+    case carbon::Result::RES_TRY_AGAIN:
+    case carbon::Result::TKO:
       return 5;
 
-    case mc_res_bad_key:
-    case mc_res_bad_value:
-    case mc_res_aborted:
+    case carbon::Result::BAD_KEY:
+    case carbon::Result::BAD_VALUE:
+    case carbon::Result::ABORTED:
       return 6;
 
-    case mc_res_remote_error:
-    case mc_res_unknown:
+    case carbon::Result::REMOTE_ERROR:
+    case carbon::Result::UNKNOWN:
       return 7;
 
-    case mc_res_local_error:
+    case carbon::Result::LOCAL_ERROR:
       return 8;
 
-    case mc_res_client_error:
+    case carbon::Result::CLIENT_ERROR:
       return 9;
 
     default:
@@ -60,29 +59,29 @@ inline int resultSeverity(mc_res_t result) {
 }
 
 /**
- * mc_res_t convenience functions, useful for replies
+ * carbon::Result convenience functions, useful for replies
  */
 /**
  * Is this reply an error?
  */
-inline bool isErrorResult(const mc_res_t result) {
-  return mc_res_is_err(result);
+inline bool isErrorResult(const carbon::Result result) {
+  return result >= carbon::Result::OOO && result < carbon::Result::WAITING;
 }
 
 /**
  * Is this reply an error as far as failover logic is concerned?
  */
-inline bool isFailoverErrorResult(const mc_res_t result) {
+inline bool isFailoverErrorResult(const carbon::Result result) {
   switch (result) {
-    case mc_res_busy:
-    case mc_res_shutdown:
-    case mc_res_tko:
-    case mc_res_try_again:
-    case mc_res_local_error:
-    case mc_res_connect_error:
-    case mc_res_connect_timeout:
-    case mc_res_timeout:
-    case mc_res_remote_error:
+    case carbon::Result::BUSY:
+    case carbon::Result::SHUTDOWN:
+    case carbon::Result::TKO:
+    case carbon::Result::RES_TRY_AGAIN:
+    case carbon::Result::LOCAL_ERROR:
+    case carbon::Result::CONNECT_ERROR:
+    case carbon::Result::CONNECT_TIMEOUT:
+    case carbon::Result::TIMEOUT:
+    case carbon::Result::REMOTE_ERROR:
       return true;
     default:
       return false;
@@ -92,9 +91,9 @@ inline bool isFailoverErrorResult(const mc_res_t result) {
 /**
  * Is this reply a soft TKO error?
  */
-inline bool isSoftTkoErrorResult(const mc_res_t result) {
+inline bool isSoftTkoErrorResult(const carbon::Result result) {
   switch (result) {
-    case mc_res_timeout:
+    case carbon::Result::TIMEOUT:
       return true;
     default:
       return false;
@@ -104,11 +103,11 @@ inline bool isSoftTkoErrorResult(const mc_res_t result) {
 /**
  * Is this reply a hard TKO error?
  */
-inline bool isHardTkoErrorResult(const mc_res_t result) {
+inline bool isHardTkoErrorResult(const carbon::Result result) {
   switch (result) {
-    case mc_res_connect_error:
-    case mc_res_connect_timeout:
-    case mc_res_shutdown:
+    case carbon::Result::CONNECT_ERROR:
+    case carbon::Result::CONNECT_TIMEOUT:
+    case carbon::Result::SHUTDOWN:
       return true;
     default:
       return false;
@@ -123,30 +122,44 @@ inline bool isHardTkoErrorResult(const mc_res_t result) {
  *
  * If isTkoResult() is true, isErrorResult() must also be true.
  */
-inline bool isTkoResult(const mc_res_t result) {
-  return result == mc_res_tko;
+inline bool isTkoResult(const carbon::Result result) {
+  return result == carbon::Result::TKO;
 }
 
 /**
  * Did we not even attempt to send request out because it is invalid/we hit
  * per-destination rate limit
  */
-inline bool isLocalErrorResult(const mc_res_t result) {
-  return result == mc_res_local_error;
+inline bool isLocalErrorResult(const carbon::Result result) {
+  return result == carbon::Result::LOCAL_ERROR;
+}
+
+/**
+ * Was there some client-side issue? Invalid request, bad client, etc?
+ */
+inline bool isClientErrorResult(const carbon::Result result) {
+  return result == carbon::Result::CLIENT_ERROR;
+}
+
+/**
+ * Was there some problem with the remote server?
+ */
+inline bool isRemoteErrorResult(const carbon::Result result) {
+  return result == carbon::Result::REMOTE_ERROR;
 }
 
 /**
  * Was the connection attempt refused?
  */
-inline bool isConnectErrorResult(const mc_res_t result) {
-  return result == mc_res_connect_error;
+inline bool isConnectErrorResult(const carbon::Result result) {
+  return result == carbon::Result::CONNECT_ERROR;
 }
 
 /**
  * Was there a timeout while attempting to establish a connection?
  */
-inline bool isConnectTimeoutResult(const mc_res_t result) {
-  return result == mc_res_connect_timeout;
+inline bool isConnectTimeoutResult(const carbon::Result result) {
+  return result == carbon::Result::CONNECT_TIMEOUT;
 }
 
 /**
@@ -154,49 +167,52 @@ inline bool isConnectTimeoutResult(const mc_res_t result) {
  * Note: the distinction is important, since in this case we don't know
  * if the data reached the server or not.
  */
-inline bool isDataTimeoutResult(const mc_res_t result) {
-  return result == mc_res_timeout;
+inline bool isDataTimeoutResult(const carbon::Result result) {
+  return result == carbon::Result::TIMEOUT;
 }
 
 /**
  * Application-specific redirect code. Server is up, but doesn't want
  * to reply now.
  */
-inline bool isRedirectResult(const mc_res_t result) {
-  return result == mc_res_busy || result == mc_res_try_again;
+inline bool isRedirectResult(const carbon::Result result) {
+  return result == carbon::Result::BUSY ||
+      result == carbon::Result::RES_TRY_AGAIN;
 }
 
 /**
  * Was the data found?
  */
-inline bool isHitResult(const mc_res_t result) {
-  return result == mc_res_deleted || result == mc_res_found ||
-      result == mc_res_touched;
+inline bool isHitResult(const carbon::Result result) {
+  return result == carbon::Result::DELETED || result == carbon::Result::FOUND ||
+      result == carbon::Result::TOUCHED;
 }
 
 /**
  * Was data not found and no errors occured?
  */
-inline bool isMissResult(const mc_res_t result) {
-  return result == mc_res_notfound;
+inline bool isMissResult(const carbon::Result result) {
+  return result == carbon::Result::NOTFOUND;
 }
 
 /**
  * Lease hot miss?
  */
-inline bool isHotMissResult(const mc_res_t result) {
-  return result == mc_res_foundstale || result == mc_res_notfoundhot;
+inline bool isHotMissResult(const carbon::Result result) {
+  return result == carbon::Result::FOUNDSTALE ||
+      result == carbon::Result::NOTFOUNDHOT;
 }
 
 /**
  * Was the data stored?
  */
-inline bool isStoredResult(const mc_res_t result) {
-  return result == mc_res_stored || result == mc_res_stalestored;
+inline bool isStoredResult(const carbon::Result result) {
+  return result == carbon::Result::STORED ||
+      result == carbon::Result::STALESTORED;
 }
 
-inline bool worseThan(mc_res_t first, mc_res_t second) {
+inline bool worseThan(carbon::Result first, carbon::Result second) {
   return resultSeverity(first) > resultSeverity(second);
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

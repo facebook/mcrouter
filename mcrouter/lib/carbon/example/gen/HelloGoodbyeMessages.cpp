@@ -18,14 +18,6 @@ namespace hellogoodbye {
 
 constexpr const char* const HelloRequest::name;
 
-void HelloRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeField(2 /* field id */, shardId());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
-}
-
 void HelloRequest::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructBegin();
   while (true) {
@@ -55,13 +47,6 @@ void HelloRequest::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
-void HelloReply::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
-}
-
 void HelloReply::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructBegin();
   while (true) {
@@ -88,14 +73,6 @@ void HelloReply::deserialize(carbon::CarbonProtocolReader& reader) {
 }
 
 constexpr const char* const GoodbyeRequest::name;
-
-void GoodbyeRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeField(2 /* field id */, shardId());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
-}
 
 void GoodbyeRequest::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructBegin();
@@ -124,14 +101,6 @@ void GoodbyeRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
   }
   reader.readStructEnd();
-}
-
-void GoodbyeReply::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, message());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
 }
 
 void GoodbyeReply::deserialize(carbon::CarbonProtocolReader& reader) {

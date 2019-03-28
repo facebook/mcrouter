@@ -1,22 +1,20 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
 #include <chrono>
 
 #include <folly/Range.h>
-#include <folly/experimental/StringKeyedUnorderedMap.h>
 
 #include "mcrouter/config.h"
 
 namespace folly {
 struct dynamic;
-} // folly
+} // namespace folly
 
 namespace facebook {
 namespace memcache {
@@ -57,6 +55,10 @@ class ShardSplitter {
     }
     size_t getSplitSizeForCurrentHost() const;
 
+    bool hasMigrationConfigured() const {
+      return migrating_;
+    }
+
    private:
     const size_t oldSplitSize_;
     const size_t newSplitSize_;
@@ -66,7 +68,10 @@ class ShardSplitter {
     mutable bool migrating_;
   };
 
-  explicit ShardSplitter(const folly::dynamic& json);
+  explicit ShardSplitter(
+      const folly::dynamic& json,
+      const folly::dynamic& defaultSplitJson = 1,
+      bool enablePrefixMatching = false);
 
   /**
    * Returns information about shard split if it exists. If it does, stores
@@ -82,19 +87,21 @@ class ShardSplitter {
   /**
    * Returns information about shard split given shard id.
    *
-   * @return  nullptr if there is no
-   *          shard split found. Otherwise returns pointer to ShardSplitInfo.
+   * @return  Returns reference to ShardSplitInfo.
    */
-  const ShardSplitInfo* FOLLY_NULLABLE
-  getShardSplit(folly::StringPiece shardId) const;
+  const ShardSplitInfo& getShardSplit(folly::StringPiece shardId) const;
 
-  const folly::StringKeyedUnorderedMap<ShardSplitInfo>& getShardSplits() const {
+  using ShardSplitInfoMap = folly::F14FastMap<std::string, ShardSplitInfo>;
+
+  const ShardSplitInfoMap& getShardSplits() const {
     return shardSplits_;
   }
 
  private:
-  folly::StringKeyedUnorderedMap<ShardSplitInfo> shardSplits_;
+  ShardSplitInfoMap shardSplits_;
+  ShardSplitInfo defaultShardSplit_;
+  bool enablePrefixMatching_;
 };
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

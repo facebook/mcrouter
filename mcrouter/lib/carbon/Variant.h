@@ -129,11 +129,16 @@ class Variant {
   }
 
   std::type_index which() const {
-    static constexpr std::type_index types[sizeof...(Ts)] = {typeid(Ts)...};
+    static std::type_index types[sizeof...(Ts)] = {typeid(Ts)...};
     if (which_ >= 0 && static_cast<size_t>(which_) < sizeof...(Ts)) {
       return types[which_];
     }
     return typeid(void);
+  }
+
+  template <class T>
+  bool is() const {
+    return which() == std::type_index(typeid(T));
   }
 
   // When writing a Carbon structure visitor, it may be more efficient (avoiding

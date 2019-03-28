@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <memory>
 
@@ -132,8 +131,6 @@ folly::dynamic readStaticJsonFile(folly::StringPiece file) {
   }
   return folly::parseJson(contents);
 }
-
-void initStandaloneSSL() {}
 
 } // namespace mcrouter
 } // namespace memcache

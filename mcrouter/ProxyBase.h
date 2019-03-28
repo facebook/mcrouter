@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -11,6 +10,7 @@
 #include <cstddef>
 #include <random>
 
+#include <folly/Portability.h>
 #include <folly/dynamic.h>
 #include <folly/fibers/FiberManager.h>
 #include <folly/io/async/VirtualEventBase.h>
@@ -110,6 +110,16 @@ class ProxyBase {
     return flushList_;
   }
 
+  /**
+   * This lets code check whether it is or is not running in a thread that is
+   * also used by mcrouter. This can be important for thread safety /
+   * re-entrancy, particularly if that code is synchronous and calls into cache
+   * client.
+   */
+  static inline bool isInProxyThread() {
+    return isProxyThread_;
+  }
+
  private:
   CarbonRouterInstanceBase& router_;
   const size_t id_{0};
@@ -126,6 +136,8 @@ class ProxyBase {
 
   static folly::fibers::FiberManager::Options getFiberManagerOptions(
       const McrouterOptions& opts);
+
+  static FOLLY_TLS bool isProxyThread_;
 
  protected:
   // A queue of callbacks for flushing requests in AsyncMcClients.

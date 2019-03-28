@@ -13,16 +13,20 @@ See https://github.com/facebook/mcrouter/wiki to get started.
 
 ### New! Ubuntu package available
 
-Currently, we only have Ubuntu Xenial (16.04) amd64 package.
+Currently, we support Ubuntu Xenial (16.04) and Bionic (18.04) amd64.
 Here is how to install it:
 
 Add the repo key:
 
-    $ wget -O - https://facebook.github.io/mcrouter/debian/PUBLIC.KEY | sudo apt-key add
+    $ wget -O - https://facebook.github.io/mcrouter/debrepo/xenial/PUBLIC.KEY | sudo apt-key add
 
-Add the following line to apt sources file /etc/apt/sources.list
+For Xenial: add the following line to apt sources file /etc/apt/sources.list
 
-    deb https://facebook.github.io/mcrouter/debian xenial contrib
+    deb https://facebook.github.io/mcrouter/debrepo/xenial xenial contrib
+
+For Bionic: add the following line to apt sources file /etc/apt/sources.list
+
+    deb https://facebook.github.io/mcrouter/debrepo/bionic bionic contrib
 
 Update the local repo cache:
 
@@ -38,7 +42,7 @@ Install mcrouter:
 See https://github.com/facebook/mcrouter/wiki/mcrouter-installation for more
 detailed installation instructions.
 
-Mcrouter depends on folly (https://github.com/facebook/folly).
+Mcrouter depends on [folly](https://github.com/facebook/folly), [wangle](https://github.com/facebook/wangle), [fizz](https://github.com/facebookincubator/fizz), and [fbthrift](https://github.com/facebook/fbthrift).
 
 The installation is a standard autotools flow:
 

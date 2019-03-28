@@ -18,52 +18,6 @@ namespace facebook {
 namespace memcache {
 namespace test {
 
-void ManyFields::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, buf1());
-  writer.writeField(2 /* field id */, buf2());
-  writer.writeField(3 /* field id */, buf3());
-  writer.writeField(4 /* field id */, buf4());
-  writer.writeField(5 /* field id */, buf5());
-  writer.writeField(6 /* field id */, buf6());
-  writer.writeField(7 /* field id */, buf7());
-  writer.writeField(8 /* field id */, buf8());
-  writer.writeField(9 /* field id */, buf9());
-  writer.writeField(10 /* field id */, buf10());
-  writer.writeField(11 /* field id */, buf11());
-  writer.writeField(12 /* field id */, buf12());
-  writer.writeField(13 /* field id */, buf13());
-  writer.writeField(14 /* field id */, buf14());
-  writer.writeField(15 /* field id */, buf15());
-  writer.writeField(16 /* field id */, buf16());
-  writer.writeField(17 /* field id */, buf17());
-  writer.writeField(18 /* field id */, buf18());
-  writer.writeField(19 /* field id */, buf19());
-  writer.writeField(20 /* field id */, buf20());
-  writer.writeField(21 /* field id */, buf21());
-  writer.writeField(22 /* field id */, buf22());
-  writer.writeField(23 /* field id */, buf23());
-  writer.writeField(24 /* field id */, buf24());
-  writer.writeField(25 /* field id */, buf25());
-  writer.writeField(26 /* field id */, buf26());
-  writer.writeField(27 /* field id */, buf27());
-  writer.writeField(28 /* field id */, buf28());
-  writer.writeField(29 /* field id */, buf29());
-  writer.writeField(30 /* field id */, buf30());
-  writer.writeField(31 /* field id */, buf31());
-  writer.writeField(32 /* field id */, buf32());
-  writer.writeField(33 /* field id */, buf33());
-  writer.writeField(34 /* field id */, buf34());
-  writer.writeField(35 /* field id */, buf35());
-  writer.writeField(36 /* field id */, buf36());
-  writer.writeField(37 /* field id */, buf37());
-  writer.writeField(38 /* field id */, buf38());
-  writer.writeField(39 /* field id */, buf39());
-  writer.writeField(40 /* field id */, buf40());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
-}
-
 void ManyFields::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructBegin();
   while (true) {

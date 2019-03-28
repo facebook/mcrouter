@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "WeightedCh3HashFunc.h"
 
@@ -16,31 +15,10 @@
 namespace facebook {
 namespace memcache {
 
-std::vector<double> ch3wParseWeights(const folly::dynamic& json, size_t n) {
-  std::vector<double> weights;
-  checkLogic(
-      json.isObject() && json.count("weights"),
-      "WeightedCh3HashFunc: not an object or no weights");
-  checkLogic(
-      json["weights"].isArray(), "WeightedCh3HashFunc: weights is not array");
-  const auto& jWeights = json["weights"];
-  LOG_IF(ERROR, jWeights.size() < n)
-      << "WeightedCh3HashFunc: CONFIG IS BROKEN!!! number of weights ("
-      << jWeights.size() << ") is smaller than number of servers (" << n
-      << "). Missing weights are set to 0.5";
-  for (size_t i = 0; i < std::min(n, jWeights.size()); ++i) {
-    const auto& weight = jWeights[i];
-    checkLogic(weight.isNumber(), "WeightedCh3HashFunc: weight is not number");
-    weights.push_back(weight.asDouble());
-  }
-  weights.resize(n, 0.5);
-  return weights;
-}
-
-size_t weightedCh3Hash(
+size_t WeightedCh3HashFunc::hash(
     folly::StringPiece key,
-    folly::Range<const double*> weights) {
-  constexpr size_t kNumTries = 32;
+    folly::Range<const double*> weights,
+    size_t retryCount) {
   constexpr uint32_t kHashSeed = 0xface2014;
 
   auto n = weights.size();
@@ -49,7 +27,7 @@ size_t weightedCh3Hash(
   size_t index = 0;
   std::string saltedKey;
   auto originalKey = key;
-  for (size_t i = 0; i < kNumTries; ++i) {
+  for (size_t i = 0; i < retryCount; ++i) {
     index = furc_hash(key.data(), key.size(), n);
 
     /* Use 32-bit hash, but store in 64-bit ints so that
@@ -76,16 +54,6 @@ size_t weightedCh3Hash(
   }
 
   return index;
-}
-
-WeightedCh3HashFunc::WeightedCh3HashFunc(std::vector<double> weights)
-    : weights_(std::move(weights)) {}
-
-WeightedCh3HashFunc::WeightedCh3HashFunc(const folly::dynamic& json, size_t n)
-    : weights_(ch3wParseWeights(json, n)) {}
-
-size_t WeightedCh3HashFunc::operator()(folly::StringPiece key) const {
-  return weightedCh3Hash(key, weights_);
 }
 
 } // namespace memcache

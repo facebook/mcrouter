@@ -19,13 +19,6 @@ namespace test {
 
 constexpr const char* const AnotherRequest::name;
 
-void AnotherRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
-}
-
 void AnotherRequest::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructBegin();
   while (true) {
@@ -49,13 +42,6 @@ void AnotherRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
   }
   reader.readStructEnd();
-}
-
-void AnotherReply::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
 }
 
 void AnotherReply::deserialize(carbon::CarbonProtocolReader& reader) {

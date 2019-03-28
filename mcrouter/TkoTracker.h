@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -19,12 +18,13 @@
 #include <folly/experimental/StringKeyedUnorderedMap.h>
 
 #include "mcrouter/TkoCounters.h"
+#include "mcrouter/lib/carbon/Result.h"
 
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
-class ProxyDestination;
+class ProxyDestinationBase;
 class TkoTrackerMap;
 
 /**
@@ -63,14 +63,23 @@ class TkoTracker {
   bool isSoftTko() const;
 
   /**
-   * @return Is the destination currently marked TKO?
+   * Tells whether or not the destination is marked as TKO.
    */
   bool isTko() const {
-    return sumFailures_ > tkoThreshold_;
+    // See sumFailures_ description for more details.
+    return sumFailures_.load(std::memory_order_relaxed) > tkoThreshold_;
   }
 
   /**
-   * @return current number of consecutive failures.
+   * The reason why the destination is marked as TKO.
+   * NOTE: If this box is not TKO'd, returns mc_res_unkown.
+   */
+  carbon::Result tkoReason() const {
+    return tkoReason_.load(std::memory_order_relaxed);
+  }
+
+  /**
+   * @return The current number of consecutive failures.
    *         This is basically a number of recordHardFailure/recordSoftFailure
    *         calls after last recordSuccess.
    */
@@ -89,23 +98,25 @@ class TkoTracker {
    * tko_threshold "soft" failures in a row to mark a host TKO. Will not TKO
    * a host if currentSoftTkos would exceed maxSoftTkos
    *
-   * @param pdstn  a pointer to the calling proxydestination for tracking
-   *               responsibility.
+   * @param pdstn   A pointer to the calling proxydestination for tracking
+   *                responsibility.
+   * @param result  The result that caused the soft failure.
    *
    * @return true if we just reached tko_threshold with this result,
    *         marking the host TKO.  In this case, the calling proxy
    *         is responsible for sending probes and calling recordSuccess()
    *         once a probe is successful.
    */
-  bool recordSoftFailure(ProxyDestination* pdstn);
+  bool recordSoftFailure(ProxyDestinationBase* pdstn, carbon::Result result);
 
   /**
    * Can be called from any proxy thread.
    * Signal that a "hard" failure occurred - marks the host TKO
    * right away.
    *
-   * @param pdstn  a pointer to the calling proxydestination for tracking
-   *               responsibility.
+   * @param pdstn   A pointer to the calling proxydestination for tracking
+   *                responsibility.
+   * @param result  The result that caused the hard failure.
    *
    * @return true if we just reached tko_threshold with this result,
    *         marking the host TKO.  In this case, the calling proxy
@@ -113,7 +124,7 @@ class TkoTracker {
    *         once a probe is successful. Note, transition from soft to hard
    *         TKO does not result in a change of responsibility.
    */
-  bool recordHardFailure(ProxyDestination* pdstn);
+  bool recordHardFailure(ProxyDestinationBase* pdstn, carbon::Result result);
 
   /**
    * Resets all consecutive failures accumulated so far
@@ -124,14 +135,14 @@ class TkoTracker {
    *
    * @return true if `pdstn` was responsible for sending probes
    */
-  bool recordSuccess(ProxyDestination* pdstn);
+  bool recordSuccess(ProxyDestinationBase* pdstn);
 
   /**
    * Should be called when ProxyDestination is going to be destroyed
    *
    * @return true if `pdstn` was responsible for sending probes
    */
-  bool removeDestination(ProxyDestination* pdstn);
+  bool removeDestination(ProxyDestinationBase* pdstn);
 
   ~TkoTracker();
 
@@ -141,19 +152,23 @@ class TkoTracker {
   const size_t tkoThreshold_;
   TkoTrackerMap& trackerMap_;
 
-  /* sumFailures_ is used for a few things depending on the state of the
-     destination. For a destination that is not TKO, it tracks the number of
-     consecutive soft failures to a destination.
-     If a destination is soft TKO, it contains the numerical representation of
-     the pointer to the proxy thread that is responsible for sending it probes.
-     If a destination is hard TKO, it contains the same value as for soft TKO,
-     but with the LSB set to 1 instead of 0.
-     In summary, allowed values are:
-       0, 1, .., tkoThreshold_ - 1, pdstn, pdstn | 0x1, where pdstn is the
-       address of any of the proxy threads for this destination. */
+  /**
+   * sumFailures_ is used for a few things depending on the state of the
+   * destination. For a destination that is not TKO, it tracks the number of
+   * consecutive soft failures to a destination.
+   * If a destination is soft TKO, it contains the numerical representation of
+   * the pointer to the proxy thread that is responsible for sending it probes.
+   * If a destination is hard TKO, it contains the same value as for soft TKO,
+   * but with the LSB set to 1 instead of 0.
+   * In summary, allowed values are:
+   *   0, 1, .., tkoThreshold_ - 1, pdstn, pdstn | 0x1, where pdstn is the
+   *   address of any of the proxy threads for this destination.
+   */
   std::atomic<uintptr_t> sumFailures_{0};
 
   std::atomic<size_t> consecutiveFailureCount_{0};
+
+  std::atomic<carbon::Result> tkoReason_{carbon::Result::UNKNOWN};
 
   /**
    * Decrement the global counter of current soft TKOs
@@ -171,7 +186,7 @@ class TkoTracker {
   bool setSumFailures(uintptr_t value);
 
   /* Return true if this thread is responsible for the TKO state */
-  bool isResponsible(ProxyDestination* pdstn) const;
+  bool isResponsible(ProxyDestinationBase* pdstn) const;
 
   /**
    * @param tkoThreshold    Require this many soft failures to mark
@@ -195,7 +210,7 @@ class TkoTrackerMap {
   /**
    * Creates/updates TkoTracker for `pdstn` and updates `pdstn->tko` pointer.
    */
-  void updateTracker(ProxyDestination& pdstn, const size_t tkoThreshold);
+  void updateTracker(ProxyDestinationBase& pdstn, const size_t tkoThreshold);
 
   /**
    * @return  number of servers that recently returned error replies.

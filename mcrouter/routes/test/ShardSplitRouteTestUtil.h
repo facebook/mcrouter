@@ -40,19 +40,19 @@ void testShardingForOp(ShardSplitter splitter, uint64_t requestFlags = 0) {
 
     std::vector<std::shared_ptr<ShardSplitTestHandle>> handles{
         std::make_shared<ShardSplitTestHandle>(
-            GetRouteTestData(mc_res_found, "a"),
-            UpdateRouteTestData(mc_res_found),
-            DeleteRouteTestData(mc_res_found))};
+            GetRouteTestData(carbon::Result::FOUND, "a"),
+            UpdateRouteTestData(carbon::Result::FOUND),
+            DeleteRouteTestData(carbon::Result::FOUND))};
     auto rh = get_route_handles(handles)[0];
     ShardSplitRouteHandle splitRoute(rh, splitter);
 
     TestFiberManager fm{FiberManagerContextTag()};
     fm.run([&] {
-      mockFiberContext();
+      mockFiberContext<RouterInfo>();
       Request req("test:123:");
       req.flags() = requestFlags;
       auto reply = splitRoute.route(req);
-      EXPECT_EQ(mc_res_found, reply.result());
+      EXPECT_EQ(carbon::Result::FOUND, reply.result());
     });
 
     if (i == 0) {

@@ -12,6 +12,7 @@
  *
  *  @generated
  */
+#include <folly/init/Init.h>
 
 #include <mcrouter/lib/carbon/CmdLineClient.h>
 #include <mcrouter/lib/carbon/JsonClient.h>
@@ -36,24 +37,19 @@ class HelloGoodbyeJsonClient : public JsonClient {
       const folly::dynamic& requestJson,
       folly::dynamic& replyJson) override final {
     if (requestName == facebook::memcache::McExecRequest::name) {
-      return sendRequest<facebook::memcache::McExecRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McExecRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McQuitRequest::name) {
-      return sendRequest<facebook::memcache::McQuitRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McQuitRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McShutdownRequest::name) {
-      return sendRequest<facebook::memcache::McShutdownRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McShutdownRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McStatsRequest::name) {
-      return sendRequest<facebook::memcache::McStatsRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McStatsRequest>(requestJson, replyJson);
     }
     if (requestName == facebook::memcache::McVersionRequest::name) {
-      return sendRequest<facebook::memcache::McVersionRequest>(
-          requestJson, replyJson);
+      return sendRequest<facebook::memcache::McVersionRequest>(requestJson, replyJson);
     }
     if (requestName == hellogoodbye::GoodbyeRequest::name) {
       return sendRequest<hellogoodbye::GoodbyeRequest>(requestJson, replyJson);
@@ -66,8 +62,10 @@ class HelloGoodbyeJsonClient : public JsonClient {
 };
 } // anonymous namespace
 
-int main(int argc, const char** argv) {
+int main(int argc, char** argv) {
+  int tmpArgc = 1;
+  folly::init(&tmpArgc, &argv, /* removeFlags */ false);
   CmdLineClient client;
-  client.sendRequests<HelloGoodbyeJsonClient>(argc, argv);
+  client.sendRequests<HelloGoodbyeJsonClient>(argc, const_cast<const char**>(argv));
   return 0;
 }

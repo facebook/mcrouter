@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -13,14 +12,13 @@
 #include <folly/fibers/FiberManager.h>
 #include <folly/io/IOBuf.h>
 
-#include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McResUtil.h"
-#include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/routes/RoutingUtils.h"
 
 namespace facebook {
 namespace memcache {
@@ -48,6 +46,11 @@ namespace mcrouter {
  *     request to "warm".
  * set/delete/incr/decr/etc.: send to the "cold" route, do not modify "warm".
  *     Client is responsible for "warm" consistency.
+ * gat/gats: send the request to "cold" route handle and in case of a miss,
+ *     fetch data from the "warm" route handle with simple 'get' request.
+ *     If "warm" returns a hit, synchronously try to add value to "cold"
+ *     using 'add' operation and send original 'gat' or 'gats' request
+ *     to "cold" one more time.
  *
  * Expiration time (TTL) for automatic warm -> cold update requests is
  * configured with "exptime" field. If the field is not present and
@@ -91,10 +94,11 @@ class WarmUpRoute {
     auto warmReply = warm_->route(req);
     uint32_t exptime = 0;
     if (isHitResult(warmReply.result()) && getExptimeForCold(req, exptime)) {
-      folly::fibers::addTask([
-        cold = cold_,
-        addReq = coldUpdateFromWarm<McAddRequest>(req, warmReply, exptime)
-      ]() { cold->route(addReq); });
+      folly::fibers::addTask([cold = cold_,
+                              addReq = createRequestFromMessage<McAddRequest>(
+                                  req.key().fullKey(), warmReply, exptime)]() {
+        cold->route(addReq);
+      });
     }
     return warmReply;
   }
@@ -124,8 +128,8 @@ class WarmUpRoute {
     if (isHitResult(warmReply.result()) &&
         getExptimeForCold(reqOpGet, exptime)) {
       // update cold route with lease set
-      auto setReq =
-          coldUpdateFromWarm<McLeaseSetRequest>(reqOpGet, warmReply, exptime);
+      auto setReq = createRequestFromMessage<McLeaseSetRequest>(
+          reqOpGet.key().fullKey(), warmReply, exptime);
       setReq.leaseToken() = coldReply.leaseToken();
 
       folly::fibers::addTask(
@@ -133,7 +137,7 @@ class WarmUpRoute {
       // On hit, no need to copy appSpecificErrorCode or message
       McLeaseGetReply reply(warmReply.result());
       reply.flags() = warmReply.flags();
-      reply.value() = warmReply.value();
+      reply.value().move_from(warmReply.value());
       return reply;
     }
     return coldReply;
@@ -152,7 +156,49 @@ class WarmUpRoute {
     uint32_t exptime = 0;
     if (isHitResult(warmReply.result()) && getExptimeForCold(req, exptime)) {
       // update cold route if we have the value
-      auto addReq = coldUpdateFromWarm<McAddRequest>(req, warmReply, exptime);
+      auto addReq = createRequestFromMessage<McAddRequest>(
+          req.key().fullKey(), warmReply, exptime);
+      cold_->route(addReq);
+      // and grab cas token again
+      return cold_->route(req);
+    }
+    return coldReply;
+  }
+
+  //////////////////////////////// gat /////////////////////////////////////
+  McGatReply route(const McGatRequest& req) {
+    auto coldReply = cold_->route(req);
+    if (isHitResult(coldReply.result())) {
+      return coldReply;
+    }
+
+    // miss: send simple get to warm route
+    McGetRequest reqGet(req.key().fullKey());
+    auto warmReply = warm_->route(reqGet);
+    if (isHitResult(warmReply.result())) {
+      // update cold route if we have the value
+      auto addReq = createRequestFromMessage<McAddRequest>(
+          req.key().fullKey(), warmReply, req.exptime());
+      cold_->route(addReq);
+      return cold_->route(req);
+    }
+    return coldReply;
+  }
+
+  ////////////////////////////////gats////////////////////////////////////
+  McGatsReply route(const McGatsRequest& req) {
+    auto coldReply = cold_->route(req);
+    if (isHitResult(coldReply.result())) {
+      return coldReply;
+    }
+
+    // miss: send simple get to warm route
+    McGetRequest reqGet(req.key().fullKey());
+    auto warmReply = warm_->route(reqGet);
+    if (isHitResult(warmReply.result())) {
+      // update cold route if we have the value
+      auto addReq = createRequestFromMessage<McAddRequest>(
+          req.key().fullKey(), warmReply, req.exptime());
       cold_->route(addReq);
       // and grab cas token again
       return cold_->route(req);
@@ -172,41 +218,16 @@ class WarmUpRoute {
   const std::shared_ptr<RouteHandleIf> cold_;
   const folly::Optional<uint32_t> exptime_;
 
-  template <class ToRequest, class Request, class Reply>
-  static ToRequest coldUpdateFromWarm(
-      const Request& origReq,
-      const Reply& reply,
-      uint32_t exptime) {
-    ToRequest req(origReq.key().fullKey());
-    folly::IOBuf cloned = carbon::valuePtrUnsafe(reply)
-        ? carbon::valuePtrUnsafe(reply)->cloneAsValue()
-        : folly::IOBuf();
-    req.value() = std::move(cloned);
-    req.flags() = reply.flags();
-    req.exptime() = exptime;
-    return req;
-  }
-
   template <class Request>
   bool getExptimeForCold(const Request& req, uint32_t& exptime) {
+    // if an exptime is defined by the configs, we will just use
+    // that value. otherwise, we will get it from the warm side.
     if (exptime_.hasValue()) {
       exptime = *exptime_;
       return true;
     }
-    McMetagetRequest reqMetaget(req.key().fullKey());
-    auto warmMeta = warm_->route(reqMetaget);
-    if (isHitResult(warmMeta.result())) {
-      exptime = warmMeta.exptime();
-      if (exptime != 0) {
-        auto curTime = time(nullptr);
-        if (curTime >= exptime) {
-          return false;
-        }
-        exptime -= curTime;
-      }
-      return true;
-    }
-    return false;
+    return getExptimeFromRoute<RouteHandleIf>(
+        warm_, req.key().fullKey(), exptime);
   }
 };
 }

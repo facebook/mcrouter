@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2015-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -15,11 +14,10 @@
 #include <folly/IntrusiveList.h>
 #include <folly/fibers/Baton.h>
 
-#include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/network/ClientMcParser.h"
 #include "mcrouter/lib/network/FBTrace.h"
 #include "mcrouter/lib/network/McSerializedRequest.h"
-#include "mcrouter/lib/network/ReplyStatsContext.h"
+#include "mcrouter/lib/network/RpcStatsContext.h"
 
 namespace facebook {
 namespace memcache {
@@ -59,7 +57,7 @@ class McClientRequestContextBase
    *
    * Should be called only when the request is not in a queue.
    */
-  void replyError(mc_res_t result, folly::StringPiece errorMessage);
+  void replyError(carbon::Result result, folly::StringPiece errorMessage);
 
   /**
    * Schedule a timeout so that the request does not wait
@@ -67,12 +65,13 @@ class McClientRequestContextBase
    */
   void scheduleTimeout();
 
-  void setReplyStatsContext(ReplyStatsContext value) {
-    replyStatsContext_ = value;
+  void setRpcStatsContext(RpcStatsContext value) {
+    rpcStatsContext_ = value;
+    rpcStatsContext_.requestBodySize = reqContext.getBodySize();
   }
 
-  ReplyStatsContext getReplyStatsContext() const {
-    return replyStatsContext_;
+  RpcStatsContext getRpcStatsContext() const {
+    return rpcStatsContext_;
   }
 
  protected:
@@ -80,7 +79,6 @@ class McClientRequestContextBase
     NONE,
     PENDING_QUEUE,
     WRITE_QUEUE,
-    WRITE_QUEUE_CANCELED,
     PENDING_REPLY_QUEUE,
     REPLIED_QUEUE,
     COMPLETE,
@@ -98,12 +96,13 @@ class McClientRequestContextBase
       InitializerFuncPtr initializer,
       const std::function<void(int pendingDiff, int inflightDiff)>&
           onStateChange,
-      const CodecIdRange& supportedCodecs);
+      const CodecIdRange& supportedCodecs,
+      PayloadFormat payloadFormat);
 
   virtual void sendTraceOnReply() = 0;
 
   virtual void replyErrorImpl(
-      mc_res_t result,
+      carbon::Result result,
       folly::StringPiece errorMessage) = 0;
 
   ReqState state() const {
@@ -131,7 +130,7 @@ class McClientRequestContextBase
 
   ReqState state_{ReqState::NONE};
 
-  ReplyStatsContext replyStatsContext_;
+  RpcStatsContext rpcStatsContext_;
 
   const std::function<void(int pendingDiff, int inflightDiff)>& onStateChange_;
 
@@ -139,11 +138,6 @@ class McClientRequestContextBase
    * Fire the request state change callbacks.
    */
   void fireStateChangeCallbacks(ReqState old, ReqState current) const;
-
-  /**
-   * Notify context that request was canceled in AsyncMcClientImpl
-   */
-  void canceled();
 
   /**
    * Entry point for propagating reply to the user.
@@ -192,7 +186,8 @@ class McClientRequestContext : public McClientRequestContextBase {
       McClientRequestContextBase::InitializerFuncPtr,
       const std::function<void(int pendingDiff, int inflightDiff)>&
           onStateChange,
-      const CodecIdRange& supportedCodecs);
+      const CodecIdRange& supportedCodecs,
+      PayloadFormat payloadFormat);
 
   std::string getContextTypeStr() const final;
 
@@ -201,11 +196,15 @@ class McClientRequestContext : public McClientRequestContextBase {
  private:
   folly::Optional<Reply> replyStorage_;
 
+  // tracing fields
+  const std::string& requestTraceContext_;
 #ifndef LIBMC_FBTRACE_DISABLE
   const mc_fbtrace_info_s* fbtraceInfo_;
 #endif
+
   void sendTraceOnReply() final;
-  void replyErrorImpl(mc_res_t result, folly::StringPiece errorMessage) final;
+  void replyErrorImpl(carbon::Result result, folly::StringPiece errorMessage)
+      final;
 };
 
 class McClientRequestContextQueue {
@@ -226,13 +225,13 @@ class McClientRequestContextQueue {
    * Fails all requests that were already sent (i.e. pending reply) with a given
    * error code.
    */
-  void failAllSent(mc_res_t error, folly::StringPiece errorMessage);
+  void failAllSent(carbon::Result error, folly::StringPiece errorMessage);
 
   /**
    * Fails all requests that were not sent yet (i.e. pending) with a given error
    * code.
    */
-  void failAllPending(mc_res_t error, folly::StringPiece errorMessage);
+  void failAllPending(carbon::Result error, folly::StringPiece errorMessage);
 
   /**
    * Return an id of the first pending request.
@@ -280,7 +279,7 @@ class McClientRequestContextQueue {
    * Does nothing if the request was already removed from the queue.
    */
   template <class Reply>
-  void reply(uint64_t id, Reply&& reply, ReplyStatsContext replyStatsContext);
+  void reply(uint64_t id, Reply&& reply, RpcStatsContext rpcStatsContext);
 
   /**
    * Obtain a function that should be used to initialize parser for given
@@ -329,7 +328,7 @@ class McClientRequestContextQueue {
 
   void failQueue(
       McClientRequestContextBase::Queue& queue,
-      mc_res_t error,
+      carbon::Result error,
       folly::StringPiece errorMessage);
 
   McClientRequestContextBase::UnorderedSet::iterator getContextById(
@@ -358,7 +357,7 @@ class McClientRequestContextQueue {
 
   std::string getFirstAliveRequestInfo() const;
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook
 
 #include "McClientRequestContext-inl.h"

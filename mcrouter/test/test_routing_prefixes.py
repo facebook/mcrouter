@@ -1,4 +1,4 @@
-# Copyright (c) 2016, Facebook, Inc.
+# Copyright (c) Facebook, Inc. and its affiliates.
 #
 # This source code is licensed under the MIT license found in the LICENSE
 # file in the root directory of this source tree.
@@ -13,6 +13,7 @@ import time
 from mcrouter.test.MCProcess import Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 
+
 class TestMcrouterRoutingPrefixAscii(McrouterTestCase):
     config = './mcrouter/test/routing_prefix_test_ascii.json'
     extra_args = []
@@ -20,7 +21,7 @@ class TestMcrouterRoutingPrefixAscii(McrouterTestCase):
     def setUp(self):
         # The order here must corresponds to the order of hosts in the .json
         self.allhosts = []
-        for i in range(0, 4):
+        for _ in range(0, 4):
             self.allhosts.append(self.add_server(Memcached()))
 
     def get_mcrouter(self):
@@ -49,14 +50,18 @@ class TestMcrouterRoutingPrefixAscii(McrouterTestCase):
             local = self.allhosts[i].get("/*/*/testkey-routing", True)
             self.assertEqual(local["value"], "testvalue")
 
-class TestMcrouterRoutingPrefixUmbrella(TestMcrouterRoutingPrefixAscii):
-    config = './mcrouter/test/routing_prefix_test_umbrella.json'
+
+class TestMcrouterRoutingPrefixCaret(TestMcrouterRoutingPrefixAscii):
+    config = './mcrouter/test/routing_prefix_test_caret.json'
+
 
 class TestMcrouterRoutingPrefixOldNaming(TestMcrouterRoutingPrefixAscii):
     config = './mcrouter/test/routing_prefix_test_old_naming.json'
 
+
 class TestMcrouterRoutingPrefixSimpleRoutes(TestMcrouterRoutingPrefixAscii):
     config = './mcrouter/test/routing_prefix_test_simple_routes.json'
+
 
 class TestFallbackRouting(McrouterTestCase):
     config = './mcrouter/test/routing_prefix_test_fallback_route.json'
@@ -93,6 +98,7 @@ class TestFallbackRouting(McrouterTestCase):
         self.assertEqual(self.ba.get('key'), orig_value)
         self.assertEqual(self.bb.get('key'), orig_value)
         self.assertEqual(self.aa.get('key'), value1)
+
 
 class TestCustomRoutingPrefixes(McrouterTestCase):
     config = './mcrouter/test/routing_prefix_test_custom.json'

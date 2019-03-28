@@ -1,18 +1,13 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
 #include <inttypes.h>
 #include <stdint.h>
-
-#include "mcrouter/lib/fbi/decls.h"
-
-__BEGIN_DECLS
 
 #define SERVER_ERROR_BUSY 307
 
@@ -50,6 +45,8 @@ typedef enum mc_op_e {
   mc_op_gets,
   mc_op_get_service_info, ///< Queries various service state
   mc_op_touch,
+  mc_op_gat,
+  mc_op_gats,
   mc_nops // placeholder
 } mc_op_t;
 
@@ -112,6 +109,10 @@ static inline const char* mc_op_to_string(const mc_op_t op) {
       return "gets";
     case mc_op_get_service_info:
       return "get-service-info";
+    case mc_op_gat:
+      return "gat";
+    case mc_op_gats:
+      return "gats";
     case mc_nops:
       return "unknown";
   };
@@ -363,6 +364,8 @@ static inline int mc_op_has_key(mc_op_t op) {
     case mc_op_decr:
     case mc_op_metaget:
     case mc_op_gets:
+    case mc_op_gat:
+    case mc_op_gats:
       return 1;
 
     default:
@@ -386,10 +389,6 @@ static inline int mc_op_has_value(mc_op_t op) {
   }
 }
 
-static inline int mc_res_is_err(const mc_res_t result) {
-  return result >= mc_res_ooo && result < mc_res_waiting;
-}
-
 typedef enum mc_req_err_s {
   mc_req_err_valid,
   mc_req_err_no_key,
@@ -400,10 +399,8 @@ typedef enum mc_req_err_s {
 const char* mc_req_err_to_string(const mc_req_err_t err);
 
 /**
- * @param result Result code
+ * @param result string like 'mc_res_notfound'
  *
- * @return Human-readable ASCII string for result.
+ * @return mc_res_t code
  */
-const char* mc_res_to_response_string(const mc_res_t result);
-
-__END_DECLS
+mc_res_t mc_res_from_string(const char* result);

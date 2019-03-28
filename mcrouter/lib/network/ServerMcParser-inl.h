@@ -1,14 +1,12 @@
-/*
- *  Copyright (c) 2015-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <folly/lang/Bits.h>
 
 #include "mcrouter/lib/debug/ConnectionFifo.h"
-#include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook {
 namespace memcache {
@@ -17,17 +15,14 @@ template <class Callback>
 ServerMcParser<Callback>::ServerMcParser(
     Callback& cb,
     size_t minBufferSize,
-    size_t maxBufferSize,
-    ConnectionFifo* debugFifo)
+    size_t maxBufferSize)
     : parser_(
           *this,
           minBufferSize,
           maxBufferSize,
-          /* useJemallocNodumpAllocator */ false,
-          debugFifo),
+          /* useJemallocNodumpAllocator */ false),
       asciiParser_(*this),
-      callback_(cb),
-      debugFifo_(debugFifo) {}
+      callback_(cb) {}
 
 template <class Callback>
 ServerMcParser<Callback>::~ServerMcParser() {}
@@ -52,65 +47,15 @@ bool ServerMcParser<Callback>::readDataAvailable(size_t len) {
 }
 
 template <class Callback>
-template <class Request>
-void ServerMcParser<Callback>::requestReadyHelper(
-    Request&& req,
-    uint64_t reqid) {
-  callback_.umbrellaRequestReady(std::move(req), reqid);
-}
-
-template <class Callback>
-bool ServerMcParser<Callback>::umMessageReady(
-    const UmbrellaMessageInfo& info,
-    const folly::IOBuf& buffer) {
-  try {
-    uint64_t reqid;
-    const mc_op_t op =
-        umbrellaDetermineOperation(buffer.data(), info.headerSize);
-    switch (op) {
-#define THRIFT_OP(MC_OPERATION)                                           \
-  case MC_OPERATION::mc_op: {                                             \
-    using Request =                                                       \
-        typename TypeFromOp<MC_OPERATION::mc_op, RequestOpMapping>::type; \
-    auto req = umbrellaParseRequest<Request>(                             \
-        buffer,                                                           \
-        buffer.data(),                                                    \
-        info.headerSize,                                                  \
-        buffer.data() + info.headerSize,                                  \
-        info.bodySize,                                                    \
-        reqid);                                                           \
-    requestReadyHelper(std::move(req), reqid);                            \
-    break;                                                                \
-  }
-#include "mcrouter/lib/McOpList.h"
-      default:
-        auto reason = folly::sformat(
-            "Error parsing Umbrella message. "
-            "Unexpected Umbrella message of type: {} ({}).",
-            mc_op_to_string(op),
-            int(op));
-        callback_.parseError(mc_res_remote_error, reason);
-        return false;
-    }
-  } catch (const std::exception& e) {
-    std::string reason(
-        std::string("Error parsing Umbrella message: ") + e.what());
-    callback_.parseError(mc_res_remote_error, reason);
-    return false;
-  }
-  return true;
-}
-
-template <class Callback>
 bool ServerMcParser<Callback>::caretMessageReady(
-    const UmbrellaMessageInfo& headerInfo,
+    const CaretMessageInfo& headerInfo,
     const folly::IOBuf& buffer) {
   try {
     // Caret header and body are assumed to be in one coalesced IOBuf
     callback_.caretRequestReady(headerInfo, buffer);
   } catch (const std::exception& e) {
     std::string reason(std::string("Error parsing Caret message: ") + e.what());
-    callback_.parseError(mc_res_remote_error, reason);
+    callback_.parseError(carbon::Result::REMOTE_ERROR, reason);
     return false;
   }
   return true;
@@ -122,7 +67,7 @@ void ServerMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
     std::string reason(folly::sformat(
         "Expected {} protocol, but received ASCII!",
         mc_protocol_to_string(parser_.protocol())));
-    callback_.parseError(mc_res_local_error, reason);
+    callback_.parseError(carbon::Result::LOCAL_ERROR, reason);
     return;
   }
 
@@ -132,13 +77,13 @@ void ServerMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
   if (result == McAsciiParserBase::State::ERROR) {
     // Note: we could include actual parsing error instead of
     // "malformed request" (e.g. asciiParser_.getErrorDescription()).
-    callback_.parseError(mc_res_client_error, "malformed request");
+    callback_.parseError(carbon::Result::CLIENT_ERROR, "malformed request");
   }
 }
 
 template <class Callback>
 void ServerMcParser<Callback>::parseError(
-    mc_res_t result,
+    carbon::Result result,
     folly::StringPiece reason) {
   callback_.parseError(result, reason);
 }

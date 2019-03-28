@@ -1,5 +1,6 @@
 # TODO: Move to carbon namespace and remove 'Mc' prefixes.
 namespace facebook::memcache;
+thrift_namespace facebook.memcache.thrift;
 
 request McVersionRequest {
   id: 13;

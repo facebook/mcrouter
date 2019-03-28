@@ -7,20 +7,30 @@
  */
 #pragma once
 
-#include "mcrouter/lib/network/CongestionController.h"
+#include <chrono>
+
+#include <folly/io/async/EventBase.h>
+
 #include "mcrouter/lib/network/ServerLoad.h"
 
 namespace facebook {
 namespace memcache {
 
+struct CpuControllerOptions {
+  /**
+   * How frequently we should collect data.
+   * 0 to disable collecting data completely.
+   */
+  std::chrono::milliseconds dataCollectionInterval{0};
+
+  bool shouldEnable() const noexcept {
+    return dataCollectionInterval.count() > 0;
+  }
+};
+
 class CpuController : public std::enable_shared_from_this<CpuController> {
  public:
-  CpuController(
-      const CongestionControllerOptions& opts,
-      folly::EventBase& evb,
-      size_t queueCapacity = 1000);
-
-  double getDropProbability() const;
+  CpuController(const CpuControllerOptions& opts, folly::EventBase& evb);
 
   /**
    * Gets the load on the server.
@@ -40,15 +50,12 @@ class CpuController : public std::enable_shared_from_this<CpuController> {
   void update(double cpuUtil);
 
   folly::EventBase& evb_;
-  std::shared_ptr<CongestionController> logic_;
   std::vector<uint64_t> prev_{8};
   std::chrono::milliseconds dataCollectionInterval_;
   std::atomic<double> percentLoad_{0.0};
   std::atomic<bool> stopController_{false};
-  bool enableDropProbability_{true};
-  bool enableServerLoad_{true};
   bool firstLoop_{true};
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

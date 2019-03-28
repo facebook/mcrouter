@@ -89,11 +89,50 @@
       }
     },
     {
+      "aliases": [ "/d/w/" ],
+      "route": {
+        "type": "ModifyKeyRoute",
+        "target": "PoolRoute|A",
+        "set_key_suffix": ":bar"
+      }
+    },
+    {
+      "aliases": [ "/e/w/" ],
+      "route": {
+        "type": "ModifyKeyRoute",
+        "target": "PoolRoute|A",
+        "set_key_suffix": "foo",
+        "ensure_key_prefix": "bar:",
+        "modify_inplace": true
+      }
+    },
+    {
+      "aliases": [ "/f/w/" ],
+      "route": {
+        "type": "ModifyKeyRoute",
+        "target": "PoolRoute|A",
+        "set_key_suffix": "foo",
+        "ensure_key_prefix": "bar:",
+        "set_routing_prefix": "",
+        "modify_inplace": true
+      }
+    },
+    {
       "aliases": [ "/j/k/" ],
       "route": {
         "type": "ModifyKeyRoute",
         "target": "PoolRoute|A",
         "ensure_key_prefix": "bar.",
+        "replace_key_prefix": "foo."
+      }
+    },
+    {
+      "aliases": [ "/j/l/" ],
+      "route": {
+        "type": "ModifyKeyRoute",
+        "target": "PoolRoute|A",
+        "ensure_key_prefix": "bar.",
+        "set_key_suffix": "moot",
         "replace_key_prefix": "foo."
       }
     }

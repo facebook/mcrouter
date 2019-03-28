@@ -39,10 +39,6 @@
  */
 #include <stdint.h>
 
-#include "mcrouter/lib/fbi/decls.h"
-
-__BEGIN_DECLS
-
 typedef struct counting_sem_s {
   /**
    * Semaphore value.
@@ -81,5 +77,3 @@ int32_t counting_sem_lazy_nonblocking(counting_sem_t* sem, int32_t n);
  * Does nothing if n <= 0.
  */
 void counting_sem_post(counting_sem_t* sem, int32_t n);
-
-__END_DECLS

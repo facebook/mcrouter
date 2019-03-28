@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2015-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -37,7 +36,9 @@ using RequestReplyPairs = List<
     Pair<McStatsRequest, McStatsReply>,
     Pair<McExecRequest, McExecReply>,
     Pair<McFlushReRequest, McFlushReReply>,
-    Pair<McFlushAllRequest, McFlushAllReply>>;
+    Pair<McFlushAllRequest, McFlushAllReply>,
+    Pair<McGatRequest, McGatReply>,
+    Pair<McGatsRequest, McGatsReply>>;
 
 using McRequestList = PairListFirstT<RequestReplyPairs>;
 
@@ -69,7 +70,9 @@ using RequestOpMapping = List<
     KV<mc_op_stats, McStatsRequest>,
     KV<mc_op_exec, McExecRequest>,
     KV<mc_op_flushre, McFlushReRequest>,
-    KV<mc_op_flushall, McFlushAllRequest>>;
+    KV<mc_op_flushall, McFlushAllRequest>,
+    KV<mc_op_gat, McGatRequest>,
+    KV<mc_op_gats, McGatsRequest>>;
 
 using ReplyOpMapping = List<
     KV<mc_op_get, McGetReply>,
@@ -93,7 +96,9 @@ using ReplyOpMapping = List<
     KV<mc_op_stats, McStatsReply>,
     KV<mc_op_exec, McExecReply>,
     KV<mc_op_flushre, McFlushReReply>,
-    KV<mc_op_flushall, McFlushAllReply>>;
+    KV<mc_op_flushall, McFlushAllReply>,
+    KV<mc_op_gat, McGatReply>,
+    KV<mc_op_gats, McGatsReply>>;
 
 /**
  * Given a Request Type T and a Mapping of mc_op_t to Request Type,

@@ -33,6 +33,8 @@ using MemcacheRequestList = carbon::List<
     McExecRequest,
     McFlushAllRequest,
     McFlushReRequest,
+    McGatRequest,
+    McGatsRequest,
     McGetRequest,
     McGetsRequest,
     McIncrRequest,

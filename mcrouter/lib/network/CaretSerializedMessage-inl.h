@@ -1,15 +1,34 @@
-/*
- *  Copyright (c) 2015-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
+#pragma once
+
+#include "mcrouter/lib/carbon/Artillery.h"
 #include "mcrouter/lib/network/CarbonMessageDispatcher.h"
-#include "mcrouter/lib/network/UmbrellaProtocol.h"
+#include "mcrouter/lib/network/CaretProtocol.h"
 
 namespace facebook {
 namespace memcache {
+
+namespace detail {
+
+template <class Request>
+std::pair<uint64_t, uint64_t> getRequestTraceId(const Request& req) {
+  if (!req.traceContext().empty()) {
+    return carbon::tracing::serializeTraceContext(req.traceContext());
+  }
+  return req.traceToInts();
+}
+
+template <class Reply>
+std::pair<uint64_t, uint64_t> getReplyTraceId(const Reply& reply) {
+  return carbon::tracing::serializeTraceContext(reply.traceContext());
+}
+
+} // namespace detail
 
 template <class Request>
 bool CaretSerializedMessage::prepare(
@@ -17,15 +36,17 @@ bool CaretSerializedMessage::prepare(
     size_t reqId,
     const CodecIdRange& supportedCodecs,
     const struct iovec*& iovOut,
-    size_t& niovOut) noexcept {
+    size_t& niovOut,
+    PayloadFormat payloadFormat) noexcept {
   return fill(
       req,
       reqId,
       Request::typeId,
-      req.traceToInts(),
+      detail::getRequestTraceId(req),
       supportedCodecs,
       iovOut,
-      niovOut);
+      niovOut,
+      payloadFormat);
 }
 
 template <class Reply>
@@ -34,7 +55,6 @@ bool CaretSerializedMessage::prepare(
     size_t reqId,
     const CodecIdRange& supportedCodecs,
     const CompressionCodecMap* compressionCodecMap,
-    double dropProbability,
     ServerLoad serverLoad,
     const struct iovec*& iovOut,
     size_t& niovOut) noexcept {
@@ -42,51 +62,49 @@ bool CaretSerializedMessage::prepare(
       reply,
       reqId,
       Reply::typeId,
-      {0, 0} /* traceId */,
+      detail::getReplyTraceId(reply),
       supportedCodecs,
       compressionCodecMap,
-      dropProbability,
       serverLoad,
       iovOut,
       niovOut);
 }
 
-template <class Message>
+template <class Request>
 bool CaretSerializedMessage::fill(
-    const Message& message,
+    const Request& message,
     uint32_t reqId,
     size_t typeId,
     std::pair<uint64_t, uint64_t> traceId,
     const CodecIdRange& supportedCodecs,
     const struct iovec*& iovOut,
-    size_t& niovOut) {
+    size_t& niovOut,
+    PayloadFormat payloadFormat) {
   // Serialize body into storage_. Note we must defer serialization of header.
   try {
-    serializeCarbonStruct(message, storage_);
+    serializeCarbonRequest(message, storage_, payloadFormat);
   } catch (const std::exception& e) {
     LOG(ERROR) << "Failed to serialize: " << e.what();
     return false;
   }
 
-  UmbrellaMessageInfo info;
+  CaretMessageInfo info;
   if (!supportedCodecs.isEmpty()) {
     info.supportedCodecsFirstId = supportedCodecs.firstId;
     info.supportedCodecsSize = supportedCodecs.size;
   }
-  fillImpl(
-      info, reqId, typeId, traceId, 0.0, ServerLoad::zero(), iovOut, niovOut);
+  fillImpl(info, reqId, typeId, traceId, ServerLoad::zero(), iovOut, niovOut);
   return true;
 }
 
-template <class Message>
+template <class Reply>
 bool CaretSerializedMessage::fill(
-    const Message& message,
+    const Reply& message,
     uint32_t reqId,
     size_t typeId,
     std::pair<uint64_t, uint64_t> traceId,
     const CodecIdRange& supportedCodecs,
     const CompressionCodecMap* compressionCodecMap,
-    double dropProbability,
     ServerLoad serverLoad,
     const struct iovec*& iovOut,
     size_t& niovOut) {
@@ -98,7 +116,7 @@ bool CaretSerializedMessage::fill(
     return false;
   }
 
-  UmbrellaMessageInfo info;
+  CaretMessageInfo info;
 
   // Maybe compress.
   auto uncompressedSize = storage_.computeBodySize();
@@ -111,15 +129,7 @@ bool CaretSerializedMessage::fill(
     info.uncompressedBodySize = uncompressedSize;
   }
 
-  fillImpl(
-      info,
-      reqId,
-      typeId,
-      traceId,
-      dropProbability,
-      serverLoad,
-      iovOut,
-      niovOut);
+  fillImpl(info, reqId, typeId, traceId, serverLoad, iovOut, niovOut);
   return true;
 }
 
@@ -153,21 +163,17 @@ inline bool CaretSerializedMessage::maybeCompress(
 }
 
 inline void CaretSerializedMessage::fillImpl(
-    UmbrellaMessageInfo& info,
+    CaretMessageInfo& info,
     uint32_t reqId,
     size_t typeId,
     std::pair<uint64_t, uint64_t> traceId,
-    double dropProbability,
     ServerLoad serverLoad,
     const struct iovec*& iovOut,
     size_t& niovOut) {
   info.bodySize = storage_.computeBodySize();
   info.typeId = typeId;
   info.reqId = reqId;
-  info.version = UmbrellaVersion::TYPED_MESSAGE;
   info.traceId = traceId;
-  info.dropProbability =
-      static_cast<uint64_t>(dropProbability * kDropProbabilityNormalizer);
   info.serverLoad = serverLoad;
 
   size_t headerSize = caretPrepareHeader(
@@ -179,5 +185,5 @@ inline void CaretSerializedMessage::fillImpl(
   niovOut = iovs.second;
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

@@ -44,8 +44,8 @@ void sendRequest(
 }
 
 TEST(oustandingLimitRouteTest, basic) {
-  auto normalHandle =
-      std::make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a"));
+  auto normalHandle = std::make_shared<TestHandle>(
+      GetRouteTestData(carbon::Result::FOUND, "a"));
 
   McrouterRouteHandle<OutstandingLimitRoute<McrouterRouterInfo>> rh(
       normalHandle->rh, 3);

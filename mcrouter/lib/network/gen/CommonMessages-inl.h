@@ -16,222 +16,323 @@
 namespace facebook {
 namespace memcache {
 
+template <class Writer>
+void McVersionRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McVersionRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
 
 template <class V>
 void McVersionRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
 
+template <class Writer>
+void McVersionReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, value());
+  writer.writeField(3 /* field id */, message());
+  writer.writeField(4 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McVersionReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "value", value_)) {
+  if (!v.visitField(2, "value", this->value())) {
     return;
   }
-  if (!v.visitField(3, "message", message_)) {
+  if (!v.visitField(3, "message", this->message())) {
     return;
   }
-  if (!v.visitField(4, "appSpecificErrorCode", appSpecificErrorCode_)) {
+  if (!v.visitField(4, "appSpecificErrorCode", this->appSpecificErrorCode())) {
     return;
   }
 }
 
 template <class V>
 void McVersionReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "value", value_)) {
+  if (!v.visitField(2, "value", this->value())) {
     return;
   }
-  if (!v.visitField(3, "message", message_)) {
+  if (!v.visitField(3, "message", this->message())) {
     return;
   }
-  if (!v.visitField(4, "appSpecificErrorCode", appSpecificErrorCode_)) {
+  if (!v.visitField(4, "appSpecificErrorCode", this->appSpecificErrorCode())) {
     return;
   }
 }
 
+template <class Writer>
+void McStatsRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McStatsRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
 
 template <class V>
 void McStatsRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
 
+template <class Writer>
+void McStatsReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, message());
+  writer.writeField(3 /* field id */, stats());
+  writer.writeField(4 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McStatsReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "message", message_)) {
+  if (!v.visitField(2, "message", this->message())) {
     return;
   }
-  if (!v.visitField(3, "stats", stats_)) {
+  if (!v.visitField(3, "stats", this->stats())) {
     return;
   }
-  if (!v.visitField(4, "appSpecificErrorCode", appSpecificErrorCode_)) {
+  if (!v.visitField(4, "appSpecificErrorCode", this->appSpecificErrorCode())) {
     return;
   }
 }
 
 template <class V>
 void McStatsReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "message", message_)) {
+  if (!v.visitField(2, "message", this->message())) {
     return;
   }
-  if (!v.visitField(3, "stats", stats_)) {
+  if (!v.visitField(3, "stats", this->stats())) {
     return;
   }
-  if (!v.visitField(4, "appSpecificErrorCode", appSpecificErrorCode_)) {
+  if (!v.visitField(4, "appSpecificErrorCode", this->appSpecificErrorCode())) {
     return;
   }
 }
 
+template <class Writer>
+void McShutdownRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McShutdownRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
 
 template <class V>
 void McShutdownRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
 
+template <class Writer>
+void McShutdownReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, message());
+  writer.writeField(3 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McShutdownReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "message", message_)) {
+  if (!v.visitField(2, "message", this->message())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
     return;
   }
 }
 
 template <class V>
 void McShutdownReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "message", message_)) {
+  if (!v.visitField(2, "message", this->message())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
     return;
   }
 }
 
+template <class Writer>
+void McQuitRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McQuitRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
 
 template <class V>
 void McQuitRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
 
+template <class Writer>
+void McQuitReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, message());
+  writer.writeField(3 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McQuitReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "message", message_)) {
+  if (!v.visitField(2, "message", this->message())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
     return;
   }
 }
 
 template <class V>
 void McQuitReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "message", message_)) {
+  if (!v.visitField(2, "message", this->message())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
     return;
   }
 }
 
+template <class Writer>
+void McExecRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McExecRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
 
 template <class V>
 void McExecRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", key_)) {
+  if (!v.visitField(1, "key", this->key())) {
     return;
   }
 }
 
+template <class Writer>
+void McExecReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, response());
+  writer.writeField(3 /* field id */, message());
+  writer.writeField(4 /* field id */, appSpecificErrorCode());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void McExecReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "response", response_)) {
+  if (!v.visitField(2, "response", this->response())) {
     return;
   }
-  if (!v.visitField(3, "message", message_)) {
+  if (!v.visitField(3, "message", this->message())) {
     return;
   }
-  if (!v.visitField(4, "appSpecificErrorCode", appSpecificErrorCode_)) {
+  if (!v.visitField(4, "appSpecificErrorCode", this->appSpecificErrorCode())) {
     return;
   }
 }
 
 template <class V>
 void McExecReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "response", response_)) {
+  if (!v.visitField(2, "response", this->response())) {
     return;
   }
-  if (!v.visitField(3, "message", message_)) {
+  if (!v.visitField(3, "message", this->message())) {
     return;
   }
-  if (!v.visitField(4, "appSpecificErrorCode", appSpecificErrorCode_)) {
+  if (!v.visitField(4, "appSpecificErrorCode", this->appSpecificErrorCode())) {
     return;
   }
+}
+
+template <class Writer>
+void GoAwayAcknowledgement::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+
+  writer.writeFieldStop();
+  writer.writeStructEnd();
 }
 
 template <class V>
@@ -240,24 +341,373 @@ void GoAwayAcknowledgement::visitFields(V&&) {}
 template <class V>
 void GoAwayAcknowledgement::visitFields(V&&) const {}
 
+template <class Writer>
+void GoAwayRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, reason());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void GoAwayRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "reason", reason_)) {
+  if (!v.visitField(2, "reason", this->reason())) {
     return;
   }
 }
 
 template <class V>
 void GoAwayRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", result_)) {
+  if (!v.visitField(1, "result", this->result())) {
     return;
   }
-  if (!v.visitField(2, "reason", reason_)) {
+  if (!v.visitField(2, "reason", this->reason())) {
     return;
   }
 }
 } // namespace memcache
 } // namespace facebook
+
+namespace apache {
+namespace thrift {
+template <>
+class Cpp2Ops<facebook::memcache::McVersionRequest> {
+ public:
+  typedef facebook::memcache::McVersionRequest Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  static void clear(Type* value) {
+    value->__clear();
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->readNoXfer(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<facebook::memcache::McVersionReply> {
+ public:
+  typedef facebook::memcache::McVersionReply Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  static void clear(Type* value) {
+    value->__clear();
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->readNoXfer(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<facebook::memcache::McStatsRequest> {
+ public:
+  typedef facebook::memcache::McStatsRequest Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  static void clear(Type* value) {
+    value->__clear();
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->readNoXfer(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<facebook::memcache::McStatsReply> {
+ public:
+  typedef facebook::memcache::McStatsReply Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  static void clear(Type* value) {
+    value->__clear();
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->readNoXfer(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<facebook::memcache::McShutdownRequest> {
+ public:
+  typedef facebook::memcache::McShutdownRequest Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  static void clear(Type* value) {
+    value->__clear();
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->readNoXfer(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<facebook::memcache::McShutdownReply> {
+ public:
+  typedef facebook::memcache::McShutdownReply Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  static void clear(Type* value) {
+    value->__clear();
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->readNoXfer(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<facebook::memcache::McQuitRequest> {
+ public:
+  typedef facebook::memcache::McQuitRequest Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  static void clear(Type* value) {
+    value->__clear();
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->readNoXfer(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<facebook::memcache::McQuitReply> {
+ public:
+  typedef facebook::memcache::McQuitReply Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  static void clear(Type* value) {
+    value->__clear();
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->readNoXfer(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<facebook::memcache::McExecRequest> {
+ public:
+  typedef facebook::memcache::McExecRequest Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  static void clear(Type* value) {
+    value->__clear();
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->readNoXfer(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<facebook::memcache::McExecReply> {
+ public:
+  typedef facebook::memcache::McExecReply Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  static void clear(Type* value) {
+    value->__clear();
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->readNoXfer(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<facebook::memcache::GoAwayAcknowledgement> {
+ public:
+  typedef facebook::memcache::GoAwayAcknowledgement Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  static void clear(Type* value) {
+    value->__clear();
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->readNoXfer(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<facebook::memcache::GoAwayRequest> {
+ public:
+  typedef facebook::memcache::GoAwayRequest Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  static void clear(Type* value) {
+    value->__clear();
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->readNoXfer(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+} // namespace thrift
+} // namespace apache

@@ -10,7 +10,15 @@ mock_mc_server_SOURCES = \
 
 mock_mc_server_CPPFLAGS = -I$(top_srcdir)/..
 
-mock_mc_server_LDADD = $(top_builddir)/lib/libmcrouter.a -lwangle -lfolly
+mock_mc_server_LDADD = \
+	$(top_builddir)/lib/libmcrouter.a \
+	-lprotocol \
+	-lthriftcpp2 \
+	-lthriftprotocol \
+	-ltransport \
+	-lwangle \
+	-lfizz \
+	-lfolly
 
 libtest_util_a_SOURCES = \
   test/ClientSocket.cpp \

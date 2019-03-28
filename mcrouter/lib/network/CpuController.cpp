@@ -43,35 +43,23 @@ bool readProcStat(std::vector<uint64_t>& curArray) {
   return true;
 }
 
-} // anonymous
+} // namespace
 
 CpuController::CpuController(
-    const CongestionControllerOptions& opts,
-    folly::EventBase& evb,
-    size_t queueCapacity)
-    : evb_(evb),
-      logic_(std::make_shared<CongestionController>(opts, evb, queueCapacity)),
-      dataCollectionInterval_(opts.dataCollectionInterval),
-      enableDropProbability_(
-          opts.target > 0 && opts.delay >= opts.dataCollectionInterval),
-      enableServerLoad_(opts.enableServerLoad) {
+    const CpuControllerOptions& opts,
+    folly::EventBase& evb)
+    : evb_(evb), dataCollectionInterval_(opts.dataCollectionInterval) {
   assert(opts.shouldEnable());
-}
-
-double CpuController::getDropProbability() const {
-  return logic_->getDropProbability();
 }
 
 void CpuController::start() {
   stopController_ = false;
-  logic_->start();
   auto self = shared_from_this();
   evb_.runInEventBaseThread([this, self]() { cpuLoggingFn(); });
 }
 
 void CpuController::stop() {
   stopController_ = true;
-  logic_->stop();
 }
 
 // Compute the cpu utilization
@@ -123,13 +111,8 @@ void CpuController::cpuLoggingFn() {
 }
 
 void CpuController::update(double cpuUtil) {
-  if (enableDropProbability_) {
-    logic_->updateValue(cpuUtil);
-  }
-  if (enableServerLoad_) {
-    percentLoad_.store(cpuUtil);
-  }
+  percentLoad_.store(cpuUtil);
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

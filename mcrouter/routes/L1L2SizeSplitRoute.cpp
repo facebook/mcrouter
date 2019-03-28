@@ -102,7 +102,7 @@ McLeaseGetReply L1L2SizeSplitRoute::doLeaseGetRoute(
   // We got an L1 sentinel, but a nonzero lease token. Note that we may convert
   // a stale hit on a sentinel to a regular lease miss or hot miss.
   if (static_cast<uint64_t>(l1Reply.leaseToken()) >= kHotMissToken) {
-    McLeaseGetReply reply(mc_res_notfound);
+    McLeaseGetReply reply(carbon::Result::NOTFOUND);
     reply.leaseToken() = l1Reply.leaseToken();
     return reply;
   }
@@ -115,9 +115,9 @@ McLeaseGetReply L1L2SizeSplitRoute::doLeaseGetRoute(
 
   auto l2Reply = l2_->route(l2Req);
   if (isHitResult(l2Reply.result())) {
-    McLeaseGetReply reply(mc_res_found);
+    McLeaseGetReply reply(carbon::Result::FOUND);
     reply.flags() = l2Reply.flags();
-    reply.value() = std::move(l2Reply.value());
+    reply.value().move_from(l2Reply.value());
     return reply;
   }
 
@@ -137,7 +137,7 @@ McLeaseGetReply L1L2SizeSplitRoute::doLeaseGetRoute(
     }();
     return doLeaseGetRoute(req, retriesLeft - 1);
   } else {
-    return McLeaseGetReply(mc_res_local_error);
+    return McLeaseGetReply(carbon::Result::LOCAL_ERROR);
   }
 }
 

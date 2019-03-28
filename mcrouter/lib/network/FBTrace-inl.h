@@ -33,7 +33,7 @@ bool fbTraceOnSend(const Request& request, const AccessPoint& ap) {
 
 inline void fbTraceOnReceive(
     const mc_fbtrace_info_s* fbtraceInfo,
-    const mc_res_t result) {
+    const carbon::Result result) {
   // Do nothing by default.
 }
 
@@ -161,7 +161,7 @@ bool fbTraceOnSend(const Request& request, const AccessPoint& ap) {
 
 inline void fbTraceOnReceive(
     const mc_fbtrace_info_s* fbtraceInfo,
-    const mc_res_t result) {
+    const carbon::Result result) {
   if (fbtraceInfo == nullptr) {
     return;
   }
@@ -171,7 +171,7 @@ inline void fbTraceOnReceive(
   fbtrace_item_t info[2];
   int idx = 0;
 
-  fbtrace_add_item(info, &idx, "result", mc_res_to_string(result));
+  fbtrace_add_item(info, &idx, "result", carbon::resultToString(result));
   fbtrace_add_item(info, &idx, nullptr, nullptr);
 
   /* fbtrace talks to scribe via thrift,
@@ -204,5 +204,6 @@ inline CommIdType traceRequestReceived(const Request& req) {
 }
 
 #endif
-}
-} // facebook::memcache
+
+} // namespace memcache
+} // namespace facebook

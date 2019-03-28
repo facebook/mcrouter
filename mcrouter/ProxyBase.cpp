@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "ProxyBase.h"
 
@@ -15,6 +14,8 @@
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
+
+FOLLY_TLS bool ProxyBase::isProxyThread_{false};
 
 const McrouterOptions& ProxyBase::getRouterOptions() const {
   return router_.opts();

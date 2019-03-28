@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -23,7 +22,13 @@
 namespace folly {
 class EventBase;
 class SSLContext;
-} // folly
+} // namespace folly
+
+namespace fizz {
+namespace server {
+class FizzServerContext;
+} // namespace server
+} // namespace fizz
 
 namespace facebook {
 namespace memcache {
@@ -50,15 +55,17 @@ class AsyncMcServerWorker {
    */
   bool addClientSocket(int fd, void* userCtxt = nullptr);
 
+  using ContextPair = std::pair<
+      std::shared_ptr<folly::SSLContext>,
+      std::shared_ptr<fizz::server::FizzServerContext>>;
+
   /**
    * Moves in ownership of an externally accepted client socket with an ssl
    * context which will be used to manage it.
    * @return    true on success, false on error
    */
-  bool addSecureClientSocket(
-      int fd,
-      const std::shared_ptr<folly::SSLContext>& context,
-      void* userCtxt = nullptr);
+  bool
+  addSecureClientSocket(int fd, ContextPair contexts, void* userCtxt = nullptr);
 
   /**
    * Certain situations call for a user to provide their own
@@ -103,10 +110,19 @@ class AsyncMcServerWorker {
 
   /**
    * Will be called once for every new accepted connection.
+   *
+   * For secure connections, this callback is only going to be called iff
+   * the handshake finishes successfully.
+   *
+   * It is safe to close the connection from this callback (by calling
+   * session.close() or other methods that closes the session).
+   * For example, this is a good place to add per-connection acl checks, and
+   * close the connection if it doesn't have the right permissions.
+   *
    * Can be nullptr for no action.
    */
-  void setOnConnectionAccepted(std::function<void()> cb) {
-    onAccepted_ = std::move(cb);
+  void setOnConnectionAccepted(std::function<void(McServerSession&)> cb) {
+    tracker_.setOnConnectionAccepted(std::move(cb));
   }
 
   /**
@@ -129,6 +145,7 @@ class AsyncMcServerWorker {
    * callback.
    *
    * Note: this callback will be applied even to already open connections.
+   *
    * Can be nullptr for no action.
    */
   void setOnConnectionCloseStart(std::function<void(McServerSession&)> cb) {
@@ -142,9 +159,11 @@ class AsyncMcServerWorker {
    * the callback.
    *
    * Note: this callback will be applied even to already open connections.
+   *
    * Can be nullptr for no action.
    */
-  void setOnConnectionCloseFinish(std::function<void(McServerSession&)> cb) {
+  void setOnConnectionCloseFinish(
+      std::function<void(McServerSession&, bool onAcceptedCalled)> cb) {
     tracker_.setOnConnectionCloseFinish(std::move(cb));
   }
 
@@ -179,13 +198,14 @@ class AsyncMcServerWorker {
   bool writesPending() const;
 
  private:
-  bool addClientSocket(folly::AsyncSocket::UniquePtr socket, void* userCtxt);
+  bool addClientSocket(
+      folly::AsyncTransportWrapper::UniquePtr socket,
+      void* userCtxt);
 
   AsyncMcServerWorkerOptions opts_;
   folly::EventBase& eventBase_;
 
   std::shared_ptr<McServerOnRequest> onRequest_;
-  std::function<void()> onAccepted_;
 
   const CompressionCodecMap* compressionCodecMap_{nullptr};
 
@@ -200,5 +220,5 @@ class AsyncMcServerWorker {
   AsyncMcServerWorker(AsyncMcServerWorker&&) noexcept = delete;
   AsyncMcServerWorker& operator=(AsyncMcServerWorker&&) = delete;
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

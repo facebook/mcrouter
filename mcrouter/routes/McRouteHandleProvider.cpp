@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "McRouteHandleProvider.h"
 
@@ -14,6 +13,7 @@
 #include "mcrouter/routes/AllInitialRouteFactory.h"
 #include "mcrouter/routes/AllMajorityRouteFactory.h"
 #include "mcrouter/routes/AllSyncRouteFactory.h"
+#include "mcrouter/routes/BlackholeRoute.h"
 #include "mcrouter/routes/CarbonLookasideRoute.h"
 #include "mcrouter/routes/DevNullRoute.h"
 #include "mcrouter/routes/ErrorRoute.h"
@@ -21,6 +21,7 @@
 #include "mcrouter/routes/FailoverWithExptimeRouteFactory.h"
 #include "mcrouter/routes/HashRouteFactory.h"
 #include "mcrouter/routes/HostIdRouteFactory.h"
+#include "mcrouter/routes/KeySplitRoute.h"
 #include "mcrouter/routes/L1L2CacheRouteFactory.h"
 #include "mcrouter/routes/L1L2SizeSplitRoute.h"
 #include "mcrouter/routes/LatencyInjectionRoute.h"
@@ -36,6 +37,7 @@
 #include "mcrouter/routes/OutstandingLimitRoute.h"
 #include "mcrouter/routes/RandomRouteFactory.h"
 #include "mcrouter/routes/ShadowRoute.h"
+#include "mcrouter/routes/StagingRoute.h"
 
 namespace folly {
 struct dynamic;
@@ -60,7 +62,7 @@ class MemcacheCarbonLookasideHelper {
   }
 
   template <typename Request>
-  bool cacheCandidate(const Request& /* unused */) {
+  bool cacheCandidate(const Request& /* unused */) const {
     if (Request::hasKey) {
       return true;
     }
@@ -68,12 +70,20 @@ class MemcacheCarbonLookasideHelper {
   }
 
   template <typename Request>
-  std::string buildKey(const Request& req) {
+  std::string buildKey(const Request& req) const {
     if (Request::hasKey) {
       return req.key().fullKey().str();
     }
     return std::string();
   }
+
+  template <typename Reply>
+  bool shouldCacheReply(const Reply& /* unused */) const {
+    return true;
+  }
+
+  template <typename Reply>
+  void postProcessCachedReply(Reply& /* reply */) const {}
 };
 
 McrouterRouteHandlePtr makeWarmUpRoute(
@@ -95,6 +105,7 @@ McRouteHandleProvider<MemcacheRouterInfo>::buildRouteMap() {
       {"AllInitialRoute", &makeAllInitialRoute<MemcacheRouterInfo>},
       {"AllMajorityRoute", &makeAllMajorityRoute<MemcacheRouterInfo>},
       {"AllSyncRoute", &makeAllSyncRoute<MemcacheRouterInfo>},
+      {"BlackholeRoute", &makeBlackholeRoute<MemcacheRouterInfo>},
       {"CarbonLookasideRoute",
        &createCarbonLookasideRoute<
            MemcacheRouterInfo,
@@ -111,6 +122,7 @@ McRouteHandleProvider<MemcacheRouterInfo>::buildRouteMap() {
       {"LatencyInjectionRoute", &makeLatencyInjectionRoute<MemcacheRouterInfo>},
       {"L1L2CacheRoute", &makeL1L2CacheRoute<MemcacheRouterInfo>},
       {"L1L2SizeSplitRoute", &makeL1L2SizeSplitRoute},
+      {"KeySplitRoute", &makeKeySplitRoute},
       {"LatestRoute", &makeLatestRoute<MemcacheRouterInfo>},
       {"LoadBalancerRoute", &makeLoadBalancerRoute<MemcacheRouterInfo>},
       {"LoggingRoute", &makeLoggingRoute<MemcacheRouterInfo>},
@@ -131,11 +143,12 @@ McRouteHandleProvider<MemcacheRouterInfo>::buildRouteMap() {
        [](McRouteHandleFactory& factory, const folly::dynamic& json) {
          return makeRateLimitRoute(factory, json);
        }},
+      {"StagingRoute", &makeStagingRoute},
       {"WarmUpRoute", &makeWarmUpRoute},
   };
   return map;
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

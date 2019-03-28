@@ -25,6 +25,7 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/carbon/FailoverUtil.h"
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
@@ -73,7 +74,9 @@ class DestinationRoute {
         indexInPool_(indexInPool),
         poolStatIndex_(poolStatIdx),
         timeout_(timeout),
-        keepRoutingPrefix_(keepRoutingPrefix) {}
+        keepRoutingPrefix_(keepRoutingPrefix) {
+    destination_->setPoolStatsIndex(poolStatIdx);
+  }
 
   template <class Request>
   void traverse(
@@ -122,12 +125,15 @@ class DestinationRoute {
   template <class Request>
   ReplyT<Request> checkAndRoute(const Request& req) const {
     auto& ctx = fiber_local<RouterInfo>::getSharedCtx();
-    if (!destination_->may_send()) {
-      return constructAndLog(req, *ctx, TkoReply);
-    }
-
-    if (destination_->shouldDrop<Request>()) {
-      return constructAndLog(req, *ctx, BusyReply);
+    carbon::Result tkoReason;
+    if (!destination_->maySend(tkoReason)) {
+      return constructAndLog(
+          req,
+          *ctx,
+          TkoReply,
+          folly::to<std::string>(
+              "Server unavailable. Reason: ",
+              carbon::resultToString(tkoReason)));
     }
 
     if (poolStatIndex_ >= 0) {
@@ -170,7 +176,7 @@ class DestinationRoute {
       Args&&... args) const {
     auto now = nowUs();
     auto reply = createReply<Request>(std::forward<Args>(args)...);
-    ReplyStatsContext replyContext;
+    RpcStatsContext rpcContext;
     ctx.onReplyReceived(
         poolName_,
         *destination_->accessPoint(),
@@ -181,7 +187,7 @@ class DestinationRoute {
         now,
         now,
         poolStatIndex_,
-        replyContext);
+        rpcContext);
     return reply;
   }
 
@@ -206,8 +212,8 @@ class DestinationRoute {
     }
 
     const auto& reqToSend = newReq ? *newReq : req;
-    ReplyStatsContext replyContext;
-    auto reply = destination_->send(reqToSend, dctx, timeout_, replyContext);
+    RpcStatsContext rpcContext;
+    auto reply = destination_->send(reqToSend, dctx, timeout_, rpcContext);
     ctx.onReplyReceived(
         poolName_,
         *destination_->accessPoint(),
@@ -218,9 +224,9 @@ class DestinationRoute {
         dctx.startTime,
         dctx.endTime,
         poolStatIndex_,
-        replyContext);
+        rpcContext);
 
-    fiber_local<RouterInfo>::setServerLoad(replyContext.serverLoad);
+    fiber_local<RouterInfo>::setServerLoad(rpcContext.serverLoad);
     return reply;
   }
 
@@ -252,7 +258,7 @@ class DestinationRoute {
           key,
           asynclogName);
     } else {
-      /* Don't reply to the user until we safely logged the request to disk */
+      // Don't reply to the user until we safely logged the request to disk
       b.wait();
       proxy->stats().increment(asynclog_requests_stat);
     }

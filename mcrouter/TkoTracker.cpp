@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "TkoTracker.h"
 
@@ -12,8 +11,9 @@
 
 #include <folly/MapUtil.h>
 
-#include "mcrouter/ProxyDestination.h"
+#include "mcrouter/ProxyDestinationBase.h"
 #include "mcrouter/TkoCounters.h"
+#include "mcrouter/lib/network/AccessPoint.h"
 
 namespace facebook {
 namespace memcache {
@@ -61,16 +61,17 @@ bool TkoTracker::setSumFailures(uintptr_t value) {
   return true;
 }
 
-bool TkoTracker::recordSoftFailure(ProxyDestination* pdstn) {
+bool TkoTracker::recordSoftFailure(
+    ProxyDestinationBase* pdstn,
+    carbon::Result result) {
+  // We increment soft tko count first before actually taking responsibility
+  // for the TKO. This means we run the risk that multiple proxies
+  // increment the count for the same destination, causing us to be overly
+  // conservative. Eventually this will get corrected, as only one proxy can
+  // ever mark it TKO, but we may be inconsistent for a very short time.
   ++consecutiveFailureCount_;
 
-  /* We increment soft tko count first before actually taking responsibility
-     for the TKO. This means we run the risk that multiple proxies
-     increment the count for the same destination, causing us to be overly
-     conservative. Eventually this will get corrected, as only one proxy can
-     ever mark it TKO, but we may be inconsistent for a very short time.
-  */
-  /* If host is in any state of TKO, we just leave it alone */
+  // If host is in any state of TKO, we just leave it alone
   if (isTko()) {
     return false;
   }
@@ -79,7 +80,7 @@ bool TkoTracker::recordSoftFailure(ProxyDestination* pdstn) {
   uintptr_t value = 0;
   uintptr_t pdstnAddr = reinterpret_cast<uintptr_t>(pdstn);
   do {
-    /* If we're one failure below the limit, we're about to enter softTKO */
+    // If we're one failure below the limit, we're about to enter softTKO
     if (curSumFailures == tkoThreshold_ - 1) {
       // Note: we need to check value to ensure we didn't already increment
       // the counter in a previous iteration
@@ -89,11 +90,11 @@ bool TkoTracker::recordSoftFailure(ProxyDestination* pdstn) {
       value = pdstnAddr;
     } else {
       if (value == pdstnAddr) {
-        /* a previous loop iteration attempted to soft TKO the box,
-         so we need to undo that */
+        // a previous loop iteration attempted to soft TKO the box,
+        // so we need to undo that
         decrementSoftTkoCount();
       }
-      /* Someone else is responsible, so quit */
+      // Someone else is responsible, so quit
       if (curSumFailures > tkoThreshold_) {
         return false;
       } else {
@@ -101,24 +102,31 @@ bool TkoTracker::recordSoftFailure(ProxyDestination* pdstn) {
       }
     }
   } while (!sumFailures_.compare_exchange_weak(curSumFailures, value));
-  return value == pdstnAddr;
+
+  if (value == pdstnAddr) {
+    tkoReason_.store(result, std::memory_order_relaxed);
+    return true;
+  }
+  return false;
 }
 
-bool TkoTracker::recordHardFailure(ProxyDestination* pdstn) {
+bool TkoTracker::recordHardFailure(
+    ProxyDestinationBase* pdstn,
+    carbon::Result result) {
   ++consecutiveFailureCount_;
 
   if (isHardTko()) {
     return false;
   }
-  /* If we were already TKO and responsible, but not hard TKO, it means we were
-     in soft TKO before. We need decrement the counter and convert to hard
-     TKO */
+  // If we were already TKO and responsible, but not hard TKO, it means we were
+  // in soft TKO before. We need decrement the counter and convert to hard
+  // TKO
   if (isResponsible(pdstn)) {
-    /* convert to hard failure */
+    // convert to hard failure
     sumFailures_ |= 1;
     decrementSoftTkoCount();
     ++trackerMap_.globalTkos_.hardTkos;
-    /* We've already been marked responsible */
+    // We've already been marked responsible
     return false;
   }
 
@@ -126,19 +134,20 @@ bool TkoTracker::recordHardFailure(ProxyDestination* pdstn) {
   bool success = setSumFailures(reinterpret_cast<uintptr_t>(pdstn) | 1);
   if (success) {
     ++trackerMap_.globalTkos_.hardTkos;
+    tkoReason_.store(result, std::memory_order_relaxed);
   }
   return success;
 }
 
-bool TkoTracker::isResponsible(ProxyDestination* pdstn) const {
+bool TkoTracker::isResponsible(ProxyDestinationBase* pdstn) const {
   return (sumFailures_ & ~1) == reinterpret_cast<uintptr_t>(pdstn);
 }
 
-bool TkoTracker::recordSuccess(ProxyDestination* pdstn) {
-  /* If we're responsible, no one else can change any state and we're
-     effectively under mutex. */
+bool TkoTracker::recordSuccess(ProxyDestinationBase* pdstn) {
+  // If we're responsible, no one else can change any state and we're
+  // effectively under mutex.
   if (isResponsible(pdstn)) {
-    /* Coming out of TKO, we need to decrement counters */
+    // Coming out of TKO, we need to decrement counters
     if (isSoftTko()) {
       decrementSoftTkoCount();
     }
@@ -147,23 +156,25 @@ bool TkoTracker::recordSuccess(ProxyDestination* pdstn) {
     }
     sumFailures_ = 0;
     consecutiveFailureCount_ = 0;
+    tkoReason_.store(carbon::Result::UNKNOWN, std::memory_order_relaxed);
     return true;
   }
-  /* Skip resetting failures if the counter is at zero.
-     If an error races here and increments the counter,
-     we can pretend this success happened before the error,
-     and the state is consistent.
 
-     If we don't skip here we end up doing CAS on a shared state
-     every single request. */
+  // Skip resetting failures if the counter is at zero.
+  // If an error races here and increments the counter,
+  // we can pretend this success happened before the error,
+  // and the state is consistent.
+
+  // If we don't skip here we end up doing CAS on a shared state
+  // every single request.
   if (sumFailures_ != 0 && setSumFailures(0)) {
     consecutiveFailureCount_ = 0;
   }
   return false;
 }
 
-bool TkoTracker::removeDestination(ProxyDestination* pdstn) {
-  // we should clear the TKO state if pdstn is responsible
+bool TkoTracker::removeDestination(ProxyDestinationBase* pdstn) {
+  // We should clear the TKO state if pdstn is responsible
   if (isResponsible(pdstn)) {
     return recordSuccess(pdstn);
   }
@@ -175,7 +186,7 @@ TkoTracker::~TkoTracker() {
 }
 
 void TkoTrackerMap::updateTracker(
-    ProxyDestination& pdstn,
+    ProxyDestinationBase& pdstn,
     const size_t tkoThreshold) {
   auto key = pdstn.accessPoint()->toHostPortString();
 
@@ -196,7 +207,7 @@ void TkoTrackerMap::updateTracker(
       tracker->key_ = trackerIt.first->first;
     }
   }
-  pdstn.tracker = std::move(tracker);
+  pdstn.setTracker(std::move(tracker));
 }
 
 std::unordered_map<std::string, std::pair<bool, size_t>>

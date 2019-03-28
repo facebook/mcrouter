@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -12,10 +11,10 @@
 #include <folly/Range.h>
 
 #include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/carbon/RequestReplyUtil.h"
 #include "mcrouter/lib/mc/msg.h"
-#include "mcrouter/lib/network/ReplyStatsContext.h"
+#include "mcrouter/lib/network/RpcStatsContext.h"
 
 namespace folly {
 class IOBuf;
@@ -36,8 +35,8 @@ struct RequestLoggerContext {
       RequestClass requestClass_,
       const int64_t startTimeUs_,
       const int64_t endTimeUs_,
-      const mc_res_t replyResult_,
-      const ReplyStatsContext replyStatsContext_)
+      const carbon::Result replyResult_,
+      const RpcStatsContext rpcStatsContext_)
       : strippedRoutingPrefix(strippedRoutingPrefix_),
         requestClass(requestClass_),
         poolName(poolName_),
@@ -45,7 +44,7 @@ struct RequestLoggerContext {
         startTimeUs(startTimeUs_),
         endTimeUs(endTimeUs_),
         replyResult(replyResult_),
-        replyStatsContext(replyStatsContext_) {}
+        rpcStatsContext(rpcStatsContext_) {}
 
   RequestLoggerContext(const RequestLoggerContext&) = delete;
   RequestLoggerContext& operator=(const RequestLoggerContext&) = delete;
@@ -56,8 +55,8 @@ struct RequestLoggerContext {
   const AccessPoint& ap;
   const int64_t startTimeUs;
   const int64_t endTimeUs;
-  const mc_res_t replyResult;
-  const ReplyStatsContext replyStatsContext;
+  const carbon::Result replyResult;
+  const RpcStatsContext rpcStatsContext;
 };
 
 } // mcrouter

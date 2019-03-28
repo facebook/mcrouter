@@ -107,7 +107,8 @@ template <class RouterInfo>
 std::shared_ptr<typename RouterInfo::RouteHandleIf>
 ProxyConfig<RouterInfo>::getRouteHandleForAsyncLog(
     folly::StringPiece asyncLogName) const {
-  return tryGet(asyncLogRoutes_, asyncLogName);
+  auto it = asyncLogRoutes_.find(asyncLogName);
+  return it != asyncLogRoutes_.end() ? it->second : nullptr;
 }
 
 template <class RouterInfo>

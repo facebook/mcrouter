@@ -70,7 +70,7 @@ McServerRequestContext::~McServerRequestContext() {
 // Note: defined in .cpp in order to avoid circular dependency between
 // McServerRequestContext.h and MultiOpParent.h.
 bool McServerRequestContext::moveReplyToParent(
-    mc_res_t result,
+    carbon::Result result,
     uint32_t errorCode,
     std::string&& errorMessage) const {
   return hasParent() &&
@@ -80,25 +80,6 @@ bool McServerRequestContext::moveReplyToParent(
 // Also defined in .cpp to avoid the same circular dependency
 bool McServerRequestContext::isParentError() const {
   return parent().error();
-}
-
-double McServerRequestContext::getDropProbability() const {
-  if (session_ == nullptr) {
-    return 0.0;
-  }
-
-  double dropProbability = 0.0;
-
-  if (session_->getCpuController()) {
-    dropProbability = session_->getCpuController()->getDropProbability();
-  }
-
-  if (session_->getMemController()) {
-    dropProbability = std::max(
-        dropProbability, session_->getMemController()->getDropProbability());
-  }
-
-  return dropProbability;
 }
 
 ServerLoad McServerRequestContext::getServerLoad() const noexcept {

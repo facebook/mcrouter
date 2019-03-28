@@ -28,6 +28,10 @@ class ConnectionTracker : public McServerSession::StateCallback {
   explicit ConnectionTracker(size_t maxConns = 0);
 
   // See AsyncMcServerWorker.h for details about the callbacks
+  void setOnConnectionAccepted(std::function<void(McServerSession&)> cb) {
+    onAccepted_ = std::move(cb);
+  }
+
   void setOnWriteQuiescence(std::function<void(McServerSession&)> cb) {
     onWriteQuiescence_ = std::move(cb);
   }
@@ -36,7 +40,8 @@ class ConnectionTracker : public McServerSession::StateCallback {
     onCloseStart_ = std::move(cb);
   }
 
-  void setOnConnectionCloseFinish(std::function<void(McServerSession&)> cb) {
+  void setOnConnectionCloseFinish(
+      std::function<void(McServerSession&, bool onAcceptedCalled)> cb) {
     onCloseFinish_ = std::move(cb);
   }
 
@@ -69,9 +74,10 @@ class ConnectionTracker : public McServerSession::StateCallback {
 
  private:
   McServerSession::Queue sessions_;
+  std::function<void(McServerSession&)> onAccepted_;
   std::function<void(McServerSession&)> onWriteQuiescence_;
   std::function<void(McServerSession&)> onCloseStart_;
-  std::function<void(McServerSession&)> onCloseFinish_;
+  std::function<void(McServerSession&, bool onAcceptedCalled)> onCloseFinish_;
   std::function<void()> onShutdown_;
   size_t maxConns_{0};
 
@@ -80,9 +86,10 @@ class ConnectionTracker : public McServerSession::StateCallback {
   void evict();
 
   // McServerSession::StateCallback API
+  void onAccepted(McServerSession& session) final;
   void onWriteQuiescence(McServerSession& session) final;
   void onCloseStart(McServerSession& session) final;
-  void onCloseFinish(McServerSession& session) final;
+  void onCloseFinish(McServerSession& session, bool onAcceptedCalled) final;
   void onShutdown() final;
 };
 }

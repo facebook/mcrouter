@@ -1,4 +1,4 @@
-# Copyright (c) 2016, Facebook, Inc.
+# Copyright (c) Facebook, Inc. and its affiliates.
 #
 # This source code is licensed under the MIT license found in the LICENSE
 # file in the root directory of this source tree.
@@ -96,6 +96,22 @@ class TestModifyKey(McrouterTestCase):
         self.assertTrue(self.mcr.set("/j/k/foo.sup", "value21"))
         self.assertEqual(self.mc.get("/j/k/bar.sup"), "value21")
 
+        self.assertTrue(self.mcr.set("/d/w/foo.sup", "value21"))
+        self.assertEqual(self.mc.get("/d/w/foo.sup:bar"), "value21")
+
+        self.assertTrue(self.mcr.set("/e/w/akey", "value14"))
+        self.assertEqual(self.mc.get("/e/w/bar:foo"), "value14")
+
+        self.assertTrue(self.mcr.set("/e/w/mykeys", "value15"))
+        self.assertEqual(self.mc.get("/e/w/bar:ysfoo"), "value15")
+
+        self.assertTrue(self.mcr.set("/f/w/akey", "value14"))
+        self.assertEqual(self.mc.get("bar:foo"), "value14")
+
         # reverts to prefix append if replace not present
         self.assertTrue(self.mcr.set("/j/k/baz.sup", "value22"))
         self.assertEqual(self.mc.get("/j/k/bar.baz.sup"), "value22")
+
+        # same as above, but with a suffix
+        self.assertTrue(self.mcr.set("/j/l/baz.sup", "value22"))
+        self.assertEqual(self.mc.get("/j/l/bar.baz.supmoot"), "value22")

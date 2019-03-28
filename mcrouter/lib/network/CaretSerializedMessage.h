@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2015-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -15,8 +14,8 @@
 #include "mcrouter/lib/Compression.h"
 #include "mcrouter/lib/CompressionCodecManager.h"
 #include "mcrouter/lib/carbon/CarbonQueueAppender.h"
+#include "mcrouter/lib/network/ConnectionOptions.h"
 #include "mcrouter/lib/network/ServerLoad.h"
-#include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook {
 namespace memcache {
@@ -44,9 +43,10 @@ class CaretSerializedMessage {
    * Prepare requests for serialization for an Operation
    *
    * @param req               Request
+   * @param reqId             Request id.
+   * @param supportedCodecs   Range of supported compression codecs.
    * @param iovOut            Set to the beginning of array of ivecs that
    *                          reference serialized data.
-   * @param supportedCodecs   Range of supported compression codecs.
    * @param niovOut           Number of valid iovecs referenced by iovOut.
    *
    * @return true iff message was successfully prepared.
@@ -57,7 +57,8 @@ class CaretSerializedMessage {
       size_t reqId,
       const CodecIdRange& supportedCodecs,
       const struct iovec*& iovOut,
-      size_t& niovOut) noexcept;
+      size_t& niovOut,
+      PayloadFormat payloadFormat = PayloadFormat::Carbon) noexcept;
 
   /**
    * Prepare replies for serialization
@@ -66,7 +67,6 @@ class CaretSerializedMessage {
    * @param reqId                 Request id.
    * @param supportedCodecs       Range of supported codecs.
    * @param compressionCodecMap   Map of available codecs.
-   * @param dropProbability       Probability to drop subsequent request.
    * @param serverLoad            Represents load on the server.
    * @param iovOut                Will be set to the beginning of
    *                              array of iovecs
@@ -80,43 +80,58 @@ class CaretSerializedMessage {
       size_t reqId,
       const CodecIdRange& supportedCodecs,
       const CompressionCodecMap* compressionCodecMap,
-      double dropProbability,
       ServerLoad serverLoad,
       const struct iovec*& iovOut,
       size_t& niovOut) noexcept;
 
+  /**
+   * Returns the size of the message without the header.
+   */
+  size_t getSizeNoHeader() {
+    return storage_.computeBodySize();
+  }
+
+  // Enable zero copy if an IOBuf exceeds this size threshold
+  void setTCPZeroCopyThreshold(size_t threshold) {
+    storage_.setTCPZeroCopyThreshold(threshold);
+  }
+
+  // Indicates if storage has been marked for zero copy
+  bool shouldApplyZeroCopy() const {
+    return storage_.shouldApplyZeroCopy();
+  }
+
  private:
   carbon::CarbonQueueAppenderStorage storage_;
 
-  template <class Message>
+  template <class Request>
   bool fill(
-      const Message& message,
+      const Request& message,
       uint32_t reqId,
       size_t typeId,
       std::pair<uint64_t, uint64_t> traceId,
       const CodecIdRange& supportedCodecs,
       const struct iovec*& iovOut,
-      size_t& niovOut);
+      size_t& niovOut,
+      PayloadFormat payloadFormat);
 
-  template <class Message>
+  template <class Reply>
   bool fill(
-      const Message& message,
+      const Reply& message,
       uint32_t reqId,
       size_t typeId,
       std::pair<uint64_t, uint64_t> traceId,
       const CodecIdRange& supportedCodecs,
       const CompressionCodecMap* compressionCodecMap,
-      double dropProbability,
       ServerLoad serverLoad,
       const struct iovec*& iovOut,
       size_t& niovOut);
 
   void fillImpl(
-      UmbrellaMessageInfo& info,
+      CaretMessageInfo& info,
       uint32_t reqId,
       size_t typeId,
       std::pair<uint64_t, uint64_t> traceId,
-      double dropProbability,
       ServerLoad serverLoad,
       const struct iovec*& iovOut,
       size_t& niovOut);
@@ -132,7 +147,7 @@ class CaretSerializedMessage {
   bool maybeCompress(CompressionCodec* codec, size_t uncompressedSize);
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
 
-#include "mcrouter/lib/network/CaretSerializedMessage-inl.h"
+#include "CaretSerializedMessage-inl.h"

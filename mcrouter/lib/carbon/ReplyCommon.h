@@ -9,7 +9,8 @@
 
 #include <memory>
 
-#include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/lib/carbon/MessageCommon.h"
+#include "mcrouter/lib/carbon/gen-cpp2/carbon_result_types.h"
 
 namespace facebook {
 namespace memcache {
@@ -19,7 +20,7 @@ struct AccessPoint;
 
 namespace carbon {
 
-class ReplyCommon {
+class ReplyCommon : public MessageCommon {
  public:
   const std::shared_ptr<const facebook::memcache::AccessPoint>& destination()
       const noexcept {
@@ -37,19 +38,19 @@ class ReplyCommon {
 
 class ReplyCommonThrift : public ReplyCommon {
  public:
-  explicit ReplyCommonThrift(mc_res_t result__ = mc_res_unknown)
+  explicit ReplyCommonThrift(carbon::Result result__ = carbon::Result::UNKNOWN)
       : result_(result__) {}
 
-  mc_res_t result() const {
+  carbon::Result result() const {
     return result_;
   }
 
-  mc_res_t& result() {
+  carbon::Result& result() {
     return result_;
   }
 
  private:
-  mc_res_t result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
 };
 
 } // carbon

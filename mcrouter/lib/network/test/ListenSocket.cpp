@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2015-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "ListenSocket.h"
 
@@ -11,18 +10,24 @@
 #include <fcntl.h>
 #include <netdb.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
+
+#include <glog/logging.h>
 
 #include <folly/Conv.h>
 #include <folly/ScopeGuard.h>
 #include <folly/String.h>
+#include <folly/portability/Sockets.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"
 
 namespace facebook {
 namespace memcache {
 
-std::pair<int, uint16_t> createAndBind(uint16_t port) {
+std::pair<int, uint16_t> createAndBind(
+    uint16_t port,
+    bool zeroCopyEnable = false) {
   struct addrinfo hints;
   struct addrinfo* res;
 
@@ -54,6 +59,14 @@ std::pair<int, uint16_t> createAndBind(uint16_t port) {
     throwRuntime("Failed to bind a socket for port {}: {}", port, errStr);
   }
 
+  int val = 1;
+  if (zeroCopyEnable &&
+      setsockopt(socketFd, SOL_SOCKET, SO_ZEROCOPY, &val, sizeof(val))) {
+    auto errStr = folly::errnoStr(errno);
+    ::close(socketFd);
+    throwRuntime("Failed enable zero copy: {}", errStr);
+  }
+
   struct sockaddr_in addr;
   socklen_t len = sizeof(struct sockaddr_in);
   if (::getsockname(socketFd, (struct sockaddr*)&addr, &len) != 0) {
@@ -65,8 +78,8 @@ std::pair<int, uint16_t> createAndBind(uint16_t port) {
   return std::make_pair(socketFd, ntohs(addr.sin_port));
 }
 
-ListenSocket::ListenSocket() {
-  auto sockPort = createAndBind(0);
+ListenSocket::ListenSocket(bool zeroCopyEnabled) {
+  auto sockPort = createAndBind(0, zeroCopyEnabled);
   socketFd_ = sockPort.first;
   port_ = sockPort.second;
   if (::listen(socketFd_, SOMAXCONN) != 0) {
@@ -138,5 +151,5 @@ bool isPortOpen(uint16_t port) {
     return true;
   }
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

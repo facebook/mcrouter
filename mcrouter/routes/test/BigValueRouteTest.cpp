@@ -35,9 +35,9 @@ constexpr BigValueRouteOptions opts(threshold, /* batchSize= */ 0);
 TEST(BigValueRouteTest, smallvalue) {
   // for small values, this route handle simply passes it to child route handle
   vector<std::shared_ptr<TestHandle>> testHandles{make_shared<TestHandle>(
-      GetRouteTestData(mc_res_found, "a"),
-      UpdateRouteTestData(mc_res_stored),
-      DeleteRouteTestData(mc_res_deleted))};
+      GetRouteTestData(carbon::Result::FOUND, "a"),
+      UpdateRouteTestData(carbon::Result::STORED),
+      DeleteRouteTestData(carbon::Result::DELETED))};
   auto routeHandles = get_route_handles(testHandles);
 
   const std::string keyGet = "smallvalue_get";
@@ -58,7 +58,7 @@ TEST(BigValueRouteTest, smallvalue) {
     reqSet.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
 
     auto fSet = rh.route(reqSet);
-    EXPECT_EQ(mc_res_stored, fSet.result());
+    EXPECT_EQ(carbon::Result::STORED, fSet.result());
     EXPECT_EQ(testHandles[0]->saw_keys, vector<std::string>{keySet});
   }});
 }
@@ -74,13 +74,13 @@ TEST(BigValueRouteTest, bigvalue) {
       folly::sformat("{}-{}-{}", version, num_chunks, rand_suffix_get);
   const auto init_reply_error = folly::sformat("{}-{}", version, num_chunks);
   vector<std::shared_ptr<TestHandle>> testHandles{
-      make_shared<TestHandle>(
-          GetRouteTestData(mc_res_found, init_reply, MC_MSG_FLAG_BIG_VALUE)),
       make_shared<TestHandle>(GetRouteTestData(
-          mc_res_found, init_reply_error, MC_MSG_FLAG_BIG_VALUE)),
-      make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored)),
-      make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored)),
-      make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored))};
+          carbon::Result::FOUND, init_reply, MC_MSG_FLAG_BIG_VALUE)),
+      make_shared<TestHandle>(GetRouteTestData(
+          carbon::Result::FOUND, init_reply_error, MC_MSG_FLAG_BIG_VALUE)),
+      make_shared<TestHandle>(UpdateRouteTestData(carbon::Result::STORED)),
+      make_shared<TestHandle>(UpdateRouteTestData(carbon::Result::STORED)),
+      make_shared<TestHandle>(UpdateRouteTestData(carbon::Result::STORED))};
   auto routeHandles = get_route_handles(testHandles);
 
   const std::string keyGet = "bigvalue_get";
@@ -122,9 +122,10 @@ TEST(BigValueRouteTest, bigvalue) {
       auto fGet = rh.route(reqGet);
       auto keys_get = testHandles[1]->saw_keys;
       EXPECT_EQ(1, keys_get.size());
-      // first get the result for original key, then return mc_res_notfound
+      // first get the result for original key, then return
+      // carbon::Result::NOTFOUND
       EXPECT_EQ(keyGet, keys_get.front());
-      EXPECT_EQ(mc_res_notfound, fGet.result());
+      EXPECT_EQ(carbon::Result::NOTFOUND, fGet.result());
       EXPECT_EQ("", carbon::valueRangeSlow(fGet).str());
     }
 

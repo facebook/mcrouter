@@ -1,14 +1,16 @@
-/*
- *  Copyright (c) 2017-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "McSSLUtil.h"
 
 #include <folly/SharedMutex.h>
+#include <folly/io/async/ssl/BasicTransportCertificate.h>
 #include <folly/io/async/ssl/OpenSSLUtils.h>
+
+#include "mcrouter/lib/network/SecurityOptions.h"
 
 namespace facebook {
 namespace memcache {
@@ -33,7 +35,36 @@ static McSSLUtil::SSLFinalizeFunction& getClientFinalizeFuncRef() {
   static McSSLUtil::SSLFinalizeFunction FINALIZER;
   return FINALIZER;
 }
+
+class PlaintextWithCerts : public folly::AsyncSocket {
+ public:
+  using UniquePtr = std::
+      unique_ptr<PlaintextWithCerts, folly::DelayedDestruction::Destructor>;
+  using AsyncSocket::AsyncSocket;
+
+  const X509* getSelfCert() const override {
+    auto self = getSelfCertificate();
+    if (self) {
+      return self->getX509().get();
+    }
+    return nullptr;
+  }
+
+  folly::ssl::X509UniquePtr getPeerCert() const override {
+    auto peer = getPeerCertificate();
+    if (!peer) {
+      return nullptr;
+    }
+    return peer->getX509();
+  }
+
+  std::string getSecurityProtocol() const override {
+    return McSSLUtil::kTlsToPlainProtocolName;
+  }
+};
 } // namespace
+
+const std::string McSSLUtil::kTlsToPlainProtocolName = "mc_plaintext";
 
 bool McSSLUtil::verifySSLWithDefaultBehavior(
     folly::AsyncSSLSocket*,
@@ -114,6 +145,42 @@ void McSSLUtil::finalizeClientSSL(
   if (func) {
     func(transport);
   }
+}
+
+bool McSSLUtil::negotiatedPlaintextFallback(
+    const folly::AsyncSSLSocket& sock) noexcept {
+  // get the negotiated protocol
+  auto nextProto = sock.getApplicationProtocol();
+  return nextProto == kMcSecurityTlsToPlaintextProto;
+}
+
+folly::AsyncTransportWrapper::UniquePtr McSSLUtil::moveToPlaintext(
+    folly::AsyncSSLSocket& sock) noexcept {
+  if (!negotiatedPlaintextFallback(sock)) {
+    return nullptr;
+  }
+
+  // We need to mark the SSL as shutdown here, but need to do
+  // it quietly so no alerts are sent over the wire.
+  // This prevents SSL thinking we are shutting down in a bad state
+  // when AsyncSSLSocket is cleaned up, which could remove the session
+  // from the session cache
+  auto ssl = const_cast<SSL*>(sock.getSSL());
+  SSL_set_quiet_shutdown(ssl, 1);
+  SSL_shutdown(ssl);
+
+  // fallback to plaintext
+  auto selfCert =
+      folly::ssl::BasicTransportCertificate::create(sock.getSelfCertificate());
+  auto peerCert =
+      folly::ssl::BasicTransportCertificate::create(sock.getPeerCertificate());
+  auto evb = sock.getEventBase();
+  auto zcId = sock.getZeroCopyBufId();
+  auto fd = sock.detachNetworkSocket();
+  PlaintextWithCerts::UniquePtr res(new PlaintextWithCerts(evb, fd, zcId));
+  res->setSelfCertificate(std::move(selfCert));
+  res->setPeerCertificate(std::move(peerCert));
+  return res;
 }
 
 } // namespace memcache

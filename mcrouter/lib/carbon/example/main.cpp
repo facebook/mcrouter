@@ -37,13 +37,15 @@ struct HelloGoodbyeOnRequest {
   void onRequest(McServerRequestContext&& ctx, HelloRequest&& request) {
     LOG(INFO) << "Hello! Server " << reinterpret_cast<uintptr_t>(this)
               << " got key " << request.key().fullKey().str();
-    McServerRequestContext::reply(std::move(ctx), HelloReply(mc_res_ok));
+    McServerRequestContext::reply(
+        std::move(ctx), HelloReply(carbon::Result::OK));
   }
 
   void onRequest(McServerRequestContext&& ctx, GoodbyeRequest&& request) {
     LOG(INFO) << "Good bye! Server " << reinterpret_cast<uintptr_t>(this)
               << " got key " << request.key().fullKey().str();
-    McServerRequestContext::reply(std::move(ctx), GoodbyeReply(mc_res_ok));
+    McServerRequestContext::reply(
+        std::move(ctx), GoodbyeReply(carbon::Result::OK));
   }
 };
 
@@ -85,9 +87,9 @@ void testClientServer() {
       fm.addTask([&client, i]() {
         auto reply =
             client.sendSync(HelloRequest(folly::sformat("key:{}", i)), 200ms);
-        if (reply.result() != mc_res_ok) {
+        if (reply.result() != carbon::Result::OK) {
           LOG(ERROR) << "Unexpected result: "
-                     << mc_res_to_string(reply.result());
+                     << carbon::resultToString(reply.result());
         }
 
       });
@@ -95,9 +97,9 @@ void testClientServer() {
       fm.addTask([&client, i]() {
         auto reply =
             client.sendSync(GoodbyeRequest(folly::sformat("key:{}", i)), 200ms);
-        if (reply.result() != mc_res_ok) {
+        if (reply.result() != carbon::Result::OK) {
           LOG(ERROR) << "Unexpected result: "
-                     << mc_res_to_string(reply.result());
+                     << carbon::resultToString(reply.result());
         }
       });
     }
@@ -119,7 +121,8 @@ void sendHelloRequestSync(
   folly::fibers::Baton baton;
 
   client->send(req, [&baton](const HelloRequest&, HelloReply&& reply) {
-    LOG(INFO) << "Reply received! Result: " << mc_res_to_string(reply.result());
+    LOG(INFO) << "Reply received! Result: "
+              << carbon::resultToString(reply.result());
     baton.post();
   });
 

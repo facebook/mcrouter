@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014-present, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *
  *  This source code is licensed under the MIT license found in the LICENSE
  *  file in the root directory of this source tree.
@@ -70,7 +70,7 @@ void ProxyRequestLogger<RouterInfo>::logDurationByRequestType(
 
 template <class RouterInfo>
 void ProxyRequestLogger<RouterInfo>::logError(
-    mc_res_t result,
+    carbon::Result result,
     RequestClass reqClass) {
   if (isErrorResult(result)) {
     REQUEST_CLASS_ERROR_STATS(proxy_, error, reqClass);
@@ -90,8 +90,14 @@ void ProxyRequestLogger<RouterInfo>::logError(
   if (isTkoResult(result)) {
     REQUEST_CLASS_ERROR_STATS(proxy_, tko, reqClass);
   }
+  if (isRemoteErrorResult(result)) {
+    REQUEST_CLASS_ERROR_STATS(proxy_, remote_error, reqClass);
+  }
   if (isLocalErrorResult(result)) {
     REQUEST_CLASS_ERROR_STATS(proxy_, local_error, reqClass);
+  }
+  if (isClientErrorResult(result)) {
+    REQUEST_CLASS_ERROR_STATS(proxy_, client_error, reqClass);
   }
 }
 

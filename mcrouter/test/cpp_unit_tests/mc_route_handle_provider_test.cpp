@@ -92,7 +92,7 @@ struct TestSetup {
 TEST(McRouteHandleProviderTest, sanity) {
   auto rh = TestSetup().getRoute(kConstShard);
   EXPECT_TRUE(rh != nullptr);
-  EXPECT_EQ("error", rh->routeName());
+  EXPECT_EQ("error|log|mc_res_local_error", rh->routeName());
 }
 
 TEST(McRouteHandleProviderTest, invalid_func) {

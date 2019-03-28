@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -13,11 +12,11 @@
 #include <folly/Optional.h>
 #include <folly/io/IOBuf.h>
 
+#include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/carbon/RequestReplyUtil.h"
 #include "mcrouter/lib/carbon/RoutingGroups.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/network/ServerLoad.h"
-#include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook {
 namespace memcache {
@@ -38,7 +37,8 @@ class McServerRequestContext {
   using DestructorFunc = void (*)(void*);
 
   template <class Reply>
-  static void reply(McServerRequestContext&& ctx, Reply&& reply);
+  static void
+  reply(McServerRequestContext&& ctx, Reply&& reply, bool flush = false);
 
   template <class Reply>
   static void reply(
@@ -56,8 +56,6 @@ class McServerRequestContext {
    * Get the associated McServerSession
    */
   McServerSession& session();
-
-  double getDropProbability() const;
 
   ServerLoad getServerLoad() const noexcept;
 
@@ -96,7 +94,8 @@ class McServerRequestContext {
       McServerRequestContext&& ctx,
       Reply&& reply,
       DestructorFunc destructor = nullptr,
-      void* toDestruct = nullptr);
+      void* toDestruct = nullptr,
+      bool flush = false);
 
   folly::Optional<folly::IOBuf>& asciiKey() {
     if (!asciiState_) {
@@ -126,7 +125,7 @@ class McServerRequestContext {
    * moved to parent.
    */
   bool moveReplyToParent(
-      mc_res_t result,
+      carbon::Result result,
       uint32_t errorCode,
       std::string&& errorMessage) const;
 
@@ -170,7 +169,7 @@ template <class Request>
 class McServerOnRequestIf<List<Request>> {
  public:
   virtual void caretRequestReady(
-      const UmbrellaMessageInfo& headerInfo,
+      const CaretMessageInfo& headerInfo,
       const folly::IOBuf& reqBody,
       McServerRequestContext&& ctx) = 0;
 
@@ -231,12 +230,12 @@ class McServerOnRequestWrapper<OnRequest, List<>> : public McServerOnRequest {
         onRequest_(std::forward<Args>(args)...) {}
 
   void caretRequestReady(
-      const UmbrellaMessageInfo& headerInfo,
+      const CaretMessageInfo& headerInfo,
       const folly::IOBuf& reqBody,
       McServerRequestContext&& ctx) final;
 
   void dispatchTypedRequestIfDefined(
-      const UmbrellaMessageInfo& headerInfo,
+      const CaretMessageInfo& headerInfo,
       const folly::IOBuf& reqBody,
       McServerRequestContext&& ctx,
       std::true_type) {
@@ -246,7 +245,7 @@ class McServerOnRequestWrapper<OnRequest, List<>> : public McServerOnRequest {
   }
 
   void dispatchTypedRequestIfDefined(
-      const UmbrellaMessageInfo&,
+      const CaretMessageInfo&,
       const folly::IOBuf& /* reqBody */,
       McServerRequestContext&&,
       std::false_type) {
@@ -265,7 +264,7 @@ class McServerOnRequestWrapper<OnRequest, List<>> : public McServerOnRequest {
   void
   requestReadyImpl(McServerRequestContext&& ctx, Request&&, std::false_type) {
     McServerRequestContext::reply(
-        std::move(ctx), ReplyT<Request>(mc_res_local_error));
+        std::move(ctx), ReplyT<Request>(carbon::Result::LOCAL_ERROR));
   }
 
  protected:
@@ -291,7 +290,7 @@ class McServerOnRequestWrapper<OnRequest, List<Request, Requests...>>
   }
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
 
 #include "McServerRequestContext-inl.h"

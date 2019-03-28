@@ -21,7 +21,6 @@
 #include <folly/Optional.h>
 #include <folly/io/IOBuf.h>
 #include <mcrouter/lib/carbon/CarbonProtocolReader.h>
-#include <mcrouter/lib/carbon/CarbonProtocolWriter.h>
 #include <mcrouter/lib/carbon/CommonSerializationTraits.h>
 #include <mcrouter/lib/carbon/Keys.h>
 #include <mcrouter/lib/carbon/ReplyCommon.h>
@@ -52,7 +51,8 @@ class HelloRequest : public carbon::RequestCommon {
   HelloRequest& operator=(const HelloRequest&) = default;
   HelloRequest(HelloRequest&&) = default;
   HelloRequest& operator=(HelloRequest&&) = default;
-  explicit HelloRequest(folly::StringPiece sp) : key_(sp) {}
+  explicit HelloRequest(folly::StringPiece sp)
+      : key_(sp) {}
   explicit HelloRequest(folly::IOBuf&& carbonKey)
       : key_(std::move(carbonKey)) {}
 
@@ -60,12 +60,14 @@ class HelloRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   uint64_t shardId() const {
     return shardId_;
   }
   uint64_t& shardId() {
+    markBufferAsDirty();
     return shardId_;
   }
   uint64_t flags() const {
@@ -74,8 +76,8 @@ class HelloRequest : public carbon::RequestCommon {
   int32_t exptime() const {
     return 0;
   }
-
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -102,7 +104,8 @@ class HelloReply : public carbon::ReplyCommon {
   HelloReply& operator=(const HelloReply&) = default;
   HelloReply(HelloReply&&) = default;
   HelloReply& operator=(HelloReply&&) = default;
-  explicit HelloReply(carbon::Result carbonResult) : result_(carbonResult) {}
+  explicit HelloReply(carbon::Result carbonResult)
+      : result_(carbonResult) {}
 
   carbon::Result result() const {
     return result_;
@@ -117,7 +120,8 @@ class HelloReply : public carbon::ReplyCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -127,7 +131,7 @@ class HelloReply : public carbon::ReplyCommon {
   void visitFields(V&& v) const;
 
  private:
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
 };
 
 class GoodbyeReply;
@@ -147,7 +151,8 @@ class GoodbyeRequest : public carbon::RequestCommon {
   GoodbyeRequest& operator=(const GoodbyeRequest&) = default;
   GoodbyeRequest(GoodbyeRequest&&) = default;
   GoodbyeRequest& operator=(GoodbyeRequest&&) = default;
-  explicit GoodbyeRequest(folly::StringPiece sp) : key_(sp) {}
+  explicit GoodbyeRequest(folly::StringPiece sp)
+      : key_(sp) {}
   explicit GoodbyeRequest(folly::IOBuf&& carbonKey)
       : key_(std::move(carbonKey)) {}
 
@@ -155,12 +160,14 @@ class GoodbyeRequest : public carbon::RequestCommon {
     return key_;
   }
   carbon::Keys<folly::IOBuf>& key() {
+    markBufferAsDirty();
     return key_;
   }
   uint64_t shardId() const {
     return shardId_;
   }
   uint64_t& shardId() {
+    markBufferAsDirty();
     return shardId_;
   }
   uint64_t flags() const {
@@ -169,8 +176,8 @@ class GoodbyeRequest : public carbon::RequestCommon {
   int32_t exptime() const {
     return 0;
   }
-
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -197,7 +204,8 @@ class GoodbyeReply : public carbon::ReplyCommon {
   GoodbyeReply& operator=(const GoodbyeReply&) = default;
   GoodbyeReply(GoodbyeReply&&) = default;
   GoodbyeReply& operator=(GoodbyeReply&&) = default;
-  explicit GoodbyeReply(carbon::Result carbonResult) : result_(carbonResult) {}
+  explicit GoodbyeReply(carbon::Result carbonResult)
+      : result_(carbonResult) {}
 
   carbon::Result result() const {
     return result_;
@@ -218,7 +226,8 @@ class GoodbyeReply : public carbon::ReplyCommon {
     return 0;
   }
 
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
+  template <class Writer>
+  void serialize(Writer&& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
@@ -229,7 +238,7 @@ class GoodbyeReply : public carbon::ReplyCommon {
 
  private:
   std::string message_;
-  carbon::Result result_{mc_res_unknown};
+  carbon::Result result_{carbon::Result::UNKNOWN};
 };
 } // namespace hellogoodbye
 

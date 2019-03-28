@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -17,7 +16,7 @@
 #include <folly/fibers/WhenN.h>
 
 #include "mcrouter/lib/McResUtil.h"
-#include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/carbon/RoutingGroups.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
@@ -87,7 +86,7 @@ class MigrateRoute {
       case kToMask:
       default:
         McLeaseSetReply reply = to_->route(req);
-        if (reply.result() != mc_res_stored &&
+        if (reply.result() != carbon::Result::STORED &&
             now < (migrationTime(req) + 10)) {
           // Send a lease invalidation to from_ if the lease-set failed and we
           // recently migrated to to_. This helps ensure that servers in the old

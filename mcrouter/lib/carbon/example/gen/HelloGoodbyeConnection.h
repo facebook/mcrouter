@@ -49,8 +49,7 @@ class HelloGoodbyeConnection {
       std::vector<std::reference_wrapper<const HelloRequest>>&&,
       carbon::RequestCb<HelloRequest>) = 0;
 
-  virtual facebook::memcache::CacheClientCounters getStatCounters() const
-      noexcept = 0;
+  virtual facebook::memcache::CacheClientCounters getStatCounters() const noexcept = 0;
   virtual std::unordered_map<std::string, std::string> getConfigOptions() = 0;
   virtual bool healthCheck() = 0;
   virtual std::unique_ptr<HelloGoodbyeConnection> recreate() = 0;
@@ -107,10 +106,10 @@ class HelloGoodbyeConnectionImpl : public HelloGoodbyeConnection {
   Impl impl_;
 };
 
-using HelloGoodbyePooledConnection = HelloGoodbyeConnectionImpl<
-    carbon::PooledCarbonConnectionImpl<HelloGoodbyeConnection>>;
-using HelloGoodbyeInternalConnection = HelloGoodbyeConnectionImpl<
-    carbon::InternalCarbonConnectionImpl<HelloGoodbyeConnection>>;
+using HelloGoodbyePooledConnection =
+    HelloGoodbyeConnectionImpl<carbon::PooledCarbonConnectionImpl<HelloGoodbyeConnection>>;
+using HelloGoodbyeInternalConnection =
+    HelloGoodbyeConnectionImpl<carbon::InternalCarbonConnectionImpl<HelloGoodbyeConnection>>;
 using HelloGoodbyeExternalConnection =
     HelloGoodbyeConnectionImpl<carbon::ExternalCarbonConnectionImpl>;
 } // namespace hellogoodbye

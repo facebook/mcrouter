@@ -17,250 +17,297 @@ namespace facebook {
 namespace memcache {
 namespace test {
 
+template <class Writer>
+void ManyFields::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, buf1());
+  writer.writeField(2 /* field id */, buf2());
+  writer.writeField(3 /* field id */, buf3());
+  writer.writeField(4 /* field id */, buf4());
+  writer.writeField(5 /* field id */, buf5());
+  writer.writeField(6 /* field id */, buf6());
+  writer.writeField(7 /* field id */, buf7());
+  writer.writeField(8 /* field id */, buf8());
+  writer.writeField(9 /* field id */, buf9());
+  writer.writeField(10 /* field id */, buf10());
+  writer.writeField(11 /* field id */, buf11());
+  writer.writeField(12 /* field id */, buf12());
+  writer.writeField(13 /* field id */, buf13());
+  writer.writeField(14 /* field id */, buf14());
+  writer.writeField(15 /* field id */, buf15());
+  writer.writeField(16 /* field id */, buf16());
+  writer.writeField(17 /* field id */, buf17());
+  writer.writeField(18 /* field id */, buf18());
+  writer.writeField(19 /* field id */, buf19());
+  writer.writeField(20 /* field id */, buf20());
+  writer.writeField(21 /* field id */, buf21());
+  writer.writeField(22 /* field id */, buf22());
+  writer.writeField(23 /* field id */, buf23());
+  writer.writeField(24 /* field id */, buf24());
+  writer.writeField(25 /* field id */, buf25());
+  writer.writeField(26 /* field id */, buf26());
+  writer.writeField(27 /* field id */, buf27());
+  writer.writeField(28 /* field id */, buf28());
+  writer.writeField(29 /* field id */, buf29());
+  writer.writeField(30 /* field id */, buf30());
+  writer.writeField(31 /* field id */, buf31());
+  writer.writeField(32 /* field id */, buf32());
+  writer.writeField(33 /* field id */, buf33());
+  writer.writeField(34 /* field id */, buf34());
+  writer.writeField(35 /* field id */, buf35());
+  writer.writeField(36 /* field id */, buf36());
+  writer.writeField(37 /* field id */, buf37());
+  writer.writeField(38 /* field id */, buf38());
+  writer.writeField(39 /* field id */, buf39());
+  writer.writeField(40 /* field id */, buf40());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
 void ManyFields::visitFields(V&& v) {
-  if (!v.visitField(1, "buf1", buf1_)) {
+  if (!v.visitField(1, "buf1", this->buf1())) {
     return;
   }
-  if (!v.visitField(2, "buf2", buf2_)) {
+  if (!v.visitField(2, "buf2", this->buf2())) {
     return;
   }
-  if (!v.visitField(3, "buf3", buf3_)) {
+  if (!v.visitField(3, "buf3", this->buf3())) {
     return;
   }
-  if (!v.visitField(4, "buf4", buf4_)) {
+  if (!v.visitField(4, "buf4", this->buf4())) {
     return;
   }
-  if (!v.visitField(5, "buf5", buf5_)) {
+  if (!v.visitField(5, "buf5", this->buf5())) {
     return;
   }
-  if (!v.visitField(6, "buf6", buf6_)) {
+  if (!v.visitField(6, "buf6", this->buf6())) {
     return;
   }
-  if (!v.visitField(7, "buf7", buf7_)) {
+  if (!v.visitField(7, "buf7", this->buf7())) {
     return;
   }
-  if (!v.visitField(8, "buf8", buf8_)) {
+  if (!v.visitField(8, "buf8", this->buf8())) {
     return;
   }
-  if (!v.visitField(9, "buf9", buf9_)) {
+  if (!v.visitField(9, "buf9", this->buf9())) {
     return;
   }
-  if (!v.visitField(10, "buf10", buf10_)) {
+  if (!v.visitField(10, "buf10", this->buf10())) {
     return;
   }
-  if (!v.visitField(11, "buf11", buf11_)) {
+  if (!v.visitField(11, "buf11", this->buf11())) {
     return;
   }
-  if (!v.visitField(12, "buf12", buf12_)) {
+  if (!v.visitField(12, "buf12", this->buf12())) {
     return;
   }
-  if (!v.visitField(13, "buf13", buf13_)) {
+  if (!v.visitField(13, "buf13", this->buf13())) {
     return;
   }
-  if (!v.visitField(14, "buf14", buf14_)) {
+  if (!v.visitField(14, "buf14", this->buf14())) {
     return;
   }
-  if (!v.visitField(15, "buf15", buf15_)) {
+  if (!v.visitField(15, "buf15", this->buf15())) {
     return;
   }
-  if (!v.visitField(16, "buf16", buf16_)) {
+  if (!v.visitField(16, "buf16", this->buf16())) {
     return;
   }
-  if (!v.visitField(17, "buf17", buf17_)) {
+  if (!v.visitField(17, "buf17", this->buf17())) {
     return;
   }
-  if (!v.visitField(18, "buf18", buf18_)) {
+  if (!v.visitField(18, "buf18", this->buf18())) {
     return;
   }
-  if (!v.visitField(19, "buf19", buf19_)) {
+  if (!v.visitField(19, "buf19", this->buf19())) {
     return;
   }
-  if (!v.visitField(20, "buf20", buf20_)) {
+  if (!v.visitField(20, "buf20", this->buf20())) {
     return;
   }
-  if (!v.visitField(21, "buf21", buf21_)) {
+  if (!v.visitField(21, "buf21", this->buf21())) {
     return;
   }
-  if (!v.visitField(22, "buf22", buf22_)) {
+  if (!v.visitField(22, "buf22", this->buf22())) {
     return;
   }
-  if (!v.visitField(23, "buf23", buf23_)) {
+  if (!v.visitField(23, "buf23", this->buf23())) {
     return;
   }
-  if (!v.visitField(24, "buf24", buf24_)) {
+  if (!v.visitField(24, "buf24", this->buf24())) {
     return;
   }
-  if (!v.visitField(25, "buf25", buf25_)) {
+  if (!v.visitField(25, "buf25", this->buf25())) {
     return;
   }
-  if (!v.visitField(26, "buf26", buf26_)) {
+  if (!v.visitField(26, "buf26", this->buf26())) {
     return;
   }
-  if (!v.visitField(27, "buf27", buf27_)) {
+  if (!v.visitField(27, "buf27", this->buf27())) {
     return;
   }
-  if (!v.visitField(28, "buf28", buf28_)) {
+  if (!v.visitField(28, "buf28", this->buf28())) {
     return;
   }
-  if (!v.visitField(29, "buf29", buf29_)) {
+  if (!v.visitField(29, "buf29", this->buf29())) {
     return;
   }
-  if (!v.visitField(30, "buf30", buf30_)) {
+  if (!v.visitField(30, "buf30", this->buf30())) {
     return;
   }
-  if (!v.visitField(31, "buf31", buf31_)) {
+  if (!v.visitField(31, "buf31", this->buf31())) {
     return;
   }
-  if (!v.visitField(32, "buf32", buf32_)) {
+  if (!v.visitField(32, "buf32", this->buf32())) {
     return;
   }
-  if (!v.visitField(33, "buf33", buf33_)) {
+  if (!v.visitField(33, "buf33", this->buf33())) {
     return;
   }
-  if (!v.visitField(34, "buf34", buf34_)) {
+  if (!v.visitField(34, "buf34", this->buf34())) {
     return;
   }
-  if (!v.visitField(35, "buf35", buf35_)) {
+  if (!v.visitField(35, "buf35", this->buf35())) {
     return;
   }
-  if (!v.visitField(36, "buf36", buf36_)) {
+  if (!v.visitField(36, "buf36", this->buf36())) {
     return;
   }
-  if (!v.visitField(37, "buf37", buf37_)) {
+  if (!v.visitField(37, "buf37", this->buf37())) {
     return;
   }
-  if (!v.visitField(38, "buf38", buf38_)) {
+  if (!v.visitField(38, "buf38", this->buf38())) {
     return;
   }
-  if (!v.visitField(39, "buf39", buf39_)) {
+  if (!v.visitField(39, "buf39", this->buf39())) {
     return;
   }
-  if (!v.visitField(40, "buf40", buf40_)) {
+  if (!v.visitField(40, "buf40", this->buf40())) {
     return;
   }
 }
 
 template <class V>
 void ManyFields::visitFields(V&& v) const {
-  if (!v.visitField(1, "buf1", buf1_)) {
+  if (!v.visitField(1, "buf1", this->buf1())) {
     return;
   }
-  if (!v.visitField(2, "buf2", buf2_)) {
+  if (!v.visitField(2, "buf2", this->buf2())) {
     return;
   }
-  if (!v.visitField(3, "buf3", buf3_)) {
+  if (!v.visitField(3, "buf3", this->buf3())) {
     return;
   }
-  if (!v.visitField(4, "buf4", buf4_)) {
+  if (!v.visitField(4, "buf4", this->buf4())) {
     return;
   }
-  if (!v.visitField(5, "buf5", buf5_)) {
+  if (!v.visitField(5, "buf5", this->buf5())) {
     return;
   }
-  if (!v.visitField(6, "buf6", buf6_)) {
+  if (!v.visitField(6, "buf6", this->buf6())) {
     return;
   }
-  if (!v.visitField(7, "buf7", buf7_)) {
+  if (!v.visitField(7, "buf7", this->buf7())) {
     return;
   }
-  if (!v.visitField(8, "buf8", buf8_)) {
+  if (!v.visitField(8, "buf8", this->buf8())) {
     return;
   }
-  if (!v.visitField(9, "buf9", buf9_)) {
+  if (!v.visitField(9, "buf9", this->buf9())) {
     return;
   }
-  if (!v.visitField(10, "buf10", buf10_)) {
+  if (!v.visitField(10, "buf10", this->buf10())) {
     return;
   }
-  if (!v.visitField(11, "buf11", buf11_)) {
+  if (!v.visitField(11, "buf11", this->buf11())) {
     return;
   }
-  if (!v.visitField(12, "buf12", buf12_)) {
+  if (!v.visitField(12, "buf12", this->buf12())) {
     return;
   }
-  if (!v.visitField(13, "buf13", buf13_)) {
+  if (!v.visitField(13, "buf13", this->buf13())) {
     return;
   }
-  if (!v.visitField(14, "buf14", buf14_)) {
+  if (!v.visitField(14, "buf14", this->buf14())) {
     return;
   }
-  if (!v.visitField(15, "buf15", buf15_)) {
+  if (!v.visitField(15, "buf15", this->buf15())) {
     return;
   }
-  if (!v.visitField(16, "buf16", buf16_)) {
+  if (!v.visitField(16, "buf16", this->buf16())) {
     return;
   }
-  if (!v.visitField(17, "buf17", buf17_)) {
+  if (!v.visitField(17, "buf17", this->buf17())) {
     return;
   }
-  if (!v.visitField(18, "buf18", buf18_)) {
+  if (!v.visitField(18, "buf18", this->buf18())) {
     return;
   }
-  if (!v.visitField(19, "buf19", buf19_)) {
+  if (!v.visitField(19, "buf19", this->buf19())) {
     return;
   }
-  if (!v.visitField(20, "buf20", buf20_)) {
+  if (!v.visitField(20, "buf20", this->buf20())) {
     return;
   }
-  if (!v.visitField(21, "buf21", buf21_)) {
+  if (!v.visitField(21, "buf21", this->buf21())) {
     return;
   }
-  if (!v.visitField(22, "buf22", buf22_)) {
+  if (!v.visitField(22, "buf22", this->buf22())) {
     return;
   }
-  if (!v.visitField(23, "buf23", buf23_)) {
+  if (!v.visitField(23, "buf23", this->buf23())) {
     return;
   }
-  if (!v.visitField(24, "buf24", buf24_)) {
+  if (!v.visitField(24, "buf24", this->buf24())) {
     return;
   }
-  if (!v.visitField(25, "buf25", buf25_)) {
+  if (!v.visitField(25, "buf25", this->buf25())) {
     return;
   }
-  if (!v.visitField(26, "buf26", buf26_)) {
+  if (!v.visitField(26, "buf26", this->buf26())) {
     return;
   }
-  if (!v.visitField(27, "buf27", buf27_)) {
+  if (!v.visitField(27, "buf27", this->buf27())) {
     return;
   }
-  if (!v.visitField(28, "buf28", buf28_)) {
+  if (!v.visitField(28, "buf28", this->buf28())) {
     return;
   }
-  if (!v.visitField(29, "buf29", buf29_)) {
+  if (!v.visitField(29, "buf29", this->buf29())) {
     return;
   }
-  if (!v.visitField(30, "buf30", buf30_)) {
+  if (!v.visitField(30, "buf30", this->buf30())) {
     return;
   }
-  if (!v.visitField(31, "buf31", buf31_)) {
+  if (!v.visitField(31, "buf31", this->buf31())) {
     return;
   }
-  if (!v.visitField(32, "buf32", buf32_)) {
+  if (!v.visitField(32, "buf32", this->buf32())) {
     return;
   }
-  if (!v.visitField(33, "buf33", buf33_)) {
+  if (!v.visitField(33, "buf33", this->buf33())) {
     return;
   }
-  if (!v.visitField(34, "buf34", buf34_)) {
+  if (!v.visitField(34, "buf34", this->buf34())) {
     return;
   }
-  if (!v.visitField(35, "buf35", buf35_)) {
+  if (!v.visitField(35, "buf35", this->buf35())) {
     return;
   }
-  if (!v.visitField(36, "buf36", buf36_)) {
+  if (!v.visitField(36, "buf36", this->buf36())) {
     return;
   }
-  if (!v.visitField(37, "buf37", buf37_)) {
+  if (!v.visitField(37, "buf37", this->buf37())) {
     return;
   }
-  if (!v.visitField(38, "buf38", buf38_)) {
+  if (!v.visitField(38, "buf38", this->buf38())) {
     return;
   }
-  if (!v.visitField(39, "buf39", buf39_)) {
+  if (!v.visitField(39, "buf39", this->buf39())) {
     return;
   }
-  if (!v.visitField(40, "buf40", buf40_)) {
+  if (!v.visitField(40, "buf40", this->buf40())) {
     return;
   }
 }

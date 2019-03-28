@@ -86,6 +86,14 @@ MCROUTER_OPTION_INTEGER(
 
 MCROUTER_OPTION_INTEGER(
     size_t,
+    num_listening_sockets,
+    kListeningSocketsDefault,
+    "num-listening-sockets",
+    no_short,
+    "adjust how many listening sockets to use. Must be <= num_proxies")
+
+MCROUTER_OPTION_INTEGER(
+    size_t,
     client_queue_size,
     1024,
     no_long,
@@ -303,14 +311,14 @@ MCROUTER_OPTION_INTEGER(
 
 MCROUTER_OPTION_STRING(
     pem_cert_path,
-    "",  // this may get overwritten by finalizeOptions
+    "", // this may get overwritten by finalizeOptions
     "pem-cert-path",
     no_short,
     "Path of pem-style client certificate for ssl.")
 
 MCROUTER_OPTION_STRING(
     pem_key_path,
-    "",  // this may get overwritten by finalizeOptions
+    "", // this may get overwritten by finalizeOptions
     "pem-key-path",
     no_short,
     "Path of pem-style client key for ssl.")
@@ -404,6 +412,13 @@ MCROUTER_OPTION_TOGGLE(
     no_short,
     "")
 
+MCROUTER_OPTION_TOGGLE(
+    use_compact_serialization,
+    false,
+    "use-compact-serialization",
+    no_short,
+    "Use compact protocol for serialization")
+
 MCROUTER_OPTION_STRING(
     config,
     "",
@@ -475,7 +490,7 @@ MCROUTER_OPTION_TOGGLE(
     "group-remote-errors",
     no_short,
     "Groups all remote (i.e. non-local) errors together, returning a single "
-    "result for all of them: mc_res_remote_error")
+    "result for all of them: REMOTE_ERROR")
 
 MCROUTER_OPTION_TOGGLE(
     send_invalid_route_to_default,
@@ -605,6 +620,16 @@ MCROUTER_OPTION_INTEGER(
     " discarded. Enabled only if value is non-zero and"
     " if proxy-max-throttled-requests is enabled.")
 
+MCROUTER_OPTION_INTEGER(
+    unsigned int,
+    connect_timeout_retries,
+    0,
+    "connect-timeout-retries",
+    no_short,
+    "The number of times to retry establishing a connection in case of a"
+    " connect timeout. We will just return the result back to the client after"
+    " either the connection is esblished, or we exhausted all retries.")
+
 MCROUTER_OPTION_GROUP("Custom Memory Allocation")
 
 MCROUTER_OPTION_TOGGLE(
@@ -685,8 +710,19 @@ MCROUTER_OPTION_INTEGER(
     0,
     "collect-rxmit-stats-every-hz",
     no_short,
-    "Will calculate retransmits per kB after every set cycles."
+    "Will calculate retransmits per kB after every set cycles whenever a "
+    "timeout or deviation from average latency occurs."
     " If value is 0, calculation won't be done.")
+
+MCROUTER_OPTION_INTEGER(
+    uint64_t,
+    rxmit_latency_deviation_us,
+    0,
+    "rxmit-latency-deviation-us",
+    no_short,
+    "Latency deviation of request in microseconds from the average latency on "
+    "the connection will trigger recalculation of retransmits per kB. "
+    "If value is 0, calculation won't be done.")
 
 MCROUTER_OPTION_INTEGER(
     uint64_t,

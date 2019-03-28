@@ -38,9 +38,17 @@ class CarbonLookasideManager {
       if (optionOverrides.find(kServiceName) == optionOverrides.end()) {
         optionOverrides.emplace(kServiceName, "carbon");
       }
-      mcrouter = createRouterFromFlavor<MemcacheRouterInfo>(
-          flavorUri, optionOverrides);
-      mcroutersLookaside_[persistenceId] = mcrouter;
+      try {
+        mcrouter = createRouterFromFlavor<MemcacheRouterInfo>(
+            flavorUri, optionOverrides);
+        if (mcrouter) {
+          mcroutersLookaside_[persistenceId] = mcrouter;
+        }
+      } catch (const std::exception& ex) {
+        mcrouter = nullptr;
+        LOG(ERROR) << "Error creating mcrouter for lookaside route. Exception: "
+                   << ex.what();
+      }
     }
     return mcrouter;
   }

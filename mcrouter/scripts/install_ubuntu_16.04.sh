@@ -22,8 +22,10 @@ sudo apt-get install -y \
     libgflags-dev \
     libgoogle-glog-dev \
     libjemalloc-dev \
+    libsodium-dev \
     libssl-dev \
     libtool \
+    libunwind8-dev \
     make \
     pkg-config \
     python-dev \

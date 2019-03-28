@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <sys/uio.h>
 
@@ -15,10 +14,12 @@
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/carbon/test/Util.h"
 #include "mcrouter/lib/carbon/test/gen/CarbonTest.h"
+#include "mcrouter/lib/carbon/test/gen/CompactTest.h"
 
 using namespace carbon::test::util;
 
 using carbon::test::SimpleStruct;
+using carbon::test::TestOptionalUnion;
 using carbon::test::TestReply;
 using carbon::test::TestRequest;
 using carbon::test::TestRequestStringKey;
@@ -57,7 +58,7 @@ void checkKeyFilledProperly(const Key& key) {
   EXPECT_TRUE(key.hasHashStop());
 }
 
-} // anonymous
+} // namespace
 
 TEST(CarbonBasic, staticAsserts) {
   static_assert(!TestRequest::hasExptime, "");
@@ -360,7 +361,7 @@ TEST(CarbonTest, serializeDeserialize) {
   // Other optional field gets a value of zero length
   outRequest.testOptionalIobuf() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "");
   // Union
-  outRequest.testUnion().emplace<3>("abc");
+  outRequest.testUnion().emplace<2>(true);
 
   outRequest.testEnumVec().push_back(carbon::test2::util::SimpleEnum::Twenty);
 
@@ -368,10 +369,18 @@ TEST(CarbonTest, serializeDeserialize) {
 
   outRequest.testUMap().insert({"hello", "world"});
   outRequest.testMap().insert({1.08, 8.3});
+  outRequest.testF14FastMap().insert({"hello", "F14FastMap"});
+  outRequest.testF14NodeMap().insert({"hello", "F14NodeMap"});
+  outRequest.testF14ValueMap().insert({"hello", "F14ValueMap"});
+  outRequest.testF14VectorMap().insert({"hello", "F14VectorMap"});
   outRequest.testComplexMap().insert({"key", {1, 2}});
 
   outRequest.testUSet().insert("hello");
   outRequest.testSet().insert(123);
+  outRequest.testF14FastSet().insert("hello F14FastSet");
+  outRequest.testF14NodeSet().insert("hello F14NodeSet");
+  outRequest.testF14ValueSet().insert("hello F14ValueSet");
+  outRequest.testF14VectorSet().insert("hello F14VectorSet");
 
   outRequest.testType() = {"blah", {1, 2, 3}};
 
@@ -386,6 +395,43 @@ TEST(CarbonTest, serializeDeserialize) {
 
   const auto inRequest = serializeAndDeserialize(outRequest);
   expectEqTestRequest(outRequest, inRequest);
+}
+
+TEST(CarbonTest, serializeDeserializeCompact) {
+  carbon::test::TestCompactRequest outRequest("abcdefghijklmnopqrstuvwxyz");
+  outRequest.testBool() = true;
+  outRequest.testChar() = 'A';
+  outRequest.testEnum() = carbon::test::SimpleEnum::Negative;
+  outRequest.testInt8() = kMinInt8;
+  outRequest.testInt16() = kMinInt16;
+  outRequest.testInt32() = kMinInt32;
+  outRequest.testInt64() = kMinInt64;
+  outRequest.testUInt8() = kMaxUInt8;
+  outRequest.testUInt16() = kMaxUInt16;
+  outRequest.testUInt32() = kMaxUInt32;
+  outRequest.testUInt64() = kMaxUInt64;
+  outRequest.testShortString() = kShortString.str();
+  outRequest.testLongString() = longString();
+  outRequest.testIobuf() =
+      folly::IOBuf(folly::IOBuf::COPY_BUFFER, kShortString);
+  outRequest.testList() = {"abcdefg",
+                           "xyz",
+                           kShortString.str(),
+                           "xyz",
+                           "xyz",
+                           "xyz",
+                           "xyz",
+                           "xyz",
+                           "xyz",
+                           "xyz",
+                           "xyz",
+                           "xyz",
+                           "xyz",
+                           "xyz",
+                           longString()};
+  const auto inRequest =
+      serializeCarbonAndDeserializeCompactCompatibility(outRequest);
+  expectEqTestCompactRequest(outRequest, inRequest);
 }
 
 TEST(CarbonTest, unionZeroSerialization) {
@@ -403,35 +449,38 @@ TEST(CarbonTest, OptionalUnionSerialization) {
   carbon::test::TestOptionalUnion testOpt;
   testOpt.emplace<1>(1);
   auto inOpt = serializeAndDeserialize(testOpt);
-  ASSERT_EQ(1, inOpt.which());
+  ASSERT_EQ(TestOptionalUnion::ValueType::UMEMBER1, inOpt.which());
   EXPECT_EQ(testOpt.umember1().hasValue(), inOpt.umember1().hasValue());
   EXPECT_EQ(1, inOpt.umember1().value());
 
-  testOpt.emplace<1>(folly::Optional<int64_t>());
+  testOpt.emplace<TestOptionalUnion::ValueType::UMEMBER1>(
+      folly::Optional<int64_t>());
   inOpt = serializeAndDeserialize(testOpt);
-  ASSERT_EQ(1, inOpt.which());
+  ASSERT_EQ(TestOptionalUnion::ValueType::UMEMBER1, inOpt.which());
   EXPECT_EQ(testOpt.umember1().hasValue(), inOpt.umember1().hasValue());
 
-  testOpt.emplace<2>(folly::Optional<bool>(false));
+  testOpt.emplace<TestOptionalUnion::ValueType::UMEMBER2>(false);
   inOpt = serializeAndDeserialize(testOpt);
-  ASSERT_EQ(2, inOpt.which());
+  ASSERT_EQ(TestOptionalUnion::ValueType::UMEMBER2, inOpt.which());
   EXPECT_EQ(testOpt.umember2().hasValue(), inOpt.umember2().hasValue());
   EXPECT_EQ(false, inOpt.umember2().value());
 
-  testOpt.emplace<2>(folly::Optional<bool>());
+  testOpt.emplace<TestOptionalUnion::ValueType::UMEMBER2>(
+      folly::Optional<bool>());
   inOpt = serializeAndDeserialize(testOpt);
-  ASSERT_EQ(2, inOpt.which());
+  ASSERT_EQ(TestOptionalUnion::ValueType::UMEMBER2, inOpt.which());
   EXPECT_EQ(testOpt.umember2().hasValue(), inOpt.umember2().hasValue());
 
-  testOpt.emplace<3>(folly::Optional<std::string>("test"));
+  testOpt.emplace<TestOptionalUnion::ValueType::UMEMBER3>("test");
   inOpt = serializeAndDeserialize(testOpt);
-  ASSERT_EQ(3, inOpt.which());
+  ASSERT_EQ(TestOptionalUnion::ValueType::UMEMBER3, inOpt.which());
   EXPECT_EQ(testOpt.umember3().hasValue(), inOpt.umember3().hasValue());
   EXPECT_EQ("test", inOpt.umember3().value());
 
-  testOpt.emplace<3>(folly::Optional<std::string>());
+  testOpt.emplace<TestOptionalUnion::ValueType::UMEMBER3>(
+      folly::Optional<std::string>());
   inOpt = serializeAndDeserialize(testOpt);
-  ASSERT_EQ(3, inOpt.which());
+  ASSERT_EQ(TestOptionalUnion::ValueType::UMEMBER3, inOpt.which());
   EXPECT_EQ(testOpt.umember3().hasValue(), inOpt.umember3().hasValue());
 }
 
@@ -490,6 +539,32 @@ TEST(CarbonTest, veryLongIobuf) {
   outRequest.testIobuf() = std::move(veryLongIobuf);
   const auto inRequest = serializeAndDeserialize(outRequest);
   expectEqTestRequest(outRequest, inRequest);
+  EXPECT_EQ(kVeryLongIobufSize, inRequest.testIobuf().length());
+}
+
+TEST(CarbonTest, veryLongStringCompact) {
+  constexpr uint32_t kVeryLongStringSize = 1 << 30;
+  std::string veryLongString(kVeryLongStringSize, 'x');
+
+  carbon::test::TestCompactRequest outRequest(longString());
+  outRequest.testLongString() = std::move(veryLongString);
+  const auto inRequest =
+      serializeCarbonAndDeserializeCompactCompatibility(outRequest);
+  expectEqTestCompactRequest(outRequest, inRequest);
+  EXPECT_EQ(kVeryLongStringSize, inRequest.testLongString().length());
+}
+
+TEST(CarbonTest, veryLongIobufCompact) {
+  constexpr uint32_t kVeryLongIobufSize = 1 << 30;
+  folly::IOBuf veryLongIobuf(folly::IOBuf::CREATE, kVeryLongIobufSize);
+  std::memset(veryLongIobuf.writableTail(), 'x', kVeryLongIobufSize);
+  veryLongIobuf.append(kVeryLongIobufSize);
+
+  carbon::test::TestCompactRequest outRequest(longString());
+  outRequest.testIobuf() = std::move(veryLongIobuf);
+  const auto inRequest =
+      serializeCarbonAndDeserializeCompactCompatibility(outRequest);
+  expectEqTestCompactRequest(outRequest, inRequest);
   EXPECT_EQ(kVeryLongIobufSize, inRequest.testIobuf().length());
 }
 
@@ -563,4 +638,55 @@ TEST(CarbonTest, keysString) {
     TestRequest req{std::string(kKeyLiteral)};
     checkKeyFilledProperly(req.key());
   }
+}
+
+TEST(CarbonTest, unionWhich) {
+  TestOptionalUnion un;
+
+  EXPECT_EQ(TestOptionalUnion::ValueType::EMPTY, un.which());
+
+  un.umember1() = 10;
+  EXPECT_EQ(TestOptionalUnion::ValueType::UMEMBER1, un.which());
+
+  un.emplace<TestOptionalUnion::ValueType::UMEMBER2>(true);
+  EXPECT_EQ(TestOptionalUnion::ValueType::UMEMBER2, un.which());
+
+  un.emplace<TestOptionalUnion::ValueType::UMEMBER3>("abc");
+  EXPECT_EQ(TestOptionalUnion::ValueType::UMEMBER3, un.which());
+}
+
+TEST(CarbonTest, f14NodeMapToStdUnorderedMap) {
+  carbon::test::TestF14Containers f14;
+  f14.nodeMap().emplace("node", 1);
+  f14.nodeMap().emplace("node2", 2);
+  f14.fastMap().emplace("fast", 3);
+  f14.valueMap().emplace("value", 4);
+  f14.vectorMap().emplace("vector", 5);
+  f14.nodeSet().emplace(1);
+  f14.nodeSet().emplace(2);
+  f14.fastSet().emplace(3);
+  f14.valueSet().emplace(4);
+  f14.vectorSet().emplace(5);
+  auto std = carbon::test::util::serializeAndDeserialize<
+      carbon::test::TestF14Containers,
+      carbon::test::TestStdContainers>(f14);
+  ASSERT_EQ(std.nodeMap().size(), 2);
+  ASSERT_EQ(std.fastMap().size(), 1);
+  ASSERT_EQ(std.valueMap().size(), 1);
+  ASSERT_EQ(std.vectorMap().size(), 1);
+  EXPECT_EQ(std.nodeMap().at("node"), 1);
+  EXPECT_EQ(std.nodeMap().at("node2"), 2);
+  EXPECT_EQ(std.fastMap().at("fast"), 3);
+  EXPECT_EQ(std.valueMap().at("value"), 4);
+  EXPECT_EQ(std.vectorMap().at("vector"), 5);
+
+  ASSERT_EQ(std.nodeSet().size(), 2);
+  ASSERT_EQ(std.fastSet().size(), 1);
+  ASSERT_EQ(std.valueSet().size(), 1);
+  ASSERT_EQ(std.vectorSet().size(), 1);
+  EXPECT_FALSE(std.nodeSet().find(1) == std.nodeSet().end());
+  EXPECT_FALSE(std.nodeSet().find(2) == std.nodeSet().end());
+  EXPECT_FALSE(std.fastSet().find(3) == std.fastSet().end());
+  EXPECT_FALSE(std.valueSet().find(4) == std.valueSet().end());
+  EXPECT_FALSE(std.vectorSet().find(5) == std.vectorSet().end());
 }

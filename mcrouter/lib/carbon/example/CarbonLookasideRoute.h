@@ -1,14 +1,14 @@
-/*
- *  Copyright (c) 2018-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
 #include <folly/Format.h>
 
+#include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
@@ -43,6 +43,14 @@ class HelloGoodbyeCarbonLookasideHelper {
     }
     return std::string();
   }
+
+  template <typename Reply>
+  bool shouldCacheReply(const Reply& /* reply */) const {
+    return true;
+  }
+
+  template <typename Reply>
+  void postProcessCachedReply(Reply& /* reply */) const {}
 };
 
 template <class RouterInfo>
