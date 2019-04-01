@@ -174,6 +174,13 @@ class AsyncMcClient {
   }
 
   /**
+   * The name of this transport.
+   */
+  static constexpr folly::StringPiece name() {
+    return "AsyncMcClient";
+  }
+
+  /**
    * Tells whether or not this Transport is compatible with the given protocol.
    */
   static constexpr bool isCompatible(mc_protocol_t protocol);

@@ -46,7 +46,7 @@ namespace mcrouter {
  * Routes a request to a single ProxyDestination.
  * This is the lowest level in Mcrouter's RouteHandle tree.
  */
-template <class RouterInfo>
+template <class RouterInfo, class Transport>
 class DestinationRoute {
  public:
   std::string routeName() const {
@@ -62,7 +62,7 @@ class DestinationRoute {
    * @param destination The destination where the request is to be sent
    */
   DestinationRoute(
-      std::shared_ptr<ProxyDestinationCarbon> destination,
+      std::shared_ptr<ProxyDestination<Transport>> destination,
       folly::StringPiece poolName,
       size_t indexInPool,
       int32_t poolStatIdx,
@@ -106,7 +106,7 @@ class DestinationRoute {
   }
 
  private:
-  const std::shared_ptr<ProxyDestinationCarbon> destination_;
+  const std::shared_ptr<ProxyDestination<Transport>> destination_;
   const folly::StringPiece poolName_;
   const size_t indexInPool_;
   const int32_t poolStatIndex_{-1};
@@ -265,15 +265,15 @@ class DestinationRoute {
   }
 };
 
-template <class RouterInfo>
+template <class RouterInfo, class Transport>
 std::shared_ptr<typename RouterInfo::RouteHandleIf> makeDestinationRoute(
-    std::shared_ptr<ProxyDestinationCarbon> destination,
+    std::shared_ptr<ProxyDestination<Transport>> destination,
     folly::StringPiece poolName,
     size_t indexInPool,
     int32_t poolStatsIndex,
     std::chrono::milliseconds timeout,
     bool keepRoutingPrefix) {
-  return makeRouteHandleWithInfo<RouterInfo, DestinationRoute>(
+  return makeRouteHandleWithInfo<RouterInfo, DestinationRoute, Transport>(
       std::move(destination),
       poolName,
       indexInPool,
@@ -282,6 +282,6 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeDestinationRoute(
       keepRoutingPrefix);
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

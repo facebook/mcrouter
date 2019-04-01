@@ -20,6 +20,7 @@
 #include "mcrouter/lib/fbi/cpp/ParsingUtil.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/network/AccessPoint.h"
+#include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/SecurityOptions.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/routes/AsynclogRoute.h"
@@ -300,20 +301,21 @@ McRouteHandleProvider<RouterInfo>::makePool(
       it->second.push_back(ap);
       folly::StringPiece nameSp = it->first;
 
-      auto pdstn = proxy_.destinationMap()->find(*ap, timeout);
-      if (!pdstn) {
-        pdstn = proxy_.destinationMap()->emplace(
-            std::move(ap), timeout, qosClass, qosPath, RouterInfo::name);
+      if (ap->getProtocol() == mc_thrift_protocol) {
+        throw std::logic_error("Thrift transport not supported yet!");
+      } else {
+        using Transport = AsyncMcClient;
+        destinations.push_back(createDestinationRoute<Transport>(
+            std::move(ap),
+            timeout,
+            connectTimeout,
+            qosClass,
+            qosPath,
+            nameSp,
+            i,
+            poolStatIndex,
+            keepRoutingPrefix));
       }
-      pdstn->updateShortestTimeout(connectTimeout, timeout);
-
-      destinations.push_back(makeDestinationRoute<RouterInfo>(
-          std::move(pdstn),
-          nameSp,
-          i,
-          poolStatIndex,
-          timeout,
-          keepRoutingPrefix));
     } // servers
 
     return pools_.emplace(std::move(name), std::move(destinations))
@@ -321,6 +323,35 @@ McRouteHandleProvider<RouterInfo>::makePool(
   } catch (const std::exception& e) {
     throwLogic("Pool {}: {}", name, e.what());
   }
+}
+
+template <class RouterInfo>
+template <class Transport>
+typename McRouteHandleProvider<RouterInfo>::RouteHandlePtr
+McRouteHandleProvider<RouterInfo>::createDestinationRoute(
+    std::shared_ptr<AccessPoint> ap,
+    std::chrono::milliseconds timeout,
+    std::chrono::milliseconds connectTimeout,
+    uint64_t qosClass,
+    uint64_t qosPath,
+    folly::StringPiece poolName,
+    size_t indexInPool,
+    int32_t poolStatIndex,
+    bool keepRoutingPrefix) {
+  auto pdstn = proxy_.destinationMap()->template find<Transport>(*ap, timeout);
+  if (!pdstn) {
+    pdstn = proxy_.destinationMap()->template emplace<Transport>(
+        std::move(ap), timeout, qosClass, qosPath, RouterInfo::name);
+  }
+  pdstn->updateShortestTimeout(connectTimeout, timeout);
+
+  return makeDestinationRoute<RouterInfo, Transport>(
+      std::move(pdstn),
+      poolName,
+      indexInPool,
+      poolStatIndex,
+      timeout,
+      keepRoutingPrefix);
 }
 
 template <class RouterInfo>
@@ -424,15 +455,16 @@ McRouteHandleProvider<RouterInfo>::buildCheckedRouteMap() {
   // extra provider functions. So those code paths must be checked by other
   // means.
   for (auto it : buildRouteMap()) {
-    checkedRouteMap.emplace(it.first, [
-      factoryFunc = std::move(it.second),
-      rhName = it.first
-    ](RouteHandleFactory<RouteHandleIf> & factory, const folly::dynamic& json) {
-      auto rh = factoryFunc(factory, json);
-      checkLogic(
-          rh != nullptr, folly::sformat("make{} returned nullptr", rhName));
-      return rh;
-    });
+    checkedRouteMap.emplace(
+        it.first,
+        [factoryFunc = std::move(it.second), rhName = it.first](
+            RouteHandleFactory<RouteHandleIf>& factory,
+            const folly::dynamic& json) {
+          auto rh = factoryFunc(factory, json);
+          checkLogic(
+              rh != nullptr, folly::sformat("make{} returned nullptr", rhName));
+          return rh;
+        });
   }
 
   return checkedRouteMap;

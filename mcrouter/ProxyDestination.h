@@ -19,9 +19,6 @@
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/mc/msg.h"
 
-// TODO(@aap): Delete
-#include "mcrouter/lib/network/AsyncMcClient.h"
-
 namespace facebook {
 namespace memcache {
 
@@ -92,6 +89,12 @@ class ProxyDestination : public ProxyDestinationBase {
   uint64_t rxmitsToCloseConnection_{0};
   uint64_t lastConnCloseCycles_{0}; // Cycles when connection was last closed
 
+  /**
+   * Creates a new ProxyDestination.
+   *
+   * @throws std::logic_error If Transport is not compatible with
+   *                          AccessPoint::getProtocol().
+   */
   static std::shared_ptr<ProxyDestination> create(
       ProxyBase& proxy,
       std::shared_ptr<AccessPoint> ap,
@@ -125,9 +128,6 @@ class ProxyDestination : public ProxyDestinationBase {
 
   friend class ProxyDestinationMap;
 };
-
-// TODO(@aap): Delete
-using ProxyDestinationCarbon = ProxyDestination<AsyncMcClient>;
 
 } // namespace mcrouter
 } // namespace memcache

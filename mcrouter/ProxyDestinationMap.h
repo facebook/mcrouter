@@ -17,9 +17,6 @@
 #include <folly/experimental/StringKeyedUnorderedMap.h>
 #include <folly/io/async/AsyncTimeout.h>
 
-// TODO(@aap): Delete
-#include "mcrouter/lib/network/AsyncMcClient.h"
-
 namespace facebook {
 namespace memcache {
 
@@ -31,9 +28,6 @@ class ProxyBase;
 template <class Transport>
 class ProxyDestination;
 class ProxyDestinationBase;
-
-// TODO(@aap): Delete
-using ProxyDestinationCarbon = ProxyDestination<AsyncMcClient>;
 
 /**
  * Manages lifetime of ProxyDestinations. Main goal is to reuse same
@@ -59,14 +53,19 @@ class ProxyDestinationMap {
    * If ProxyDestination is already stored in this object - returns it;
    * otherwise, returns nullptr.
    */
-  std::shared_ptr<ProxyDestinationCarbon> find(
+  template <class Transport>
+  std::shared_ptr<ProxyDestination<Transport>> find(
       const AccessPoint& ap,
       std::chrono::milliseconds timeout) const;
   /**
    * If ProxyDestination is already stored in this object - returns it;
    * otherwise creates a new one.
+   *
+   * @throws std::logic_error If Transport is not compatible with
+   *                          AccessPoint::getProtocol().
    */
-  std::shared_ptr<ProxyDestinationCarbon> emplace(
+  template <class Transport>
+  std::shared_ptr<ProxyDestination<Transport>> emplace(
       std::shared_ptr<AccessPoint> ap,
       std::chrono::milliseconds timeout,
       uint64_t qosClass,
@@ -146,6 +145,13 @@ class ProxyDestinationMap {
    */
   void scheduleTimer(bool initialAttempt);
 
+  /**
+   * Generates the key to be used in this map for a given (pdst, timeout) pair.
+   */
+  std::string genProxyDestinationKey(
+      const AccessPoint& ap,
+      std::chrono::milliseconds timeout) const;
+
   /*
    * Releases the shared_ptr reference on the destination's event-base.
    */
@@ -156,3 +162,5 @@ class ProxyDestinationMap {
 } // namespace mcrouter
 } // namespace memcache
 } // namespace facebook
+
+#include "mcrouter/ProxyDestinationMap-inl.h"

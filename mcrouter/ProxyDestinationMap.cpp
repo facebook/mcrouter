@@ -24,11 +24,9 @@ namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
-namespace {
-
-std::string genProxyDestinationKey(
+std::string ProxyDestinationMap::genProxyDestinationKey(
     const AccessPoint& ap,
-    std::chrono::milliseconds timeout) {
+    std::chrono::milliseconds timeout) const {
   if (ap.getProtocol() == mc_ascii_protocol) {
     // we cannot send requests with different timeouts for ASCII, since
     // it will break in-order nature of the protocol
@@ -37,8 +35,6 @@ std::string genProxyDestinationKey(
     return ap.toString();
   }
 }
-
-} // anonymous
 
 struct ProxyDestinationMap::StateList {
   using List = folly::IntrusiveList<
@@ -52,43 +48,6 @@ ProxyDestinationMap::ProxyDestinationMap(ProxyBase* proxy)
       active_(std::make_unique<StateList>()),
       inactive_(std::make_unique<StateList>()),
       inactivityTimeout_(0) {}
-
-std::shared_ptr<ProxyDestinationCarbon> ProxyDestinationMap::emplace(
-    std::shared_ptr<AccessPoint> ap,
-    std::chrono::milliseconds timeout,
-    uint64_t qosClass,
-    uint64_t qosPath,
-    folly::StringPiece routerInfoName) {
-  auto key = genProxyDestinationKey(*ap, timeout);
-  auto destination = ProxyDestinationCarbon::create(
-      *proxy_, std::move(ap), timeout, qosClass, qosPath, routerInfoName);
-  {
-    std::lock_guard<std::mutex> lck(destinationsLock_);
-    auto destIt = destinations_.emplace(key, destination);
-    destination->setKey(destIt.first->first);
-  }
-
-  // Update shared area of ProxyDestinations with same key from different
-  // threads. This shared area is represented with TkoTracker class.
-  proxy_->router().tkoTrackerMap().updateTracker(
-      *destination, proxy_->router().opts().failures_until_tko);
-
-  return destination;
-}
-
-/**
- * If ProxyDestination is already stored in this object - returns it;
- * otherwise, returns nullptr.
- */
-std::shared_ptr<ProxyDestinationCarbon> ProxyDestinationMap::find(
-    const AccessPoint& ap,
-    std::chrono::milliseconds timeout) const {
-  auto key = genProxyDestinationKey(ap, timeout);
-  {
-    std::lock_guard<std::mutex> lck(destinationsLock_);
-    return std::dynamic_pointer_cast<ProxyDestinationCarbon>(find(key));
-  }
-}
 
 // Note: caller must be holding destionationsLock_.
 std::shared_ptr<ProxyDestinationBase> ProxyDestinationMap::find(
@@ -161,6 +120,6 @@ void ProxyDestinationMap::releaseProxyDestinationRef(
 
 ProxyDestinationMap::~ProxyDestinationMap() {}
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

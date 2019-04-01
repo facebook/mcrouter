@@ -16,7 +16,8 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/Clocks.h"
 #include "mcrouter/lib/Reply.h"
-#include "mcrouter/lib/network/AsyncMcClient.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/network/ConnectionDownReason.h"
 #include "mcrouter/lib/network/McFizzClient.h"
 #include "mcrouter/lib/network/RpcStatsContext.h"
@@ -199,6 +200,11 @@ ProxyDestination<Transport>::create(
     uint64_t qosClass,
     uint64_t qosPath,
     folly::StringPiece routerInfoName) {
+  checkLogic(
+      Transport::isCompatible(ap->getProtocol()),
+      "Transport {} not compatible with {} protocol.",
+      Transport::name(),
+      mc_protocol_to_string(ap->getProtocol()));
   std::shared_ptr<ProxyDestination<Transport>> ptr(
       new ProxyDestination<Transport>(
           proxy, std::move(ap), timeout, qosClass, qosPath, routerInfoName));
