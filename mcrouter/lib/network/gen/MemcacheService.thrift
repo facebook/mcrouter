@@ -12,6 +12,7 @@
  *
  *  @generated
  */
+include "mcrouter/lib/network/gen/Common.thrift"
 include "mcrouter/lib/network/gen/Memcache.thrift"
 
 cpp_include "mcrouter/lib/network/gen/MemcacheMessages.h"
@@ -38,4 +39,5 @@ service Memcache {
   Memcache.McFlushAllReply (cpp.type = "facebook::memcache::McFlushAllReply") mcFlushAll(1: Memcache.McFlushAllRequest (cpp.type = "facebook::memcache::McFlushAllRequest") request) (thread = "eb")
   Memcache.McGatReply (cpp.type = "facebook::memcache::McGatReply") mcGat(1: Memcache.McGatRequest (cpp.type = "facebook::memcache::McGatRequest") request) (thread = "eb")
   Memcache.McGatsReply (cpp.type = "facebook::memcache::McGatsReply") mcGats(1: Memcache.McGatsRequest (cpp.type = "facebook::memcache::McGatsRequest") request) (thread = "eb")
+  Common.McVersionReply (cpp.type = "facebook::memcache::McVersionReply") mcVersion(1: Common.McVersionRequest (cpp.type = "facebook::memcache::McVersionRequest") request) (thread = "eb")
 }
