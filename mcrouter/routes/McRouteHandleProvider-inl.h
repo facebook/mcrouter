@@ -158,6 +158,8 @@ McRouteHandleProvider<RouterInfo>::makePool(
         protocol = mc_ascii_protocol;
       } else if (equalStr("caret", str, folly::AsciiCaseInsensitive())) {
         protocol = mc_caret_protocol;
+      } else if (equalStr("thrift", str, folly::AsciiCaseInsensitive())) {
+        protocol = mc_thrift_protocol;
       } else {
         throwLogic("Unknown protocol '{}'", str);
       }

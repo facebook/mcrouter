@@ -173,10 +173,15 @@ class AsyncMcClient {
     base_->setFlushList(flushList);
   }
 
+  /**
+   * Tells whether or not this Transport is compatible with the given protocol.
+   */
+  static constexpr bool isCompatible(mc_protocol_t protocol);
+
  private:
   std::shared_ptr<AsyncMcClientImpl> base_;
 };
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
 
 #include "AsyncMcClient-inl.h"

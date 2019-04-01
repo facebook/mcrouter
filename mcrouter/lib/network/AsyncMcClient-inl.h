@@ -68,5 +68,11 @@ inline const folly::AsyncTransportWrapper* AsyncMcClient::getTransport() {
 inline double AsyncMcClient::getRetransmissionInfo() {
   return base_->getRetransmissionInfo();
 }
-} // memcache
-} // facebook
+
+/* static */ inline constexpr bool AsyncMcClient::isCompatible(
+    mc_protocol_t protocol) {
+  return protocol == mc_ascii_protocol || protocol == mc_caret_protocol;
+}
+
+} // namespace memcache
+} // namespace facebook

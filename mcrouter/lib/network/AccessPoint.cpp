@@ -55,6 +55,8 @@ mc_protocol_t parseProtocol(folly::StringPiece str) {
     return mc_ascii_protocol;
   } else if (str == "caret") {
     return mc_caret_protocol;
+  } else if (str == "thrift") {
+    return mc_thrift_protocol;
   }
   throw std::runtime_error("Invalid protocol");
 }
