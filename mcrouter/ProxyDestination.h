@@ -19,11 +19,13 @@
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/mc/msg.h"
 
+// TODO(@aap): Delete
+#include "mcrouter/lib/network/AsyncMcClient.h"
+
 namespace facebook {
 namespace memcache {
 
 struct AccessPoint;
-class AsyncMcClient;
 struct RpcStatsContext;
 
 namespace mcrouter {
@@ -39,6 +41,7 @@ struct DestinationRequestCtx {
   explicit DestinationRequestCtx(int64_t now) : startTime(now) {}
 };
 
+template <class Transport>
 class ProxyDestination : public ProxyDestinationBase {
  public:
   ~ProxyDestination();
@@ -77,13 +80,12 @@ class ProxyDestination : public ProxyDestinationBase {
   std::weak_ptr<ProxyDestinationBase> selfPtr() override final {
     return selfPtr_;
   }
-  void markAsActive() override final;
 
  private:
-  std::unique_ptr<AsyncMcClient> client_;
-  // Ensure proxy thread doesn't reset AsyncMcClient
+  std::unique_ptr<Transport> transport_;
+  // Ensure proxy thread doesn't reset the Transport
   // while config and stats threads may be accessing it
-  mutable folly::SpinLock clientLock_;
+  mutable folly::SpinLock transportLock_;
 
   // Retransmits control information
   uint64_t lastRetransCycles_{0}; // Cycles when restransmits were last fetched
@@ -98,8 +100,8 @@ class ProxyDestination : public ProxyDestinationBase {
       uint64_t qosPath,
       folly::StringPiece routerInfoName);
 
-  AsyncMcClient& getAsyncMcClient();
-  void initializeAsyncMcClient();
+  Transport& getTransport();
+  void initializeTransport();
 
   ProxyDestination(
       ProxyBase& proxy,
@@ -123,6 +125,9 @@ class ProxyDestination : public ProxyDestinationBase {
 
   friend class ProxyDestinationMap;
 };
+
+// TODO(@aap): Delete
+using ProxyDestinationCarbon = ProxyDestination<AsyncMcClient>;
 
 } // namespace mcrouter
 } // namespace memcache

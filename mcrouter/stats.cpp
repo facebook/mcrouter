@@ -47,17 +47,17 @@ namespace {
 
 char* gStandaloneArgs = nullptr;
 
-const char* clientStateToStr(ProxyDestination::State state) {
+const char* clientStateToStr(ProxyDestinationBase::State state) {
   switch (state) {
-    case ProxyDestination::State::Up:
+    case ProxyDestinationBase::State::Up:
       return "up";
-    case ProxyDestination::State::New:
+    case ProxyDestinationBase::State::New:
       return "new";
-    case ProxyDestination::State::Closed:
+    case ProxyDestinationBase::State::Closed:
       return "closed";
-    case ProxyDestination::State::Down:
+    case ProxyDestinationBase::State::Down:
       return "down";
-    case ProxyDestination::State::NumStates:
+    case ProxyDestinationBase::State::NumStates:
       assert(false);
   }
   return "unknown";
@@ -65,7 +65,7 @@ const char* clientStateToStr(ProxyDestination::State state) {
 
 struct ServerStat {
   uint64_t results[static_cast<size_t>(carbon::Result::NUM_RESULTS)] = {0};
-  size_t states[(size_t)ProxyDestination::State::NumStates] = {0};
+  size_t states[(size_t)ProxyDestinationBase::State::NumStates] = {0};
   bool isHardTko{false};
   bool isSoftTko{false};
   double sumLatencies{0.0};
@@ -96,9 +96,11 @@ struct ServerStat {
           minRetransPerKByte)
           .appendTo(res);
     }
-    for (size_t i = 0; i < (size_t)ProxyDestination::State::NumStates; ++i) {
+    for (size_t i = 0; i < (size_t)ProxyDestinationBase::State::NumStates;
+         ++i) {
       if (states[i] > 0) {
-        auto state = clientStateToStr(static_cast<ProxyDestination::State>(i));
+        auto state =
+            clientStateToStr(static_cast<ProxyDestinationBase::State>(i));
         folly::format(" {}:{}", state, states[i]).appendTo(res);
       }
     }

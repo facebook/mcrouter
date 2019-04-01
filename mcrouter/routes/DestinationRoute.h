@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -63,7 +62,7 @@ class DestinationRoute {
    * @param destination The destination where the request is to be sent
    */
   DestinationRoute(
-      std::shared_ptr<ProxyDestination> destination,
+      std::shared_ptr<ProxyDestinationCarbon> destination,
       folly::StringPiece poolName,
       size_t indexInPool,
       int32_t poolStatIdx,
@@ -107,7 +106,7 @@ class DestinationRoute {
   }
 
  private:
-  const std::shared_ptr<ProxyDestination> destination_;
+  const std::shared_ptr<ProxyDestinationCarbon> destination_;
   const folly::StringPiece poolName_;
   const size_t indexInPool_;
   const int32_t poolStatIndex_{-1};
@@ -268,7 +267,7 @@ class DestinationRoute {
 
 template <class RouterInfo>
 std::shared_ptr<typename RouterInfo::RouteHandleIf> makeDestinationRoute(
-    std::shared_ptr<ProxyDestination> destination,
+    std::shared_ptr<ProxyDestinationCarbon> destination,
     folly::StringPiece poolName,
     size_t indexInPool,
     int32_t poolStatsIndex,

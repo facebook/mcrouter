@@ -12,6 +12,7 @@
 
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/network/AsyncMcClientImpl.h"
+#include "mcrouter/lib/network/ConnectionDownReason.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
 
 namespace folly {
@@ -35,7 +36,6 @@ struct RpcStatsContext;
  */
 class AsyncMcClient {
  public:
-  using ConnectionDownReason = AsyncMcClientImpl::ConnectionDownReason;
   using FlushList = AsyncMcClientImpl::FlushList;
 
   AsyncMcClient(folly::EventBase& eventBase, ConnectionOptions options);

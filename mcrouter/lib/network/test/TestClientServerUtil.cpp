@@ -266,8 +266,8 @@ TestClient::TestClient(
       [](const folly::AsyncTransportWrapper&, int64_t) {
         LOG(INFO) << "Client UP.";
       },
-      [](AsyncMcClient::ConnectionDownReason reason, int64_t) {
-        if (reason == AsyncMcClient::ConnectionDownReason::SERVER_GONE_AWAY) {
+      [](ConnectionDownReason reason, int64_t) {
+        if (reason == ConnectionDownReason::SERVER_GONE_AWAY) {
           LOG(INFO) << "Server gone Away.";
         } else {
           LOG(INFO) << "Client DOWN.";
@@ -293,7 +293,7 @@ TestClient::TestClient(
 
 void TestClient::setStatusCallbacks(
     std::function<void(const folly::AsyncTransportWrapper&, int64_t)> onUp,
-    std::function<void(AsyncMcClient::ConnectionDownReason, int64_t)> onDown) {
+    std::function<void(ConnectionDownReason, int64_t)> onDown) {
   client_->setStatusCallbacks(
       [onUp](
           const folly::AsyncTransportWrapper& socket,
@@ -303,10 +303,8 @@ void TestClient::setStatusCallbacks(
           onUp(socket, numConnectRetries);
         }
       },
-      [onDown](
-          AsyncMcClient::ConnectionDownReason reason,
-          int64_t numConnectRetries) {
-        if (reason == AsyncMcClient::ConnectionDownReason::SERVER_GONE_AWAY) {
+      [onDown](ConnectionDownReason reason, int64_t numConnectRetries) {
+        if (reason == ConnectionDownReason::SERVER_GONE_AWAY) {
           LOG(INFO) << "Server gone Away.";
         } else {
           LOG(INFO) << "Client DOWN.";

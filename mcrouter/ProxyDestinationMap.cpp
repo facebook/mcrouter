@@ -53,14 +53,14 @@ ProxyDestinationMap::ProxyDestinationMap(ProxyBase* proxy)
       inactive_(std::make_unique<StateList>()),
       inactivityTimeout_(0) {}
 
-std::shared_ptr<ProxyDestination> ProxyDestinationMap::emplace(
+std::shared_ptr<ProxyDestinationCarbon> ProxyDestinationMap::emplace(
     std::shared_ptr<AccessPoint> ap,
     std::chrono::milliseconds timeout,
     uint64_t qosClass,
     uint64_t qosPath,
     folly::StringPiece routerInfoName) {
   auto key = genProxyDestinationKey(*ap, timeout);
-  auto destination = ProxyDestination::create(
+  auto destination = ProxyDestinationCarbon::create(
       *proxy_, std::move(ap), timeout, qosClass, qosPath, routerInfoName);
   {
     std::lock_guard<std::mutex> lck(destinationsLock_);
@@ -80,13 +80,13 @@ std::shared_ptr<ProxyDestination> ProxyDestinationMap::emplace(
  * If ProxyDestination is already stored in this object - returns it;
  * otherwise, returns nullptr.
  */
-std::shared_ptr<ProxyDestination> ProxyDestinationMap::find(
+std::shared_ptr<ProxyDestinationCarbon> ProxyDestinationMap::find(
     const AccessPoint& ap,
     std::chrono::milliseconds timeout) const {
   auto key = genProxyDestinationKey(ap, timeout);
   {
     std::lock_guard<std::mutex> lck(destinationsLock_);
-    return std::dynamic_pointer_cast<ProxyDestination>(find(key));
+    return std::dynamic_pointer_cast<ProxyDestinationCarbon>(find(key));
   }
 }
 

@@ -17,6 +17,9 @@
 #include <folly/experimental/StringKeyedUnorderedMap.h>
 #include <folly/io/async/AsyncTimeout.h>
 
+// TODO(@aap): Delete
+#include "mcrouter/lib/network/AsyncMcClient.h"
+
 namespace facebook {
 namespace memcache {
 
@@ -25,8 +28,12 @@ struct AccessPoint;
 namespace mcrouter {
 
 class ProxyBase;
+template <class Transport>
 class ProxyDestination;
 class ProxyDestinationBase;
+
+// TODO(@aap): Delete
+using ProxyDestinationCarbon = ProxyDestination<AsyncMcClient>;
 
 /**
  * Manages lifetime of ProxyDestinations. Main goal is to reuse same
@@ -52,14 +59,14 @@ class ProxyDestinationMap {
    * If ProxyDestination is already stored in this object - returns it;
    * otherwise, returns nullptr.
    */
-  std::shared_ptr<ProxyDestination> find(
+  std::shared_ptr<ProxyDestinationCarbon> find(
       const AccessPoint& ap,
       std::chrono::milliseconds timeout) const;
   /**
    * If ProxyDestination is already stored in this object - returns it;
    * otherwise creates a new one.
    */
-  std::shared_ptr<ProxyDestination> emplace(
+  std::shared_ptr<ProxyDestinationCarbon> emplace(
       std::shared_ptr<AccessPoint> ap,
       std::chrono::milliseconds timeout,
       uint64_t qosClass,
@@ -145,6 +152,7 @@ class ProxyDestinationMap {
   static void releaseProxyDestinationRef(
       std::shared_ptr<const ProxyDestinationBase>&& destination);
 };
+
 } // namespace mcrouter
 } // namespace memcache
 } // namespace facebook

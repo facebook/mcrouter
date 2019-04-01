@@ -163,6 +163,7 @@ libmcrouter_a_SOURCES = \
   network/CaretSerializedMessage.h \
   network/ClientMcParser-inl.h \
   network/ClientMcParser.h \
+  network/ConnectionDownReason.h \
   network/ConnectionOptions.h \
   network/ConnectionTracker.cpp \
   network/ConnectionTracker.h \

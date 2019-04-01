@@ -329,6 +329,10 @@ void ProxyDestinationBase::setState(State newState) {
   }
 }
 
+void ProxyDestinationBase::markAsActive() {
+  proxy().destinationMap()->markAsActive(*this);
+}
+
 } // namespace mcrouter
 } // namespace memcache
 } // namespace facebook

@@ -21,6 +21,7 @@
 #include "mcrouter/lib/debug/ConnectionFifo.h"
 #include "mcrouter/lib/fbi/cpp/ObjectPool.h"
 #include "mcrouter/lib/network/ClientMcParser.h"
+#include "mcrouter/lib/network/ConnectionDownReason.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
 #include "mcrouter/lib/network/McClientRequestContext.h"
 #include "mcrouter/lib/network/RpcStatsContext.h"
@@ -39,14 +40,6 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
                           private folly::AsyncTransportWrapper::WriteCallback,
                           private folly::AsyncTransport::BufferCallback {
  public:
-  enum class ConnectionDownReason {
-    ERROR,
-    ABORTED,
-    CONNECT_TIMEOUT,
-    CONNECT_ERROR,
-    SERVER_GONE_AWAY,
-  };
-
   using FlushList = boost::intrusive::list<
       folly::EventBase::LoopCallback,
       boost::intrusive::constant_time_size<false>>;

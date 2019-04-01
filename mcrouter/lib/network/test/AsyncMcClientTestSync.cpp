@@ -502,9 +502,7 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
   auto client = std::make_unique<AsyncMcClient>(*eventBase, opts);
   client->setStatusCallbacks(
       [&wasUp](const folly::AsyncTransportWrapper&, int64_t) { wasUp = true; },
-      [&wentDown](AsyncMcClient::ConnectionDownReason, int64_t) {
-        wentDown = true;
-      });
+      [&wentDown](ConnectionDownReason, int64_t) { wentDown = true; });
 
   fiberManager->addTask([&client, &replied] {
     McGetRequest req("hold");
@@ -642,9 +640,7 @@ TEST(AsyncMcClient, tonsOfConnections) {
   TestClient client("localhost", server->getListenPort(), 1, mc_ascii_protocol);
   client.setStatusCallbacks(
       [](const folly::AsyncTransportWrapper&, int64_t) {},
-      [&wentDown](AsyncMcClient::ConnectionDownReason, int64_t) {
-        wentDown = true;
-      });
+      [&wentDown](ConnectionDownReason, int64_t) { wentDown = true; });
   client.sendGet("test", carbon::Result::FOUND);
   client.waitForReplies();
 
@@ -826,8 +822,8 @@ TEST(AsyncMcClient, caretGoAway) {
   client.sendGet("hold", carbon::Result::FOUND);
   client.setStatusCallbacks(
       [](const folly::AsyncTransportWrapper&, int64_t) {},
-      [&client](AsyncMcClient::ConnectionDownReason reason, int64_t) {
-        if (reason == AsyncMcClient::ConnectionDownReason::SERVER_GONE_AWAY) {
+      [&client](ConnectionDownReason reason, int64_t) {
+        if (reason == ConnectionDownReason::SERVER_GONE_AWAY) {
           LOG(INFO) << "Server gone away, flushing";
           client.sendGet("flush", carbon::Result::FOUND);
         }
@@ -1035,11 +1031,11 @@ TEST_P(AsyncMcClientSSLOffloadTest, closeNow) {
   lc->attachEventBase(evb);
   folly::fibers::FiberManager fm(std::move(lc));
   bool upCalled = false;
-  folly::Optional<AsyncMcClient::ConnectionDownReason> downReason;
+  folly::Optional<ConnectionDownReason> downReason;
   auto upFunc = [&](const folly::AsyncTransportWrapper&, int64_t) {
     upCalled = true;
   };
-  auto downFunc = [&](AsyncMcClient::ConnectionDownReason reason, int64_t) {
+  auto downFunc = [&](ConnectionDownReason reason, int64_t) {
     downReason = reason;
   };
 
@@ -1055,7 +1051,7 @@ TEST_P(AsyncMcClientSSLOffloadTest, closeNow) {
   evb.loop();
   EXPECT_FALSE(upCalled);
   EXPECT_TRUE(downReason.hasValue());
-  EXPECT_EQ(*downReason, AsyncMcClient::ConnectionDownReason::ABORTED);
+  EXPECT_EQ(*downReason, ConnectionDownReason::ABORTED);
 }
 
 TEST_P(AsyncMcClientSSLOffloadTest, clientReset) {
@@ -1068,7 +1064,7 @@ TEST_P(AsyncMcClientSSLOffloadTest, clientReset) {
   auto lc = std::make_unique<folly::fibers::EventBaseLoopController>();
   lc->attachEventBase(evb);
   folly::fibers::FiberManager fm(std::move(lc));
-  folly::Optional<AsyncMcClient::ConnectionDownReason> downReason;
+  folly::Optional<ConnectionDownReason> downReason;
   auto client = std::make_unique<AsyncMcClient>(evb, opts);
   auto clientPtr = client.get();
   fm.addTask([clientPtr] {

@@ -146,8 +146,8 @@ class ProxyDestinationBase {
       std::chrono::milliseconds shortestWriteTimeout) = 0;
   virtual carbon::Result sendProbe() = 0;
   virtual std::weak_ptr<ProxyDestinationBase> selfPtr() = 0;
-  virtual void markAsActive() = 0;
 
+  void markAsActive();
   void setState(State st);
 
   void handleTko(const carbon::Result result, bool isProbeRequest);
