@@ -166,15 +166,16 @@ void McServerSession::checkClosed() {
     assert(pendingWrites_.empty());
 
     if (state_ == CLOSING) {
-      /* It's possible to call close() more than once from the same stack.
-         Prevent second close() from doing anything */
+      // It's possible to call close() more than once from the same stack.
+      // Prevent second close() from doing anything
       state_ = CLOSED;
+      // Call onCloseFinish() before transport reset to keep transport in tact
+      onCloseFinish();
       if (transport_) {
-        /* prevent readEOF() from being called */
+        // prevent readEOF() from being called
         transport_->setReadCB(nullptr);
         transport_.reset();
       }
-      onCloseFinish();
       destroy();
     }
   }
