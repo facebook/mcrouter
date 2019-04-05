@@ -646,7 +646,7 @@ void McServerSession::handshakeSuc(folly::AsyncSSLSocket* sock) noexcept {
 void McServerSession::handshakeErr(
     folly::AsyncSSLSocket*,
     const folly::AsyncSocketException& e) noexcept {
-  LOG(ERROR) << "SSL Handshake failure: " << e.what();
+  LOG_EVERY_N(ERROR, 100) << "SSL Handshake failure: " << e.what();
   close();
 }
 
@@ -675,7 +675,7 @@ void McServerSession::fizzHandshakeSuccess(
 void McServerSession::fizzHandshakeError(
     fizz::server::AsyncFizzServer*,
     folly::exception_wrapper e) noexcept {
-  LOG(ERROR) << "Fizz Handshake failure: " << e.what();
+  LOG_EVERY_N(ERROR, 100) << "Fizz Handshake failure: " << e.what();
   close();
 }
 
