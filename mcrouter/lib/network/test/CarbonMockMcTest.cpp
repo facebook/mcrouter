@@ -18,6 +18,8 @@
 #include "mcrouter/lib/network/CaretProtocol.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/TypedMsg.h"
+#include "mcrouter/lib/network/gen/MemcacheMessages.h"
+#include "mcrouter/lib/network/gen/MemcacheServer.h"
 #include "mcrouter/lib/network/test/ClientSocket.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
 #include "mcrouter/lib/network/test/MockMc.h"

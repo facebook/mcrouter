@@ -12,7 +12,7 @@
 #include "mcrouter/lib/MessageQueue.h"
 #include "mcrouter/lib/carbon/RoutingGroups.h"
 #include "mcrouter/lib/carbon/Stats.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/lib/network/gen/MemcacheMessages.h"
 #include "mcrouter/options.h"
 #include "mcrouter/routes/ProxyRoute.h"
 #include "mcrouter/stats.h"

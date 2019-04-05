@@ -27,7 +27,7 @@
 #include "mcrouter/lib/carbon/FailoverUtil.h"
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/lib/network/gen/MemcacheMessages.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace folly {

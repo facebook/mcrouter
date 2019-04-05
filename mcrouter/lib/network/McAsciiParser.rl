@@ -8,7 +8,8 @@
 #include "mcrouter/lib/network/McAsciiParser.h"
 
 #include "mcrouter/lib/mc/msg.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/lib/network/gen/MemcacheMessages.h"
+#include "mcrouter/lib/network/gen/MemcacheRoutingGroups.h"
 
 namespace facebook { namespace memcache {
 

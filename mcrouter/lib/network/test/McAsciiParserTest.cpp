@@ -14,7 +14,8 @@
 
 #include "mcrouter/lib/network/ClientMcParser.h"
 #include "mcrouter/lib/network/McAsciiParser.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/lib/network/gen/MemcacheMessages.h"
+#include "mcrouter/lib/network/gen/MemcacheRoutingGroups.h"
 #include "mcrouter/lib/network/test/TestMcAsciiParserUtil.h"
 
 using namespace facebook::memcache;

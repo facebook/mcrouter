@@ -20,7 +20,7 @@
 #include "mcrouter/lib/network/McSSLUtil.h"
 #include "mcrouter/lib/network/SecurityOptions.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/lib/network/gen/MemcacheMessages.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
 #include "mcrouter/lib/network/test/TestClientServerUtil.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"

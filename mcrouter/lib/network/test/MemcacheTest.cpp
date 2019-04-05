@@ -6,7 +6,7 @@
  */
 #include <gtest/gtest.h>
 
-#include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/lib/network/gen/MemcacheMessages.h"
 
 using namespace facebook::memcache;
 

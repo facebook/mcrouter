@@ -16,8 +16,8 @@
 
 #include "mcrouter/lib/carbon/CarbonQueueAppender.h"
 #include "mcrouter/lib/network/CaretProtocol.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
-#include "mcrouter/lib/network/test/gen/CarbonTest.h"
+#include "mcrouter/lib/network/gen/MemcacheMessages.h"
+#include "mcrouter/lib/network/test/gen/CarbonTestMessages.h"
 
 using namespace facebook::memcache;
 

@@ -27,7 +27,7 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/StatsReply.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/lib/network/gen/MemcacheMessages.h"
 
 /**                             .__
  * __  _  _______ _______  ____ |__| ____    ____

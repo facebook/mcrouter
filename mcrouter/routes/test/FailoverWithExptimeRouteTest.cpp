@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <memory>
 #include <vector>
@@ -11,7 +10,7 @@
 #include <gtest/gtest.h>
 
 #include "mcrouter/lib/FailoverErrorsSettings.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/lib/network/gen/MemcacheMessages.h"
 #include "mcrouter/routes/FailoverRateLimiter.h"
 #include "mcrouter/routes/FailoverWithExptimeRouteFactory.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
@@ -31,9 +30,9 @@ namespace {
 using FiberManagerContextTag =
     typename fiber_local<MemcacheRouterInfo>::ContextTypeTag;
 } // anonymous
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 TEST(failoverWithExptimeRouteTest, success) {
   std::vector<std::shared_ptr<TestHandle>> normalHandle{

@@ -19,6 +19,7 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/network/ConnectionDownReason.h"
+#include "mcrouter/lib/network/ConnectionOptions.h"
 #include "mcrouter/lib/network/McFizzClient.h"
 #include "mcrouter/lib/network/RpcStatsContext.h"
 
