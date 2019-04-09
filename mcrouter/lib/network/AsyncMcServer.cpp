@@ -475,9 +475,6 @@ size_t AsyncMcServer::Options::setMaxConnections(
   }
   assert(nThreads > 0);
 
-  // reserve some FDs for things like file, pipes (mcpiper uses pipes), etc.
-  constexpr size_t kReservedFDs = 2048;
-
   rlimit rlim;
   auto rlimRes = getrlimit(RLIMIT_NOFILE, &rlim);
 
@@ -490,7 +487,8 @@ size_t AsyncMcServer::Options::setMaxConnections(
     }
 
     size_t softLimit = rlim.rlim_cur;
-    globalMaxConns = std::max<size_t>(softLimit, kReservedFDs) - kReservedFDs;
+    globalMaxConns =
+        std::max<size_t>(softLimit, worker.reservedFDs) - worker.reservedFDs;
     VLOG(2) << "Setting max conns to " << globalMaxConns
             << " based on soft resource limit of " << softLimit;
 
@@ -509,7 +507,7 @@ size_t AsyncMcServer::Options::setMaxConnections(
     return globalMaxConns;
   }
 
-  size_t desiredRlim = globalMaxConns + kReservedFDs;
+  size_t desiredRlim = globalMaxConns + worker.reservedFDs;
 
   // if the hard rlimit is not large enough, try and raise it.
   // this call will fail for unprivileged services.
@@ -525,8 +523,8 @@ size_t AsyncMcServer::Options::setMaxConnections(
                    << folly::errnoStr(errno);
       // we failed to set hard limt, lower the globalMaxConns to the current
       // hard limit.
-      globalMaxConns =
-          std::max<size_t>(rlim.rlim_max, kReservedFDs) - kReservedFDs;
+      globalMaxConns = std::max<size_t>(rlim.rlim_max, worker.reservedFDs) -
+          worker.reservedFDs;
     }
   }
 
@@ -537,8 +535,8 @@ size_t AsyncMcServer::Options::setMaxConnections(
     if (setrlimit(RLIMIT_NOFILE, &newRlim) == 0) {
       VLOG(2) << "Successfully updated soft rlimit to " << newRlim.rlim_cur;
       // setrlimit succeeded, update globalMaxConns.
-      globalMaxConns =
-          std::max<size_t>(newRlim.rlim_cur, kReservedFDs) - kReservedFDs;
+      globalMaxConns = std::max<size_t>(newRlim.rlim_cur, worker.reservedFDs) -
+          worker.reservedFDs;
     } else {
       LOG(ERROR) << "setrlimit for soft limit failed. "
                  << "Errno: " << folly::errnoStr(errno)
