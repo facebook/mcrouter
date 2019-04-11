@@ -135,13 +135,11 @@ void AsyncMcClientImpl::closeNow() {
   }
 }
 
-void AsyncMcClientImpl::setStatusCallbacks(
-    std::function<void(const folly::AsyncTransportWrapper&, int64_t)> onUp,
-    std::function<void(ConnectionDownReason, int64_t)> onDown) {
+void AsyncMcClientImpl::setConnectionStatusCallbacks(
+    ConnectionStatusCallbacks callbacks) {
   DestructorGuard dg(this);
 
-  statusCallbacks_ =
-      ConnectionStatusCallbacks{std::move(onUp), std::move(onDown)};
+  statusCallbacks_ = std::move(callbacks);
 
   if (connectionState_ == ConnectionState::UP && statusCallbacks_.onUp) {
     statusCallbacks_.onUp(*socket_, getNumConnectRetries());
@@ -149,18 +147,15 @@ void AsyncMcClientImpl::setStatusCallbacks(
 }
 
 void AsyncMcClientImpl::setRequestStatusCallbacks(
-    std::function<void(int pendingDiff, int inflightDiff)> onStateChange,
-    std::function<void(size_t numToSend)> onWrite,
-    std::function<void()> onPartialWrite) {
+    RequestStatusCallbacks callbacks) {
   DestructorGuard dg(this);
 
-  requestStatusCallbacks_ = RequestStatusCallbacks{
-      std::move(onStateChange), std::move(onWrite), std::move(onPartialWrite)};
+  requestStatusCallbacks_ = std::move(callbacks);
 }
 
 AsyncMcClientImpl::~AsyncMcClientImpl() {
-  assert(getPendingRequestCount() == 0);
-  assert(getInflightRequestCount() == 0);
+  assert(queue_.getPendingRequestCount() == 0);
+  assert(queue_.getInflightRequestCount() == 0);
   if (socket_) {
     // Close the socket immediately. We need to process all callbacks, such as
     // readEOF and connectError, before we exit destructor.
@@ -169,12 +164,10 @@ AsyncMcClientImpl::~AsyncMcClientImpl() {
   eventBaseDestructionCallback_->cancel();
 }
 
-size_t AsyncMcClientImpl::getPendingRequestCount() const {
-  return queue_.getPendingRequestCount();
-}
-
-size_t AsyncMcClientImpl::getInflightRequestCount() const {
-  return queue_.getInflightRequestCount();
+typename Transport::RequestQueueStats AsyncMcClientImpl::getRequestQueueStats()
+    const {
+  return RequestQueueStats{queue_.getPendingRequestCount(),
+                           queue_.getInflightRequestCount()};
 }
 
 void AsyncMcClientImpl::setThrottle(size_t maxInflight, size_t maxPending) {
@@ -206,10 +199,11 @@ void AsyncMcClientImpl::sendCommon(McClientRequestContextBase& req) {
 size_t AsyncMcClientImpl::getNumToSend() const {
   size_t numToSend = queue_.getPendingRequestCount();
   if (maxInflight_ != 0) {
-    if (maxInflight_ <= getInflightRequestCount()) {
+    if (maxInflight_ <= queue_.getInflightRequestCount()) {
       numToSend = 0;
     } else {
-      numToSend = std::min(numToSend, maxInflight_ - getInflightRequestCount());
+      numToSend =
+          std::min(numToSend, maxInflight_ - queue_.getInflightRequestCount());
     }
   }
   return numToSend;
@@ -260,7 +254,7 @@ void AsyncMcClientImpl::pushMessages() {
     return connectionState_ == ConnectionState::UP;
   };
 
-  while (getPendingRequestCount() != 0 && numToSend > 0 &&
+  while (queue_.getPendingRequestCount() != 0 && numToSend > 0 &&
          /* we might be already not UP, because of failed writev */
          connectionState_ == ConnectionState::UP) {
     auto& req = queue_.peekNextPending();
@@ -712,7 +706,7 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
     }
   }
 
-  assert(getInflightRequestCount() == 0);
+  assert(queue_.getInflightRequestCount() == 0);
   assert(queue_.getParserInitializer() == nullptr);
 
   scheduleNextWriterLoop();
@@ -757,7 +751,7 @@ void AsyncMcClientImpl::connectErr(
     errorMessage = ex.what();
   }
 
-  assert(getInflightRequestCount() == 0);
+  assert(queue_.getInflightRequestCount() == 0);
   connectionState_ = ConnectionState::DOWN;
   // We don't need it anymore, so let it perform complete cleanup.
   socket_.reset();
@@ -815,7 +809,7 @@ void AsyncMcClientImpl::processShutdown(folly::StringPiece errorMessage) {
 
         // In case we still have some pending requests, then try reconnecting
         // immediately.
-        if (getPendingRequestCount() != 0) {
+        if (queue_.getPendingRequestCount() != 0) {
           attemptConnection();
         }
       }
@@ -1019,7 +1013,7 @@ void AsyncMcClientImpl::updateTimeoutsIfShorter(
   });
 }
 
-double AsyncMcClientImpl::getRetransmissionInfo() {
+double AsyncMcClientImpl::getRetransmitsPerKb() {
   if (socket_ != nullptr) {
     struct tcp_info tcpinfo;
     socklen_t len = sizeof(struct tcp_info);

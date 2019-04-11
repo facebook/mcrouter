@@ -218,6 +218,7 @@ libmcrouter_a_SOURCES = \
   network/SocketConnector.h \
   network/ThreadLocalSSLContextProvider.cpp \
   network/ThreadLocalSSLContextProvider.h \
+  network/Transport.h \
   network/UniqueIntrusiveList.h \
   network/WriteBuffer.cpp \
   network/WriteBuffer.h \

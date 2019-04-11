@@ -28,6 +28,7 @@
 #include "mcrouter/lib/network/RpcStatsContext.h"
 #include "mcrouter/lib/network/SecurityOptions.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
+#include "mcrouter/lib/network/Transport.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
 
 namespace folly {
@@ -262,18 +263,19 @@ TestClient::TestClient(
     opts.qosPath = qosPath;
   }
   client_ = std::make_unique<AsyncMcClient>(eventBase_, opts);
-  client_->setStatusCallbacks(
-      [](const folly::AsyncTransportWrapper&, int64_t) {
-        LOG(INFO) << "Client UP.";
-      },
-      [](ConnectionDownReason reason, int64_t) {
-        if (reason == ConnectionDownReason::SERVER_GONE_AWAY) {
-          LOG(INFO) << "Server gone Away.";
-        } else {
-          LOG(INFO) << "Client DOWN.";
-        }
-      });
-  client_->setRequestStatusCallbacks(
+  client_->setConnectionStatusCallbacks(
+      typename Transport::ConnectionStatusCallbacks{
+          [](const folly::AsyncTransportWrapper&, int64_t) {
+            LOG(INFO) << "Client UP.";
+          },
+          [](ConnectionDownReason reason, int64_t) {
+            if (reason == ConnectionDownReason::SERVER_GONE_AWAY) {
+              LOG(INFO) << "Server gone Away.";
+            } else {
+              LOG(INFO) << "Client DOWN.";
+            }
+          }});
+  client_->setRequestStatusCallbacks(typename Transport::RequestStatusCallbacks{
       [this](int pendingDiff, int inflightDiff) {
         CHECK(pendingDiff != inflightDiff)
             << "A request can't be pending and inflight at the same time";
@@ -288,31 +290,32 @@ TestClient::TestClient(
         inflightStatMax_ = std::max(inflightStatMax_, inflightStat_);
       },
       nullptr,
-      nullptr);
+      nullptr});
 }
 
-void TestClient::setStatusCallbacks(
+void TestClient::setConnectionStatusCallbacks(
     std::function<void(const folly::AsyncTransportWrapper&, int64_t)> onUp,
     std::function<void(ConnectionDownReason, int64_t)> onDown) {
-  client_->setStatusCallbacks(
-      [onUp](
-          const folly::AsyncTransportWrapper& socket,
-          int64_t numConnectRetries) {
-        LOG(INFO) << "Client UP.";
-        if (onUp) {
-          onUp(socket, numConnectRetries);
-        }
-      },
-      [onDown](ConnectionDownReason reason, int64_t numConnectRetries) {
-        if (reason == ConnectionDownReason::SERVER_GONE_AWAY) {
-          LOG(INFO) << "Server gone Away.";
-        } else {
-          LOG(INFO) << "Client DOWN.";
-        }
-        if (onDown) {
-          onDown(reason, numConnectRetries);
-        }
-      });
+  client_->setConnectionStatusCallbacks(
+      typename Transport::ConnectionStatusCallbacks{
+          [onUp](
+              const folly::AsyncTransportWrapper& socket,
+              int64_t numConnectRetries) {
+            LOG(INFO) << "Client UP.";
+            if (onUp) {
+              onUp(socket, numConnectRetries);
+            }
+          },
+          [onDown](ConnectionDownReason reason, int64_t numConnectRetries) {
+            if (reason == ConnectionDownReason::SERVER_GONE_AWAY) {
+              LOG(INFO) << "Server gone Away.";
+            } else {
+              LOG(INFO) << "Client DOWN.";
+            }
+            if (onDown) {
+              onDown(reason, numConnectRetries);
+            }
+          }});
 }
 
 void TestClient::sendGet(

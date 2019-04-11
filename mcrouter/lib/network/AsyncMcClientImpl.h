@@ -25,6 +25,7 @@
 #include "mcrouter/lib/network/ConnectionOptions.h"
 #include "mcrouter/lib/network/McClientRequestContext.h"
 #include "mcrouter/lib/network/RpcStatsContext.h"
+#include "mcrouter/lib/network/Transport.h"
 
 namespace facebook {
 namespace memcache {
@@ -40,9 +41,10 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
                           private folly::AsyncTransportWrapper::WriteCallback,
                           private folly::AsyncTransport::BufferCallback {
  public:
-  using FlushList = boost::intrusive::list<
-      folly::EventBase::LoopCallback,
-      boost::intrusive::constant_time_size<false>>;
+  using FlushList = Transport::FlushList;
+  using ConnectionStatusCallbacks = Transport::ConnectionStatusCallbacks;
+  using RequestStatusCallbacks = Transport::RequestStatusCallbacks;
+  using RequestQueueStats = Transport::RequestQueueStats;
 
   static std::shared_ptr<AsyncMcClientImpl> create(
       folly::VirtualEventBase& eventBase,
@@ -54,14 +56,9 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   // Fail all requests and close connection.
   void closeNow();
 
-  void setStatusCallbacks(
-      std::function<void(const folly::AsyncTransportWrapper&, int64_t)> onUp,
-      std::function<void(ConnectionDownReason, int64_t)> onDown);
+  void setConnectionStatusCallbacks(ConnectionStatusCallbacks callbacks);
 
-  void setRequestStatusCallbacks(
-      std::function<void(int pendingDiff, int inflightDiff)> onStateChange,
-      std::function<void(size_t numToSend)> onWrite,
-      std::function<void()> onPartialWrite);
+  void setRequestStatusCallbacks(RequestStatusCallbacks callbacks);
 
   template <class Request>
   ReplyT<Request> sendSync(
@@ -71,8 +68,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
 
   void setThrottle(size_t maxInflight, size_t maxPending);
 
-  size_t getPendingRequestCount() const;
-  size_t getInflightRequestCount() const;
+  RequestQueueStats getRequestQueueStats() const;
 
   void updateTimeoutsIfShorter(
       std::chrono::milliseconds connectTimeout,
@@ -81,11 +77,11 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   /**
    * @return        The transport used to manage socket
    */
-  const folly::AsyncTransportWrapper* getTransport() {
+  const folly::AsyncTransportWrapper* getTransport() const {
     return socket_.get();
   }
 
-  double getRetransmissionInfo();
+  double getRetransmitsPerKb();
 
   void setFlushList(FlushList* flushList) {
     flushList_ = flushList;
@@ -100,18 +96,6 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
     DOWN, // Connection is not open (or close), we need to reconnect.
     CONNECTING, // Currently connecting.
     ERROR // Currently processing error.
-  };
-
-  struct ConnectionStatusCallbacks {
-    std::function<
-        void(const folly::AsyncTransportWrapper&, size_t numConnectRetries)>
-        onUp;
-    std::function<void(ConnectionDownReason, size_t numConnectRetires)> onDown;
-  };
-  struct RequestStatusCallbacks {
-    std::function<void(int pendingDiff, int inflightDiff)> onStateChange;
-    std::function<void(size_t numToSend)> onWrite;
-    std::function<void()> onPartialWrite;
   };
 
   folly::EventBase& eventBase_;

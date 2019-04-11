@@ -15,6 +15,7 @@
 #include "mcrouter/ExponentialSmoothData.h"
 #include "mcrouter/TkoLog.h"
 #include "mcrouter/lib/carbon/Result.h"
+#include "mcrouter/lib/network/Transport.h"
 
 namespace folly {
 class AsyncTimeout;
@@ -33,6 +34,8 @@ class TkoTracker;
 
 class ProxyDestinationBase {
  public:
+  using RequestQueueStats = Transport::RequestQueueStats;
+
   enum class State {
     New, // never connected
     Up, // currently connected
@@ -129,11 +132,7 @@ class ProxyDestinationBase {
     return key_;
   }
 
-  struct RequestStats {
-    size_t numPending;
-    size_t numInflight;
-  };
-  virtual RequestStats getRequestStats() const = 0;
+  virtual RequestQueueStats getRequestStats() const = 0;
 
   /**
    * Closes transport connection.

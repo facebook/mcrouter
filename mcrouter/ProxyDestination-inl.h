@@ -68,7 +68,7 @@ void ProxyDestination<Transport>::handleRxmittingConnection(
     const auto curCycles = cycles::getCpuCycles();
     if (curCycles > lastRetransCycles_ + retransCycles) {
       lastRetransCycles_ = curCycles;
-      const auto currRetransPerKByte = transport_->getRetransmissionInfo();
+      const auto currRetransPerKByte = transport_->getRetransmitsPerKb();
       if (currRetransPerKByte >= 0.0) {
         stats().retransPerKByte = currRetransPerKByte;
         proxy().stats().setValue(
@@ -179,14 +179,13 @@ void ProxyDestination<Transport>::onReply(
 }
 
 template <class Transport>
-ProxyDestinationBase::RequestStats
+typename Transport::RequestQueueStats
 ProxyDestination<Transport>::getRequestStats() const {
-  RequestStats stats{0, 0};
+  RequestQueueStats stats{0, 0};
   {
     folly::SpinLockGuard g(transportLock_);
     if (transport_) {
-      stats.numPending = transport_->getPendingRequestCount();
-      stats.numInflight = transport_->getInflightRequestCount();
+      stats = transport_->getRequestQueueStats();
     }
   }
   return stats;
@@ -221,7 +220,8 @@ ProxyDestination<Transport>::~ProxyDestination() {
   }
 
   if (transport_) {
-    transport_->setStatusCallbacks(nullptr, nullptr);
+    transport_->setConnectionStatusCallbacks(
+        ConnectionStatusCallbacks{nullptr, nullptr});
     transport_->closeNow();
   }
 
@@ -316,7 +316,7 @@ void ProxyDestination<Transport>::initializeTransport() {
 
   transport_->setFlushList(&proxy().flushList());
 
-  transport_->setRequestStatusCallbacks(
+  transport_->setRequestStatusCallbacks(RequestStatusCallbacks{
       [this](int pending, int inflight) { // onStateChange
         if (pending != 0) {
           proxy().stats().increment(destination_pending_reqs_stat, pending);
@@ -342,9 +342,9 @@ void ProxyDestination<Transport>::initializeTransport() {
       },
       [this]() { // onPartialWrite
         proxy().stats().increment(num_socket_partial_writes_stat);
-      });
+      }});
 
-  transport_->setStatusCallbacks(
+  transport_->setConnectionStatusCallbacks(ConnectionStatusCallbacks{
       [this](
           const folly::AsyncTransportWrapper& socket,
           int64_t numConnectRetries) mutable {
@@ -420,7 +420,7 @@ void ProxyDestination<Transport>::initializeTransport() {
 
         pdstn->proxy().stats().increment(
             num_connect_retries_stat, numConnectRetries);
-      });
+      }});
 
   if (opts.target_max_inflight_requests > 0) {
     transport_->setThrottle(
@@ -438,7 +438,8 @@ void ProxyDestination<Transport>::closeGracefully() {
     }
     // Check again, in case we reset it in closeNow()
     if (transport_) {
-      transport_->setStatusCallbacks(nullptr, nullptr);
+      transport_->setConnectionStatusCallbacks(
+          ConnectionStatusCallbacks{nullptr, nullptr});
       std::unique_ptr<Transport> client;
       {
         folly::SpinLockGuard g(transportLock_);

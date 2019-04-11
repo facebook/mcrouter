@@ -207,7 +207,7 @@ class TestClient {
     client_->setThrottle(maxInflight, maxOutstanding);
   }
 
-  void setStatusCallbacks(
+  void setConnectionStatusCallbacks(
       std::function<void(const folly::AsyncTransportWrapper&, int64_t)> onUp,
       std::function<void(ConnectionDownReason, int64_t)> onDown);
 

@@ -20,6 +20,7 @@
 #include "mcrouter/lib/network/McSSLUtil.h"
 #include "mcrouter/lib/network/SecurityOptions.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
+#include "mcrouter/lib/network/Transport.h"
 #include "mcrouter/lib/network/gen/MemcacheMessages.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
 #include "mcrouter/lib/network/test/TestClientServerUtil.h"
@@ -500,9 +501,12 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
   ConnectionOptions opts("100::", 11302, mc_ascii_protocol);
   opts.connectTimeout = std::chrono::milliseconds(1000);
   auto client = std::make_unique<AsyncMcClient>(*eventBase, opts);
-  client->setStatusCallbacks(
-      [&wasUp](const folly::AsyncTransportWrapper&, int64_t) { wasUp = true; },
-      [&wentDown](ConnectionDownReason, int64_t) { wentDown = true; });
+  client->setConnectionStatusCallbacks(
+      typename Transport::ConnectionStatusCallbacks{
+          [&wasUp](const folly::AsyncTransportWrapper&, int64_t) {
+            wasUp = true;
+          },
+          [&wentDown](ConnectionDownReason, int64_t) { wentDown = true; }});
 
   fiberManager->addTask([&client, &replied] {
     McGetRequest req("hold");
@@ -638,7 +642,7 @@ TEST(AsyncMcClient, tonsOfConnections) {
 
   /* Create a client to see if it gets evicted. */
   TestClient client("localhost", server->getListenPort(), 1, mc_ascii_protocol);
-  client.setStatusCallbacks(
+  client.setConnectionStatusCallbacks(
       [](const folly::AsyncTransportWrapper&, int64_t) {},
       [&wentDown](ConnectionDownReason, int64_t) { wentDown = true; });
   client.sendGet("test", carbon::Result::FOUND);
@@ -702,7 +706,7 @@ TEST_P(AsyncMcClientSessionTest, SessionResumption) {
 
   auto sendAndCheckRequest = [mech](TestClient& client, int i) {
     LOG(INFO) << "Connection attempt: " << i;
-    client.setStatusCallbacks(
+    client.setConnectionStatusCallbacks(
         [&](const folly::AsyncTransportWrapper& sock, int64_t) {
           if (mech == SecurityMech::TLS ||
               mech == SecurityMech::TLS_TO_PLAINTEXT) {
@@ -820,7 +824,7 @@ TEST(AsyncMcClient, caretGoAway) {
       "localhost", server->getListenPort(), 200, mc_caret_protocol);
   client.sendGet("test", carbon::Result::FOUND);
   client.sendGet("hold", carbon::Result::FOUND);
-  client.setStatusCallbacks(
+  client.setConnectionStatusCallbacks(
       [](const folly::AsyncTransportWrapper&, int64_t) {},
       [&client](ConnectionDownReason reason, int64_t) {
         if (reason == ConnectionDownReason::SERVER_GONE_AWAY) {
@@ -901,7 +905,7 @@ TEST_P(AsyncMcClientTFOTest, testTfoWithSSL) {
   auto constexpr nConnAttempts = 10;
 
   auto sendReq = [serverEnabled, clientEnabled](TestClient& client) {
-    client.setStatusCallbacks(
+    client.setConnectionStatusCallbacks(
         [&](const folly::AsyncTransportWrapper& sock, int64_t) {
           auto* socket = sock.getUnderlyingTransport<folly::AsyncSocket>();
           if (clientEnabled) {
@@ -1040,7 +1044,8 @@ TEST_P(AsyncMcClientSSLOffloadTest, closeNow) {
   };
 
   auto client = std::make_unique<AsyncMcClient>(evb, opts);
-  client->setStatusCallbacks(upFunc, downFunc);
+  client->setConnectionStatusCallbacks(
+      typename Transport::ConnectionStatusCallbacks{upFunc, downFunc});
   auto clientPtr = client.get();
   fm.addTask([clientPtr] {
     McGetRequest req("test");

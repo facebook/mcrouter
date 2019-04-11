@@ -20,7 +20,7 @@ ReplyT<Request> AsyncMcClientImpl::sendSync(
 
   assert(folly::fibers::onFiber());
 
-  if (maxPending_ != 0 && getPendingRequestCount() >= maxPending_) {
+  if (maxPending_ != 0 && queue_.getPendingRequestCount() >= maxPending_) {
     return createReply<Request>(
         ErrorReply,
         folly::sformat(

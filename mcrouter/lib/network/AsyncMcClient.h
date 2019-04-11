@@ -14,6 +14,7 @@
 #include "mcrouter/lib/network/AsyncMcClientImpl.h"
 #include "mcrouter/lib/network/ConnectionDownReason.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
+#include "mcrouter/lib/network/Transport.h"
 
 namespace folly {
 class AsyncSocket;
@@ -34,62 +35,37 @@ struct RpcStatsContext;
  * as we have at least one request, but it will be impossible to send more
  * requests).
  */
-class AsyncMcClient {
+class AsyncMcClient : public Transport {
  public:
-  using FlushList = AsyncMcClientImpl::FlushList;
+  using FlushList = Transport::FlushList;
+  using RequestQueueStats = Transport::RequestQueueStats;
 
   AsyncMcClient(folly::EventBase& eventBase, ConnectionOptions options);
   AsyncMcClient(folly::VirtualEventBase& eventBase, ConnectionOptions options);
-  ~AsyncMcClient() {
+  ~AsyncMcClient() final {
     base_->setFlushList(nullptr);
   }
 
   /**
    * Close connection and fail all outstanding requests immediately.
    */
-  void closeNow();
+  void closeNow() override final;
 
   /**
    * Set status callbacks for the underlying connection.
    *
-   * @param onUp  Will be called whenever client successfully connects to the
-   *              server. Will be called immediately if we're already connected.
-   *              Can be nullptr.
-   * @param onDown  will be called whenever connection goes down. Will be passed
-   *                explanation about why the connection went down.
-   *                Will not be called if the connection is already DOWN.
-   *                Can be nullptr.
-   * Note: those callbacks may be called even after the client was destroyed.
+   * NOTE: those callbacks may be called even after the client was destroyed.
    *       This will happen in case when the client is destroyed and there are
    *       some requests left, for wich reply callback wasn't called yet.
    */
-  void setStatusCallbacks(
-      std::function<void(
-          const folly::AsyncTransportWrapper& socket,
-          int64_t numConnectRetries)> onUp,
-      std::function<void(ConnectionDownReason, int64_t numConnectRetires)>
-          onDown);
+  void setConnectionStatusCallbacks(
+      ConnectionStatusCallbacks callbacks) override final;
 
   /**
    * Set callbacks for when requests state change.
-   *
-   * @param onStateChange   Will be called whenever a request changes state.
-   *                        pendingDiff and inflightDiff will hold the
-   *                        difference in the number of pending and inflight
-   *                        requests, respectively.
-   * @param onWrite         Will be called everytime AsyncMcClient is about to
-   *                        write data to network. The numToSend argument
-   *                        holds the number of requests that will be sent in
-   *                        a single batch.
-   * @param onPartialWrite  Will be called everytime a partial write happened.
-   *                        This means we would block when performing the full
-   *                        write, so we buffered some data to try again when
-   *                        the transport becomes ready to be written to again.
    */
   void setRequestStatusCallbacks(
-      std::function<void(int pendingDiff, int inflightDiff)> onStateChange,
-      std::function<void(size_t numToSend)> onWrite,
-      std::function<void()> onPartialWrite);
+      RequestStatusCallbacks callbacks) override final;
 
   /**
    * Send request synchronously (i.e. blocking call).
@@ -126,23 +102,12 @@ class AsyncMcClient {
    * Note: will not affect already sent or pending requests. None of them would
    *       be dropped.
    */
-  void setThrottle(size_t maxInflight, size_t maxPending);
+  void setThrottle(size_t maxInflight, size_t maxPending) override final;
 
   /**
-   * Get the number of requests in pending queue. Those requests have not been
-   * sent to the network yet, this means that in case of remote error we can
-   * still try to send them.
+   * Get the current stats of the requests queues.
    */
-  size_t getPendingRequestCount() const;
-
-  /**
-   * Get the number of requests in inflight queue. This amounts for requests
-   * that are currently been written to the socket and requests that were
-   * already sent to the server and are waiting for replies. Those requests
-   * might be already processed by the server, thus they wouldn't be
-   * retransmitted in case of error.
-   */
-  size_t getInflightRequestCount() const;
+  RequestQueueStats getRequestQueueStats() const override final;
 
   /**
    * Update connect and write timeouts. If the new value is larger than the
@@ -153,23 +118,23 @@ class AsyncMcClient {
    */
   void updateTimeoutsIfShorter(
       std::chrono::milliseconds connectTimeout,
-      std::chrono::milliseconds writeTimeout);
+      std::chrono::milliseconds writeTimeout) override final;
 
   /**
    * @return        The transport used to manage socket
    */
-  const folly::AsyncTransportWrapper* getTransport();
+  const folly::AsyncTransportWrapper* getTransport() const override final;
 
   /**
    * @return Retransmits per packet used to detect lossy connections
    */
-  double getRetransmissionInfo();
+  double getRetransmitsPerKb() override final;
 
   /**
    * Set external queue for managing flush callbacks. By default we'll use
    * EventBase as a manager of these callbacks.
    */
-  void setFlushList(FlushList* flushList) {
+  void setFlushList(FlushList* flushList) override final {
     base_->setFlushList(flushList);
   }
 

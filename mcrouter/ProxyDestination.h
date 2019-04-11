@@ -18,6 +18,7 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/lib/network/Transport.h"
 
 namespace facebook {
 namespace memcache {
@@ -41,6 +42,11 @@ struct DestinationRequestCtx {
 template <class Transport>
 class ProxyDestination : public ProxyDestinationBase {
  public:
+  using ConnectionStatusCallbacks =
+      typename Transport::ConnectionStatusCallbacks;
+  using RequestStatusCallbacks = typename Transport::RequestStatusCallbacks;
+  using RequestQueueStats = typename Transport::RequestQueueStats;
+
   ~ProxyDestination();
 
   /**
@@ -67,7 +73,7 @@ class ProxyDestination : public ProxyDestinationBase {
    */
   void closeGracefully();
 
-  RequestStats getRequestStats() const override;
+  RequestQueueStats getRequestStats() const override;
 
  protected:
   void updateTransportTimeoutsIfShorter(

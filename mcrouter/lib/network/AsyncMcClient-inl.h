@@ -21,18 +21,14 @@ inline void AsyncMcClient::closeNow() {
   base_->closeNow();
 }
 
-inline void AsyncMcClient::setStatusCallbacks(
-    std::function<void(const folly::AsyncTransportWrapper&, int64_t)> onUp,
-    std::function<void(ConnectionDownReason, int64_t)> onDown) {
-  base_->setStatusCallbacks(std::move(onUp), std::move(onDown));
+inline void AsyncMcClient::setConnectionStatusCallbacks(
+    ConnectionStatusCallbacks callbacks) {
+  base_->setConnectionStatusCallbacks(std::move(callbacks));
 }
 
 inline void AsyncMcClient::setRequestStatusCallbacks(
-    std::function<void(int pendingDiff, int inflightDiff)> onStateChange,
-    std::function<void(size_t numToSend)> onWrite,
-    std::function<void()> onPartialWrite) {
-  base_->setRequestStatusCallbacks(
-      std::move(onStateChange), std::move(onWrite), std::move(onPartialWrite));
+    RequestStatusCallbacks callbacks) {
+  base_->setRequestStatusCallbacks(std::move(callbacks));
 }
 
 template <class Request>
@@ -47,12 +43,9 @@ inline void AsyncMcClient::setThrottle(size_t maxInflight, size_t maxPending) {
   base_->setThrottle(maxInflight, maxPending);
 }
 
-inline size_t AsyncMcClient::getPendingRequestCount() const {
-  return base_->getPendingRequestCount();
-}
-
-inline size_t AsyncMcClient::getInflightRequestCount() const {
-  return base_->getInflightRequestCount();
+inline typename Transport::RequestQueueStats
+AsyncMcClient::getRequestQueueStats() const {
+  return base_->getRequestQueueStats();
 }
 
 inline void AsyncMcClient::updateTimeoutsIfShorter(
@@ -61,12 +54,12 @@ inline void AsyncMcClient::updateTimeoutsIfShorter(
   base_->updateTimeoutsIfShorter(connectTimeout, writeTimeout);
 }
 
-inline const folly::AsyncTransportWrapper* AsyncMcClient::getTransport() {
+inline const folly::AsyncTransportWrapper* AsyncMcClient::getTransport() const {
   return base_->getTransport();
 }
 
-inline double AsyncMcClient::getRetransmissionInfo() {
-  return base_->getRetransmissionInfo();
+inline double AsyncMcClient::getRetransmitsPerKb() {
+  return base_->getRetransmitsPerKb();
 }
 
 /* static */ inline constexpr bool AsyncMcClient::isCompatible(

@@ -18,6 +18,7 @@
 #include "mcrouter/AsyncLog.h"
 #include "mcrouter/ProxyStats.h"
 #include "mcrouter/config.h"
+#include "mcrouter/lib/network/Transport.h"
 
 namespace facebook {
 namespace memcache {
@@ -31,9 +32,7 @@ class ProxyDestinationMap;
 
 class ProxyBase {
  public:
-  using FlushList = boost::intrusive::list<
-      folly::EventBase::LoopCallback,
-      boost::intrusive::constant_time_size<false>>;
+  using FlushList = Transport::FlushList;
 
   template <class RouterInfo>
   ProxyBase(
