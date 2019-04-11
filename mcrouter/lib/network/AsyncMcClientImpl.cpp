@@ -623,14 +623,16 @@ void AsyncMcClientImpl::attemptConnection() {
               self->connectSuccess();
             }
           })
-          .onError([self](const folly::AsyncSocketException& ex) {
-            CHECK(self->eventBase_.isInEventBaseThread());
-            self->connectErr(ex);
-            // handle the case where the client was aborting mid connect
-            if (self->isAborting_) {
-              self->isAborting_ = false;
-            }
-          });
+          .thenError(
+              folly::tag_t<folly::AsyncSocketException>{},
+              [self](const folly::AsyncSocketException& ex) {
+                CHECK(self->eventBase_.isInEventBaseThread());
+                self->connectErr(ex);
+                // handle the case where the client was aborting mid connect
+                if (self->isAborting_) {
+                  self->isAborting_ = false;
+                }
+              });
     } else {
       // connect inline on the current evb
       if (mech == SecurityMech::TLS13_FIZZ) {
