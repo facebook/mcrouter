@@ -77,13 +77,23 @@ class RouteHandleFactory {
 
   /**
    * Pushes a list of route_handles that will be used the next time this class
-   * sees %children_list% in the config. The list of route handles are kept in
+   * sees $children_list$ in the config. The list of route handles are kept in
    * a stack - so the last list pushed will be the first one to be used.
    *
+   * NOTE: Callers must explicitly call popChildrenList() when the children
+   *       list is no longer necessary (e.g. when we are done processing the
+   *       piece of config that might use the children_list).
+   *
    * @param children  The list of route_handles to be used to replace
-   *                  %children_list% in the config.
+   *                  $children_list$ in the config.
    */
   void pushChildrenList(std::vector<RouteHandlePtr> children);
+
+  /**
+   * Pops the last children_list object pushed using the pushChildrenList()
+   * method.
+   */
+  void popChildrenList();
 
  private:
   RouteHandleProviderIf<RouteHandleIf>& provider_;
@@ -95,7 +105,7 @@ class RouteHandleFactory {
   /// Thread where route handles created by this factory will be used
   size_t threadId_;
 
-  // list of servers that should be used to replace "%children_list%" in config.
+  // list of servers that should be used to replace "$children_list$" in config.
   std::stack<std::vector<RouteHandlePtr>> childrenLists_;
 
   const std::vector<RouteHandlePtr>& createNamed(

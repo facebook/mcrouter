@@ -4,6 +4,8 @@
  * This source code is licensed under the MIT license found in the LICENSE
  * file in the root directory of this source tree.
  */
+#pragma once
+
 #include <folly/Range.h>
 #include <folly/dynamic.h>
 
@@ -255,9 +257,10 @@ void buildChildrenCustomJsonmRoutes(
   std::for_each(shardMap.begin(), shardMap.end(), [&](auto& item) {
     auto shardId = item.first;
     auto childrenList = std::move(item.second);
-    // push children to factory. Factory will use when it sees "%children_list%"
+    // push children to factory. Factory will use when it sees "$children_list$"
     factory.pushChildrenList(std::move(childrenList));
     destinations.push_back(factory.create(json));
+    factory.popChildrenList();
     shardToDestinationIndexMap[shardId] = destinations.size() - 1;
   });
 }

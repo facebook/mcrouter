@@ -476,7 +476,7 @@ TEST_F(EagerShardSelectionRouteTest, customJsonmRoute) {
     "children_type": "CustomJsonmRoute",
     "children_settings": {
       "type": "AllSyncRoute",
-      "children": "%children_list%"
+      "children": "$children_list$"
     },
     "pools": [
       {
@@ -545,6 +545,104 @@ TEST_F(EagerShardSelectionRouteTest, customJsonmRoute) {
       }};
   rh->traverse(req, t);
   EXPECT_GE(iterations, 4);
+}
+
+TEST_F(EagerShardSelectionRouteTest, customJsonmRoute_twice) {
+  constexpr folly::StringPiece kSelectionRouteConfig = R"(
+  {
+    "children_type": "CustomJsonmRoute",
+    "children_settings": {
+      "type": "AllSyncRoute",
+      "children": [
+        "$children_list$",
+        "NullRoute",
+        "$children_list$"
+      ]
+    },
+    "pools": [
+      {
+        "pool": {
+          "type": "Pool",
+          "name": "pool1",
+          "servers": [
+            "localhost:12345",
+            "localhost:12325"
+          ],
+          "protocol": "caret"
+        },
+        "shards": [
+          "1, 2, 3",
+          "2, 5, 6"
+        ]
+      },
+      {
+        "pool": {
+          "type": "Pool",
+          "name": "pool2",
+          "servers": [
+            "localhost:12302",
+            "localhost:35602"
+          ],
+          "protocol": "caret"
+        },
+        "shards": [
+          "1, 2, 3",
+          "3, 5, 6"
+        ]
+      }
+    ]
+  }
+  )";
+
+  auto rh = getEagerShardSelectionRoute(kSelectionRouteConfig);
+  ASSERT_TRUE(rh);
+  EXPECT_EQ("selection|basic-shard-selector", rh->routeName());
+
+  GoodbyeRequest req;
+
+  req.shardId() = 2;
+  size_t iterations = 0;
+  RouteHandleTraverser<HelloGoodbyeRouterInfo::RouteHandleIf> t{
+      [&iterations](const HelloGoodbyeRouterInfo::RouteHandleIf& r) {
+        ++iterations;
+        if (iterations == 1) {
+          EXPECT_EQ("all-sync", r.routeName());
+        } else if (iterations == 2) {
+          EXPECT_EQ(
+              "host|pool=pool1|id=0|"
+              "ap=localhost:12345:caret:plain:notcompressed|timeout=1000ms",
+              r.routeName());
+        } else if (iterations == 3) {
+          EXPECT_EQ(
+              "host|pool=pool1|id=1|"
+              "ap=localhost:12325:caret:plain:notcompressed|timeout=1000ms",
+              r.routeName());
+        } else if (iterations == 4) {
+          EXPECT_EQ(
+              "host|pool=pool2|id=0|"
+              "ap=localhost:12302:caret:plain:notcompressed|timeout=1000ms",
+              r.routeName());
+        } else if (iterations == 5) {
+          EXPECT_EQ("null", r.routeName());
+        } else if (iterations == 6) {
+          EXPECT_EQ(
+              "host|pool=pool1|id=0|"
+              "ap=localhost:12345:caret:plain:notcompressed|timeout=1000ms",
+              r.routeName());
+        } else if (iterations == 7) {
+          EXPECT_EQ(
+              "host|pool=pool1|id=1|"
+              "ap=localhost:12325:caret:plain:notcompressed|timeout=1000ms",
+              r.routeName());
+        } else if (iterations == 8) {
+          EXPECT_EQ(
+              "host|pool=pool2|id=0|"
+              "ap=localhost:12302:caret:plain:notcompressed|timeout=1000ms",
+              r.routeName());
+        }
+      }};
+  rh->traverse(req, t);
+  EXPECT_GE(iterations, 8);
 }
 
 } // namespace mcrouter

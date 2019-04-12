@@ -129,7 +129,7 @@ typename RouterInfo::RouteHandlePtr createShardSelectionRoute(
  *    are responsible for a given shard. Can be: LoadBalancerRoute,
  *    LatestRoute, CustomJsonmRoute, or one of the names provided in the
  *    childrenFactoryMap. If CustomJsonmRoute is used, "children_settings"
- *    will have access to "%children_list%", which expands to the list of
+ *    will have access to "$children_list$", which expands to the list of
  *    servers that serve a given shard. Check EagerShardSelectionRouteTest for
  *    more details.
  *
@@ -167,4 +167,4 @@ typename RouterInfo::RouteHandlePtr createEagerShardSelectionRoute(
 } // namespace memcache
 } // namespace facebook
 
-#include "ShardSelectionRouteFactory-inl.h"
+#include "mcrouter/routes/ShardSelectionRouteFactory-inl.h"

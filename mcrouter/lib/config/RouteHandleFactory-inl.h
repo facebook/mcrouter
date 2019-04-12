@@ -109,15 +109,13 @@ RouteHandleFactory<RouteHandleIf>::createList(const folly::dynamic& json) {
     }
 
     // check if we need to use a pre-built list of children.
-    constexpr folly::StringPiece kChildrenListStr = "%children_list%";
+    constexpr folly::StringPiece kChildrenListStr = "$children_list$";
     if (json.stringPiece() == kChildrenListStr) {
       checkLogic(
           !childrenLists_.empty(),
-          "%children_list% was specified, but there were no pre-constructed "
+          "$children_list$ was found, but there were no pre-constructed "
           "children available. Did you forget to call pushChildrenList()?");
-      auto result = std::move(childrenLists_.top());
-      childrenLists_.pop();
-      return std::move(result);
+      return childrenLists_.top();
     }
 
     // check if we already parsed the same string. It can be named handle or
@@ -164,6 +162,12 @@ template <class RouteHandleIf>
 void RouteHandleFactory<RouteHandleIf>::pushChildrenList(
     std::vector<RouteHandlePtr> children) {
   childrenLists_.push(std::move(children));
+}
+
+template <class RouteHandleIf>
+void RouteHandleFactory<RouteHandleIf>::popChildrenList() {
+  assert(!childrenLists_.empty());
+  childrenLists_.pop();
 }
 
 } // namespace memcache
