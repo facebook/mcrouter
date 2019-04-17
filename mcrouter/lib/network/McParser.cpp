@@ -15,6 +15,7 @@
 #include <folly/experimental/JemallocNodumpAllocator.h>
 #include <folly/io/Cursor.h>
 #include <folly/lang/Bits.h>
+#include <glog/logging.h>
 
 #include "mcrouter/lib/Clocks.h"
 #include "mcrouter/lib/network/CaretProtocol.h"
@@ -117,6 +118,14 @@ bool McParser::readCaretData() {
     }
 
     const auto messageSize = msgInfo_.headerSize + msgInfo_.bodySize;
+
+    // Case 0: There was an overflow. Return an error and let mcrouter close the
+    // connection.
+    if (messageSize == 0) {
+      LOG(ERROR)
+          << "Got a 0 size message, likely due to overflow. Returning a parse error.";
+      return false;
+    }
 
     // Parse message body
     // Case 1: Entire message (and possibly part of next) is in the buffer

@@ -8,6 +8,7 @@ mcrouter_network_test_SOURCES = \
   CarbonQueueAppenderTest.cpp \
   gen/CarbonTestMessages.cpp \
   McAsciiParserTest.cpp \
+  McParserTest.cpp \
   McServerAsciiParserTest.cpp \
   MockMc.cpp \
   MockMcServer.cpp \
