@@ -23,6 +23,7 @@
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/NoOpTransport.h"
 #include "mcrouter/lib/network/SecurityOptions.h"
+#include "mcrouter/lib/network/ThriftTransport.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/routes/AsynclogRoute.h"
 #include "mcrouter/routes/DestinationRoute.h"
@@ -305,7 +306,17 @@ McRouteHandleProvider<RouterInfo>::makePool(
       folly::StringPiece nameSp = it->first;
 
       if (ap->getProtocol() == mc_thrift_protocol) {
-        throw std::logic_error("Thrift transport not supported yet!");
+        using Transport = ThriftTransport<RouterInfo>;
+        destinations.push_back(createDestinationRoute<Transport>(
+            std::move(ap),
+            timeout,
+            connectTimeout,
+            qosClass,
+            qosPath,
+            nameSp,
+            i,
+            poolStatIndex,
+            keepRoutingPrefix));
       } else if (ap->getProtocol() == mc_noop_protocol) {
         using Transport = NoOpTransport;
         destinations.push_back(createDestinationRoute<Transport>(

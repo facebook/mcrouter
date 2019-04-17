@@ -53,6 +53,8 @@ using namespace facebook::memcache::mcrouter;
 namespace carbon {
 namespace test {
 
+constexpr const char* CarbonTestRouterInfo::name;
+
 /* static */ CarbonTestRouterInfo::RouteHandleFactoryMap
 CarbonTestRouterInfo::buildRouteMap() {
   RouteHandleFactoryMap map{

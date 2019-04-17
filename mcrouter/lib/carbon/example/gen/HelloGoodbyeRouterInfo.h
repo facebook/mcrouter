@@ -14,12 +14,15 @@
  */
 #pragma once
 
+#include <chrono>
 #include <functional>
 #include <unordered_map>
 
 #include <folly/Range.h>
 
 #include <mcrouter/lib/carbon/Stats.h>
+#include <mcrouter/lib/network/RpcStatsContext.h>
+#include <mcrouter/lib/network/ThriftTransport.h>
 
 #include "mcrouter/lib/carbon/example/gen/HelloGoodbyeRouteHandleIf.h"
 #include "mcrouter/lib/carbon/example/gen/HelloGoodbyeRouterStats.h"
@@ -27,6 +30,7 @@
 // Forward declarations
 namespace folly {
 struct dynamic;
+class VirtualEventBase;
 } // namespace folly
 
 namespace facebook {
@@ -75,3 +79,9 @@ struct HelloGoodbyeRouterInfo {
   buildExtraProvider();
 };
 } // namespace hellogoodbye
+
+namespace facebook {
+namespace memcache {
+
+} // namespace memcache
+} // namespace facebook

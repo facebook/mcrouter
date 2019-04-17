@@ -53,6 +53,8 @@ using namespace facebook::memcache::mcrouter;
 namespace facebook {
 namespace memcache {
 
+constexpr const char* MemcacheRouterInfo::name;
+
 /* static */ MemcacheRouterInfo::RouteHandleFactoryMap
 MemcacheRouterInfo::buildRouteMap() {
   RouteHandleFactoryMap map{

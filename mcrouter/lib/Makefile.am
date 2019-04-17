@@ -180,6 +180,15 @@ libmcrouter_a_SOURCES = \
   network/gen/gen-cpp2/Common_types.tcc \
   network/gen/gen-cpp2/Common_data.cpp \
   network/gen/gen-cpp2/Common_data.h \
+  network/gen/gen-cpp2/MemcacheAsyncClient.cpp \
+  network/gen/gen-cpp2/MemcacheAsyncClient.h \
+  network/gen/gen-cpp2/MemcacheService_constants.cpp \
+  network/gen/gen-cpp2/MemcacheService_constants.h \
+  network/gen/gen-cpp2/MemcacheService_types.cpp \
+  network/gen/gen-cpp2/MemcacheService_types.h \
+  network/gen/gen-cpp2/MemcacheService_types.tcc \
+  network/gen/gen-cpp2/MemcacheService_data.cpp \
+  network/gen/gen-cpp2/MemcacheService_data.h \
   network/gen/gen-cpp2/Memcache_types.cpp \
   network/gen/gen-cpp2/Memcache_types.h \
   network/gen/gen-cpp2/Memcache_types.tcc \
@@ -219,6 +228,8 @@ libmcrouter_a_SOURCES = \
   network/SocketConnector.h \
   network/ThreadLocalSSLContextProvider.cpp \
   network/ThreadLocalSSLContextProvider.h \
+  network/ThriftTransport.cpp \
+  network/ThriftTransport.h \
   network/Transport.h \
   network/UniqueIntrusiveList.h \
   network/WriteBuffer.cpp \
