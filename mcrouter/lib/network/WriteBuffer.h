@@ -120,6 +120,13 @@ class WriteBuffer {
     return false;
   }
 
+  void setZeroCopyPendingNotifications(size_t num) {
+    zeroCopyPendingNotifications_ = num;
+  }
+  size_t decZeroCopyPendingNotifications() {
+    return --zeroCopyPendingNotifications_;
+  }
+
  private:
   const mc_protocol_t protocol_;
 
@@ -134,6 +141,7 @@ class WriteBuffer {
   size_t iovsCount_{0};
   bool isEndOfBatch_{false};
   uint32_t typeId_{0};
+  uint32_t zeroCopyPendingNotifications_{0};
 
   WriteBuffer(const WriteBuffer&) = delete;
   WriteBuffer& operator=(const WriteBuffer&) = delete;

@@ -50,6 +50,7 @@ void WriteBuffer::clear() {
   destructor_.clear();
   isEndOfBatch_ = false;
   typeId_ = 0;
+  zeroCopyPendingNotifications_ = 0;
 
   switch (protocol_) {
     case mc_ascii_protocol:
@@ -79,9 +80,7 @@ bool WriteBuffer::isEndContext() const {
 
 WriteBuffer::List& WriteBufferQueue::initFreeStack(
     mc_protocol_t protocol) noexcept {
-  assert(
-      protocol == mc_ascii_protocol ||
-      protocol == mc_caret_protocol);
+  assert(protocol == mc_ascii_protocol || protocol == mc_caret_protocol);
 
   static thread_local WriteBuffer::List freeBuffers[mc_nprotocols];
   return freeBuffers[static_cast<size_t>(protocol)];

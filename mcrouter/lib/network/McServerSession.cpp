@@ -433,41 +433,38 @@ void McServerSession::sendZeroCopyIOBuf(
   // IOBuf FreeFn is a function pointer, so cannot use lambdas. Pass in
   // destructor guard to ensure that McServerSession is not destructed before
   // this IOBuf is destroyed.
-  auto wbufInfo = std::make_unique<BufferContext>(
+  auto wbufInfo = new BufferContext(
       std::ref(wbuf), std::ref(writeBufs_), !options_.singleWrite, dg);
-
+  assert(wbufInfo != nullptr);
+  wbuf.setZeroCopyPendingNotifications(iovsCount);
   std::unique_ptr<folly::IOBuf> chainTail;
-
   for (size_t i = 0; i < iovsCount; i++) {
     size_t len = iovs[i].iov_len;
     if (len > 0) {
-      std::unique_ptr<folly::IOBuf> iobuf;
-      if (!chainTail) {
-        iobuf = folly::IOBuf::takeOwnership(
-            iovs[i].iov_base,
-            len,
-            [](void* /* unused */, void* userData) {
-              auto bufferContext = std::unique_ptr<BufferContext>(
-                  reinterpret_cast<BufferContext*>(userData));
+      std::unique_ptr<folly::IOBuf> iobuf = folly::IOBuf::takeOwnership(
+          iovs[i].iov_base,
+          len,
+          [](void* /* unused */, void* userData) {
+            assert(userData != nullptr);
+            BufferContext* bufferContext =
+                reinterpret_cast<BufferContext*>(userData);
+            auto& wb = std::get<0>(*bufferContext).get();
+            if (wb.decZeroCopyPendingNotifications() == 0) {
               auto& q = std::get<1>(*bufferContext).get();
-              auto& wb = std::get<0>(*bufferContext).get();
               auto batch = std::get<2>(*bufferContext);
               q.releaseZeroCopyChain(wb, batch);
-            },
-            wbufInfo.release(),
-            true /* freeOnError */);
+              delete (bufferContext);
+            }
+          },
+          wbufInfo,
+          true /* freeOnError */);
+      if (!chainTail) {
         chainTail = std::move(iobuf);
       } else {
-        // The IOBufs not at the head of chain have a noop free function given
-        // that the head of chain will free the entire chain.
-        iobuf = folly::IOBuf::takeOwnership(
-            iovs[i].iov_base,
-            len,
-            [](void* /* unused */, void* /* unused */) {},
-            nullptr,
-            true /* freeOnError */);
         chainTail->prependChain(std::move(iobuf));
       }
+    } else {
+      wbuf.decZeroCopyPendingNotifications();
     }
   }
 
