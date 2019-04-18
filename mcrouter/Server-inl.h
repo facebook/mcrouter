@@ -138,7 +138,7 @@ bool runServer(
   }
 
   opts.numThreads = mcrouterOpts.num_proxies;
-  opts.numListeningSockets = mcrouterOpts.num_listening_sockets;
+  opts.numListeningSockets = standaloneOpts.num_listening_sockets;
   opts.worker.tcpZeroCopyThresholdBytes =
       standaloneOpts.tcp_zero_copy_threshold;
 

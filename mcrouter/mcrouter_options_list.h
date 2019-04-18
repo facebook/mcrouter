@@ -86,14 +86,6 @@ MCROUTER_OPTION_INTEGER(
 
 MCROUTER_OPTION_INTEGER(
     size_t,
-    num_listening_sockets,
-    kListeningSocketsDefault,
-    "num-listening-sockets",
-    no_short,
-    "adjust how many listening sockets to use. Must be <= num_proxies")
-
-MCROUTER_OPTION_INTEGER(
-    size_t,
     client_queue_size,
     1024,
     no_long,

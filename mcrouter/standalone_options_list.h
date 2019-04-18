@@ -216,6 +216,14 @@ MCROUTER_OPTION_STRING(
     no_short,
     "If true, enforces the result of the ACL check.")
 
+MCROUTER_OPTION_INTEGER(
+    size_t,
+    num_listening_sockets,
+    kListeningSocketsDefault,
+    "num-listening-sockets",
+    no_short,
+    "adjust how many listening sockets to use. Must be <= num_proxies")
+
 #ifdef ADDITIONAL_STANDALONE_OPTIONS_FILE
 #include ADDITIONAL_STANDALONE_OPTIONS_FILE
 #endif
