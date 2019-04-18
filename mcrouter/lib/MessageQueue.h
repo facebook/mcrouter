@@ -41,7 +41,7 @@ class Notifier {
    * @param nowFunc  Function that returns current time in us.
    *
    * @param postDrainCallback  Callback to be called after drainig a queue.
-   *   As an argument it will be passed false if we're still draining and false
+   *   As an argument it will be passed false if we're still draining and true
    *   if we're out of drain loop. It should return true if it can guarantee
    *   that the current event_base_loop won't block, false otherwise. The return
    *   value is used as a hint for avoiding unnecessary notifications.
@@ -91,7 +91,9 @@ class Notifier {
     if (postDrainCallback_) {
       postDrainCallback_(true);
     }
-    waitStart_ = nowFunc_();
+    if (waitThreshold_ > 0) {
+      waitStart_ = nowFunc_();
+    }
   }
 
   void maybeUpdatePeriod() noexcept;
