@@ -215,9 +215,6 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   void parseError(carbon::Result result, folly::StringPiece reason);
   bool nextReplyAvailable(uint64_t reqId);
 
-  // Create the underlying transport
-  folly::AsyncTransportWrapper::UniquePtr createTransport();
-
   static void incMsgId(uint32_t& msgId);
 };
 } // namespace memcache

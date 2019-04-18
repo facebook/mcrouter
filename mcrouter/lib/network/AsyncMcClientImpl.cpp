@@ -20,6 +20,7 @@
 #include "mcrouter/lib/network/McFizzClient.h"
 #include "mcrouter/lib/network/McSSLUtil.h"
 #include "mcrouter/lib/network/SocketConnector.h"
+#include "mcrouter/lib/network/SocketUtil.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 
 namespace facebook {
@@ -342,216 +343,6 @@ void AsyncMcClientImpl::sendGoAwayReply() {
   }
 }
 
-namespace {
-
-void createTCPKeepAliveOptions(
-    folly::AsyncSocket::OptionMap& options,
-    int cnt,
-    int idle,
-    int interval) {
-  // 0 means KeepAlive is disabled.
-  if (cnt != 0) {
-#ifdef SO_KEEPALIVE
-    folly::AsyncSocket::OptionMap::key_type key;
-    key.level = SOL_SOCKET;
-    key.optname = SO_KEEPALIVE;
-    options[key] = 1;
-
-    key.level = IPPROTO_TCP;
-
-#ifdef TCP_KEEPCNT
-    key.optname = TCP_KEEPCNT;
-    options[key] = cnt;
-#endif // TCP_KEEPCNT
-
-#ifdef TCP_KEEPIDLE
-    key.optname = TCP_KEEPIDLE;
-    options[key] = idle;
-#endif // TCP_KEEPIDLE
-
-#ifdef TCP_KEEPINTVL
-    key.optname = TCP_KEEPINTVL;
-    options[key] = interval;
-#endif // TCP_KEEPINTVL
-
-#endif // SO_KEEPALIVE
-  }
-}
-
-const folly::AsyncSocket::OptionKey getQoSOptionKey(sa_family_t addressFamily) {
-  static const folly::AsyncSocket::OptionKey kIpv4OptKey = {IPPROTO_IP, IP_TOS};
-  static const folly::AsyncSocket::OptionKey kIpv6OptKey = {IPPROTO_IPV6,
-                                                            IPV6_TCLASS};
-  return (addressFamily == AF_INET) ? kIpv4OptKey : kIpv6OptKey;
-}
-
-uint64_t getQoS(uint64_t qosClassLvl, uint64_t qosPathLvl) {
-  // class
-  static const uint64_t kDefaultClass = 0x00;
-  static const uint64_t kLowestClass = 0x20;
-  static const uint64_t kMediumClass = 0x40;
-  static const uint64_t kHighClass = 0x60;
-  static const uint64_t kHighestClass = 0x80;
-  static const uint64_t kQoSClasses[] = {
-      kDefaultClass, kLowestClass, kMediumClass, kHighClass, kHighestClass};
-
-  // path
-  static const uint64_t kAnyPathNoProtection = 0x00;
-  static const uint64_t kAnyPathProtection = 0x04;
-  static const uint64_t kShortestPathNoProtection = 0x08;
-  static const uint64_t kShortestPathProtection = 0x0c;
-  static const uint64_t kQoSPaths[] = {kAnyPathNoProtection,
-                                       kAnyPathProtection,
-                                       kShortestPathNoProtection,
-                                       kShortestPathProtection};
-
-  if (qosClassLvl > 4) {
-    qosClassLvl = 0;
-    LOG_FAILURE(
-        "AsyncMcClient",
-        failure::Category::kSystemError,
-        "Invalid QoS class value in AsyncMcClient");
-  }
-
-  if (qosPathLvl > 3) {
-    qosPathLvl = 0;
-    LOG_FAILURE(
-        "AsyncMcClient",
-        failure::Category::kSystemError,
-        "Invalid QoS path value in AsyncMcClient");
-  }
-
-  return kQoSClasses[qosClassLvl] | kQoSPaths[qosPathLvl];
-}
-
-void createQoSClassOption(
-    folly::AsyncSocket::OptionMap& options,
-    const sa_family_t addressFamily,
-    uint64_t qosClass,
-    uint64_t qosPath) {
-  const auto& optkey = getQoSOptionKey(addressFamily);
-  options[optkey] = getQoS(qosClass, qosPath);
-}
-
-void checkWhetherQoSIsApplied(
-    const folly::SocketAddress& address,
-    int socketFd,
-    const ConnectionOptions& connectionOptions) {
-  const auto& optkey = getQoSOptionKey(address.getFamily());
-
-  const uint64_t expectedValue =
-      getQoS(connectionOptions.qosClass, connectionOptions.qosPath);
-
-  uint64_t val = 0;
-  socklen_t len = sizeof(expectedValue);
-  int rv = getsockopt(socketFd, optkey.level, optkey.optname, &val, &len);
-  // Zero out last 2 bits as they are not used for the QOS value
-  constexpr uint64_t kMaskTwoLeastSignificantBits = 0xFFFFFFFc;
-  val = val & kMaskTwoLeastSignificantBits;
-  if (rv != 0 || val != expectedValue) {
-    LOG_FAILURE(
-        "AsyncMcClient",
-        failure::Category::kSystemError,
-        "Failed to apply QoS! "
-        "Return Value: {} (expected: {}). "
-        "QoS Value: {} (expected: {}).",
-        rv,
-        0,
-        val,
-        expectedValue);
-  }
-}
-
-folly::AsyncSocket::OptionMap createSocketOptions(
-    const folly::SocketAddress& address,
-    const ConnectionOptions& connectionOptions) {
-  folly::AsyncSocket::OptionMap options;
-
-  createTCPKeepAliveOptions(
-      options,
-      connectionOptions.tcpKeepAliveCount,
-      connectionOptions.tcpKeepAliveIdle,
-      connectionOptions.tcpKeepAliveInterval);
-  if (connectionOptions.enableQoS) {
-    createQoSClassOption(
-        options,
-        address.getFamily(),
-        connectionOptions.qosClass,
-        connectionOptions.qosPath);
-  }
-
-  return options;
-}
-} // anonymous namespace
-
-folly::AsyncTransportWrapper::UniquePtr AsyncMcClientImpl::createTransport() {
-  const auto mech = connectionOptions_.accessPoint->getSecurityMech();
-  folly::AsyncTransportWrapper::UniquePtr result;
-  if (mech == SecurityMech::NONE) {
-    result.reset(new folly::AsyncSocket(&eventBase_));
-    return result;
-  }
-  // creating a secure transport - make sure it isn't over a unix domain sock
-  if (connectionOptions_.accessPoint->isUnixDomainSocket()) {
-    connectErr(folly::AsyncSocketException(
-        folly::AsyncSocketException::BAD_ARGS,
-        "SSL protocol is not applicable for Unix Domain Sockets"));
-    return nullptr;
-  }
-  const auto& securityOpts = connectionOptions_.securityOpts;
-  const auto& serviceId = getServiceIdentity(connectionOptions_);
-  if (mech == SecurityMech::TLS || mech == SecurityMech::TLS_TO_PLAINTEXT) {
-    // openssl based tls
-    auto sslContext = getClientContext(securityOpts, mech);
-    if (!sslContext) {
-      connectErr(folly::AsyncSocketException(
-          folly::AsyncSocketException::SSL_ERROR,
-          "SSLContext provider returned nullptr, "
-          "check SSL certificates"));
-      return nullptr;
-    }
-
-    auto sslSocket = new folly::AsyncSSLSocket(sslContext, &eventBase_);
-    if (securityOpts.sessionCachingEnabled) {
-      if (auto clientCtx =
-              std::dynamic_pointer_cast<ClientSSLContext>(sslContext)) {
-        sslSocket->setSessionKey(serviceId);
-        auto session = clientCtx->getCache().getSSLSession(serviceId);
-        if (session) {
-          sslSocket->setSSLSession(session.release(), true);
-        }
-      }
-    }
-    if (securityOpts.tfoEnabledForSsl) {
-      sslSocket->enableTFO();
-    }
-    result.reset(sslSocket);
-  } else {
-    // tls 13 fizz
-    auto fizzContextAndVerifier = getFizzClientConfig(securityOpts);
-    if (!fizzContextAndVerifier.first) {
-      connectErr(folly::AsyncSocketException(
-          folly::AsyncSocketException::SSL_ERROR,
-          "Fizz context provider returned nullptr, "
-          "check SSL certificates"));
-      return nullptr;
-    }
-    auto fizzClient = new McFizzClient(
-        &eventBase_,
-        std::move(fizzContextAndVerifier.first),
-        std::move(fizzContextAndVerifier.second));
-    fizzClient->setSessionKey(serviceId);
-    if (securityOpts.tfoEnabledForSsl) {
-      if (auto socket =
-              fizzClient->getUnderlyingTransport<folly::AsyncSocket>()) {
-        socket->enableTFO();
-      }
-    }
-    result.reset(fizzClient);
-  }
-  return result;
-}
-
 void AsyncMcClientImpl::attemptConnection() {
   // We may use a lot of stack memory (e.g. hostname resolution) or some
   // expensive SSL code. This should be always executed on main context.
@@ -560,34 +351,27 @@ void AsyncMcClientImpl::attemptConnection() {
     connectionState_ = ConnectionState::CONNECTING;
     pendingGoAwayReply_ = false;
 
-    const auto mech = connectionOptions_.accessPoint->getSecurityMech();
-    socket_ = createTransport();
-    if (!socket_) {
-      // connect err was invoked
+    auto expectedSocket = createSocket(eventBase_, connectionOptions_);
+    if (expectedSocket.hasError()) {
+      connectErr(expectedSocket.error());
       return;
     }
+    socket_ = std::move(expectedSocket).value();
 
-    folly::SocketAddress address;
-    try {
-      if (connectionOptions_.accessPoint->isUnixDomainSocket()) {
-        address.setFromPath(connectionOptions_.accessPoint->getHost());
-      } else {
-        address = folly::SocketAddress(
-            connectionOptions_.accessPoint->getHost(),
-            connectionOptions_.accessPoint->getPort(),
-            /* allowNameLookup */ true);
-      }
-    } catch (const std::system_error& e) {
+    auto expectedSocketAddress = getSocketAddress(connectionOptions_);
+    if (expectedSocketAddress.hasError()) {
+      const auto& ex = expectedSocketAddress.error();
       LOG_FAILURE(
-          "AsyncMcClient", failure::Category::kBadEnvironment, "{}", e.what());
-      connectErr(folly::AsyncSocketException(
-          folly::AsyncSocketException::NOT_OPEN, ""));
+          "AsyncMcClient", failure::Category::kBadEnvironment, "{}", ex.what());
+      connectErr(ex);
       return;
     }
-
-    auto socketOptions = createSocketOptions(address, connectionOptions_);
+    folly::SocketAddress address = std::move(expectedSocketAddress).value();
 
     socket_->setSendTimeout(connectionOptions_.writeTimeout.count());
+
+    const auto mech = connectionOptions_.accessPoint->getSecurityMech();
+    auto socketOptions = createSocketOptions(address, connectionOptions_);
     if ((mech == SecurityMech::TLS || mech == SecurityMech::TLS_TO_PLAINTEXT) &&
         connectionOptions_.securityOpts.sslHandshakeOffload &&
         // we must make sure that contexts are threadsafe before doing this!
@@ -659,7 +443,10 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
     auto asyncSock = socket_->getUnderlyingTransport<folly::AsyncSocket>();
     if (asyncSock) {
       checkWhetherQoSIsApplied(
-          address, asyncSock->getNetworkSocket().toFd(), connectionOptions_);
+          asyncSock->getNetworkSocket().toFd(),
+          address,
+          connectionOptions_,
+          "AsyncMcClient");
     }
   }
 

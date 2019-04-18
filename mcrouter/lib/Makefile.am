@@ -226,6 +226,8 @@ libmcrouter_a_SOURCES = \
   network/ServerMcParser.h \
   network/SocketConnector.cpp \
   network/SocketConnector.h \
+  network/SocketUtil.cpp \
+  network/SocketUtil.h \
   network/ThreadLocalSSLContextProvider.cpp \
   network/ThreadLocalSSLContextProvider.h \
   network/ThriftTransport.cpp \
