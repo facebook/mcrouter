@@ -68,6 +68,13 @@ class ErrorRoute {
         auto now = nowUs();
         AccessPoint ap;
         RpcStatsContext rpcContext;
+        ctx->onBeforeRequestSent(
+            routeName() /* poolName */,
+            ap,
+            folly::StringPiece(),
+            req,
+            fiber_local<RouterInfo>::getRequestClass(),
+            now);
         ctx->onReplyReceived(
             routeName() /* poolName */,
             ap,

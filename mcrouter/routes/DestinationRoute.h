@@ -176,6 +176,13 @@ class DestinationRoute {
     auto now = nowUs();
     auto reply = createReply<Request>(std::forward<Args>(args)...);
     RpcStatsContext rpcContext;
+    ctx.onBeforeRequestSent(
+        poolName_,
+        *destination_->accessPoint(),
+        folly::StringPiece(),
+        req,
+        fiber_local<RouterInfo>::getRequestClass(),
+        now);
     ctx.onReplyReceived(
         poolName_,
         *destination_->accessPoint(),
@@ -211,6 +218,13 @@ class DestinationRoute {
     }
 
     const auto& reqToSend = newReq ? *newReq : req;
+    ctx.onBeforeRequestSent(
+        poolName_,
+        *destination_->accessPoint(),
+        strippedRoutingPrefix,
+        reqToSend,
+        fiber_local<RouterInfo>::getRequestClass(),
+        dctx.startTime);
     RpcStatsContext rpcContext;
     auto reply = destination_->send(reqToSend, dctx, timeout_, rpcContext);
     ctx.onReplyReceived(

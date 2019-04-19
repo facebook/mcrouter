@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -103,6 +102,35 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
   }
 
   /**
+   * Called before a request is sent
+   */
+  template <class Request>
+  void onBeforeRequestSent(
+      const folly::StringPiece poolName,
+      const AccessPoint& ap,
+      folly::StringPiece strippedRoutingPrefix,
+      const Request& request,
+      RequestClass requestClass,
+      const int64_t startTimeUs) {
+    if (recording()) {
+      return;
+    }
+
+    RpcStatsContext rpcStatsContext;
+    RequestLoggerContext loggerContext(
+        poolName,
+        ap,
+        strippedRoutingPrefix,
+        requestClass,
+        startTimeUs,
+        /* endTimeUs */ 0,
+        carbon::Result::UNKNOWN,
+        rpcStatsContext);
+    assert(additionalLogger_.hasValue());
+    additionalLogger_->logBeforeRequestSent(request, loggerContext);
+  }
+
+  /**
    * Called once a reply is received to record a stats sample if required.
    */
   template <class Request>
@@ -140,9 +168,12 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
     additionalLogger_->log(request, reply, loggerContext);
   }
 
- private:
+ public:
   using AdditionalLogger =
       typename detail::RouterAdditionalLogger<RouterInfo>::type;
+  AdditionalLogger& additionalLogger() {
+    return *additionalLogger_;
+  }
 
  protected:
   ProxyRequestContextWithInfo(
