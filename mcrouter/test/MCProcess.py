@@ -788,6 +788,23 @@ class MockMemcached(MCProcess):
             listen_sock.close()
 
 
+class MockMemcachedThrift(MCProcess):
+    def __init__(self, port=None):
+        args = [McrouterGlobals.binPath('mockmcthrift')]
+        listen_sock = None
+        if port is None:
+            listen_sock = create_listen_socket()
+            port = listen_sock.getsockname()[1]
+            args.extend(['-t', str(listen_sock.fileno())])
+        else:
+            args.extend(['-P', str(port)])
+
+        MCProcess.__init__(self, args, port)
+
+        if listen_sock is not None:
+            listen_sock.close()
+
+
 class Memcached(MCProcess):
     def __init__(self, port=None):
         args = [McrouterGlobals.binPath('prodmc')]

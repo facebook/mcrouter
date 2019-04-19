@@ -1,16 +1,10 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
-#
-# This source code is licensed under the MIT license found in the LICENSE
-# file in the root directory of this source tree.
-
-from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
 import random
 
-from mcrouter.test.MCProcess import MockMemcached
+from mcrouter.test.MCProcess import MockMemcached, MockMemcachedThrift
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 from mcrouter.test.mock_servers import DeadServer
 from mcrouter.test.mock_servers import SleepServer
@@ -27,6 +21,9 @@ def randstring(n):
 class TestMcrouterSanityMock(McrouterTestCase):
     config = './mcrouter/test/test_ascii.json'
 
+    def make_memcached(self):
+        return MockMemcached()
+
     def setUp(self):
         mc_ports = [
             11510, 11511, 11512, 11513,
@@ -37,9 +34,10 @@ class TestMcrouterSanityMock(McrouterTestCase):
         tmo_port = 11555
 
         # have to do these before starting mcrouter
-        self.mcs = [self.add_server(MockMemcached(), logical_port=port)
+        self.mcs = [self.add_server(self.make_memcached(), logical_port=port)
                     for port in mc_ports]
-        self.mc_gut = self.add_server(MockMemcached(), logical_port=mc_gut_port)
+        self.mc_gut = self.add_server(self.make_memcached(),
+                                      logical_port=mc_gut_port)
         self.mcs.append(self.mc_gut)
 
         self.add_server(SleepServer(), logical_port=tmo_port)
@@ -76,12 +74,18 @@ class TestMcrouterSanityMock(McrouterTestCase):
 
     def test_metaget_age(self):
         self.mcrouter.set("key", "value")
-        # mock_mc_server will send back hardcoded age = 123 if key is not
-        # 'unknown_age'
-        self.assertEqual(self.mcrouter.metaget("key")['age'], "123")
+        # Allow 5 seconds for super slow environments.
+        self.assertLess(int(self.mcrouter.metaget("key")['age']), 5)
         self.mcrouter.set("unknown_age", "value")
         self.assertEqual(self.mcrouter.metaget("unknown_age")['age'], "unknown")
 
 
 class TestCaretSanityMock(TestMcrouterSanityMock):
     config = './mcrouter/test/test_caret.json'
+
+
+class TestThriftSanityMock(TestMcrouterSanityMock):
+    config = './mcrouter/test/test_thrift.json'
+
+    def make_memcached(self):
+        return MockMemcachedThrift()

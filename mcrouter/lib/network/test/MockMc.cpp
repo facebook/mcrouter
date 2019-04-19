@@ -28,6 +28,7 @@ MockMc::Item::Item(std::unique_ptr<folly::IOBuf> v) : value(std::move(v)) {}
 
 MockMc::Item::Item(const folly::IOBuf& v, int32_t t, uint64_t f)
     : value(v.clone()),
+      creationTime(time(nullptr)),
       exptime(t != 0 && t <= 60 * 60 * 24 * 30 ? t + time(nullptr) : t),
       flags(f) {}
 

@@ -24,6 +24,7 @@ class MockMc {
  public:
   struct Item {
     std::unique_ptr<folly::IOBuf> value;
+    int32_t creationTime{0};
     int32_t exptime{0};
     uint64_t flags{0};
 
@@ -31,6 +32,7 @@ class MockMc {
     template <class Request>
     explicit Item(const Request& req)
         : value(req.value().clone()),
+          creationTime(time(nullptr)),
           exptime(
               req.exptime() != 0 && req.exptime() <= 60 * 60 * 24 * 30
                   ? req.exptime() + time(nullptr)

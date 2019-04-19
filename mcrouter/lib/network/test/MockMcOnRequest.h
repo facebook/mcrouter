@@ -35,7 +35,7 @@ class MockMcOnRequest {
     if (key == "unknown_age") {
       reply.age() = -1;
     } else {
-      reply.age() = 123;
+      reply.age() = time(nullptr) - item->creationTime;
     }
     reply.ipAddress() = "127.0.0.1";
     reply.ipv() = 4;

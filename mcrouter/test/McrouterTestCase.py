@@ -41,11 +41,13 @@ class McrouterTestCase(unittest.TestCase):
         return server
 
     def add_mcrouter(self, config, route=None, extra_args=None,
-                     replace_map=None, bg_mcrouter=False):
+                     replace_map=None, bg_mcrouter=False, replace_ports=True):
         self.ensureClassVariables()
-        substitute_ports = (self.open_ports
-                            if 'port_map' not in self.__dict__
-                            else self.port_map)
+        substitute_ports = None
+        if replace_ports:
+            substitute_ports = (self.open_ports
+                                if 'port_map' not in self.__dict__
+                                else self.port_map)
 
         mcrouter = Mcrouter(config,
                             substitute_config_ports=substitute_ports,
