@@ -610,9 +610,13 @@ bool McServerSession::handshakeVer(
 void McServerSession::handshakeSuc(folly::AsyncSSLSocket* sock) noexcept {
   DestructorGuard dg(this);
 
-  auto cert = sock->getPeerCert();
-  if (cert != nullptr) {
-    auto sub = X509_get_subject_name(cert.get());
+  auto cert = sock->getPeerCertificate();
+  folly::ssl::X509UniquePtr x509;
+  if (cert) {
+    x509 = cert->getX509();
+  }
+  if (x509 != nullptr) {
+    auto sub = X509_get_subject_name(x509.get());
     if (sub != nullptr) {
       char cn[ub_common_name + 1];
       const auto res =
@@ -651,12 +655,16 @@ void McServerSession::fizzHandshakeSuccess(
     fizz::server::AsyncFizzServer* transport) noexcept {
   DestructorGuard dg(this);
 
-  auto cert = transport->getPeerCert();
-  if (cert == nullptr) {
+  auto cert = transport->getPeerCertificate();
+  folly::ssl::X509UniquePtr x509;
+  if (cert) {
+    x509 = cert->getX509();
+  }
+  if (x509 == nullptr) {
     onAccepted();
     return;
   }
-  auto sub = X509_get_subject_name(cert.get());
+  auto sub = X509_get_subject_name(x509.get());
   if (sub != nullptr) {
     std::array<char, ub_common_name + 1> cn{};
     const auto res = X509_NAME_get_text_by_NID(

@@ -42,22 +42,6 @@ class PlaintextWithCerts : public folly::AsyncSocket {
       unique_ptr<PlaintextWithCerts, folly::DelayedDestruction::Destructor>;
   using AsyncSocket::AsyncSocket;
 
-  const X509* getSelfCert() const override {
-    auto self = getSelfCertificate();
-    if (self) {
-      return self->getX509().get();
-    }
-    return nullptr;
-  }
-
-  folly::ssl::X509UniquePtr getPeerCert() const override {
-    auto peer = getPeerCertificate();
-    if (!peer) {
-      return nullptr;
-    }
-    return peer->getX509();
-  }
-
   std::string getSecurityProtocol() const override {
     return McSSLUtil::kTlsToPlainProtocolName;
   }

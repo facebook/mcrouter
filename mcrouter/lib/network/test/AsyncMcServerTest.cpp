@@ -398,11 +398,13 @@ TEST(AsyncMcServer, onAccepted_RejectBasedOnCert) {
   config.requirePeerCerts = false;
   config.onConnectionAcceptedAdditionalCb = [](McServerSession& session) {
     EXPECT_EQ(SecurityMech::TLS_TO_PLAINTEXT, session.securityMech());
-    auto peerCert = session.getTransport()->getPeerCert();
+    auto peerCert = session.getTransport()->getPeerCertificate();
     EXPECT_TRUE(peerCert);
+    auto x509 = peerCert->getX509();
+    EXPECT_TRUE(x509);
 
     // we just trust certs from the "The Cool Company"
-    auto certName = folly::ssl::OpenSSLUtils::getCommonName(peerCert.get());
+    auto certName = folly::ssl::OpenSSLUtils::getCommonName(x509.get());
     LOG(INFO) << "Cert common name: " << certName;
     if (!folly::StringPiece(certName).contains("The Cool Company")) {
       session.close();
@@ -427,7 +429,7 @@ TEST(AsyncMcServer, onAccepted_RejectEmptyCert) {
   TestServer::Config config;
   config.requirePeerCerts = false;
   config.onConnectionAcceptedAdditionalCb = [](McServerSession& session) {
-    auto peerCert = session.getTransport()->getPeerCert();
+    auto peerCert = session.getTransport()->getPeerCertificate();
     if (!peerCert) {
       // we don't like missing certs.
       session.close();
