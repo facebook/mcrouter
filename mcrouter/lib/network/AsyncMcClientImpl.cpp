@@ -76,11 +76,6 @@ inline size_t calculateIovecsTotalSize(const struct iovec* iovecs, size_t num) {
   return size;
 }
 
-std::string getServiceIdentity(const ConnectionOptions& opts) {
-  const auto& svcIdentity = opts.securityOpts.sslServiceIdentity;
-  return svcIdentity.empty() ? opts.accessPoint->toHostPortString()
-                             : svcIdentity;
-}
 } // namespace
 
 void AsyncMcClientImpl::WriterLoop::runLoopCallback() noexcept {
@@ -131,7 +126,7 @@ void AsyncMcClientImpl::closeNow() {
     socket_->closeNow();
     socket_.reset();
     isAborting_ = false;
-  } else if (connectionState_ == ConnectionState::CONNECTING) {
+  } else if (connectionState_ == ConnectionState::Connecting) {
     isAborting_ = true;
   }
 }
@@ -142,7 +137,7 @@ void AsyncMcClientImpl::setConnectionStatusCallbacks(
 
   statusCallbacks_ = std::move(callbacks);
 
-  if (connectionState_ == ConnectionState::UP && statusCallbacks_.onUp) {
+  if (connectionState_ == ConnectionState::Up && statusCallbacks_.onUp) {
     statusCallbacks_.onUp(*socket_, getNumConnectRetries());
   }
 }
@@ -183,7 +178,7 @@ void AsyncMcClientImpl::sendCommon(McClientRequestContextBase& req) {
 
       queue_.markAsPending(req);
       scheduleNextWriterLoop();
-      if (connectionState_ == ConnectionState::DOWN) {
+      if (connectionState_ == ConnectionState::Down) {
         attemptConnection();
       }
       return;
@@ -211,7 +206,7 @@ size_t AsyncMcClientImpl::getNumToSend() const {
 }
 
 void AsyncMcClientImpl::scheduleNextWriterLoop() {
-  if (connectionState_ == ConnectionState::UP &&
+  if (connectionState_ == ConnectionState::Up &&
       !writer_.isLoopCallbackScheduled() &&
       (getNumToSend() > 0 || pendingGoAwayReply_)) {
     if (flushList_) {
@@ -229,7 +224,7 @@ void AsyncMcClientImpl::cancelWriterCallback() {
 void AsyncMcClientImpl::pushMessages() {
   DestructorGuard dg(this);
 
-  assert(connectionState_ == ConnectionState::UP);
+  assert(connectionState_ == ConnectionState::Up);
   auto numToSend = getNumToSend();
   // Call batch status callback
   if (requestStatusCallbacks_.onWrite && numToSend > 0) {
@@ -252,12 +247,12 @@ void AsyncMcClientImpl::pushMessages() {
         iov,
         iovCnt,
         last ? folly::WriteFlags::NONE : folly::WriteFlags::CORK);
-    return connectionState_ == ConnectionState::UP;
+    return connectionState_ == ConnectionState::Up;
   };
 
   while (queue_.getPendingRequestCount() != 0 && numToSend > 0 &&
          /* we might be already not UP, because of failed writev */
-         connectionState_ == ConnectionState::UP) {
+         connectionState_ == ConnectionState::Up) {
     auto& req = queue_.peekNextPending();
 
     auto iov = req.reqContext.getIovs();
@@ -313,7 +308,7 @@ void AsyncMcClientImpl::pushMessages() {
 
     --numToSend;
   }
-  if (connectionState_ == ConnectionState::UP && pendingGoAwayReply_) {
+  if (connectionState_ == ConnectionState::Up && pendingGoAwayReply_) {
     // Note: we're not waiting for all requests to be sent, since that may take
     // a while and if we didn't succeed in one loop, this means that we're
     // already backlogged.
@@ -347,8 +342,8 @@ void AsyncMcClientImpl::attemptConnection() {
   // We may use a lot of stack memory (e.g. hostname resolution) or some
   // expensive SSL code. This should be always executed on main context.
   folly::fibers::runInMainContext([this] {
-    assert(connectionState_ == ConnectionState::DOWN);
-    connectionState_ = ConnectionState::CONNECTING;
+    assert(connectionState_ == ConnectionState::Down);
+    connectionState_ = ConnectionState::Connecting;
     pendingGoAwayReply_ = false;
 
     auto expectedSocket = createSocket(eventBase_, connectionOptions_);
@@ -433,9 +428,9 @@ void AsyncMcClientImpl::attemptConnection() {
 }
 
 void AsyncMcClientImpl::connectSuccess() noexcept {
-  assert(connectionState_ == ConnectionState::CONNECTING);
+  assert(connectionState_ == ConnectionState::Connecting);
   DestructorGuard dg(this);
-  connectionState_ = ConnectionState::UP;
+  connectionState_ = ConnectionState::Up;
 
   if (connectionOptions_.enableQoS) {
     folly::SocketAddress address;
@@ -509,7 +504,7 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
 
 void AsyncMcClientImpl::connectErr(
     const folly::AsyncSocketException& ex) noexcept {
-  assert(connectionState_ == ConnectionState::CONNECTING);
+  assert(connectionState_ == ConnectionState::Connecting);
   DestructorGuard dg(this);
 
   std::string errorMessage;
@@ -539,7 +534,7 @@ void AsyncMcClientImpl::connectErr(
   }
 
   assert(queue_.getInflightRequestCount() == 0);
-  connectionState_ = ConnectionState::DOWN;
+  connectionState_ = ConnectionState::Down;
   // We don't need it anymore, so let it perform complete cleanup.
   socket_.reset();
 
@@ -559,11 +554,11 @@ void AsyncMcClientImpl::connectErr(
 void AsyncMcClientImpl::processShutdown(folly::StringPiece errorMessage) {
   DestructorGuard dg(this);
   switch (connectionState_) {
-    case ConnectionState::UP: // on error, UP always transitions to ERROR state
+    case ConnectionState::Up: // on error, UP always transitions to ERROR state
       // Cancel loop callback, or otherwise we might attempt to write
       // something while processing error state.
       cancelWriterCallback();
-      connectionState_ = ConnectionState::ERROR;
+      connectionState_ = ConnectionState::Error;
       // We're already in ERROR state, no need to listen for reads.
       socket_->setReadCB(nullptr);
       // We can safely close connection, it will stop all writes.
@@ -571,7 +566,7 @@ void AsyncMcClientImpl::processShutdown(folly::StringPiece errorMessage) {
 
       /* fallthrough */
 
-    case ConnectionState::ERROR:
+    case ConnectionState::Error:
       queue_.failAllSent(
           isAborting_ ? carbon::Result::ABORTED : carbon::Result::REMOTE_ERROR,
           errorMessage);
@@ -590,7 +585,7 @@ void AsyncMcClientImpl::processShutdown(folly::StringPiece errorMessage) {
               getNumConnectRetries());
         }
 
-        connectionState_ = ConnectionState::DOWN;
+        connectionState_ = ConnectionState::Down;
         // We don't need it anymore, so let it perform complete cleanup.
         socket_.reset();
 
@@ -601,9 +596,9 @@ void AsyncMcClientImpl::processShutdown(folly::StringPiece errorMessage) {
         }
       }
       return;
-    case ConnectionState::CONNECTING:
+    case ConnectionState::Connecting:
     // connectError is not a remote error, it's processed in connectError.
-    case ConnectionState::DOWN:
+    case ConnectionState::Down:
       // We shouldn't have any errors while not connected.
       CHECK(false);
   }
@@ -622,13 +617,13 @@ void AsyncMcClientImpl::readDataAvailable(size_t len) noexcept {
 }
 
 void AsyncMcClientImpl::readEOF() noexcept {
-  assert(connectionState_ == ConnectionState::UP);
+  assert(connectionState_ == ConnectionState::Up);
   processShutdown("Connection closed by the server.");
 }
 
 void AsyncMcClientImpl::readErr(
     const folly::AsyncSocketException& ex) noexcept {
-  assert(connectionState_ == ConnectionState::UP);
+  assert(connectionState_ == ConnectionState::Up);
   std::string errorMessage = folly::sformat(
       "Failed to read from socket with remote endpoint \"{}\". Exception: {}",
       connectionOptions_.accessPoint->toString(),
@@ -639,8 +634,8 @@ void AsyncMcClientImpl::readErr(
 
 void AsyncMcClientImpl::writeSuccess() noexcept {
   assert(
-      connectionState_ == ConnectionState::UP ||
-      connectionState_ == ConnectionState::ERROR);
+      connectionState_ == ConnectionState::Up ||
+      connectionState_ == ConnectionState::Error);
   DestructorGuard dg(this);
 
   bool last;
@@ -652,7 +647,7 @@ void AsyncMcClientImpl::writeSuccess() noexcept {
 
   // It is possible that we're already processing error, but still have a
   // successfull write.
-  if (connectionState_ == ConnectionState::ERROR) {
+  if (connectionState_ == ConnectionState::Error) {
     processShutdown("Connection was in ERROR state.");
   }
 }
@@ -661,8 +656,8 @@ void AsyncMcClientImpl::writeErr(
     size_t bytesWritten,
     const folly::AsyncSocketException& ex) noexcept {
   assert(
-      connectionState_ == ConnectionState::UP ||
-      connectionState_ == ConnectionState::ERROR);
+      connectionState_ == ConnectionState::Up ||
+      connectionState_ == ConnectionState::Error);
 
   std::string errorMessage = folly::sformat(
       "Failed to write into socket with remote endpoint \"{}\", "
@@ -694,13 +689,13 @@ void AsyncMcClientImpl::onEgressBufferCleared() {}
 
 folly::StringPiece AsyncMcClientImpl::clientStateToStr() const {
   switch (connectionState_) {
-    case ConnectionState::UP:
+    case ConnectionState::Up:
       return "UP";
-    case ConnectionState::DOWN:
+    case ConnectionState::Down:
       return "DOWN";
-    case ConnectionState::CONNECTING:
+    case ConnectionState::Connecting:
       return "CONNECTING";
-    case ConnectionState::ERROR:
+    case ConnectionState::Error:
       return "ERROR";
   }
   return "state is incorrect";
@@ -727,7 +722,7 @@ void AsyncMcClientImpl::handleConnectionControlMessage(
   switch (headerInfo.typeId) {
     case GoAwayRequest::typeId: {
       // No need to process GoAway if the connection is already closing.
-      if (connectionState_ != ConnectionState::UP) {
+      if (connectionState_ != ConnectionState::Up) {
         break;
       }
       if (statusCallbacks_.onDown) {
@@ -749,7 +744,7 @@ void AsyncMcClientImpl::parseError(
     folly::StringPiece reason) {
   logErrorWithContext(reason);
   // mc_parser can call the parseError multiple times, process only first.
-  if (connectionState_ != ConnectionState::UP) {
+  if (connectionState_ != ConnectionState::Up) {
     return;
   }
   DestructorGuard dg(this);
@@ -757,7 +752,7 @@ void AsyncMcClientImpl::parseError(
 }
 
 bool AsyncMcClientImpl::nextReplyAvailable(uint64_t reqId) {
-  assert(connectionState_ == ConnectionState::UP);
+  assert(connectionState_ == ConnectionState::Up);
 
   auto initializer = queue_.getParserInitializer(reqId);
 

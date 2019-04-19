@@ -21,8 +21,6 @@
 #include <folly/Range.h>
 
 #include <mcrouter/lib/carbon/Stats.h>
-#include <mcrouter/lib/network/RpcStatsContext.h>
-#include <mcrouter/lib/network/ThriftTransport.h>
 
 #include "mcrouter/lib/carbon/test/gen/CarbonTestRouteHandleIf.h"
 #include "mcrouter/lib/carbon/test/gen/CarbonTestRouterStats.h"
@@ -83,9 +81,3 @@ struct CarbonTestRouterInfo {
 };
 } // namespace test
 } // namespace carbon
-
-namespace facebook {
-namespace memcache {
-
-} // namespace memcache
-} // namespace facebook

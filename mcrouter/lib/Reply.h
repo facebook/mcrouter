@@ -80,5 +80,14 @@ ReplyT<Request> createReply(BusyReplyT) {
   return ReplyT<Request>(carbon::Result::BUSY);
 }
 
+template <class Reply>
+void setReplyResultAndMessage(
+    Reply& reply,
+    carbon::Result res,
+    std::string errorMessage) {
+  reply.result() = res;
+  carbon::setMessageIfPresent(reply, std::move(errorMessage));
+}
+
 } // namespace memcache
 } // namespace facebook

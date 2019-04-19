@@ -21,6 +21,13 @@ namespace memcache {
 
 struct ConnectionOptions;
 
+enum class ConnectionState {
+  Up, // Connection is open and we can write into it.
+  Down, // Connection is not open (or close), we need to reconnect.
+  Connecting, // Currently connecting.
+  Error // Currently processing error.
+};
+
 /**
  * Creates a socket based on the given options. The socket will be attached to
  * the given Eventbase.

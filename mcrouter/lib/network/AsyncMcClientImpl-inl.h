@@ -63,11 +63,11 @@ void AsyncMcClientImpl::replyReady(
     Reply&& r,
     uint64_t reqId,
     RpcStatsContext rpcStatsContext) {
-  assert(connectionState_ == ConnectionState::UP);
+  assert(connectionState_ == ConnectionState::Up);
   DestructorGuard dg(this);
 
   queue_.reply(reqId, std::move(r), rpcStatsContext);
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

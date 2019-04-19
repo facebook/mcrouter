@@ -1,28 +1,30 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <chrono>
 
 #include <folly/fibers/FiberManagerMap.h>
 #include <folly/init/Init.h>
 #include <folly/io/async/EventBase.h>
+#include <folly/synchronization/Baton.h>
 #include <glog/logging.h>
+#include <thrift/lib/cpp2/server/ThriftServer.h>
+#include <thrift/lib/cpp2/transport/rsocket/server/RSRoutingHandler.h>
 
+#include "mcrouter/CarbonRouterClient.h"
+#include "mcrouter/CarbonRouterInstance.h"
+#include "mcrouter/config.h"
 #include "mcrouter/lib/carbon/example/gen/HelloGoodbye.h"
 #include "mcrouter/lib/carbon/example/gen/HelloGoodbyeRouterInfo.h"
+#include "mcrouter/lib/carbon/example/gen/gen-cpp2/HelloGoodbye.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
-
-#include "mcrouter/CarbonRouterClient.h"
-#include "mcrouter/CarbonRouterInstance.h"
-#include "mcrouter/config.h"
 
 using namespace facebook::memcache;
 using namespace facebook::memcache::mcrouter;
@@ -46,6 +48,42 @@ struct HelloGoodbyeOnRequest {
               << " got key " << request.key().fullKey().str();
     McServerRequestContext::reply(
         std::move(ctx), GoodbyeReply(carbon::Result::OK));
+  }
+};
+
+class ThriftHandler : virtual public hellogoodbye::thrift::HelloGoodbyeSvIf {
+ public:
+  ThriftHandler() = default;
+  virtual ~ThriftHandler() = default;
+
+  void async_eb_hello(
+      std::unique_ptr<apache::thrift::HandlerCallback<hellogoodbye::HelloReply>>
+          callback,
+      const hellogoodbye::HelloRequest& request) override {
+    LOG(INFO) << "Hello! Thrift server " << reinterpret_cast<uintptr_t>(this)
+              << " got key " << request.key().fullKey().str();
+    hellogoodbye::HelloReply reply(carbon::Result::OK);
+    decltype(callback)::element_type::resultInThread(
+        std::move(callback), std::move(reply));
+  }
+
+  void async_eb_goodbye(
+      std::unique_ptr<
+          apache::thrift::HandlerCallback<hellogoodbye::GoodbyeReply>> callback,
+      const hellogoodbye::GoodbyeRequest& request) override {
+    LOG(INFO) << "Good bye! Thrift server " << reinterpret_cast<uintptr_t>(this)
+              << " got key " << request.key().fullKey().str();
+    hellogoodbye::GoodbyeReply reply(carbon::Result::OK);
+    decltype(callback)::element_type::resultInThread(
+        std::move(callback), std::move(reply));
+  }
+
+  void async_eb_mcVersion(
+      std::unique_ptr<apache::thrift::HandlerCallback<
+          facebook::memcache::McVersionReply>> callback,
+      const facebook::memcache::McVersionRequest& /* request */) override {
+    decltype(callback)::element_type::resultInThread(
+        std::move(callback), McVersionReply(carbon::Result::OK));
   }
 };
 
@@ -122,7 +160,8 @@ void sendHelloRequestSync(
 
   client->send(req, [&baton](const HelloRequest&, HelloReply&& reply) {
     LOG(INFO) << "Reply received! Result: "
-              << carbon::resultToString(reply.result());
+              << carbon::resultToString(reply.result())
+              << ". Message: " << reply.message();
     baton.post();
   });
 
@@ -241,14 +280,95 @@ void testCarbonLookasideRouter() {
   }
 }
 
+std::thread startThriftServer(
+    std::shared_ptr<apache::thrift::ThriftServer> server,
+    uint16_t port) {
+  folly::Baton baton;
+  std::thread serverThread([&baton, server, port]() {
+    auto handler = std::make_shared<ThriftHandler>();
+    server->setInterface(handler);
+    server->setPort(port);
+    server->enableRocketServer(true);
+    server->setNumIOWorkerThreads(1);
+    server->addRoutingHandler(
+        std::make_unique<apache::thrift::RSRoutingHandler>());
+    baton.post();
+    server->serve();
+  });
+  baton.wait();
+  return serverThread;
+}
+
+void testCarbonThriftServer() {
+  // Run one simple HelloGoodbye thrift server.
+  auto server1 = std::make_shared<apache::thrift::ThriftServer>();
+  auto server2 = std::make_shared<apache::thrift::ThriftServer>();
+  auto server1Thread = startThriftServer(server1, kPort);
+  auto server2Thread = startThriftServer(server2, kPort2);
+
+  // Start mcrouter
+  McrouterOptions routerOpts;
+  routerOpts.num_proxies = 2;
+  routerOpts.asynclog_disable = true;
+  routerOpts.probe_delay_initial_ms = 1;
+  routerOpts.probe_delay_max_ms = 10;
+  routerOpts.config_str = R"(
+  {
+    "pools": {
+      "A": {
+        "servers": [ "127.0.0.1:11303", "127.0.0.1:11305" ],
+        "protocol": "thrift"
+      }
+    },
+    "route": "PoolRoute|A"
+  }
+  )";
+
+  auto router = CarbonRouterInstance<HelloGoodbyeRouterInfo>::init(
+      "thriftClientRouter", routerOpts);
+  if (!router) {
+    LOG(ERROR) << "Failed to initialize router!";
+    return;
+  }
+
+  auto client = router->createClient(0 /* max_outstanding_requests */);
+  for (int i = 0; i < 10; ++i) {
+    sendHelloRequestSync(client.get(), folly::sformat("key:{}", i));
+  }
+
+  // stop server 1
+  server1->stop();
+  server1Thread.join();
+
+  for (int i = 10; i < 20; ++i) {
+    sendHelloRequestSync(client.get(), folly::sformat("key:{}", i));
+  }
+
+  // start server 1 again.
+  server1 = std::make_shared<apache::thrift::ThriftServer>();
+  server1Thread = startThriftServer(server1, kPort);
+  usleep(1000);
+
+  for (int i = 20; i < 30; ++i) {
+    sendHelloRequestSync(client.get(), folly::sformat("key:{}", i));
+  }
+
+  router->shutdown();
+  server1->stop();
+  server2->stop();
+  server1Thread.join();
+  server2Thread.join();
+}
+
 } // anonymous
 
 int main(int argc, char* argv[]) {
   folly::init(&argc, &argv);
 
   // testClientServer();
-  testRouter();
-  testCarbonLookasideRouter();
+  // testRouter();
+  // testCarbonLookasideRouter();
+  testCarbonThriftServer();
 
   return 0;
 }

@@ -230,6 +230,7 @@ libmcrouter_a_SOURCES = \
   network/SocketUtil.h \
   network/ThreadLocalSSLContextProvider.cpp \
   network/ThreadLocalSSLContextProvider.h \
+  network/ThriftTransport-inl.h \
   network/ThriftTransport.cpp \
   network/ThriftTransport.h \
   network/Transport.h \

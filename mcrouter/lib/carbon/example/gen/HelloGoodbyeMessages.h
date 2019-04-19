@@ -30,6 +30,8 @@
 #include <mcrouter/lib/carbon/TypeList.h>
 #include <mcrouter/lib/carbon/Variant.h>
 
+#include "mcrouter/lib/carbon/example/gen/gen-cpp2/HelloGoodbye_types.h"
+
 #include "mcrouter/lib/network/gen/CommonMessages.h"
 
 namespace hellogoodbye {
@@ -51,24 +53,26 @@ class HelloRequest : public carbon::RequestCommon {
   HelloRequest& operator=(const HelloRequest&) = default;
   HelloRequest(HelloRequest&&) = default;
   HelloRequest& operator=(HelloRequest&&) = default;
-  explicit HelloRequest(folly::StringPiece sp)
-      : key_(sp) {}
-  explicit HelloRequest(folly::IOBuf&& carbonKey)
-      : key_(std::move(carbonKey)) {}
+  explicit HelloRequest(folly::StringPiece sp) {
+    underlyingThriftStruct_.key = sp;
+  }
+  explicit HelloRequest(folly::IOBuf&& carbonKey) {
+    underlyingThriftStruct_.key = std::move(carbonKey);
+  }
 
   const carbon::Keys<folly::IOBuf>& key() const {
-    return key_;
+    return underlyingThriftStruct_.key;
   }
   carbon::Keys<folly::IOBuf>& key() {
     markBufferAsDirty();
-    return key_;
+    return underlyingThriftStruct_.key;
   }
   uint64_t shardId() const {
-    return shardId_;
+    return underlyingThriftStruct_.shardId;
   }
   uint64_t& shardId() {
     markBufferAsDirty();
-    return shardId_;
+    return underlyingThriftStruct_.shardId;
   }
   uint64_t flags() const {
     return 0;
@@ -76,6 +80,14 @@ class HelloRequest : public carbon::RequestCommon {
   int32_t exptime() const {
     return 0;
   }
+  const hellogoodbye::thrift::HelloRequest& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  hellogoodbye::thrift::HelloRequest& getThriftStruct() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_;
+  }
+
   template <class Writer>
   void serialize(Writer&& writer) const;
 
@@ -86,9 +98,33 @@ class HelloRequest : public carbon::RequestCommon {
   template <class V>
   void visitFields(V&& v) const;
 
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
  private:
-  carbon::Keys<folly::IOBuf> key_;
-  uint64_t shardId_{0};
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<HelloRequest>;
+
+ private:
+  hellogoodbye::thrift::HelloRequest underlyingThriftStruct_;
 };
 
 class HelloReply : public carbon::ReplyCommon {
@@ -104,20 +140,33 @@ class HelloReply : public carbon::ReplyCommon {
   HelloReply& operator=(const HelloReply&) = default;
   HelloReply(HelloReply&&) = default;
   HelloReply& operator=(HelloReply&&) = default;
-  explicit HelloReply(carbon::Result carbonResult)
-      : result_(carbonResult) {}
+  explicit HelloReply(carbon::Result carbonResult) {
+    underlyingThriftStruct_.result = carbonResult;
+  }
 
   carbon::Result result() const {
-    return result_;
+    return underlyingThriftStruct_.result;
   }
   carbon::Result& result() {
-    return result_;
+    return underlyingThriftStruct_.result;
+  }
+  const std::string& message() const {
+    return underlyingThriftStruct_.message;
+  }
+  std::string& message() {
+    return underlyingThriftStruct_.message;
   }
   uint64_t flags() const {
     return 0;
   }
   int32_t exptime() const {
     return 0;
+  }
+  const hellogoodbye::thrift::HelloReply& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  hellogoodbye::thrift::HelloReply& getThriftStruct() {
+    return underlyingThriftStruct_;
   }
 
   template <class Writer>
@@ -130,8 +179,33 @@ class HelloReply : public carbon::ReplyCommon {
   template <class V>
   void visitFields(V&& v) const;
 
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
  private:
-  carbon::Result result_{carbon::Result::UNKNOWN};
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<HelloReply>;
+
+ private:
+  hellogoodbye::thrift::HelloReply underlyingThriftStruct_;
 };
 
 class GoodbyeReply;
@@ -151,24 +225,26 @@ class GoodbyeRequest : public carbon::RequestCommon {
   GoodbyeRequest& operator=(const GoodbyeRequest&) = default;
   GoodbyeRequest(GoodbyeRequest&&) = default;
   GoodbyeRequest& operator=(GoodbyeRequest&&) = default;
-  explicit GoodbyeRequest(folly::StringPiece sp)
-      : key_(sp) {}
-  explicit GoodbyeRequest(folly::IOBuf&& carbonKey)
-      : key_(std::move(carbonKey)) {}
+  explicit GoodbyeRequest(folly::StringPiece sp) {
+    underlyingThriftStruct_.key = sp;
+  }
+  explicit GoodbyeRequest(folly::IOBuf&& carbonKey) {
+    underlyingThriftStruct_.key = std::move(carbonKey);
+  }
 
   const carbon::Keys<folly::IOBuf>& key() const {
-    return key_;
+    return underlyingThriftStruct_.key;
   }
   carbon::Keys<folly::IOBuf>& key() {
     markBufferAsDirty();
-    return key_;
+    return underlyingThriftStruct_.key;
   }
   uint64_t shardId() const {
-    return shardId_;
+    return underlyingThriftStruct_.shardId;
   }
   uint64_t& shardId() {
     markBufferAsDirty();
-    return shardId_;
+    return underlyingThriftStruct_.shardId;
   }
   uint64_t flags() const {
     return 0;
@@ -176,6 +252,14 @@ class GoodbyeRequest : public carbon::RequestCommon {
   int32_t exptime() const {
     return 0;
   }
+  const hellogoodbye::thrift::GoodbyeRequest& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  hellogoodbye::thrift::GoodbyeRequest& getThriftStruct() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_;
+  }
+
   template <class Writer>
   void serialize(Writer&& writer) const;
 
@@ -186,9 +270,33 @@ class GoodbyeRequest : public carbon::RequestCommon {
   template <class V>
   void visitFields(V&& v) const;
 
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
  private:
-  carbon::Keys<folly::IOBuf> key_;
-  uint64_t shardId_{0};
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<GoodbyeRequest>;
+
+ private:
+  hellogoodbye::thrift::GoodbyeRequest underlyingThriftStruct_;
 };
 
 class GoodbyeReply : public carbon::ReplyCommon {
@@ -204,26 +312,33 @@ class GoodbyeReply : public carbon::ReplyCommon {
   GoodbyeReply& operator=(const GoodbyeReply&) = default;
   GoodbyeReply(GoodbyeReply&&) = default;
   GoodbyeReply& operator=(GoodbyeReply&&) = default;
-  explicit GoodbyeReply(carbon::Result carbonResult)
-      : result_(carbonResult) {}
+  explicit GoodbyeReply(carbon::Result carbonResult) {
+    underlyingThriftStruct_.result = carbonResult;
+  }
 
   carbon::Result result() const {
-    return result_;
+    return underlyingThriftStruct_.result;
   }
   carbon::Result& result() {
-    return result_;
+    return underlyingThriftStruct_.result;
   }
   const std::string& message() const {
-    return message_;
+    return underlyingThriftStruct_.message;
   }
   std::string& message() {
-    return message_;
+    return underlyingThriftStruct_.message;
   }
   uint64_t flags() const {
     return 0;
   }
   int32_t exptime() const {
     return 0;
+  }
+  const hellogoodbye::thrift::GoodbyeReply& getThriftStruct() const {
+    return underlyingThriftStruct_;
+  }
+  hellogoodbye::thrift::GoodbyeReply& getThriftStruct() {
+    return underlyingThriftStruct_;
   }
 
   template <class Writer>
@@ -236,9 +351,33 @@ class GoodbyeReply : public carbon::ReplyCommon {
   template <class V>
   void visitFields(V&& v) const;
 
+  // Methods for Thrift interoperability, note that the methods work with Thrift
+  // protocols and not Carbon protocol.
+  void __clear() {
+    underlyingThriftStruct_.__clear();
+  }
+  template <class Protocol>
+  uint32_t write(Protocol* protocol) const {
+    return underlyingThriftStruct_.write(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSize(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSize(protocol);
+  }
+  template <class Protocol>
+  uint32_t serializedSizeZC(Protocol* protocol) const {
+    return underlyingThriftStruct_.serializedSizeZC(protocol);
+  }
  private:
-  std::string message_;
-  carbon::Result result_{carbon::Result::UNKNOWN};
+  template <class Protocol>
+  void readNoXfer(Protocol* protocol) {
+    underlyingThriftStruct_.read(protocol);
+  }
+
+  friend class apache::thrift::Cpp2Ops<GoodbyeReply>;
+
+ private:
+  hellogoodbye::thrift::GoodbyeReply underlyingThriftStruct_;
 };
 } // namespace hellogoodbye
 

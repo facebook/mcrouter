@@ -21,8 +21,6 @@
 #include <folly/Range.h>
 
 #include <mcrouter/lib/carbon/Stats.h>
-#include <mcrouter/lib/network/RpcStatsContext.h>
-#include <mcrouter/lib/network/ThriftTransport.h>
 
 #include "mcrouter/lib/carbon/example/gen/HelloGoodbyeRouteHandleIf.h"
 #include "mcrouter/lib/carbon/example/gen/HelloGoodbyeRouterStats.h"
@@ -80,8 +78,4 @@ struct HelloGoodbyeRouterInfo {
 };
 } // namespace hellogoodbye
 
-namespace facebook {
-namespace memcache {
-
-} // namespace memcache
-} // namespace facebook
+#include "mcrouter/lib/carbon/example/gen/HelloGoodbyeThriftTransport.h"

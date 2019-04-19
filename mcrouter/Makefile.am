@@ -213,6 +213,7 @@ libmcroutercore_a_CPPFLAGS = -I..
 mcrouter_LDADD = \
   libmcroutercore.a \
   lib/libmcrouter.a \
+  -lasync \
   -lprotocol \
   -lthriftcpp2 \
   -lthriftprotocol \

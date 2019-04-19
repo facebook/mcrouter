@@ -10,10 +10,13 @@
 #include <folly/io/async/EventBase.h>
 #include <folly/io/async/VirtualEventBase.h>
 #include <thrift/lib/cpp/async/TAsyncSocket.h>
+#include <thrift/lib/cpp2/async/RequestChannel.h>
 
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
+#include "mcrouter/lib/network/McFizzClient.h"
 #include "mcrouter/lib/network/SecurityOptions.h"
+#include "mcrouter/lib/network/SocketUtil.h"
 
 using apache::thrift::async::TAsyncSocket;
 
@@ -26,7 +29,9 @@ ThriftTransportBase::ThriftTransportBase(
     : eventBase_(eventBase.getEventBase()),
       connectionOptions_(std::move(options)) {}
 
-void ThriftTransportBase::closeNow() {}
+void ThriftTransportBase::closeNow() {
+  resetClient();
+}
 
 void ThriftTransportBase::setConnectionStatusCallbacks(
     ConnectionStatusCallbacks callbacks) {
@@ -61,20 +66,88 @@ double ThriftTransportBase::getRetransmitsPerKb() {
 
 void ThriftTransportBase::setFlushList(FlushList* /* flushList */) {}
 
+apache::thrift::async::TAsyncTransport::UniquePtr
+ThriftTransportBase::getConnectingSocket() {
+  return folly::fibers::runInMainContext([this] {
+    // TODO(@aap): Replace with createSocket() once Thrift works with
+    // AsyncTransportWrapper.
+    apache::thrift::async::TAsyncTransport::UniquePtr socket(
+        new apache::thrift::async::TAsyncSocket(&eventBase_));
+
+    socket->setSendTimeout(connectionOptions_.writeTimeout.count());
+
+    auto sockAddressExpected = getSocketAddress(connectionOptions_);
+    if (sockAddressExpected.hasError()) {
+      const auto& ex = sockAddressExpected.error();
+      LOG_FAILURE(
+          "ThriftTransport",
+          failure::Category::kBadEnvironment,
+          "{}",
+          ex.what());
+      return apache::thrift::async::TAsyncTransport::UniquePtr{};
+    }
+    folly::SocketAddress address = std::move(sockAddressExpected).value();
+
+    auto socketOptions = createSocketOptions(address, connectionOptions_);
+    const auto mech = connectionOptions_.accessPoint->getSecurityMech();
+    connectionState_ = ConnectionState::Connecting;
+    if (mech == SecurityMech::TLS13_FIZZ) {
+      auto fizzClient = socket->getUnderlyingTransport<McFizzClient>();
+      fizzClient->connect(
+          this,
+          address,
+          connectionOptions_.connectTimeout.count(),
+          socketOptions);
+    } else {
+      auto asyncSock = socket->getUnderlyingTransport<folly::AsyncSocket>();
+      asyncSock->connect(
+          this,
+          address,
+          connectionOptions_.connectTimeout.count(),
+          socketOptions);
+    }
+    return socket;
+  });
+}
+
+apache::thrift::RocketClientChannel::Ptr ThriftTransportBase::createChannel() {
+  auto socket = getConnectingSocket();
+  if (!socket) {
+    return nullptr;
+  }
+  auto channel =
+      apache::thrift::RocketClientChannel::newChannel(std::move(socket));
+  channel->setCloseCallback(this);
+  return channel;
+}
+
+apache::thrift::RpcOptions ThriftTransportBase::getRpcOptions(
+    std::chrono::milliseconds timeout) const {
+  apache::thrift::RpcOptions rpcOptions;
+  rpcOptions.setTimeout(timeout);
+  return rpcOptions;
+}
+
 void ThriftTransportBase::connectSuccess() noexcept {
-  DestructorGuard dg(this);
+  assert(connectionState_ == ConnectionState::Connecting);
   connectionState_ = ConnectionState::Up;
+  VLOG(5) << "[ThriftTransport] Connection successfully established!";
 }
 
 void ThriftTransportBase::connectErr(
     const folly::AsyncSocketException& ex) noexcept {
   assert(connectionState_ == ConnectionState::Connecting);
-  DestructorGuard dg(this);
 
-  LOG(ERROR) << "[ThriftClientBase] Error connecting: " << ex.what();
+  connectionState_ = ConnectionState::Error;
+  connectionTimedOut_ =
+      (ex.getType() == folly::AsyncSocketException::TIMED_OUT);
 
-  connectionState_ = ConnectionState::Down;
-  socket_.reset();
+  VLOG(2) << "[ThriftTransport] Error connecting: " << ex.what();
+}
+
+void ThriftTransportBase::channelClosed() {
+  VLOG(3) << "[ThriftTransport] Channel closed.";
+  resetClient();
 }
 
 } // namespace memcache

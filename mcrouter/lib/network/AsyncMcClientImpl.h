@@ -25,6 +25,7 @@
 #include "mcrouter/lib/network/ConnectionOptions.h"
 #include "mcrouter/lib/network/McClientRequestContext.h"
 #include "mcrouter/lib/network/RpcStatsContext.h"
+#include "mcrouter/lib/network/SocketUtil.h"
 #include "mcrouter/lib/network/Transport.h"
 
 namespace facebook {
@@ -91,13 +92,6 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   using ParserT = ClientMcParser<AsyncMcClientImpl>;
   friend ParserT;
 
-  enum class ConnectionState {
-    UP, // Connection is open and we can write into it.
-    DOWN, // Connection is not open (or close), we need to reconnect.
-    CONNECTING, // Currently connecting.
-    ERROR // Currently processing error.
-  };
-
   folly::EventBase& eventBase_;
   std::unique_ptr<ParserT> parser_;
 
@@ -105,7 +99,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   std::pair<void*, size_t> curBuffer_{nullptr, 0};
 
   // Socket related variables.
-  ConnectionState connectionState_{ConnectionState::DOWN};
+  ConnectionState connectionState_{ConnectionState::Down};
   folly::AsyncTransportWrapper::UniquePtr socket_;
   ConnectionStatusCallbacks statusCallbacks_;
   RequestStatusCallbacks requestStatusCallbacks_;

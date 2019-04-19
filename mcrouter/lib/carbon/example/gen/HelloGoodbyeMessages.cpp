@@ -63,6 +63,10 @@ void HelloReply::deserialize(carbon::CarbonProtocolReader& reader) {
         reader.readField(result(), fieldType);
         break;
       }
+      case 2: {
+        reader.readField(message(), fieldType);
+        break;
+      }
       default: {
         reader.skip(fieldType);
         break;

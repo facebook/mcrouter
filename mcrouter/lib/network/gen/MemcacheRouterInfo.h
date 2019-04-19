@@ -21,13 +21,10 @@
 #include <folly/Range.h>
 
 #include <mcrouter/lib/carbon/Stats.h>
-#include <mcrouter/lib/network/RpcStatsContext.h>
-#include <mcrouter/lib/network/ThriftTransport.h>
 
 #include "mcrouter/lib/network/gen/MemcacheRouteHandleIf.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterStats.h"
 #include "mcrouter/lib/network/gen/MemcacheRoutingGroups.h"
-#include "mcrouter/lib/network/gen/gen-cpp2/MemcacheAsyncClient.h"
 
 // Forward declarations
 namespace folly {
@@ -109,24 +106,4 @@ struct MemcacheRouterInfo {
 } // namespace memcache
 } // namespace facebook
 
-namespace facebook {
-namespace memcache {
-
-template <>
-class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
- public:
-  ThriftTransport(folly::VirtualEventBase& eventBase, ConnectionOptions options)
-      : ThriftTransportBase(eventBase, std::move(options)) {}
-  ~ThriftTransport() override final = default;
-
-  template <class Request>
-  ReplyT<Request> sendSync(
-      const Request& request,
-      std::chrono::milliseconds /* timeout */,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return createReply(DefaultReply, request);
-  }
-};
-
-} // namespace memcache
-} // namespace facebook
+#include "mcrouter/lib/network/gen/MemcacheThriftTransport.h"
