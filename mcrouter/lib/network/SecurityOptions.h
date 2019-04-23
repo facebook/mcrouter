@@ -24,6 +24,9 @@ enum class SecurityMech : uint8_t {
   TLS_TO_PLAINTEXT,
   // tls 1.3 w/ fizz
   TLS13_FIZZ,
+  // TLS 1.2 handshake and attempt kTLS.  If KTLS is not available, it is same
+  // as TLS
+  KTLS12,
 };
 
 // packed struct for stats

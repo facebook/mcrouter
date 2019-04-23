@@ -47,6 +47,12 @@ folly::Optional<SSLTestPaths> getFizzSSL() {
   return res;
 }
 
+folly::Optional<SSLTestPaths> getKtlsSSL() {
+  auto res = validClientSsl();
+  res.mech = SecurityMech::KTLS12;
+  return res;
+}
+
 class AsyncMcClientSimpleTest
     : public TestWithParam<folly::Optional<SSLTestPaths>> {
  public:
@@ -68,8 +74,12 @@ TEST_P(AsyncMcClientSimpleTest, serverShutdownTest) {
   auto transport = client.getClient().getTransport();
   if (!ssl.hasValue()) {
     EXPECT_EQ(transport->getSecurityProtocol(), "");
-  } else if (ssl->mech == SecurityMech::TLS) {
+  } else if (
+      ssl->mech == SecurityMech::TLS || ssl->mech == SecurityMech::KTLS12) {
+    // by default ktls support is not available
     EXPECT_EQ(transport->getSecurityProtocol(), "TLS");
+    auto* sslsock = transport->getUnderlyingTransport<folly::AsyncSSLSocket>();
+    EXPECT_NE(sslsock, nullptr);
   } else if (ssl->mech == SecurityMech::TLS_TO_PLAINTEXT) {
     // TLS_TO_PLAINTEXT
     EXPECT_EQ(transport->getSecurityProtocol(), "mc_plaintext");
@@ -79,6 +89,8 @@ TEST_P(AsyncMcClientSimpleTest, serverShutdownTest) {
     auto selfCert = transport->getSelfCertificate();
     EXPECT_NE(peerCert, nullptr);
     EXPECT_NE(selfCert, nullptr);
+  } else if (ssl->mech == SecurityMech::KTLS12) {
+    EXPECT_EQ(transport->getSecurityProtocol(), "TLS");
   } else {
     EXPECT_EQ(ssl->mech, SecurityMech::TLS13_FIZZ);
     EXPECT_EQ(transport->getSecurityProtocol(), "Fizz");
@@ -227,7 +239,12 @@ TEST_P(AsyncMcClientSimpleTest, connectionError) {
 INSTANTIATE_TEST_CASE_P(
     AsyncMcClientTest,
     AsyncMcClientSimpleTest,
-    Values(folly::none, validClientSsl(), getTlsToPtSSL(), getFizzSSL()));
+    Values(
+        folly::none,
+        validClientSsl(),
+        getTlsToPtSSL(),
+        getFizzSSL(),
+        getKtlsSSL()));
 
 void testCerts(
     std::string name,
@@ -378,10 +395,13 @@ INSTANTIATE_TEST_CASE_P(
     AsyncMcClientTest,
     AsyncMcClientBasicTest,
     Combine(
+        Values(mc_ascii_protocol, mc_caret_protocol),
         Values(
-            mc_ascii_protocol,
-            mc_caret_protocol),
-        Values(folly::none, validClientSsl(), getTlsToPtSSL(), getFizzSSL())));
+            folly::none,
+            validClientSsl(),
+            getTlsToPtSSL(),
+            getFizzSSL(),
+            getKtlsSSL())));
 
 TEST_F(AsyncMcClientBasicTest, caretSslNoCerts) {
   config.requirePeerCerts = false;
@@ -1113,8 +1133,6 @@ INSTANTIATE_TEST_CASE_P(AsyncMcClientTest, AsyncMcClientSSLOffloadTest, Bool());
 // SSL Context thread safety tests
 TEST(AsyncMcClient, contextsSafeByDefault) {
   // ensure test is in a clean state lock wise
-  folly::ssl::cleanup();
-  folly::ssl::setLockTypes({});
   EXPECT_TRUE(sslContextsAreThreadSafe());
 }
 

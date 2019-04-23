@@ -141,7 +141,7 @@ createSocket(
   }
   const auto& securityOpts = connectionOptions.securityOpts;
   const auto& serviceId = getServiceIdentity(connectionOptions);
-  if (mech == SecurityMech::TLS || mech == SecurityMech::TLS_TO_PLAINTEXT) {
+  if (isAsyncSSLSocketMech(mech)) {
     // openssl based tls
     auto sslContext = getClientContext(securityOpts, mech);
     if (!sslContext) {

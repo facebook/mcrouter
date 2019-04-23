@@ -60,6 +60,11 @@ bool sslContextsAreThreadSafe();
 FizzContextAndVerifier getFizzClientConfig(const SecurityOptions& opts);
 
 /**
+ * Determine if we are to use a AsyncSSLSocket with the provided mech.
+ */
+bool isAsyncSSLSocketMech(SecurityMech mech);
+
+/**
  * Get a context used for client connections.  If opts has an empty CA path, the
  * context will be configured to verify server ceritifcates against the CA.
  * Cert paths for pemCertPath and pemKeyPath may be empty.

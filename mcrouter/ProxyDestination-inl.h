@@ -372,6 +372,20 @@ void ProxyDestination<Transport>::initializeTransport() {
             proxy().stats().increment(num_tls_to_plain_fallback_failures_stat);
           }
         }
+        if (mech == SecurityMech::KTLS12) {
+          auto stats = McSSLUtil::getKtlsStats(socket);
+          if (stats) {
+            proxy().stats().increment(num_ktls_connections_opened_stat);
+            if (stats->sessionReuseAttempted) {
+              proxy().stats().increment(num_ktls_resumption_attempts_stat);
+            }
+            if (stats->sessionReuseSuccess) {
+              proxy().stats().increment(num_ktls_resumption_successes_stat);
+            }
+          } else {
+            proxy().stats().increment(num_ktls_fallback_failures_stat);
+          }
+        }
         // no else if here in case the tls to plain didn't work - we can capture
         // ssl socket stats here
         if (const auto* sslSocket =
@@ -422,6 +436,8 @@ void ProxyDestination<Transport>::initializeTransport() {
           if (mech == SecurityMech::TLS_TO_PLAINTEXT) {
             pdstn->proxy().stats().increment(
                 num_tls_to_plain_connections_closed_stat);
+          } else if (mech == SecurityMech::KTLS12) {
+            pdstn->proxy().stats().increment(num_ktls_connections_closed_stat);
           } else {
             pdstn->proxy().stats().increment(num_ssl_connections_closed_stat);
           }

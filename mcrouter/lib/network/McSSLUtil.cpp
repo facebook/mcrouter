@@ -34,6 +34,16 @@ static McSSLUtil::SSLFinalizeFunction& getClientFinalizeFuncRef() {
   static McSSLUtil::SSLFinalizeFunction FINALIZER;
   return FINALIZER;
 }
+
+static McSSLUtil::SSLToKtlsFunction& getKtlsFuncRef() {
+  static McSSLUtil::SSLToKtlsFunction KTLSFUNC;
+  return KTLSFUNC;
+}
+
+static McSSLUtil::KtlsStatsFunction& getKtlsStatsFuncRef() {
+  static McSSLUtil::KtlsStatsFunction KTLSFUNC;
+  return KTLSFUNC;
+}
 } // namespace
 
 const std::string McSSLUtil::kTlsToPlainProtocolName = "mc_plaintext";
@@ -70,6 +80,14 @@ bool McSSLUtil::verifySSLWithDefaultBehavior(
   }
   return folly::ssl::OpenSSLUtils::validatePeerCertNames(
       cert, reinterpret_cast<sockaddr*>(&addrStorage), addrLen);
+}
+
+void McSSLUtil::setApplicationKtlsFunctions(
+    SSLToKtlsFunction func,
+    KtlsStatsFunction statsFunc) {
+  folly::SharedMutex::WriteHolder wh(getMutex());
+  getKtlsFuncRef() = std::move(func);
+  getKtlsStatsFuncRef() = std::move(statsFunc);
 }
 
 void McSSLUtil::setApplicationSSLVerifier(SSLVerifyFunction func) {
@@ -163,6 +181,25 @@ folly::AsyncTransportWrapper::UniquePtr McSSLUtil::moveToPlaintext(
   res->setPeerCertificate(std::move(peerCert));
   res->setStats(stats);
   return res;
+}
+
+folly::AsyncTransportWrapper::UniquePtr McSSLUtil::moveToKtls(
+    folly::AsyncTransportWrapper& sock) noexcept {
+  folly::SharedMutex::ReadHolder rh(getMutex());
+  auto& func = getKtlsFuncRef();
+  if (func) {
+    return func(sock);
+  }
+  return nullptr;
+}
+
+folly::Optional<SecurityTransportStats> McSSLUtil::getKtlsStats(
+    const folly::AsyncTransportWrapper& sock) noexcept {
+  auto& func = getKtlsStatsFuncRef();
+  if (func) {
+    return func(sock);
+  }
+  return folly::none;
 }
 } // namespace memcache
 } // namespace facebook

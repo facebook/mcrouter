@@ -367,7 +367,7 @@ void AsyncMcClientImpl::attemptConnection() {
 
     const auto mech = connectionOptions_.accessPoint->getSecurityMech();
     auto socketOptions = createSocketOptions(address, connectionOptions_);
-    if ((mech == SecurityMech::TLS || mech == SecurityMech::TLS_TO_PLAINTEXT) &&
+    if ((isAsyncSSLSocketMech(mech)) &&
         connectionOptions_.securityOpts.sslHandshakeOffload &&
         // we must make sure that contexts are threadsafe before doing this!
         sslContextsAreThreadSafe()) {
@@ -433,7 +433,7 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
   connectionState_ = ConnectionState::Up;
 
   const auto mech = connectionOptions_.accessPoint->getSecurityMech();
-  if (mech == SecurityMech::TLS || mech == SecurityMech::TLS_TO_PLAINTEXT) {
+  if (isAsyncSSLSocketMech(mech)) {
     auto* sslSocket = socket_->getUnderlyingTransport<folly::AsyncSSLSocket>();
     assert(sslSocket != nullptr);
     McSSLUtil::finalizeClientSSL(sslSocket);
@@ -452,6 +452,17 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
       } else {
         // replace socket with this
         socket_.reset(fallback.release());
+        // we need to set timeout options here.  things like tcp opts and
+        // qos are sock opts and don't change on the FD.
+        socket_->setSendTimeout(connectionOptions_.writeTimeout.count());
+      }
+    } else if (mech == SecurityMech::KTLS12) {
+      auto ktlsSock = McSSLUtil::moveToKtls(*sslSocket);
+      // it's not an error if this fails - it could be a kernel that doesn't
+      // support this or something else - on error we'll just continue using
+      // user space ssl
+      if (ktlsSock) {
+        socket_.reset(ktlsSock.release());
         // we need to set timeout options here.  things like tcp opts and
         // qos are sock opts and don't change on the FD.
         socket_->setSendTimeout(connectionOptions_.writeTimeout.count());

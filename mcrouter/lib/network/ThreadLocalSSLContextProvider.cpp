@@ -406,6 +406,11 @@ ServerContextInfo& getServerContextInfo(
 
 } // namespace
 
+bool isAsyncSSLSocketMech(SecurityMech mech) {
+  return mech == SecurityMech::TLS || mech == SecurityMech::TLS_TO_PLAINTEXT ||
+      mech == SecurityMech::KTLS12;
+}
+
 bool sslContextsAreThreadSafe() {
   static folly::once_flag flag;
   static bool ctxLockDisabled = false;
@@ -434,7 +439,7 @@ FizzContextAndVerifier getFizzClientConfig(const SecurityOptions& opts) {
 std::shared_ptr<folly::SSLContext> getClientContext(
     const SecurityOptions& opts,
     SecurityMech mech) {
-  if (mech != SecurityMech::TLS && mech != SecurityMech::TLS_TO_PLAINTEXT) {
+  if (!isAsyncSSLSocketMech(mech)) {
     LOG_FAILURE(
         "SSLConfig",
         failure::Category::kInvalidOption,
