@@ -20,6 +20,7 @@
 #include "mcrouter/lib/network/McSSLUtil.h"
 #include "mcrouter/lib/network/SecurityOptions.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
+#include "mcrouter/lib/network/TlsToPlainTransport.h"
 #include "mcrouter/lib/network/Transport.h"
 #include "mcrouter/lib/network/gen/MemcacheMessages.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
@@ -72,8 +73,8 @@ TEST_P(AsyncMcClientSimpleTest, serverShutdownTest) {
   } else if (ssl->mech == SecurityMech::TLS_TO_PLAINTEXT) {
     // TLS_TO_PLAINTEXT
     EXPECT_EQ(transport->getSecurityProtocol(), "mc_plaintext");
-    auto* sslsock = transport->getUnderlyingTransport<folly::AsyncSSLSocket>();
-    EXPECT_EQ(sslsock, nullptr);
+    auto* sock = transport->getUnderlyingTransport<TlsToPlainTransport>();
+    EXPECT_NE(sock, nullptr);
     auto peerCert = transport->getPeerCertificate();
     auto selfCert = transport->getSelfCertificate();
     EXPECT_NE(peerCert, nullptr);
@@ -708,13 +709,21 @@ TEST_P(AsyncMcClientSessionTest, SessionResumption) {
     LOG(INFO) << "Connection attempt: " << i;
     client.setConnectionStatusCallbacks(
         [&](const folly::AsyncTransportWrapper& sock, int64_t) {
-          if (mech == SecurityMech::TLS ||
-              mech == SecurityMech::TLS_TO_PLAINTEXT) {
+          if (mech == SecurityMech::TLS) {
             auto* socket = sock.getUnderlyingTransport<folly::AsyncSSLSocket>();
             if (i != 0) {
               EXPECT_TRUE(socket->getSSLSessionReused());
             } else {
               EXPECT_FALSE(socket->getSSLSessionReused());
+            }
+          } else if (mech == SecurityMech::TLS_TO_PLAINTEXT) {
+            auto* socket = sock.getUnderlyingTransport<TlsToPlainTransport>();
+            EXPECT_NE(socket, nullptr);
+            auto stats = socket->getStats();
+            if (i != 0) {
+              EXPECT_TRUE(stats.sessionReuseSuccess);
+            } else {
+              EXPECT_FALSE(stats.sessionReuseSuccess);
             }
           } else {
             EXPECT_EQ(mech, SecurityMech::TLS13_FIZZ);
@@ -904,20 +913,38 @@ TEST_P(AsyncMcClientTFOTest, testTfoWithSSL) {
   auto offloadHandshake = std::get<2>(GetParam());
   auto constexpr nConnAttempts = 10;
 
-  auto sendReq = [serverEnabled, clientEnabled](TestClient& client) {
+  auto mech = std::get<3>(GetParam());
+  auto sendReq = [serverEnabled, clientEnabled, mech](TestClient& client) {
     client.setConnectionStatusCallbacks(
         [&](const folly::AsyncTransportWrapper& sock, int64_t) {
-          auto* socket = sock.getUnderlyingTransport<folly::AsyncSocket>();
-          if (clientEnabled) {
-            EXPECT_TRUE(socket->getTFOAttempted());
-            EXPECT_TRUE(socket->getTFOFinished());
-            // we can not guarantee socket->getTFOSucceeded() will return true
-            // unless there are specific kernel + host settings applied
-            if (!serverEnabled) {
-              EXPECT_FALSE(socket->getTFOSucceded());
+          if (mech == SecurityMech::TLS_TO_PLAINTEXT) {
+            auto* socket = sock.getUnderlyingTransport<TlsToPlainTransport>();
+            EXPECT_NE(socket, nullptr);
+            auto stats = socket->getStats();
+            if (clientEnabled) {
+              EXPECT_TRUE(stats.tfoAttempted);
+              EXPECT_TRUE(stats.tfoFinished);
+              // we can not guarantee socket->getTFOSucceeded() will return true
+              // unless there are specific kernel + host settings applied
+              if (!serverEnabled) {
+                EXPECT_FALSE(stats.tfoSuccess);
+              }
+            } else {
+              EXPECT_FALSE(stats.tfoAttempted);
             }
           } else {
-            EXPECT_FALSE(socket->getTFOAttempted());
+            auto* socket = sock.getUnderlyingTransport<folly::AsyncSocket>();
+            if (clientEnabled) {
+              EXPECT_TRUE(socket->getTFOAttempted());
+              EXPECT_TRUE(socket->getTFOFinished());
+              // we can not guarantee socket->getTFOSucceeded() will return true
+              // unless there are specific kernel + host settings applied
+              if (!serverEnabled) {
+                EXPECT_FALSE(socket->getTFOSucceded());
+              }
+            } else {
+              EXPECT_FALSE(socket->getTFOAttempted());
+            }
           }
         },
         nullptr);
@@ -926,7 +953,7 @@ TEST_P(AsyncMcClientTFOTest, testTfoWithSSL) {
   };
 
   auto ssl = validClientSsl();
-  ssl.mech = std::get<3>(GetParam());
+  ssl.mech = mech;
   for (int i = 0; i < nConnAttempts; i++) {
     TestClient client(
         "::1",

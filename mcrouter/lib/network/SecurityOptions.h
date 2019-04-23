@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -25,6 +24,22 @@ enum class SecurityMech : uint8_t {
   TLS_TO_PLAINTEXT,
   // tls 1.3 w/ fizz
   TLS13_FIZZ,
+};
+
+// packed struct for stats
+struct SecurityTransportStats {
+  SecurityTransportStats()
+      : tfoSuccess(false),
+        tfoAttempted(false),
+        tfoFinished(false),
+        sessionReuseSuccess(false),
+        sessionReuseAttempted(false) {}
+
+  bool tfoSuccess : 1;
+  bool tfoAttempted : 1;
+  bool tfoFinished : 1;
+  bool sessionReuseSuccess : 1;
+  bool sessionReuseAttempted : 1;
 };
 
 const char* securityMechToString(SecurityMech mech);

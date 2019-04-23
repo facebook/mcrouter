@@ -9,8 +9,7 @@
 #include <folly/SharedMutex.h>
 #include <folly/io/async/ssl/BasicTransportCertificate.h>
 #include <folly/io/async/ssl/OpenSSLUtils.h>
-
-#include "mcrouter/lib/network/SecurityOptions.h"
+#include <mcrouter/lib/network/TlsToPlainTransport.h>
 
 namespace facebook {
 namespace memcache {
@@ -35,17 +34,6 @@ static McSSLUtil::SSLFinalizeFunction& getClientFinalizeFuncRef() {
   static McSSLUtil::SSLFinalizeFunction FINALIZER;
   return FINALIZER;
 }
-
-class PlaintextWithCerts : public folly::AsyncSocket {
- public:
-  using UniquePtr = std::
-      unique_ptr<PlaintextWithCerts, folly::DelayedDestruction::Destructor>;
-  using AsyncSocket::AsyncSocket;
-
-  std::string getSecurityProtocol() const override {
-    return McSSLUtil::kTlsToPlainProtocolName;
-  }
-};
 } // namespace
 
 const std::string McSSLUtil::kTlsToPlainProtocolName = "mc_plaintext";
@@ -144,6 +132,14 @@ folly::AsyncTransportWrapper::UniquePtr McSSLUtil::moveToPlaintext(
     return nullptr;
   }
 
+  // Get the stats for the socket
+  SecurityTransportStats stats;
+  stats.tfoSuccess = sock.getTFOSucceded();
+  stats.tfoAttempted = sock.getTFOAttempted();
+  stats.tfoFinished = sock.getTFOFinished();
+  stats.sessionReuseSuccess = sock.getSSLSessionReused();
+  stats.sessionReuseAttempted = sock.sessionResumptionAttempted();
+
   // We need to mark the SSL as shutdown here, but need to do
   // it quietly so no alerts are sent over the wire.
   // This prevents SSL thinking we are shutting down in a bad state
@@ -161,11 +157,12 @@ folly::AsyncTransportWrapper::UniquePtr McSSLUtil::moveToPlaintext(
   auto evb = sock.getEventBase();
   auto zcId = sock.getZeroCopyBufId();
   auto fd = sock.detachNetworkSocket();
-  PlaintextWithCerts::UniquePtr res(new PlaintextWithCerts(evb, fd, zcId));
+
+  TlsToPlainTransport::UniquePtr res(new TlsToPlainTransport(evb, fd, zcId));
   res->setSelfCertificate(std::move(selfCert));
   res->setPeerCertificate(std::move(peerCert));
+  res->setStats(stats);
   return res;
 }
-
 } // namespace memcache
 } // namespace facebook

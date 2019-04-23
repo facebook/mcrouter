@@ -432,35 +432,6 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
   DestructorGuard dg(this);
   connectionState_ = ConnectionState::Up;
 
-  if (connectionOptions_.enableQoS) {
-    folly::SocketAddress address;
-    socket_->getPeerAddress(&address);
-    auto asyncSock = socket_->getUnderlyingTransport<folly::AsyncSocket>();
-    if (asyncSock) {
-      checkWhetherQoSIsApplied(
-          asyncSock->getNetworkSocket().toFd(),
-          address,
-          connectionOptions_,
-          "AsyncMcClient");
-    }
-  }
-
-  if (statusCallbacks_.onUp) {
-    statusCallbacks_.onUp(*socket_, getNumConnectRetries());
-  }
-
-  numConnectTimeoutRetriesLeft_ = connectionOptions_.numConnectTimeoutRetries;
-
-  if (!connectionOptions_.debugFifoPath.empty()) {
-    if (auto fifoManager = FifoManager::getInstance()) {
-      if (auto fifo =
-              fifoManager->fetchThreadLocal(connectionOptions_.debugFifoPath)) {
-        debugFifo_ = ConnectionFifo(
-            std::move(fifo), socket_.get(), connectionOptions_.routerInfoName);
-      }
-    }
-  }
-
   const auto mech = connectionOptions_.accessPoint->getSecurityMech();
   if (mech == SecurityMech::TLS || mech == SecurityMech::TLS_TO_PLAINTEXT) {
     auto* sslSocket = socket_->getUnderlyingTransport<folly::AsyncSSLSocket>();
@@ -490,6 +461,35 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
 
   assert(queue_.getInflightRequestCount() == 0);
   assert(queue_.getParserInitializer() == nullptr);
+
+  if (connectionOptions_.enableQoS) {
+    folly::SocketAddress address;
+    socket_->getPeerAddress(&address);
+    auto asyncSock = socket_->getUnderlyingTransport<folly::AsyncSocket>();
+    if (asyncSock) {
+      checkWhetherQoSIsApplied(
+          asyncSock->getNetworkSocket().toFd(),
+          address,
+          connectionOptions_,
+          "AsyncMcClient");
+    }
+  }
+
+  if (!connectionOptions_.debugFifoPath.empty()) {
+    if (auto fifoManager = FifoManager::getInstance()) {
+      if (auto fifo =
+              fifoManager->fetchThreadLocal(connectionOptions_.debugFifoPath)) {
+        debugFifo_ = ConnectionFifo(
+            std::move(fifo), socket_.get(), connectionOptions_.routerInfoName);
+      }
+    }
+  }
+
+  if (statusCallbacks_.onUp) {
+    statusCallbacks_.onUp(*socket_, getNumConnectRetries());
+  }
+
+  numConnectTimeoutRetriesLeft_ = connectionOptions_.numConnectTimeoutRetries;
 
   scheduleNextWriterLoop();
   parser_ = std::make_unique<ParserT>(

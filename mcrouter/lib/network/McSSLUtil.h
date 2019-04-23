@@ -9,6 +9,7 @@
 #include <string>
 
 #include <folly/Function.h>
+#include <folly/Optional.h>
 #include <folly/io/async/AsyncSSLSocket.h>
 
 namespace facebook {

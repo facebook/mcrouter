@@ -21,7 +21,9 @@
 #include "mcrouter/lib/network/ConnectionDownReason.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
 #include "mcrouter/lib/network/McFizzClient.h"
+#include "mcrouter/lib/network/McSSLUtil.h"
 #include "mcrouter/lib/network/RpcStatsContext.h"
+#include "mcrouter/lib/network/TlsToPlainTransport.h"
 
 namespace facebook {
 namespace memcache {
@@ -352,7 +354,26 @@ void ProxyDestination<Transport>::initializeTransport() {
         proxy().stats().increment(num_connections_opened_stat);
 
         updatePoolStatConnections(true);
-
+        auto mech = accessPoint()->getSecurityMech();
+        if (mech == SecurityMech::TLS_TO_PLAINTEXT) {
+          if (const auto* tlsToPlainSock =
+                  socket.getUnderlyingTransport<TlsToPlainTransport>()) {
+            auto stats = tlsToPlainSock->getStats();
+            proxy().stats().increment(num_tls_to_plain_connections_opened_stat);
+            if (stats.sessionReuseAttempted) {
+              proxy().stats().increment(
+                  num_tls_to_plain_resumption_attempts_stat);
+            }
+            if (stats.sessionReuseSuccess) {
+              proxy().stats().increment(
+                  num_tls_to_plain_resumption_successes_stat);
+            }
+          } else {
+            proxy().stats().increment(num_tls_to_plain_fallback_failures_stat);
+          }
+        }
+        // no else if here in case the tls to plain didn't work - we can capture
+        // ssl socket stats here
         if (const auto* sslSocket =
                 socket.getUnderlyingTransport<folly::AsyncSSLSocket>()) {
           proxy().stats().increment(num_ssl_connections_opened_stat);
@@ -397,7 +418,13 @@ void ProxyDestination<Transport>::initializeTransport() {
 
         pdstn->proxy().stats().increment(num_connections_closed_stat);
         if (pdstn->accessPoint()->useSsl()) {
-          pdstn->proxy().stats().increment(num_ssl_connections_closed_stat);
+          auto mech = pdstn->accessPoint()->getSecurityMech();
+          if (mech == SecurityMech::TLS_TO_PLAINTEXT) {
+            pdstn->proxy().stats().increment(
+                num_tls_to_plain_connections_closed_stat);
+          } else {
+            pdstn->proxy().stats().increment(num_ssl_connections_closed_stat);
+          }
         }
 
         pdstn->updatePoolStatConnections(false);

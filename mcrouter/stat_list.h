@@ -57,6 +57,12 @@ STUI(num_ssl_connections_closed, 0, 1)
 // Running total of successful SSL connection attempts/successes
 STUI(num_ssl_resumption_attempts, 0, 1)
 STUI(num_ssl_resumption_successes, 0, 1)
+// Running total of tls to plain connections and resumption stats
+STUI(num_tls_to_plain_fallback_failures, 0, 1)
+STUI(num_tls_to_plain_connections_opened, 0, 1)
+STUI(num_tls_to_plain_connections_closed, 0, 1)
+STUI(num_tls_to_plain_resumption_attempts, 0, 1)
+STUI(num_tls_to_plain_resumption_successes, 0, 1)
 // time between closing an inactive connection and opening it again.
 STAT(inactive_connection_closed_interval_sec, stat_double, 0, .dbl = 0.0)
 // Information about connect retries
