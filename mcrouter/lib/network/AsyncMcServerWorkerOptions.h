@@ -121,6 +121,11 @@ struct AsyncMcServerWorkerOptions {
    * stop sending requests over this connection after processing this message.
    */
   std::chrono::milliseconds goAwayTimeout{0};
+
+  /**
+   * Whether to try KTLS for accepted TLS 1.2 connections
+   */
+  bool useKtls12{false};
 };
 } // namespace memcache
 } // namespace facebook

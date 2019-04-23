@@ -368,6 +368,7 @@ class McServerSession
   std::unique_ptr<folly::AsyncTimeout> goAwayTimeout_;
 
   ZeroCopySessionCB zeroCopySessionCB_;
+  SecurityMech negotiatedMech_{SecurityMech::NONE};
 
   /**
    * pause()/resume() reads from the socket (TODO: does not affect the already

@@ -106,6 +106,7 @@ class TestServer {
     bool requirePeerCerts = true;
     std::function<void(McServerSession&)> onConnectionAcceptedAdditionalCb;
     size_t tcpZeroCopyThresholdBytes = 0;
+    bool useKtls12 = false;
   };
 
   template <class OnRequest = TestServerOnRequest>

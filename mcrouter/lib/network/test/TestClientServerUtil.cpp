@@ -166,6 +166,7 @@ TestServer::TestServer(Config config)
       opts_.tfoEnabledForSsl = true;
       opts_.tfoQueueSize = 100000;
     }
+    opts_.worker.useKtls12 = config.useKtls12;
   }
 }
 

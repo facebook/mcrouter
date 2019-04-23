@@ -86,6 +86,13 @@ MCROUTER_OPTION_STRING(
     no_short,
     "Path of pem-style CA cert for ssl to verify clients against")
 
+MCROUTER_OPTION_TOGGLE(
+    ssl_use_ktls12,
+    false,
+    "ssl-use-ktls12",
+    no_short,
+    "Use KTLS for all TLS 1.2 connections")
+
 MCROUTER_OPTION_INTEGER(
     int,
     listen_sock_fd,

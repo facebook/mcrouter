@@ -135,6 +135,7 @@ bool runServer(
     opts.sslRequirePeerCerts = standaloneOpts.ssl_require_peer_certs;
     opts.tfoEnabledForSsl = mcrouterOpts.enable_ssl_tfo;
     opts.tfoQueueSize = standaloneOpts.tfo_queue_size;
+    opts.worker.useKtls12 = standaloneOpts.ssl_use_ktls12;
   }
 
   opts.numThreads = mcrouterOpts.num_proxies;

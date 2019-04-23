@@ -71,7 +71,8 @@ McServerSession& McServerSession::create(
 
   // For secure connections, we need to delay calling the onAccepted client
   // callback until the handshake is complete.
-  if (ptr->securityMech() == SecurityMech::NONE) {
+  // we assume any secure transport will return non empty secure protocols
+  if (ptr->transport_->getSecurityProtocol().empty()) {
     ptr->onAccepted();
   }
 
@@ -119,19 +120,7 @@ McServerSession::McServerSession(
 }
 
 SecurityMech McServerSession::securityMech() const noexcept {
-  if (!transport_) {
-    return SecurityMech::NONE;
-  }
-  if (transport_->getUnderlyingTransport<McFizzServer>()) {
-    return SecurityMech::TLS13_FIZZ;
-  }
-  if (transport_->getUnderlyingTransport<folly::AsyncSSLSocket>()) {
-    return SecurityMech::TLS;
-  }
-  if (transport_->getSecurityProtocol() == McSSLUtil::kTlsToPlainProtocolName) {
-    return SecurityMech::TLS_TO_PLAINTEXT;
-  }
-  return SecurityMech::NONE;
+  return negotiatedMech_;
 }
 
 void McServerSession::pause(PauseReason reason) {
@@ -610,19 +599,18 @@ bool McServerSession::handshakeVer(
 void McServerSession::handshakeSuc(folly::AsyncSSLSocket* sock) noexcept {
   DestructorGuard dg(this);
 
+  negotiatedMech_ = SecurityMech::TLS;
   auto cert = sock->getPeerCertificate();
-  folly::ssl::X509UniquePtr x509;
   if (cert) {
-    x509 = cert->getX509();
-  }
-  if (x509 != nullptr) {
-    auto sub = X509_get_subject_name(x509.get());
-    if (sub != nullptr) {
-      char cn[ub_common_name + 1];
-      const auto res =
-          X509_NAME_get_text_by_NID(sub, NID_commonName, cn, ub_common_name);
-      if (res > 0) {
-        clientCommonName_.assign(std::string(cn, res));
+    if (auto x509 = cert->getX509()) {
+      auto sub = X509_get_subject_name(x509.get());
+      if (sub != nullptr) {
+        char cn[ub_common_name + 1];
+        const auto res =
+            X509_NAME_get_text_by_NID(sub, NID_commonName, cn, ub_common_name);
+        if (res > 0) {
+          clientCommonName_.assign(std::string(cn, res));
+        }
       }
     }
   }
@@ -635,10 +623,21 @@ void McServerSession::handshakeSuc(folly::AsyncSSLSocket* sock) noexcept {
     CHECK(asyncSock);
     applySocketOptions(*asyncSock, options_);
     transport_.reset(fallback.release());
+    negotiatedMech_ = SecurityMech::TLS_TO_PLAINTEXT;
+  } else if (options_.useKtls12) {
+    // try to flip to using ktls
+    if (auto ktlsTransport = McSSLUtil::moveToKtls(*sock)) {
+      auto asyncSock =
+          ktlsTransport->getUnderlyingTransport<folly::AsyncSocket>();
+      CHECK(asyncSock);
+      applySocketOptions(*asyncSock, options_);
+      transport_.reset(ktlsTransport.release());
+      negotiatedMech_ = SecurityMech::KTLS12;
+    }
   }
 
   // sock is currently wrapped by transport_, but underlying socket may
-  // change by end of this function (mainly due to negotiatedPlaintextFallback).
+  // change by end of this function due to negotiatedPlaintextFallback or ktls.
   transport_->setReadCB(this);
 
   onAccepted();
@@ -655,22 +654,19 @@ void McServerSession::fizzHandshakeSuccess(
     fizz::server::AsyncFizzServer* transport) noexcept {
   DestructorGuard dg(this);
 
+  negotiatedMech_ = SecurityMech::TLS13_FIZZ;
   auto cert = transport->getPeerCertificate();
-  folly::ssl::X509UniquePtr x509;
   if (cert) {
-    x509 = cert->getX509();
-  }
-  if (x509 == nullptr) {
-    onAccepted();
-    return;
-  }
-  auto sub = X509_get_subject_name(x509.get());
-  if (sub != nullptr) {
-    std::array<char, ub_common_name + 1> cn{};
-    const auto res = X509_NAME_get_text_by_NID(
-        sub, NID_commonName, cn.data(), ub_common_name);
-    if (res > 0) {
-      clientCommonName_.assign(std::string(cn.data(), res));
+    if (auto x509 = cert->getX509()) {
+      auto sub = X509_get_subject_name(x509.get());
+      if (sub != nullptr) {
+        std::array<char, ub_common_name + 1> cn{};
+        const auto res = X509_NAME_get_text_by_NID(
+            sub, NID_commonName, cn.data(), ub_common_name);
+        if (res > 0) {
+          clientCommonName_.assign(std::string(cn.data(), res));
+        }
+      }
     }
   }
   McSSLUtil::finalizeServerSSL(transport);
