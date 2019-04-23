@@ -210,14 +210,19 @@ mcrouter_SOURCES = \
 
 libmcroutercore_a_CPPFLAGS = -I..
 
+# Link order matters.
 mcrouter_LDADD = \
   libmcroutercore.a \
   lib/libmcrouter.a \
-  -lasync \
-  -lprotocol \
   -lthriftcpp2 \
-  -lthriftprotocol \
   -ltransport \
+  -lthriftprotocol \
+  -lReactiveSocket \
+  -lyarpl \
+  -lasync \
+  -lconcurrency \
+  -lprotocol \
+  -lthrift-core \
   -lwangle \
   -lfolly
 

@@ -9,14 +9,20 @@ mock_mc_server_SOURCES = \
   test/MockMcOnRequest.h \
   test/MockMcServer.cpp
 mock_mc_server_CPPFLAGS = -I$(top_srcdir)/..
+# Link order matters.
 mock_mc_server_LDADD = \
 	$(top_builddir)/lib/libmcrouter.a \
-	-lprotocol \
 	-lthriftcpp2 \
-	-lthriftprotocol \
 	-ltransport \
-	-lwangle \
+	-lthriftprotocol \
+	-lReactiveSocket \
+	-lyarpl \
+	-lasync \
+	-lconcurrency \
+	-lprotocol \
+	-lthrift-core \
 	-lfizz \
+	-lwangle \
 	-lfolly
 
 mock_mc_thrift_server_SOURCES = \
@@ -25,14 +31,20 @@ mock_mc_thrift_server_SOURCES = \
   test/MockMcOnRequest.h \
   test/MockMcThriftServer.cpp
 mock_mc_thrift_server_CPPFLAGS = -I$(top_srcdir)/..
+# Link order matters.
 mock_mc_thrift_server_LDADD = \
 	$(top_builddir)/lib/libmcrouter.a \
-	-lprotocol \
 	-lthriftcpp2 \
-	-lthriftprotocol \
 	-ltransport \
-	-lwangle \
+	-lthriftprotocol \
+	-lReactiveSocket \
+	-lyarpl \
+	-lasync \
+	-lconcurrency \
+	-lprotocol \
+	-lthrift-core \
 	-lfizz \
+	-lwangle \
 	-lfolly
 
 libtest_util_a_SOURCES = \
