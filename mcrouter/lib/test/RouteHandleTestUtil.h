@@ -87,15 +87,23 @@ struct GetRouteTestData {
   carbon::Result result_;
   std::string value_;
   int64_t flags_;
+  int16_t appSpecificErrorCode_;
 
   GetRouteTestData()
-      : result_(carbon::Result::UNKNOWN), value_(std::string()), flags_(0) {}
+      : result_(carbon::Result::UNKNOWN),
+        value_(std::string()),
+        flags_(0),
+        appSpecificErrorCode_(0) {}
 
   GetRouteTestData(
       carbon::Result result,
       const std::string& value,
-      int64_t flags = 0)
-      : result_(result), value_(value), flags_(flags) {}
+      int64_t flags = 0,
+      int16_t appSpecificErrorCode = 0)
+      : result_(result),
+        value_(value),
+        flags_(flags),
+        appSpecificErrorCode_(appSpecificErrorCode) {}
 };
 
 struct UpdateRouteTestData {
@@ -280,6 +288,7 @@ struct RecordingRoute {
       reply.result() = dataGet_.result_;
       detail::setReplyValue(reply, dataGet_.value_);
       detail::testSetFlags(reply, dataGet_.flags_);
+      reply.appSpecificErrorCode() = dataGet_.appSpecificErrorCode_;
       return reply;
     }
     if (carbon::UpdateLike<Request>::value) {

@@ -184,6 +184,7 @@ class FailoverRoute {
     SCOPE_EXIT {
       if (conditionalFailover) {
         proxy.stats().increment(failover_conditional_stat);
+        proxy.stats().increment(failover_conditional_count_stat);
       }
     };
 
