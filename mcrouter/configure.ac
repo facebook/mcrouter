@@ -174,7 +174,8 @@ AC_CHECK_FUNCS([gettimeofday \
 
 LIBS="$LIBS $BOOST_LDFLAGS $BOOST_CONTEXT_LIB $BOOST_FILESYSTEM_LIB \
       $BOOST_PROGRAM_OPTIONS_LIB $BOOST_SYSTEM_LIB $BOOST_REGEX_LIB \
-      $BOOST_THREAD_LIB -lpthread -pthread -ldl -lunwind -lzstd"
+      $BOOST_THREAD_LIB -lpthread -pthread -ldl -lunwind \
+      -lbz2 -llz4 -llzma -lsnappy -lzstd"
 
 AM_PATH_PYTHON([2.6],, [:])
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])

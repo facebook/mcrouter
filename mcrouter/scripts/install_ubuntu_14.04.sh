@@ -27,12 +27,16 @@ sudo apt-get install -y \
     libboost-context1.58-dev \
     libboost-regex1.58-dev \
     libboost-program-options1.58-dev \
+    libbz2-dev \
     libdouble-conversion-dev \
     libevent-dev \
     libgflags-dev \
     libgoogle-glog-dev \
     libjemalloc-dev \
+    liblz4-dev \
     liblzma-dev \
+    liblzma5 \
+    libsnappy-dev \
     libsodium-dev \
     libssl-dev \
     libtool \
