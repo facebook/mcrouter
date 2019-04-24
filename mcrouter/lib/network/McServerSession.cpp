@@ -646,7 +646,13 @@ void McServerSession::handshakeSuc(folly::AsyncSSLSocket* sock) noexcept {
 void McServerSession::handshakeErr(
     folly::AsyncSSLSocket*,
     const folly::AsyncSocketException& e) noexcept {
-  LOG_EVERY_N(ERROR, 100) << "SSL Handshake failure: " << e.what();
+  auto type = e.getType();
+  if (type !=
+      folly::AsyncSocketException::AsyncSocketExceptionType::SSL_ERROR) {
+    LOG_EVERY_N(ERROR, 10000) << "SSL handshake failure: " << e.what();
+  } else {
+    LOG_EVERY_N(ERROR, 100) << "SSL Handshake failure: " << e.what();
+  }
   close();
 }
 
@@ -676,7 +682,21 @@ void McServerSession::fizzHandshakeSuccess(
 void McServerSession::fizzHandshakeError(
     fizz::server::AsyncFizzServer*,
     folly::exception_wrapper e) noexcept {
-  LOG_EVERY_N(ERROR, 100) << "Fizz Handshake failure: " << e.what();
+  e.handle(
+      [](const folly::AsyncSocketException& ex) {
+        auto type = ex.getType();
+        // we log non SSL errors less frequently as they are most likely network
+        // related / not specific to SSL itself
+        if (type !=
+            folly::AsyncSocketException::AsyncSocketExceptionType::SSL_ERROR) {
+          LOG_EVERY_N(ERROR, 10000) << "Fizz Handshake failure: " << ex.what();
+        } else {
+          LOG_EVERY_N(ERROR, 100) << "Fizz Handshake failure: " << ex.what();
+        }
+      },
+      [](const std::exception& ex) {
+        LOG_EVERY_N(ERROR, 100) << "Fizz Handshake failure: " << ex.what();
+      });
   close();
 }
 
