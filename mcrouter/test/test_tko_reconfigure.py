@@ -17,7 +17,7 @@ from mcrouter.test.McrouterTestCase import McrouterTestCase
 class TestTkoReconfigure(McrouterTestCase):
     config1 = './mcrouter/test/test_tko_reconfigure1.json'
     config2 = './mcrouter/test/test_tko_reconfigure2.json'
-    extra_args = ['--timeouts-until-tko', '1']
+    extra_args = ['--timeouts-until-tko', '1', '-v', '3']
 
     def tearDown(self):
         McrouterTestCase.tearDown(self)
