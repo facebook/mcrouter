@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include <folly/Traits.h>
 #include <folly/fibers/FiberManager.h>
 #include <folly/fibers/SimpleLoopController.h>
 #include <folly/fibers/WhenN.h>
@@ -47,7 +48,7 @@ template <class Reply>
 typename std::enable_if<!Reply::hasValue, void>::type setReplyValue(
     Reply&,
     const std::string& /* val */) {}
-} // detail
+} // namespace detail
 
 /**
  * Very basic route handle provider to be used in unit tests only.
@@ -268,6 +269,26 @@ struct RecordingRoute {
   std::enable_if_t<!HasShadowId<Request>::value, void> recordShadowId(
       const Request&) {}
 
+  template <typename T, typename = void>
+  struct has_app_error : std::false_type {};
+  template <typename T>
+  struct has_app_error<
+      T,
+      folly::void_t<decltype(std::declval<T>().appSpecificErrorCode())>>
+      : std::true_type {};
+
+  template <
+      typename Reply,
+      typename std::enable_if_t<!has_app_error<Reply>::value>* = nullptr>
+  void setAppspecificErrorCode(Reply& /* unused */) {}
+
+  template <
+      typename Reply,
+      typename std::enable_if_t<has_app_error<Reply>::value>* = nullptr>
+  void setAppspecificErrorCode(Reply& reply) {
+    reply.appSpecificErrorCode() = dataGet_.appSpecificErrorCode_;
+  }
+
   template <class Request>
   ReplyT<Request> routeInternal(const Request& req) {
     ReplyT<Request> reply;
@@ -288,7 +309,7 @@ struct RecordingRoute {
       reply.result() = dataGet_.result_;
       detail::setReplyValue(reply, dataGet_.value_);
       detail::testSetFlags(reply, dataGet_.flags_);
-      reply.appSpecificErrorCode() = dataGet_.appSpecificErrorCode_;
+      setAppspecificErrorCode(reply);
       return reply;
     }
     if (carbon::UpdateLike<Request>::value) {
@@ -364,5 +385,5 @@ std::string replyFor(Rh& rh, const std::string& key) {
   return carbon::valueRangeSlow(reply).str();
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
