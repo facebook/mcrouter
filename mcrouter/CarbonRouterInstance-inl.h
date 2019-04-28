@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <vector>
 
@@ -223,7 +222,9 @@ CarbonRouterInstance<RouterInfo>::createClient(
       this->shared_from_this(),
       max_outstanding,
       max_outstanding_error,
-      /* sameThread= */ false);
+      opts().thread_affinity
+          ? CarbonRouterClient<RouterInfo>::ThreadMode::AffinitizedRemoteThread
+          : CarbonRouterClient<RouterInfo>::ThreadMode::FixedRemoteThread);
 }
 
 template <class RouterInfo>
@@ -234,7 +235,7 @@ CarbonRouterInstance<RouterInfo>::createSameThreadClient(
       this->shared_from_this(),
       max_outstanding,
       /* maxOutstandingError= */ true,
-      /* sameThread= */ true);
+      CarbonRouterClient<RouterInfo>::ThreadMode::SameThread);
 }
 
 template <class RouterInfo>
@@ -336,6 +337,12 @@ template <class RouterInfo>
 Proxy<RouterInfo>* CarbonRouterInstance<RouterInfo>::getProxy(
     size_t index) const {
   return index < proxies_.size() ? proxies_[index] : nullptr;
+}
+
+template <class RouterInfo>
+const std::vector<Proxy<RouterInfo>*>
+CarbonRouterInstance<RouterInfo>::getProxies() const {
+  return proxies_;
 }
 
 template <class RouterInfo>

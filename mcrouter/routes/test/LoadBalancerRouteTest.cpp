@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2017-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include <memory>
 #include <unordered_map>
@@ -58,8 +57,10 @@ class TestRoute {
       : name_(std::move(name)), map_(std::move(mymap)), result_(result) {}
 
   template <class Request>
-  void traverse(const Request&, const RouteHandleTraverser<RouteHandleIf>&)
-      const {}
+  bool traverse(const Request&, const RouteHandleTraverser<RouteHandleIf>&)
+      const {
+    return false;
+  }
 
   template <class Request>
   ReplyT<Request> route(const Request& /* req */) {

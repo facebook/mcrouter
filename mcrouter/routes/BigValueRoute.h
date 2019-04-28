@@ -56,7 +56,7 @@ class BigValueRoute {
   }
 
   template <class Request>
-  void traverse(
+  bool traverse(
       const Request& req,
       const RouteHandleTraverser<MemcacheRouteHandleIf>& t) const;
 

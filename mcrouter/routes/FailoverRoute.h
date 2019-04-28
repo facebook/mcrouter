@@ -72,14 +72,13 @@ class FailoverRoute {
   }
 
   template <class Request>
-  void traverse(
+  bool traverse(
       const Request& req,
       const RouteHandleTraverser<RouteHandleIf>& t) const {
     if (fiber_local<RouterInfo>::getFailoverDisabled()) {
-      t(*targets_[0], req);
-    } else {
-      t(targets_, req);
+      return t(*targets_[0], req);
     }
+    return t(targets_, req);
   }
 
   FailoverRoute(

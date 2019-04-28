@@ -52,11 +52,13 @@ class L1L2SizeSplitRoute {
   }
 
   template <class Request>
-  void traverse(
+  bool traverse(
       const Request& req,
       const RouteHandleTraverser<MemcacheRouteHandleIf>& t) const {
-    t(*l1_, req);
-    t(*l2_, req);
+    if (t(*l1_, req)) {
+      return true;
+    }
+    return t(*l2_, req);
   }
 
   L1L2SizeSplitRoute(

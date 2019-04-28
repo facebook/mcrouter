@@ -32,11 +32,13 @@ class AllInitialRoute {
   }
 
   template <class Request>
-  void traverse(
+  bool traverse(
       const Request& req,
       const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(*firstChild_, req);
-    asyncRoute_.traverse(req, t);
+    if (t(*firstChild_, req)) {
+      return true;
+    }
+    return asyncRoute_.traverse(req, t);
   }
 
   explicit AllInitialRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh)

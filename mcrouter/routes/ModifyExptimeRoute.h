@@ -82,10 +82,10 @@ class ModifyExptimeRoute {
   }
 
   template <class Request>
-  void traverse(
+  bool traverse(
       const Request& req,
       const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(*target_, req);
+    return t(*target_, req);
   }
 
   template <class Request>

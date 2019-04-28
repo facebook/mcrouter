@@ -79,11 +79,13 @@ class SlowWarmUpRoute {
         settings_(std::move(settings)) {}
 
   template <class Request>
-  void traverse(
+  bool traverse(
       const Request& req,
       const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(*target_, req);
-    t(*failoverTarget_, req);
+    if (t(*target_, req)) {
+      return true;
+    }
+    return t(*failoverTarget_, req);
   }
 
   template <class Request>

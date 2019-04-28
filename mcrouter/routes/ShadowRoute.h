@@ -65,15 +65,20 @@ class ShadowRoute {
         shadowPolicy_(std::move(shadowPolicy)) {}
 
   template <class Request>
-  void traverse(
+  bool traverse(
       const Request& req,
       const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(*normal_, req);
-    fiber_local<RouterInfo>::runWithLocals([this, &req, &t]() mutable {
+    if (t(*normal_, req)) {
+      return true;
+    }
+    return fiber_local<RouterInfo>::runWithLocals([this, &req, &t]() mutable {
       fiber_local<RouterInfo>::addRequestClass(RequestClass::kShadow);
       for (auto& shadowData : shadowData_) {
-        t(*shadowData.first, req);
+        if (t(*shadowData.first, req)) {
+          return true;
+        }
       }
+      return false;
     });
   }
 

@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -43,22 +42,27 @@ class RootRoute {
             opts_.send_invalid_route_to_default) {}
 
   template <class Request>
-  void traverse(
+  bool traverse(
       const Request& req,
       const RouteHandleTraverser<RouteHandleIf>& t) const {
     const auto* rhPtr = rhMap_.getTargetsForKeyFast(
         req.key().routingPrefix(), req.key().routingKey());
     if (LIKELY(rhPtr != nullptr)) {
       for (const auto& rh : *rhPtr) {
-        t(*rh, req);
+        if (t(*rh, req)) {
+          return true;
+        }
       }
-      return;
+      return false;
     }
     auto v = rhMap_.getTargetsForKeySlow(
         req.key().routingPrefix(), req.key().routingKey());
     for (const auto& rh : v) {
-      t(*rh, req);
+      if (t(*rh, req)) {
+        return true;
+      }
     }
+    return false;
   }
 
   template <class Request>

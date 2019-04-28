@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2017-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -35,13 +34,14 @@ class DuplicateRoute {
       : child_(std::move(child)), numCopies_(numCopies) {}
 
   template <class Request>
-  void traverse(
+  bool traverse(
       const Request& req,
       const facebook::memcache::RouteHandleTraverser<
           typename RouterInfo::RouteHandleIf>& t) const {
     if (child_) {
-      t(*child_, req);
+      return t(*child_, req);
     }
+    return false;
   }
 
   template <class Request>

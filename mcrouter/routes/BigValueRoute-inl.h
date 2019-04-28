@@ -88,10 +88,10 @@ BigValueRoute::collectAllByBatches(FuncIt beginF, FuncIt endF) const {
 }
 
 template <class Request>
-void BigValueRoute::traverse(
+bool BigValueRoute::traverse(
     const Request& req,
     const RouteHandleTraverser<MemcacheRouteHandleIf>& t) const {
-  t(*ch_, req);
+  return t(*ch_, req);
 }
 
 template <class Request>

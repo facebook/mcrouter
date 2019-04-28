@@ -772,6 +772,14 @@ MCROUTER_OPTION_TOGGLE(
     no_short,
     "enable TFO when connecting/accepting via SSL")
 
+MCROUTER_OPTION_TOGGLE(
+    thread_affinity,
+    false,
+    "thread-affinity",
+    no_short,
+    "Enable deterministic selection of the proxy thread to lower the number of"
+    "connections between client and server.")
+
 #ifdef ADDITIONAL_OPTIONS_FILE
 #include ADDITIONAL_OPTIONS_FILE
 #endif

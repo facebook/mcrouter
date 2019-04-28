@@ -37,10 +37,10 @@ class AsynclogRoute {
       : rh_(std::move(rh)), asynclogName_(std::move(asynclogName)) {}
 
   template <class Request>
-  void traverse(
+  bool traverse(
       const Request& req,
       const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(*rh_, req);
+    return t(*rh_, req);
   }
 
   memcache::McDeleteReply route(const memcache::McDeleteRequest& req) const {

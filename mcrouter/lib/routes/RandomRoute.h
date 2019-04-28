@@ -29,10 +29,10 @@ class RandomRoute {
   }
 
   template <class Request>
-  void traverse(
+  bool traverse(
       const Request& req,
       const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(children_, req);
+    return t(children_, req);
   }
 
   explicit RandomRoute(std::vector<std::shared_ptr<RouteHandleIf>> children)

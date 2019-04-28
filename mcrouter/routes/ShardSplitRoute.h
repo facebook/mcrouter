@@ -84,7 +84,7 @@ class ShardSplitRoute {
       : rh_(std::move(rh)), shardSplitter_(std::move(shardSplitter)) {}
 
   template <class Request>
-  void traverse(
+  bool traverse(
       const Request& req,
       const RouteHandleTraverser<RouteHandleIf>& t) const {
     auto* ctx = fiber_local<RouterInfo>::getTraverseCtx();
@@ -96,28 +96,31 @@ class ShardSplitRoute {
     auto split = shardSplitter_.getShardSplit(req.key().routingKey(), shard);
 
     if (split == nullptr) {
-      t(*rh_, req);
-      return;
+      return t(*rh_, req);
     }
 
     auto splitSize = split->getSplitSizeForCurrentHost();
     if (carbon::DeleteLike<Request>::value && split->fanoutDeletesEnabled()) {
       // Note: the order here is part of the API and must not be changed.
       // We traverse the primary split and then other splits in order.
-      t(*rh_, req);
+      if (t(*rh_, req)) {
+        return true;
+      }
       for (size_t i = 1; i < splitSize; ++i) {
-        t(*rh_, splitReq(req, i, shard));
+        if (t(*rh_, splitReq(req, i, shard))) {
+          return true;
+        }
       }
     } else {
       size_t i = globals::hostid() % splitSize;
       // Note that foreachPossibleClient always calls traverse on a request with
       // no flags set.
       if (i == 0) {
-        t(*rh_, req);
-        return;
+        return t(*rh_, req);
       }
-      t(*rh_, splitReq(req, i, shard));
+      return t(*rh_, splitReq(req, i, shard));
     }
+    return false;
   }
 
   template <class Request>

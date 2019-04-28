@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -48,6 +47,10 @@ struct AccessPoint {
 
   const std::string& getHost() const {
     return host_;
+  }
+
+  uint64_t getHash() const {
+    return hash_;
   }
 
   uint16_t getPort() const {
@@ -96,6 +99,7 @@ struct AccessPoint {
 
  private:
   std::string host_;
+  uint64_t hash_{0};
   uint16_t port_;
   mc_protocol_t protocol_ : 8;
   SecurityMech securityMech_{SecurityMech::NONE};
@@ -104,5 +108,5 @@ struct AccessPoint {
   bool unixDomainSocket_{false};
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

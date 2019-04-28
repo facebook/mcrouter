@@ -72,11 +72,13 @@ class StagingRoute {
   }
 
   template <class Request>
-  void traverse(
+  bool traverse(
       const Request& req,
       const RouteHandleTraverser<MemcacheRouteHandleIf>& t) const {
-    t(*warm_, req);
-    t(*staging_, req);
+    if (t(*warm_, req)) {
+      return true;
+    }
+    return t(*staging_, req);
   }
 
   StagingRoute(

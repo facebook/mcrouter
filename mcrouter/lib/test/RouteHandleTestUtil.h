@@ -233,8 +233,10 @@ struct RecordingRoute {
   }
 
   template <class Request>
-  void traverse(const Request&, const RouteHandleTraverser<RouteHandleIf>&)
-      const {}
+  bool traverse(const Request&, const RouteHandleTraverser<RouteHandleIf>&)
+      const {
+    return false;
+  }
 
   GetRouteTestData dataGet_;
   UpdateRouteTestData dataUpdate_;

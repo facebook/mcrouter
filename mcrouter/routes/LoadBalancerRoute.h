@@ -93,11 +93,11 @@ class LoadBalancerRoute {
   }
 
   template <class Request>
-  void traverse(
+  bool traverse(
       const Request& req,
       const RouteHandleTraverser<RouteHandleIf>& t) const {
     // Walk all children
-    t(children_, req);
+    return t(children_, req);
   }
 
   template <class Request>

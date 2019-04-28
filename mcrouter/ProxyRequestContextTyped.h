@@ -169,6 +169,10 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
   }
 
  public:
+  Proxy<RouterInfo>& proxyWithRouterInfo() const {
+    return proxy_;
+  }
+
   using AdditionalLogger =
       typename detail::RouterAdditionalLogger<RouterInfo>::type;
   AdditionalLogger& additionalLogger() {
@@ -259,8 +263,7 @@ class ProxyRequestContextTyped
       Proxy<RouterInfo>& pr,
       const Request& req,
       ProxyRequestPriority priority__)
-      : ProxyRequestContextWithInfo<RouterInfo>(pr, priority__),
-        req_(&req) {}
+      : ProxyRequestContextWithInfo<RouterInfo>(pr, priority__), req_(&req) {}
 
   std::shared_ptr<const ProxyConfig<RouterInfo>> config_;
 
@@ -285,8 +288,8 @@ createProxyRequestContext(
     F&& f,
     ProxyRequestPriority priority = ProxyRequestPriority::kCritical);
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 #include "ProxyRequestContextTyped-inl.h"

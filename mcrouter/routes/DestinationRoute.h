@@ -78,7 +78,7 @@ class DestinationRoute {
   }
 
   template <class Request>
-  void traverse(
+  bool traverse(
       const Request&,
       const RouteHandleTraverser<typename RouterInfo::RouteHandleIf>&) const {
     auto* ctx = fiber_local<RouterInfo>::getTraverseCtx();
@@ -88,7 +88,12 @@ class DestinationRoute {
       ctx->recordDestination(
           PoolContext{poolName_, indexInPool_, isShadow},
           *destination_->accessPoint());
+      if (fiber_local<RouterInfo>::getTraverseEarlyExit() &&
+          !destination_->tracker()->isTko() && !isShadow) {
+        return true;
+      }
     }
+    return false;
   }
 
   memcache::McDeleteReply route(const memcache::McDeleteRequest& req) const {

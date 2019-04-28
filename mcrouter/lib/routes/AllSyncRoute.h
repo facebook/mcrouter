@@ -38,10 +38,10 @@ class AllSyncRoute {
   }
 
   template <class Request>
-  void traverse(
+  bool traverse(
       const Request& req,
       const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(children_, req);
+    return t(children_, req);
   }
 
   template <class Request>

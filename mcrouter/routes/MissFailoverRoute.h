@@ -49,10 +49,10 @@ class MissFailoverRoute {
   }
 
   template <class Request>
-  void traverse(
+  bool traverse(
       const Request& req,
       const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(targets_, req);
+    return t(targets_, req);
   }
 
   template <class Request>

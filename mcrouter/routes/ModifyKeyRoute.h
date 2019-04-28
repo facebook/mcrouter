@@ -72,7 +72,7 @@ class ModifyKeyRoute {
         keySuffix_(std::move(keySuffix)) {}
 
   template <class Request>
-  void traverse(
+  bool traverse(
       const Request& req,
       const RouteHandleTraverser<RouteHandleIf>& t) const {
     auto cloneReq = req;
@@ -80,7 +80,7 @@ class ModifyKeyRoute {
     if (key) {
       cloneReq.key() = key.value();
     }
-    t(*target_, cloneReq);
+    return t(*target_, cloneReq);
   }
 
   template <class Request>

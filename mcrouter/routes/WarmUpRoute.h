@@ -65,11 +65,13 @@ class WarmUpRoute {
   }
 
   template <class Request>
-  void traverse(
+  bool traverse(
       const Request& req,
       const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(*cold_, req);
-    t(*warm_, req);
+    if (t(*cold_, req)) {
+      return true;
+    }
+    return t(*warm_, req);
   }
 
   WarmUpRoute(

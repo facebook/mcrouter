@@ -61,7 +61,7 @@ mc_protocol_t parseProtocol(folly::StringPiece str) {
   throw std::runtime_error("Invalid protocol");
 }
 
-} // anonymous
+} // namespace
 
 AccessPoint::AccessPoint(
     folly::StringPiece host,
@@ -78,6 +78,7 @@ AccessPoint::AccessPoint(
   try {
     folly::IPAddress ip(host);
     host_ = ip.toFullyQualified();
+    hash_ = folly::hash_value(ip);
     isV6_ = ip.isV6();
   } catch (const folly::IPAddressFormatException& e) {
     // host is not an IP address (e.g. 'localhost')
@@ -189,5 +190,5 @@ std::string AccessPoint::toString() const {
       compressed_ ? "compressed" : "notcompressed");
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

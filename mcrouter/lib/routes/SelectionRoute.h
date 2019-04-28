@@ -58,10 +58,10 @@ class SelectionRoute {
   }
 
   template <class Request>
-  void traverse(
+  bool traverse(
       const Request& req,
       const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(*select(req), req);
+    return t(*select(req), req);
   }
 
   template <class Request>

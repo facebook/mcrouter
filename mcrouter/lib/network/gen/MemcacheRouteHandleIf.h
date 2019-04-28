@@ -59,63 +59,63 @@ class MemcacheRouteHandleIf {
   virtual McSetReply route(const McSetRequest&) = 0;
   virtual McTouchReply route(const McTouchRequest&) = 0;
 
-  virtual void traverse(
-      const McAddRequest&,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
-  virtual void traverse(
-      const McAppendRequest&,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
-  virtual void traverse(
-      const McCasRequest&,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
-  virtual void traverse(
-      const McDecrRequest&,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
-  virtual void traverse(
-      const McDeleteRequest&,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
-  virtual void traverse(
-      const McFlushAllRequest&,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
-  virtual void traverse(
-      const McFlushReRequest&,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
-  virtual void traverse(
-      const McGatRequest&,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
-  virtual void traverse(
-      const McGatsRequest&,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
-  virtual void traverse(
-      const McGetRequest&,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
-  virtual void traverse(
-      const McGetsRequest&,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
-  virtual void traverse(
-      const McIncrRequest&,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
-  virtual void traverse(
-      const McLeaseGetRequest&,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
-  virtual void traverse(
-      const McLeaseSetRequest&,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
-  virtual void traverse(
-      const McMetagetRequest&,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
-  virtual void traverse(
-      const McPrependRequest&,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
-  virtual void traverse(
-      const McReplaceRequest&,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
-  virtual void traverse(
-      const McSetRequest&,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
-  virtual void traverse(
-      const McTouchRequest&,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
+virtual bool traverse(
+    const McAddRequest&,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
+virtual bool traverse(
+    const McAppendRequest&,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
+virtual bool traverse(
+    const McCasRequest&,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
+virtual bool traverse(
+    const McDecrRequest&,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
+virtual bool traverse(
+    const McDeleteRequest&,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
+virtual bool traverse(
+    const McFlushAllRequest&,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
+virtual bool traverse(
+    const McFlushReRequest&,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
+virtual bool traverse(
+    const McGatRequest&,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
+virtual bool traverse(
+    const McGatsRequest&,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
+virtual bool traverse(
+    const McGetRequest&,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
+virtual bool traverse(
+    const McGetsRequest&,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
+virtual bool traverse(
+    const McIncrRequest&,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
+virtual bool traverse(
+    const McLeaseGetRequest&,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
+virtual bool traverse(
+    const McLeaseSetRequest&,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
+virtual bool traverse(
+    const McMetagetRequest&,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
+virtual bool traverse(
+    const McPrependRequest&,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
+virtual bool traverse(
+    const McReplaceRequest&,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
+virtual bool traverse(
+    const McSetRequest&,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
+virtual bool traverse(
+    const McTouchRequest&,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
 };
 
 template <class Route>
@@ -186,120 +186,120 @@ class MemcacheRouteHandle : public MemcacheRouteHandleIf {
     return route_.route(request);
   }
 
-  void traverse(
-      const McAddRequest& request,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
-      const override final {
-    route_.traverse(request, traverser);
-  }
-  void traverse(
-      const McAppendRequest& request,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
-      const override final {
-    route_.traverse(request, traverser);
-  }
-  void traverse(
-      const McCasRequest& request,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
-      const override final {
-    route_.traverse(request, traverser);
-  }
-  void traverse(
-      const McDecrRequest& request,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
-      const override final {
-    route_.traverse(request, traverser);
-  }
-  void traverse(
-      const McDeleteRequest& request,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
-      const override final {
-    route_.traverse(request, traverser);
-  }
-  void traverse(
-      const McFlushAllRequest& request,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
-      const override final {
-    route_.traverse(request, traverser);
-  }
-  void traverse(
-      const McFlushReRequest& request,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
-      const override final {
-    route_.traverse(request, traverser);
-  }
-  void traverse(
-      const McGatRequest& request,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
-      const override final {
-    route_.traverse(request, traverser);
-  }
-  void traverse(
-      const McGatsRequest& request,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
-      const override final {
-    route_.traverse(request, traverser);
-  }
-  void traverse(
-      const McGetRequest& request,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
-      const override final {
-    route_.traverse(request, traverser);
-  }
-  void traverse(
-      const McGetsRequest& request,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
-      const override final {
-    route_.traverse(request, traverser);
-  }
-  void traverse(
-      const McIncrRequest& request,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
-      const override final {
-    route_.traverse(request, traverser);
-  }
-  void traverse(
-      const McLeaseGetRequest& request,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
-      const override final {
-    route_.traverse(request, traverser);
-  }
-  void traverse(
-      const McLeaseSetRequest& request,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
-      const override final {
-    route_.traverse(request, traverser);
-  }
-  void traverse(
-      const McMetagetRequest& request,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
-      const override final {
-    route_.traverse(request, traverser);
-  }
-  void traverse(
-      const McPrependRequest& request,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
-      const override final {
-    route_.traverse(request, traverser);
-  }
-  void traverse(
-      const McReplaceRequest& request,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
-      const override final {
-    route_.traverse(request, traverser);
-  }
-  void traverse(
-      const McSetRequest& request,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
-      const override final {
-    route_.traverse(request, traverser);
-  }
-  void traverse(
-      const McTouchRequest& request,
-      const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
-      const override final {
-    route_.traverse(request, traverser);
-  }
+bool traverse(
+    const McAddRequest& request,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
+    const override final {
+  return route_.traverse(request, traverser);
+}
+bool traverse(
+    const McAppendRequest& request,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
+    const override final {
+  return route_.traverse(request, traverser);
+}
+bool traverse(
+    const McCasRequest& request,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
+    const override final {
+  return route_.traverse(request, traverser);
+}
+bool traverse(
+    const McDecrRequest& request,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
+    const override final {
+  return route_.traverse(request, traverser);
+}
+bool traverse(
+    const McDeleteRequest& request,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
+    const override final {
+  return route_.traverse(request, traverser);
+}
+bool traverse(
+    const McFlushAllRequest& request,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
+    const override final {
+  return route_.traverse(request, traverser);
+}
+bool traverse(
+    const McFlushReRequest& request,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
+    const override final {
+  return route_.traverse(request, traverser);
+}
+bool traverse(
+    const McGatRequest& request,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
+    const override final {
+  return route_.traverse(request, traverser);
+}
+bool traverse(
+    const McGatsRequest& request,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
+    const override final {
+  return route_.traverse(request, traverser);
+}
+bool traverse(
+    const McGetRequest& request,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
+    const override final {
+  return route_.traverse(request, traverser);
+}
+bool traverse(
+    const McGetsRequest& request,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
+    const override final {
+  return route_.traverse(request, traverser);
+}
+bool traverse(
+    const McIncrRequest& request,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
+    const override final {
+  return route_.traverse(request, traverser);
+}
+bool traverse(
+    const McLeaseGetRequest& request,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
+    const override final {
+  return route_.traverse(request, traverser);
+}
+bool traverse(
+    const McLeaseSetRequest& request,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
+    const override final {
+  return route_.traverse(request, traverser);
+}
+bool traverse(
+    const McMetagetRequest& request,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
+    const override final {
+  return route_.traverse(request, traverser);
+}
+bool traverse(
+    const McPrependRequest& request,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
+    const override final {
+  return route_.traverse(request, traverser);
+}
+bool traverse(
+    const McReplaceRequest& request,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
+    const override final {
+  return route_.traverse(request, traverser);
+}
+bool traverse(
+    const McSetRequest& request,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
+    const override final {
+  return route_.traverse(request, traverser);
+}
+bool traverse(
+    const McTouchRequest& request,
+    const RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
+    const override final {
+  return route_.traverse(request, traverser);
+}
 
  private:
   Route route_;

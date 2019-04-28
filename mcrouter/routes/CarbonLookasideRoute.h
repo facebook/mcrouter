@@ -147,10 +147,10 @@ class CarbonLookasideRoute {
   }
 
   template <class Request>
-  void traverse(
+  bool traverse(
       const Request& req,
       const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(*child_, req);
+    return t(*child_, req);
   }
 
   template <class Request>

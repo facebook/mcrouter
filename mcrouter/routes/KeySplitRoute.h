@@ -50,15 +50,14 @@ class KeySplitRoute {
   static constexpr size_t kMaxReplicaCount = 1000;
 
   template <class Request>
-  void traverse(
+  bool traverse(
       const Request& req,
       const RouteHandleTraverser<MemcacheRouteHandleIf>& t) const {
     uint64_t replicaId = getReplicaId();
     if (shouldAugmentRequest(replicaId)) {
-      t(*child_, copyAndAugment(req, replicaId));
-    } else {
-      t(*child_, req);
+      return t(*child_, copyAndAugment(req, replicaId));
     }
+    return t(*child_, req);
   }
 
   KeySplitRoute(

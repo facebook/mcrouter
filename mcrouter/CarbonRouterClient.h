@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2016-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -12,6 +11,7 @@
 
 #include "mcrouter/CarbonRouterClientBase.h"
 #include "mcrouter/lib/CacheClientStats.h"
+#include "mcrouter/lib/fbi/cpp/TypeList.h"
 #include "mcrouter/lib/mc/msg.h"
 
 namespace facebook {
@@ -26,6 +26,9 @@ template <class RouterInfo>
 class Proxy;
 
 class ProxyRequestContext;
+
+template <class RouterInfo>
+class ProxyRequestContextWithInfo;
 
 /**
  * A mcrouter client is used to communicate with a mcrouter instance.
@@ -57,6 +60,19 @@ class CarbonRouterClient : public CarbonRouterClientBase {
   using Queue = folly::IntrusiveList<
       CarbonRouterClient<RouterInfo>,
       &CarbonRouterClient<RouterInfo>::hook_>;
+
+  enum class ThreadMode {
+    // Routes the request in the same thread that is calling CarbonRouterClient.
+    SameThread = 0,
+
+    // Routes the request in a dedicated mcrouter thread, chose at
+    // CarbonRouterClient creation time.
+    FixedRemoteThread,
+
+    // Routes the request deterministically, chosen at routing time, with the
+    // goal to reduce the number of connections between client and server.
+    AffinitizedRemoteThread,
+  };
 
   /**
    * Asynchronously send a single request with the given operation.
@@ -125,9 +141,12 @@ class CarbonRouterClient : public CarbonRouterClientBase {
 
  private:
   std::weak_ptr<CarbonRouterInstance<RouterInfo>> router_;
-  bool sameThread_{false};
+  ThreadMode mode_;
 
+  // proxy_ is used by ThreadModes FixedRemoteThread and SameThread
   Proxy<RouterInfo>* proxy_{nullptr};
+  // proxies_ is used by the AffinitizedRemoteThread ThreadMode
+  std::vector<Proxy<RouterInfo>*> proxies_;
 
   CacheClientStats stats_;
 
@@ -146,13 +165,13 @@ class CarbonRouterClient : public CarbonRouterClientBase {
       std::weak_ptr<CarbonRouterInstance<RouterInfo>> router,
       size_t maximum_outstanding,
       bool maximum_outstanding_error,
-      bool sameThread);
+      ThreadMode mode);
 
   static Pointer create(
       std::weak_ptr<CarbonRouterInstance<RouterInfo>> router,
       size_t maximum_outstanding,
       bool maximum_outstanding_error,
-      bool sameThread);
+      ThreadMode mode);
 
   /**
    * Batch send requests.
@@ -165,14 +184,28 @@ class CarbonRouterClient : public CarbonRouterClientBase {
   template <class F, class G>
   bool sendMultiImpl(size_t nreqs, F&& makeNextPreq, G&& failRemaining);
 
-  void sendRemoteThread(std::unique_ptr<ProxyRequestContext> req);
-  void sendSameThread(std::unique_ptr<ProxyRequestContext> req);
+  void sendRemoteThread(
+      std::unique_ptr<ProxyRequestContextWithInfo<RouterInfo>> req);
+  void sendSameThread(
+      std::unique_ptr<ProxyRequestContextWithInfo<RouterInfo>> req);
+
+  template <class Request>
+  typename std::enable_if<
+      ListContains<typename RouterInfo::RoutableRequests, Request>::value,
+      uint64_t>::type
+  findProxy(const Request& req);
+
+  template <class Request>
+  typename std::enable_if<
+      !ListContains<typename RouterInfo::RoutableRequests, Request>::value,
+      uint64_t>::type
+  findProxy(const Request& req);
 
   friend class CarbonRouterInstance<RouterInfo>;
 };
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 #include "CarbonRouterClient-inl.h"

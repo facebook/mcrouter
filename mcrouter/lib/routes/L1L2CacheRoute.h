@@ -47,11 +47,13 @@ class L1L2CacheRoute {
   }
 
   template <class Request>
-  void traverse(
+  bool traverse(
       const Request& req,
       const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(*l1_, req);
-    t(*l2_, req);
+    if (t(*l1_, req)) {
+      return true;
+    }
+    return t(*l2_, req);
   }
 
   L1L2CacheRoute(
