@@ -41,6 +41,7 @@ libmcroutercore_a_SOURCES = \
   FileDataProvider.h \
   FileObserver.cpp \
   FileObserver.h \
+  ForEachPossibleClient.h \
   flavor.cpp \
   flavor.h \
   LeaseTokenMap.cpp \
