@@ -10,6 +10,8 @@
 
 #include <folly/Range.h>
 
+#include "mcrouter/lib/HashFunctionType.h"
+
 namespace facebook {
 namespace memcache {
 
@@ -31,6 +33,10 @@ class RendezvousHashFunc {
 
   static const char* type() {
     return "Rendezvous";
+  }
+
+  static HashFunctionType typeId() {
+    return HashFunctionType::Rendezvous;
   }
 
  private:

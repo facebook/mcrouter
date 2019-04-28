@@ -45,6 +45,10 @@ class HashSelectorBase {
     return n;
   }
 
+  bool hasSalt() const {
+    return (!salt_.empty());
+  }
+
  private:
   const std::string salt_;
   const HashFunc hashFunc_;
@@ -58,12 +62,19 @@ class HashSelector : public HashSelectorBase<HashFunc> {
 
   template <class Request>
   size_t select(const Request& req, size_t size) const {
+    if (!this->hasSalt() && req.key().reuseLastHash(size, HashFunc::typeId())) {
+      return req.key().getLastHash();
+    }
     // Hash functions can be stack-intensive, so jump back to the main context
-    return folly::fibers::runInMainContext([this, &req, size]() {
+    auto hash = folly::fibers::runInMainContext([this, &req, size]() {
       // this-> here is necessary for gcc-4.7 - it can't find selectInternal()
       // without it
       return this->selectInternal(req.key().routingKey(), size);
     });
+    if (!this->hasSalt()) {
+      req.key().setLastHash(hash, size, HashFunc::typeId());
+    }
+    return hash;
   }
 };
 

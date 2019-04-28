@@ -192,7 +192,10 @@ CarbonRouterClient<RouterInfo>::findProxy(const Request& req) {
       req,
       [&hash](
           const memcache::mcrouter::PoolContext&,
-          const memcache::AccessPoint& ap) { hash = ap.getHash(); });
+          const memcache::AccessPoint& ap) { hash = ap.getHash(); },
+      /* spCallback */ nullptr,
+      /* includeFailoverDestinations */ true,
+      /* traverseEarlyExit */ true);
   /* Hash on ipv6 address */
   return hash % proxies_.size();
 }

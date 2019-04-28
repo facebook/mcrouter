@@ -96,7 +96,7 @@ void sendHelloRequestSync(
 
 AsyncMcServer::Options getOpts() {
   AsyncMcServer::Options opts;
-  opts.worker.debugFifoPath = "./thread_affinity";
+  opts.worker.debugFifoPath = "./ta-hello-goodbye";
   opts.ports.push_back(kPort);
   opts.numThreads = 4;
   return opts;

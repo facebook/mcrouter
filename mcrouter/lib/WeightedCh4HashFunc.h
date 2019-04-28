@@ -6,6 +6,7 @@
  */
 #pragma once
 
+#include "mcrouter/lib/HashFunctionType.h"
 #include "mcrouter/lib/WeightedChHashFuncBase.h"
 
 namespace facebook {
@@ -70,6 +71,10 @@ class WeightedCh4HashFunc : public WeightedChHashFuncBase {
 
   static const char* type() {
     return "WeightedCh4";
+  }
+
+  static HashFunctionType typeId() {
+    return HashFunctionType::WeightedCh4;
   }
 
  private:
