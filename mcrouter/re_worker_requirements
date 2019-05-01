@@ -1,0 +1,18 @@
+{
+    "mcrouter_core#compile-McRouteHandleProvider.cpp.o4059a00a,platform007-clang,v13e8451": {
+        "workerSize": "MEDIUM",
+        "platformType": "LINUX"
+    },
+    "mcrouter_core#compile-pic-CarbonLookasideRoute.cpp.oa3bc956a,platform007-clang,v13e8451": {
+        "workerSize": "MEDIUM",
+        "platformType": "LINUX"
+    },
+    "mcrouter_core#compile-pic-McRouteHandleProvider.cpp.o4059a00a,platform007-clang,v13e8451": {
+        "workerSize": "MEDIUM",
+        "platformType": "LINUX"
+    },
+    "mcrouter_core#compile-CarbonLookasideRoute.cpp.oa3bc956a,platform007-clang,v13e8451": {
+        "workerSize": "MEDIUM",
+        "platformType": "LINUX"
+    }
+}
