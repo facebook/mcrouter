@@ -267,8 +267,11 @@ template <class RouterInfo>
 void CarbonRouterClient<RouterInfo>::sendRemoteThread(
     std::unique_ptr<ProxyRequestContextWithInfo<RouterInfo>> req) {
   // Use the proxy saved in the ProxyRequestContext, as it may change
-  // base on the ThreadMode
-  req->proxyWithRouterInfo().messageQueue_->blockingWriteRelaxed(
+  // base on the ThreadMode. Get a reference to the Proxy first as
+  // the unique pointer is released as part of the blockingWriteRelaxed
+  // call.
+  Proxy<RouterInfo>& pr = req->proxyWithRouterInfo();
+  pr.messageQueue_->blockingWriteRelaxed(
       ProxyMessage::Type::REQUEST, req.release());
 }
 
