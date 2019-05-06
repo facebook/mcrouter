@@ -25,6 +25,7 @@
 #include <folly/String.h>
 #include <folly/io/async/AsyncServerSocket.h>
 #include <folly/io/async/EventBase.h>
+#include <folly/io/async/EventFDWrapper.h>
 #include <folly/io/async/SSLContext.h>
 #include <folly/io/async/ScopedEventBaseThread.h>
 #include <wangle/ssl/TLSCredProcessor.h>
