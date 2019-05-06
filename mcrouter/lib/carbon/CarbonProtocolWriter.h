@@ -398,6 +398,10 @@ class CarbonProtocolWriter {
     appender_.insert(buf);
   }
 
+  void writeFixedSize(const folly::ByteRange& range) {
+    appender_.push(range.data(), range.size());
+  }
+
   void writeRaw(const bool b) {
     writeByte(b ? FieldType::True : FieldType::False);
   }

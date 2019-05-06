@@ -40,7 +40,7 @@ class CarbonProtocolReader {
     cursor_ = c;
   }
 
-  const CarbonCursor& cursor() const {
+  CarbonCursor& cursor() {
     return cursor_;
   }
 
