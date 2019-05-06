@@ -11,6 +11,7 @@
 
 #include <folly/Optional.h>
 #include <folly/io/IOBuf.h>
+#include <folly/io/async/EventBase.h>
 
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/carbon/RequestReplyUtil.h"
@@ -58,6 +59,10 @@ class McServerRequestContext {
   McServerSession& session();
 
   ServerLoad getServerLoad() const noexcept;
+
+  folly::Optional<struct sockaddr_storage> getPeerSocketAddress();
+
+  folly::EventBase& getSessionEventBase() const noexcept;
 
  private:
   McServerSession* session_;

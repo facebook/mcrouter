@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "McServerRequestContext.h"
 
@@ -91,5 +90,19 @@ ServerLoad McServerRequestContext::getServerLoad() const noexcept {
   return ServerLoad::zero();
 }
 
-} // memcache
-} // facebook
+folly::Optional<struct sockaddr_storage>
+McServerRequestContext::getPeerSocketAddress() {
+  folly::Optional<struct sockaddr_storage> peerAddress;
+  if (session_) {
+    peerAddress.emplace();
+    session_->getSocketAddress().getAddress(peerAddress.get_pointer());
+  }
+  return peerAddress;
+}
+
+folly::EventBase& McServerRequestContext::getSessionEventBase() const noexcept {
+  return session_->getEventBase();
+}
+
+} // namespace memcache
+} // namespace facebook
