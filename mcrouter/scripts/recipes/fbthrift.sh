@@ -14,17 +14,6 @@ if [[ ! -d "$PKG_DIR/fbthrift" ]]; then
   fi
 fi
 
-if [ ! -d "$PKG_DIR/mstch" ]; then
-  cd "$PKG_DIR" || die "cd fail"
-  git clone https://github.com/no1msd/mstch
-
-  cd "$PKG_DIR/mstch" || die "cd fail"
-
-  cmake -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" -DBUILD_SHARED_LIBS=ON \
-  -DCMAKE_CXX_FLAGS="-fPIC" .
-  make $MAKE_ARGS && make install $MAKE_ARGS
-fi
-
 cd "$PKG_DIR/fbthrift/build" || die "cd fbthrift failed"
 
 CXXFLAGS="$CXXFLAGS -fPIC" \
