@@ -1129,18 +1129,3 @@ TEST_P(AsyncMcClientSSLOffloadTest, clientReset) {
 }
 
 INSTANTIATE_TEST_CASE_P(AsyncMcClientTest, AsyncMcClientSSLOffloadTest, Bool());
-
-// SSL Context thread safety tests
-TEST(AsyncMcClient, contextsSafeByDefault) {
-  // ensure test is in a clean state lock wise
-  EXPECT_TRUE(sslContextsAreThreadSafe());
-}
-
-#ifdef CRYPTO_LOCK_SSL_CTX
-TEST(AsyncMcClient, contextsUnsafe) {
-  // ensure test is in a clean state lock wise
-  folly::ssl::cleanup();
-  folly::ssl::setLockTypes({{CRYPTO_LOCK_SSL_CTX, folly::ssl::LockType::NONE}});
-  EXPECT_FALSE(sslContextsAreThreadSafe());
-}
-#endif

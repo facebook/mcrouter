@@ -368,9 +368,7 @@ void AsyncMcClientImpl::attemptConnection() {
     const auto mech = connectionOptions_.accessPoint->getSecurityMech();
     auto socketOptions = createSocketOptions(address, connectionOptions_);
     if ((isAsyncSSLSocketMech(mech)) &&
-        connectionOptions_.securityOpts.sslHandshakeOffload &&
-        // we must make sure that contexts are threadsafe before doing this!
-        sslContextsAreThreadSafe()) {
+        connectionOptions_.securityOpts.sslHandshakeOffload) {
       // we keep ourself alive during connection.
       auto self = selfPtr_.lock();
       auto sslSocket = socket_->getUnderlyingTransport<folly::AsyncSSLSocket>();

@@ -411,18 +411,6 @@ bool isAsyncSSLSocketMech(SecurityMech mech) {
       mech == SecurityMech::KTLS12;
 }
 
-bool sslContextsAreThreadSafe() {
-  static folly::once_flag flag;
-  static bool ctxLockDisabled = false;
-  folly::call_once(flag, [&] {
-    folly::ssl::init();
-#ifdef CRYPTO_LOCK_SSL_CTX
-    ctxLockDisabled = folly::ssl::isLockDisabled(CRYPTO_LOCK_SSL_CTX);
-#endif
-  });
-  return !ctxLockDisabled;
-}
-
 FizzContextAndVerifier getFizzClientConfig(const SecurityOptions& opts) {
   auto& info = getClientContextInfo(opts, SecurityMech::TLS13_FIZZ);
   auto now = std::chrono::steady_clock::now();

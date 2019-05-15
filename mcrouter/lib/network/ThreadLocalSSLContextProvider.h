@@ -47,13 +47,6 @@ class ClientSSLContext : public folly::SSLContext {
 };
 
 /**
- * Determine if SSL Contexts are thread safe.  Depending on the OpenSSL version,
- * certain locks may be disabled that prevent usage of contexts across threads.
- * This can happen if handshakes are being offloaded to a different thread pool.
- */
-bool sslContextsAreThreadSafe();
-
-/**
  * The following methods return thread local managed SSL Contexts.  Contexts are
  * reloaded on demand if they are 30 minutes old on a per thread basis.
  */
