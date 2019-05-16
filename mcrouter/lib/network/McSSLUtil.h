@@ -25,7 +25,7 @@ class McSSLUtil {
   using SSLVerifyFunction =
       folly::Function<bool(folly::AsyncSSLSocket*, bool, X509_STORE_CTX*)
                           const noexcept>;
-  using SSLFinalizeFunction =
+  using TransportFinalizeFunction =
       folly::Function<void(folly::AsyncTransportWrapper*) const noexcept>;
 
   static const std::string kTlsToPlainProtocolName;
@@ -63,20 +63,21 @@ class McSSLUtil {
   static void setApplicationSSLVerifier(SSLVerifyFunction func);
 
   /**
-   * Install an app specific SSL finalizer for the server.  This function will
-   * be called from multiple threads, so it must be threadsafe.
-   * This function should be called once, typically around application init and
+   * Install an app specific transport finalizer for the server.  This function
+   * will be called from multiple threads, so it must be threadsafe. This
+   * function should be called once, typically around application init and
    * before the server has received any requests.
    */
-  static void setApplicationServerSSLFinalizer(SSLFinalizeFunction func);
+  static void setApplicationServerTransportFinalizer(
+      TransportFinalizeFunction func);
 
   /**
-   * Install an app specific SSL finalizer for the client.  This function will
-   * be called from multiple threads, so it must be threadsafe.
-   * This function should be called once, before the client has sent any
-   * requests.
+   * Install an app specific transport finalizer for the client.  This function
+   * will be called from multiple threads, so it must be threadsafe. This
+   * function should be called once, before the client has sent any requests.
    */
-  static void setApplicationClientSSLFinalizer(SSLFinalizeFunction func);
+  static void setApplicationClientTransportFinalizer(
+      TransportFinalizeFunction func);
 
   /**
    * Verify an SSL connection.  If no application verifier is set, the default
@@ -85,16 +86,16 @@ class McSSLUtil {
   static bool verifySSL(folly::AsyncSSLSocket*, bool, X509_STORE_CTX*) noexcept;
 
   /**
-   * Finalize a server SSL connection. Use this to do any processing on the
+   * Finalize a server connection. Use this to do any processing on the
    * transport after the connection has been accepted.
    */
-  static void finalizeServerSSL(folly::AsyncTransportWrapper*) noexcept;
+  static void finalizeServerTransport(folly::AsyncTransportWrapper*) noexcept;
 
   /**
-   * Finalize a client SSL connection. Use this to do any processing on the
+   * Finalize a client connection. Use this to do any processing on the
    * transport after the connection has been accepted.
    */
-  static void finalizeClientSSL(folly::AsyncTransportWrapper*) noexcept;
+  static void finalizeClientTransport(folly::AsyncTransportWrapper*) noexcept;
 
   /**
    * Check if the ssl connection successfully negotiated falling back to

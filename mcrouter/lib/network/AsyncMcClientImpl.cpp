@@ -434,7 +434,6 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
   if (isAsyncSSLSocketMech(mech)) {
     auto* sslSocket = socket_->getUnderlyingTransport<folly::AsyncSSLSocket>();
     assert(sslSocket != nullptr);
-    McSSLUtil::finalizeClientSSL(sslSocket);
     if (mech == SecurityMech::TLS_TO_PLAINTEXT) {
       // if we negotiated the right alpn, then server also supports this and we
       // can fall back to plaintext.
@@ -467,6 +466,7 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
       }
     }
   }
+  McSSLUtil::finalizeClientTransport(socket_.get());
 
   assert(queue_.getInflightRequestCount() == 0);
   assert(queue_.getParserInitializer() == nullptr);

@@ -614,8 +614,6 @@ void McServerSession::handshakeSuc(folly::AsyncSSLSocket* sock) noexcept {
       }
     }
   }
-  McSSLUtil::finalizeServerSSL(transport_.get());
-
   if (McSSLUtil::negotiatedPlaintextFallback(*sock)) {
     auto fallback = McSSLUtil::moveToPlaintext(*sock);
     CHECK(fallback);
@@ -635,6 +633,9 @@ void McServerSession::handshakeSuc(folly::AsyncSSLSocket* sock) noexcept {
       negotiatedMech_ = SecurityMech::KTLS12;
     }
   }
+
+  // finalize the transports at the end
+  McSSLUtil::finalizeServerTransport(transport_.get());
 
   // sock is currently wrapped by transport_, but underlying socket may
   // change by end of this function due to negotiatedPlaintextFallback or ktls.
@@ -675,7 +676,7 @@ void McServerSession::fizzHandshakeSuccess(
       }
     }
   }
-  McSSLUtil::finalizeServerSSL(transport);
+  McSSLUtil::finalizeServerTransport(transport);
   onAccepted();
 }
 

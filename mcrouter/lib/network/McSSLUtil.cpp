@@ -25,13 +25,13 @@ static McSSLUtil::SSLVerifyFunction& getAppFuncRef() {
   return VERIFIER;
 }
 
-static McSSLUtil::SSLFinalizeFunction& getServerFinalizeFuncRef() {
-  static McSSLUtil::SSLFinalizeFunction FINALIZER;
+static McSSLUtil::TransportFinalizeFunction& getServerFinalizeFuncRef() {
+  static McSSLUtil::TransportFinalizeFunction FINALIZER;
   return FINALIZER;
 }
 
-static McSSLUtil::SSLFinalizeFunction& getClientFinalizeFuncRef() {
-  static McSSLUtil::SSLFinalizeFunction FINALIZER;
+static McSSLUtil::TransportFinalizeFunction& getClientFinalizeFuncRef() {
+  static McSSLUtil::TransportFinalizeFunction FINALIZER;
   return FINALIZER;
 }
 
@@ -109,17 +109,19 @@ bool McSSLUtil::verifySSL(
   return func(sock, preverifyOk, ctx);
 }
 
-void McSSLUtil::setApplicationServerSSLFinalizer(SSLFinalizeFunction func) {
+void McSSLUtil::setApplicationServerTransportFinalizer(
+    TransportFinalizeFunction func) {
   folly::SharedMutex::WriteHolder wh(getMutex());
   getServerFinalizeFuncRef() = std::move(func);
 }
 
-void McSSLUtil::setApplicationClientSSLFinalizer(SSLFinalizeFunction func) {
+void McSSLUtil::setApplicationClientTransportFinalizer(
+    TransportFinalizeFunction func) {
   folly::SharedMutex::WriteHolder wh(getMutex());
   getClientFinalizeFuncRef() = std::move(func);
 }
 
-void McSSLUtil::finalizeServerSSL(
+void McSSLUtil::finalizeServerTransport(
     folly::AsyncTransportWrapper* transport) noexcept {
   folly::SharedMutex::ReadHolder rh(getMutex());
   auto& func = getServerFinalizeFuncRef();
@@ -128,7 +130,7 @@ void McSSLUtil::finalizeServerSSL(
   }
 }
 
-void McSSLUtil::finalizeClientSSL(
+void McSSLUtil::finalizeClientTransport(
     folly::AsyncTransportWrapper* transport) noexcept {
   folly::SharedMutex::ReadHolder rh(getMutex());
   auto& func = getClientFinalizeFuncRef();
