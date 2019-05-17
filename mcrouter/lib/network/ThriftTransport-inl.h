@@ -17,7 +17,10 @@ std::unique_ptr<ThriftClient> ThriftTransportBase::createThriftClient() {
   if (!channel) {
     return nullptr;
   }
-  return std::make_unique<ThriftClient>(std::move(channel));
+  auto ret = std::make_unique<ThriftClient>(std::move(channel));
+  // Avoid any static default-registered event handlers.
+  ret->clearEventHandlers();
+  return ret;
 }
 
 template <class F>
