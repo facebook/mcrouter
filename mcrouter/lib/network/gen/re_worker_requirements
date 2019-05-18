@@ -2,5 +2,9 @@
     "carbon-Memcache-router#compile-pic-MemcacheRouterInfo.cpp.o8ff043a5,platform007-clang,v13e8451": {
         "workerSize": "MEDIUM",
         "platformType": "LINUX"
+    },
+    "carbon-Memcache-router#compile-MemcacheRouterInfo.cpp.o8ff043a5,platform007-clang,v13e8451": {
+        "workerSize": "MEDIUM",
+        "platformType": "LINUX"
     }
 }
