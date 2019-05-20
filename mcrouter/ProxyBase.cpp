@@ -27,7 +27,7 @@ folly::fibers::FiberManager::Options ProxyBase::getFiberManagerOptions(
   fmOpts.stackSize = opts.fibers_stack_size;
   fmOpts.recordStackEvery = opts.fibers_record_stack_size_every;
   fmOpts.maxFibersPoolSize = opts.fibers_max_pool_size;
-  fmOpts.useGuardPages = opts.fibers_use_guard_pages;
+  fmOpts.guardPagesPerStack = (opts.fibers_use_guard_pages ? 1 : 0);
   fmOpts.fibersPoolResizePeriodMs = opts.fibers_pool_resize_period_ms;
   return fmOpts;
 }
@@ -49,6 +49,6 @@ void ProxyBase::FlushCallback::runLoopCallback() noexcept {
   }
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
