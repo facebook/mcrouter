@@ -6,6 +6,8 @@
  */
 #pragma once
 
+#include <folly/io/async/EventBase.h>
+
 #include "mcrouter/CarbonRouterClient.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
@@ -44,11 +46,27 @@ class ServerOnRequest {
 
   ServerOnRequest(
       CarbonRouterClient<RouterInfo>& client,
+      folly::EventBase& eventBase,
       bool retainSourceIp,
-      bool enablePassThroughMode)
+      bool enablePassThroughMode,
+      bool remoteThread)
       : client_(client),
+        eventBase_(eventBase),
         retainSourceIp_(retainSourceIp),
-        enablePassThroughMode_(enablePassThroughMode) {}
+        enablePassThroughMode_(enablePassThroughMode),
+        remoteThread_(remoteThread) {}
+
+  template <class Reply>
+  void sendReply(McServerRequestContext&& ctx, Reply&& reply) {
+    if (remoteThread_) {
+      return eventBase_.runInEventBaseThread(
+          [ctx = std::move(ctx), reply = std::move(reply)]() mutable {
+            McServerRequestContext::reply(std::move(ctx), std::move(reply));
+          });
+    } else {
+      return McServerRequestContext::reply(std::move(ctx), std::move(reply));
+    }
+  }
 
   template <class Request>
   void onRequest(
@@ -64,6 +82,7 @@ class ServerOnRequest {
         headerInfo,
         reqBuffer);
   }
+
   template <class Request>
   void onRequest(McServerRequestContext&& ctx, Request&& req) {
     using Reply = ReplyT<Request>;
@@ -75,17 +94,15 @@ class ServerOnRequest {
     reply.value() =
         folly::IOBuf(folly::IOBuf::COPY_BUFFER, MCROUTER_PACKAGE_STRING);
 
-    McServerRequestContext::reply(std::move(ctx), std::move(reply));
+    sendReply(std::move(ctx), std::move(reply));
   }
 
   void onRequest(McServerRequestContext&& ctx, McQuitRequest&&) {
-    McServerRequestContext::reply(
-        std::move(ctx), McQuitReply(carbon::Result::OK));
+    sendReply(std::move(ctx), McQuitReply(carbon::Result::OK));
   }
 
   void onRequest(McServerRequestContext&& ctx, McShutdownRequest&&) {
-    McServerRequestContext::reply(
-        std::move(ctx), McShutdownReply(carbon::Result::OK));
+    sendReply(std::move(ctx), McShutdownReply(carbon::Result::OK));
   }
 
   template <class Request>
@@ -115,9 +132,17 @@ class ServerOnRequest {
       reqRef.setSerializedBuffer(reqBufferRef);
     }
 
-    auto cb = [sctx = std::move(rctx), replyFn](
-                  const Request&, ReplyT<Request>&& reply) {
-      replyFn(std::move(sctx->ctx), std::move(reply), false /* flush */);
+    auto cb = [this, sctx = std::move(rctx), replyFn = std::move(replyFn)](
+                  const Request&, ReplyT<Request>&& reply) mutable {
+      if (remoteThread_) {
+        eventBase_.runInEventBaseThread([sctx = std::move(sctx),
+                                         replyFn = std::move(replyFn),
+                                         reply = std::move(reply)]() mutable {
+          replyFn(std::move(sctx->ctx), std::move(reply), false /* flush */);
+        });
+      } else {
+        replyFn(std::move(sctx->ctx), std::move(reply), false /* flush */);
+      }
     };
 
     if (retainSourceIp_) {
@@ -130,8 +155,10 @@ class ServerOnRequest {
 
  private:
   CarbonRouterClient<RouterInfo>& client_;
-  bool retainSourceIp_{false};
-  bool enablePassThroughMode_{false};
+  folly::EventBase& eventBase_;
+  const bool retainSourceIp_{false};
+  const bool enablePassThroughMode_{false};
+  const bool remoteThread_{false};
 };
 } // namespace mcrouter
 } // namespace memcache

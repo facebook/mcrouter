@@ -8,6 +8,8 @@
 
 #include <cstdio>
 
+#include <folly/io/async/EventBase.h>
+
 #include "mcrouter/CarbonRouterClient.h"
 #include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
@@ -56,8 +58,9 @@ void serverLoop(
     const McrouterStandaloneOptions& standaloneOpts) {
   using RequestHandlerType = RequestHandler<ServerOnRequest<RouterInfo>>;
 
-  auto routerClient =
-      router.createSameThreadClient(0 /* maximum_outstanding_requests */);
+  auto routerClient = standaloneOpts.remote_thread
+      ? router.createClient(0 /* maximum_outstanding_requests */)
+      : router.createSameThreadClient(0 /* maximum_outstanding_requests */);
 
   auto proxy = router.getProxy(threadId);
   // Manually override proxy assignment
@@ -65,8 +68,10 @@ void serverLoop(
 
   worker.setOnRequest(RequestHandlerType(
       *routerClient,
+      evb,
       standaloneOpts.retain_source_ip,
-      standaloneOpts.enable_pass_through_mode));
+      standaloneOpts.enable_pass_through_mode,
+      standaloneOpts.remote_thread));
 
   worker.setOnConnectionAccepted(
       [proxy,
@@ -192,8 +197,13 @@ bool runServer(
       }
     };
 
-    router = CarbonRouterInstance<RouterInfo>::init(
-        "standalone", mcrouterOpts, server.eventBases());
+    if (standaloneOpts.remote_thread) {
+      router =
+          CarbonRouterInstance<RouterInfo>::init("standalone", mcrouterOpts);
+    } else {
+      router = CarbonRouterInstance<RouterInfo>::init(
+          "standalone", mcrouterOpts, server.eventBases());
+    }
     if (router == nullptr) {
       LOG(ERROR) << "CRITICAL: Failed to initialize mcrouter!";
       return false;

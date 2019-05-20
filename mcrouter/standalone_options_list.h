@@ -198,9 +198,9 @@ MCROUTER_OPTION_INTEGER(
     0,
     "tcp-zero-copy-threshold",
     no_short,
-    "TCP packets with payload >= tcp-zero-copy-threshold bytes will use"
-    "use the zero copy optimization on TX."
-    "If 0, the tcp zero copy optimization will not be applied.")
+    "TCP packets with payload >= tcp-zero-copy-threshold bytes will"
+    " use the zero copy optimization on TX."
+    " If 0, the tcp zero copy optimization will not be applied.")
 
 MCROUTER_OPTION_TOGGLE(
     acl_checker_enable,
@@ -230,6 +230,17 @@ MCROUTER_OPTION_INTEGER(
     "num-listening-sockets",
     no_short,
     "adjust how many listening sockets to use. Must be <= num_proxies")
+
+MCROUTER_OPTION_TOGGLE(
+    remote_thread,
+    false,
+    "remote-thread",
+    no_short,
+    "If true, mcrouter client threads will be separate from the server threads."
+    " This option will cause mcrouter to use more CPU, but it will reduce the"
+    " number of connections if running with >1 proxies/threads, and used"
+    " together with thread-affinity option.")
+
 
 #ifdef ADDITIONAL_STANDALONE_OPTIONS_FILE
 #include ADDITIONAL_STANDALONE_OPTIONS_FILE
