@@ -194,6 +194,13 @@ class McServerSession
   }
 
   /**
+   * @returns true iff reading from the socket has been paused by the user
+   */
+  bool paused() const noexcept {
+    return (pauseState_ & static_cast<uint64_t>(PAUSE_USER)) != 0;
+  }
+
+  /**
    * Get the user context associated with this session.
    */
   void* userContext() {
