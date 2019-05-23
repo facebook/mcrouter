@@ -77,14 +77,20 @@ class CarbonRouterClient : public CarbonRouterClientBase {
   /**
    * Asynchronously send a single request with the given operation.
    *
-   * @param callback  the callback to call when request is completed,
-   *                  should be callable
+   * @param req       The request to send.
+   *                  The caller is responsible for keeping the request alive
+   *                  until the callback is called.
+   * @param callback  The callback to call when request is completed.
+   *                  Should have the following signature:
    *                    f(const Request& request, ReplyT<Request>&& reply)
-   *
-   *                  result carbon::Result::UNKNOWN means that the request was
-   * canceled. It will be moved into a temporary storage before being called.
-   * Will be destroyed only after callback is called, but may be delayed, until
-   * all sub-requests are processed.
+   *                  The reply.result() carbon::Result::UNKNOWN means that the
+   *                  request was canceled.
+   *                  The callback will be moved into a temporary storage
+   *                  before being called.
+   *                  The callback will be destroyed only after callback is
+   *                  called, but may be delayed, until all sub-requests are
+   *                  processed.
+   *                  The callback must be copyable.
    *
    * @return true iff the request was scheduled to be sent / was sent,
    *         false if some error happened (e.g. RouterInstance was destroyed).
@@ -93,7 +99,6 @@ class CarbonRouterClient : public CarbonRouterClientBase {
    *       callback is called.
    */
   template <class Request, class F>
-  /* Don't attempt instantiation when we want the other overload of send() */
   bool send(
       const Request& req,
       F&& callback,
@@ -101,9 +106,10 @@ class CarbonRouterClient : public CarbonRouterClientBase {
 
   /**
    * Multi requests version of send.
-   * @param callback  callback to call for each request, should be callable
-   *                    f(const Request& request, ReplyT<Request>&& reply)
-   *                  Note: callback should be copyable.
+   *
+   * @param being     Iterator pointing to the first request.
+   * @param end       Iterator pointing past the last request.
+   * @param callback  See documentation of single-request send().
    *
    * @return true iff the requests were scheduled for sending,
    *         false otherwise (e.g. CarbonRouterInstance was destroyed).
@@ -189,21 +195,37 @@ class CarbonRouterClient : public CarbonRouterClientBase {
   void sendSameThread(
       std::unique_ptr<ProxyRequestContextWithInfo<RouterInfo>> req);
 
+  /**
+   * Returns the proxy that should be used to route the request.
+   */
+  template <class Request>
+  Proxy<RouterInfo>* getProxy(const Request& req) const;
+
+  /**
+   * Finds the best proxy to be used to route the request.
+   * NOTE: This should only be used when ThreadMode == AffinitizedRemoteThread.
+   */
   template <class Request>
   typename std::enable_if<
       ListContains<typename RouterInfo::RoutableRequests, Request>::value,
       uint64_t>::type
-  findProxy(const Request& req);
+  findAffinitizedProxyIdx(const Request& req) const;
 
   template <class Request>
   typename std::enable_if<
       !ListContains<typename RouterInfo::RoutableRequests, Request>::value,
       uint64_t>::type
-  findProxy(const Request& req);
+  findAffinitizedProxyIdx(const Request& req) const;
+
+  template <class Request, class CallbackFunc>
+  std::unique_ptr<ProxyRequestContextWithInfo<RouterInfo>>
+  makeProxyRequestContext(
+      const Request& req,
+      CallbackFunc&& callback,
+      folly::StringPiece ipAddr);
 
   friend class CarbonRouterInstance<RouterInfo>;
 };
-
 } // namespace mcrouter
 } // namespace memcache
 } // namespace facebook
