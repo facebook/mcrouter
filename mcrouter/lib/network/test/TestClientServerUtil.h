@@ -104,6 +104,7 @@ class TestServer {
     std::string certPath = getDefaultCertPath();
     std::string keyPath = getDefaultKeyPath();
     bool requirePeerCerts = true;
+    bool tlsPreferOcbCipher = false;
     std::function<void(McServerSession&)> onConnectionAcceptedAdditionalCb;
     size_t tcpZeroCopyThresholdBytes = 0;
     bool useKtls12 = false;

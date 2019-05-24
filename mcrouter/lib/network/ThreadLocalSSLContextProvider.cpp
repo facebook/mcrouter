@@ -449,7 +449,8 @@ ServerContextPair getServerContexts(
     folly::StringPiece pemKeyPath,
     folly::StringPiece pemCaPath,
     bool requireClientCerts,
-    folly::Optional<wangle::TLSTicketKeySeeds> seeds) {
+    folly::Optional<wangle::TLSTicketKeySeeds> seeds,
+    bool preferOcbCipher) {
   auto& info = getServerContextInfo(
       pemCertPath, pemKeyPath, pemCaPath, requireClientCerts);
   auto now = std::chrono::steady_clock::now();
@@ -471,6 +472,7 @@ ServerContextPair getServerContexts(
         keyData,
         pemCaPath,
         requireClientCerts,
+        preferOcbCipher,
         seeds.get_pointer());
     info.setContexts(std::move(ctx), std::move(fizzCtx), now);
   }

@@ -162,6 +162,7 @@ TestServer::TestServer(Config config)
     opts_.pemCertPath = config.certPath;
     opts_.pemCaPath = config.caPath;
     opts_.sslRequirePeerCerts = config.requirePeerCerts;
+    opts_.tlsPreferOcbCipher = config.tlsPreferOcbCipher;
     if (config.tfoEnabled) {
       opts_.tfoEnabledForSsl = true;
       opts_.tfoQueueSize = 100000;

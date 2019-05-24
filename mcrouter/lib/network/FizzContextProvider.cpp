@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2018-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #include "FizzContextProvider.h"
 
@@ -63,6 +62,7 @@ std::shared_ptr<fizz::server::FizzServerContext> createFizzServerContext(
     folly::StringPiece keyData,
     folly::StringPiece pemCaPath,
     bool requireClientVerification,
+    bool preferOcbCipher,
     wangle::TLSTicketKeySeeds* ticketKeySeeds) {
   initSSL();
   auto certMgr = std::make_unique<fizz::server::CertManager>();
@@ -96,6 +96,17 @@ std::shared_ptr<fizz::server::FizzServerContext> createFizzServerContext(
   }
   if (requireClientVerification) {
     ctx->setClientAuthMode(fizz::server::ClientAuthMode::Required);
+  }
+  if (preferOcbCipher) {
+#if FOLLY_OPENSSL_IS_110 && !defined(OPENSSL_NO_OCB)
+    auto serverCiphers = folly::copy(ctx->getSupportedCiphers());
+    serverCiphers.insert(
+        serverCiphers.begin(),
+        {
+            fizz::CipherSuite::TLS_AES_128_OCB_SHA256_EXPERIMENTAL,
+        });
+    ctx->setSupportedCiphers(std::move(serverCiphers));
+#endif
   }
 
   // set ticket seeds

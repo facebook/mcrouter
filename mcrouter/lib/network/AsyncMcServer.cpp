@@ -291,7 +291,8 @@ class McServerThread {
             opts.pemKeyPath,
             opts.pemCaPath,
             opts.sslRequirePeerCerts,
-            server.getTicketKeySeeds());
+            server.getTicketKeySeeds(),
+            opts.tlsPreferOcbCipher);
 
         if (contextPair.first) {
           mcServerThread_->worker_.addSecureClientSocket(

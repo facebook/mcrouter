@@ -83,7 +83,8 @@ ServerContextPair getServerContexts(
     folly::StringPiece pemKeyPath,
     folly::StringPiece pemCaPath,
     bool requireClientCerts,
-    folly::Optional<wangle::TLSTicketKeySeeds> seeds);
+    folly::Optional<wangle::TLSTicketKeySeeds> seeds,
+    bool preferOcbCipher = false);
 
 } // memcache
 } // facebook
