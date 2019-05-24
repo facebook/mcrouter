@@ -126,6 +126,7 @@ apache::thrift::RpcOptions ThriftTransportBase::getRpcOptions(
     std::chrono::milliseconds timeout) const {
   apache::thrift::RpcOptions rpcOptions;
   rpcOptions.setTimeout(timeout);
+  rpcOptions.setClientOnlyTimeouts(true);
   return rpcOptions;
 }
 
