@@ -132,7 +132,7 @@ class CarbonRouterInstance
    */
   Proxy<RouterInfo>* getProxy(size_t index) const;
 
-  const std::vector<Proxy<RouterInfo>*> getProxies() const;
+  const std::vector<Proxy<RouterInfo>*>& getProxies() const;
 
   CarbonRouterInstance(const CarbonRouterInstance&) = delete;
   CarbonRouterInstance& operator=(const CarbonRouterInstance&) = delete;

@@ -134,8 +134,8 @@ class CarbonRouterClient : public CarbonRouterClientBase {
   /**
    * Override default proxy assignment.
    */
-  void setProxy(Proxy<RouterInfo>* proxy) {
-    proxy_ = proxy;
+  void setProxyIndex(size_t proxyIdx) {
+    proxyIdx_ = proxyIdx;
   }
 
   CarbonRouterClient(const CarbonRouterClient<RouterInfo>&) = delete;
@@ -149,10 +149,10 @@ class CarbonRouterClient : public CarbonRouterClientBase {
   std::weak_ptr<CarbonRouterInstance<RouterInfo>> router_;
   ThreadMode mode_;
 
-  // proxy_ is used by ThreadModes FixedRemoteThread and SameThread
-  Proxy<RouterInfo>* proxy_{nullptr};
-  // proxies_ is used by the AffinitizedRemoteThread ThreadMode
-  std::vector<Proxy<RouterInfo>*> proxies_;
+  // Reference to the vector of proxies inside router_.
+  const std::vector<Proxy<RouterInfo>*>& proxies_;
+  // The proxy to use when either on FixedRemoteThread or on SameThread mode.
+  size_t proxyIdx_{0};
 
   CacheClientStats stats_;
 
@@ -168,13 +168,13 @@ class CarbonRouterClient : public CarbonRouterClientBase {
   std::shared_ptr<CarbonRouterClient<RouterInfo>> self_;
 
   CarbonRouterClient(
-      std::weak_ptr<CarbonRouterInstance<RouterInfo>> router,
+      std::shared_ptr<CarbonRouterInstance<RouterInfo>> router,
       size_t maximum_outstanding,
       bool maximum_outstanding_error,
       ThreadMode mode);
 
   static Pointer create(
-      std::weak_ptr<CarbonRouterInstance<RouterInfo>> router,
+      std::shared_ptr<CarbonRouterInstance<RouterInfo>> router,
       size_t maximum_outstanding,
       bool maximum_outstanding_error,
       ThreadMode mode);

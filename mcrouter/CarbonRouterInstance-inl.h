@@ -340,7 +340,7 @@ Proxy<RouterInfo>* CarbonRouterInstance<RouterInfo>::getProxy(
 }
 
 template <class RouterInfo>
-const std::vector<Proxy<RouterInfo>*>
+const std::vector<Proxy<RouterInfo>*>&
 CarbonRouterInstance<RouterInfo>::getProxies() const {
   return proxies_;
 }

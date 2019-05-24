@@ -83,8 +83,7 @@ TEST(CarbonRouterClient, basicUsageSameThreadClient) {
   // Currently, this is necessary when using createSameThreadClient() with more
   // than one thread.
   auto& eventBase = *evbs.front();
-  auto* proxy = router->getProxy(0);
-  client->setProxy(proxy);
+  client->setProxyIndex(0);
 
   bool replyReceived = false;
   eventBase.runInEventBaseThread([ client = client.get(), &replyReceived ]() {

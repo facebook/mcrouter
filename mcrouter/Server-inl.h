@@ -64,7 +64,7 @@ void serverLoop(
 
   auto proxy = router.getProxy(threadId);
   // Manually override proxy assignment
-  routerClient->setProxy(proxy);
+  routerClient->setProxyIndex(threadId);
 
   worker.setOnRequest(RequestHandlerType(
       *routerClient,

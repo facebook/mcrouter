@@ -167,7 +167,7 @@ Proxy<RouterInfo>* CarbonRouterClient<RouterInfo>::getProxy(
   if (mode_ == ThreadMode::AffinitizedRemoteThread) {
     return proxies_[findAffinitizedProxyIdx(req)];
   }
-  return proxy_;
+  return proxies_[proxyIdx_];
 }
 
 template <class RouterInfo>
@@ -251,32 +251,27 @@ void CarbonRouterClient<RouterInfo>::sendRemoteThread(
 template <class RouterInfo>
 void CarbonRouterClient<RouterInfo>::sendSameThread(
     std::unique_ptr<ProxyRequestContextWithInfo<RouterInfo>> req) {
-  // We are guaranteed to be in the thread that owns proxy_.
-  proxy_->messageReady(ProxyMessage::Type::REQUEST, req.release());
+  // We are guaranteed to be in the thread that owns proxies_[proxyIdx_]
+  proxies_[proxyIdx_]->messageReady(ProxyMessage::Type::REQUEST, req.release());
 }
 
 template <class RouterInfo>
 CarbonRouterClient<RouterInfo>::CarbonRouterClient(
-    std::weak_ptr<CarbonRouterInstance<RouterInfo>> rtr,
+    std::shared_ptr<CarbonRouterInstance<RouterInfo>> router,
     size_t maximumOutstanding,
     bool maximumOutstandingError,
     ThreadMode mode)
     : CarbonRouterClientBase(maximumOutstanding, maximumOutstandingError),
-      router_(std::move(rtr)),
-      mode_(mode) {
-  if (auto router = router_.lock()) {
-    if (mode_ == ThreadMode::AffinitizedRemoteThread) {
-      proxies_ = router->getProxies();
-    } else {
-      proxy_ = router->getProxy(router->nextProxyIndex());
-    }
-  }
+      router_(router),
+      mode_(mode),
+      proxies_(router->getProxies()) {
+  proxyIdx_ = router->nextProxyIndex();
 }
 
 template <class RouterInfo>
 typename CarbonRouterClient<RouterInfo>::Pointer
 CarbonRouterClient<RouterInfo>::create(
-    std::weak_ptr<CarbonRouterInstance<RouterInfo>> router,
+    std::shared_ptr<CarbonRouterInstance<RouterInfo>> router,
     size_t maximumOutstanding,
     bool maximumOutstandingError,
     ThreadMode mode) {
