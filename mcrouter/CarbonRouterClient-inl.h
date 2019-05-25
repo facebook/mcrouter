@@ -89,8 +89,9 @@ bool CarbonRouterClient<RouterInfo>::send(
     const Request& req,
     F&& callback,
     folly::StringPiece ipAddr) {
-  auto makePreq = [this, ipAddr, &req, &callback]() mutable {
-    return makeProxyRequestContext(req, std::forward<F>(callback), ipAddr);
+  auto makePreq = [this, ipAddr, &req, &callback](bool inBatch) mutable {
+    return makeProxyRequestContext(
+        req, std::forward<F>(callback), ipAddr, inBatch);
   };
 
   auto cancelRemaining = [&req, &callback]() {
@@ -111,14 +112,33 @@ bool CarbonRouterClient<RouterInfo>::sendMultiImpl(
     return false;
   }
 
+  auto notify = [this]() {
+    assert(mode_ != ThreadMode::SameThread);
+    if (mode_ == ThreadMode::FixedRemoteThread) {
+      proxies_[proxyIdx_]->messageQueue_->notifyRelaxed();
+    } else {
+      assert(mode_ == ThreadMode::AffinitizedRemoteThread);
+      for (size_t i = 0; i < proxies_.size(); ++i) {
+        if (proxiesToNotify_[i]) {
+          proxies_[i]->messageQueue_->notifyRelaxed();
+          proxiesToNotify_[i] = false;
+        }
+      }
+    }
+  };
+
   if (maxOutstanding() == 0) {
     if (mode_ == ThreadMode::SameThread) {
       for (size_t i = 0; i < nreqs; ++i) {
-        sendSameThread(makeNextPreq());
+        sendSameThread(makeNextPreq(/* inBatch */ false));
       }
     } else {
+      bool delayNotification = shouldDelayNotification(nreqs);
       for (size_t i = 0; i < nreqs; ++i) {
-        sendRemoteThread(makeNextPreq());
+        sendRemoteThread(makeNextPreq(delayNotification), delayNotification);
+      }
+      if (delayNotification) {
+        notify();
       }
     }
   } else if (maxOutstandingError()) {
@@ -132,11 +152,15 @@ bool CarbonRouterClient<RouterInfo>::sendMultiImpl(
 
       if (mode_ == ThreadMode::SameThread) {
         for (size_t i = begin; i < end; i++) {
-          sendSameThread(makeNextPreq());
+          sendSameThread(makeNextPreq(/*  inBatch */ false));
         }
       } else {
+        bool delayNotification = shouldDelayNotification(end - begin);
         for (size_t i = begin; i < end; i++) {
-          sendRemoteThread(makeNextPreq());
+          sendRemoteThread(makeNextPreq(delayNotification), delayNotification);
+        }
+        if (delayNotification) {
+          notify();
         }
       }
 
@@ -150,24 +174,18 @@ bool CarbonRouterClient<RouterInfo>::sendMultiImpl(
 
     while (i < nreqs) {
       n += counting_sem_lazy_wait(outstandingReqsSem(), nreqs - n);
+      bool delayNotification = shouldDelayNotification(n);
       for (size_t j = i; j < n; ++j) {
-        sendRemoteThread(makeNextPreq());
+        sendRemoteThread(makeNextPreq(delayNotification), delayNotification);
+      }
+      if (delayNotification) {
+        notify();
       }
       i = n;
     }
   }
 
   return true;
-}
-
-template <class RouterInfo>
-template <class Request>
-Proxy<RouterInfo>* CarbonRouterClient<RouterInfo>::getProxy(
-    const Request& req) const {
-  if (mode_ == ThreadMode::AffinitizedRemoteThread) {
-    return proxies_[findAffinitizedProxyIdx(req)];
-  }
-  return proxies_[proxyIdx_];
 }
 
 template <class RouterInfo>
@@ -214,9 +232,9 @@ bool CarbonRouterClient<RouterInfo>::send(
   using Request = typename std::decay<decltype(
       detail::unwrapRequest(std::declval<IterReference>()))>::type;
 
-  auto makeNextPreq = [this, ipAddr, &callback, &begin]() {
+  auto makeNextPreq = [this, ipAddr, &callback, &begin](bool inBatch) {
     auto proxyRequestContext = makeProxyRequestContext(
-        detail::unwrapRequest(*begin), callback, ipAddr);
+        detail::unwrapRequest(*begin), callback, ipAddr, inBatch);
     ++begin;
     return proxyRequestContext;
   };
@@ -238,14 +256,18 @@ bool CarbonRouterClient<RouterInfo>::send(
 
 template <class RouterInfo>
 void CarbonRouterClient<RouterInfo>::sendRemoteThread(
-    std::unique_ptr<ProxyRequestContextWithInfo<RouterInfo>> req) {
+    std::unique_ptr<ProxyRequestContextWithInfo<RouterInfo>> req,
+    bool skipNotification) {
   // Use the proxy saved in the ProxyRequestContext, as it may change
-  // base on the ThreadMode. Get a reference to the Proxy first as
-  // the unique pointer is released as part of the blockingWriteRelaxed
-  // call.
+  // base on the ThreadMode.
+  // Get a reference to the Proxy first as the unique pointer is released as
+  // part of the blockingWriteRelaxed call.
   Proxy<RouterInfo>& pr = req->proxyWithRouterInfo();
-  pr.messageQueue_->blockingWriteRelaxed(
+  pr.messageQueue_->blockingWriteNoNotify(
       ProxyMessage::Type::REQUEST, req.release());
+  if (!skipNotification) {
+    pr.messageQueue_->notifyRelaxed();
+  }
 }
 
 template <class RouterInfo>
@@ -264,7 +286,8 @@ CarbonRouterClient<RouterInfo>::CarbonRouterClient(
     : CarbonRouterClientBase(maximumOutstanding, maximumOutstandingError),
       router_(router),
       mode_(mode),
-      proxies_(router->getProxies()) {
+      proxies_(router->getProxies()),
+      proxiesToNotify_(proxies_.size(), false) {
   proxyIdx_ = router->nextProxyIndex();
 }
 
@@ -287,14 +310,29 @@ CarbonRouterClient<RouterInfo>::~CarbonRouterClient() {
 }
 
 template <class RouterInfo>
+bool CarbonRouterClient<RouterInfo>::shouldDelayNotification(
+    size_t batchSize) const {
+  return mode_ != ThreadMode::SameThread && batchSize > 1;
+}
+
+template <class RouterInfo>
 template <class Request, class CallbackFunc>
 std::unique_ptr<ProxyRequestContextWithInfo<RouterInfo>>
 CarbonRouterClient<RouterInfo>::makeProxyRequestContext(
     const Request& req,
     CallbackFunc&& callback,
-    folly::StringPiece ipAddr) {
+    folly::StringPiece ipAddr,
+    bool inBatch) {
+  Proxy<RouterInfo>* proxy = proxies_[proxyIdx_];
+  if (mode_ == ThreadMode::AffinitizedRemoteThread) {
+    size_t idx = findAffinitizedProxyIdx(req);
+    proxy = proxies_[idx];
+    if (inBatch) {
+      proxiesToNotify_[idx] = true;
+    }
+  }
   auto proxyRequestContext = createProxyRequestContext(
-      *getProxy(req),
+      *proxy,
       req,
       [this, cb = std::forward<CallbackFunc>(callback)](
           const Request& request, ReplyT<Request>&& reply) mutable {

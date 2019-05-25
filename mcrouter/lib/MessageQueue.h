@@ -245,8 +245,6 @@ class MessageQueue {
    * Put a new element into the queue. Can be called from any thread.
    * Allows inplace construction of the message.
    * Will block if queue is full until the reader catches up.
-   *
-   * @return true if the notify event was posted
    */
   template <class... Args>
   void blockingWrite(Args&&... args) noexcept {
@@ -256,9 +254,33 @@ class MessageQueue {
     }
   }
 
+  /**
+   * Similar to blockingWrite, except that it used the relaxed notification
+   * semantics. See Notifier class in this file for more details.
+   */
   template <class... Args>
   void blockingWriteRelaxed(Args&&... args) noexcept {
     queue_.blockingWrite(std::forward<Args>(args)...);
+    if (notifier_.shouldNotifyRelaxed()) {
+      doNotify();
+    }
+  }
+
+  /**
+   * Similar to blockingWrite, except that it won't notify the EventBase thread.
+   * The caller will then be responsible for calling notifyRelaxed().
+   */
+  template <class... Args>
+  void blockingWriteNoNotify(Args&&... args) noexcept {
+    queue_.blockingWrite(std::forward<Args>(args)...);
+  }
+
+  /**
+   * Notify the EventBase thread that there's work pending in the queue.
+   * Uses relaxed notification semantics. See Notifier class in this file for
+   * more details.
+   */
+  void notifyRelaxed() noexcept {
     if (notifier_.shouldNotifyRelaxed()) {
       doNotify();
     }

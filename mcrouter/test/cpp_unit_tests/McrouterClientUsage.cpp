@@ -16,8 +16,10 @@
 
 #include "mcrouter/CarbonRouterClient.h"
 #include "mcrouter/CarbonRouterInstance.h"
+#include "mcrouter/Proxy.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
+#include "mcrouter/stats.h"
 
 using facebook::memcache::McGetReply;
 using facebook::memcache::McGetRequest;
@@ -159,6 +161,7 @@ TEST(CarbonRouterClient, basicUsageRemoteThreadClientThreadAffinity) {
   auto opts = defaultTestOptions();
   opts.config_str = R"({ "route": "NullRoute" })";
   opts.thread_affinity = true;
+  opts.num_proxies = 3;
 
   auto router = CarbonRouterInstance<MemcacheRouterInfo>::init(
       "basicUsageRemoteThreadClientThreadAffinity", opts);
@@ -189,6 +192,87 @@ TEST(CarbonRouterClient, basicUsageRemoteThreadClientThreadAffinity) {
   baton.wait();
   router->shutdown();
   EXPECT_TRUE(replyReceived);
+}
+
+TEST(CarbonRouterClient, basicUsageRemoteThreadClientThreadAffinityMulti) {
+  // This test is a lot like the previous one, but it shows how to send a batch
+  // of requests at once.
+  auto opts = defaultTestOptions();
+  opts.config_str = R"(
+  {
+    "route": {
+      "type": "PoolRoute",
+      "pool": {
+        "name": "A",
+        "servers": [
+          "10.0.0.1:11111",
+          "10.0.0.2:11111",
+          "10.0.0.3:11111",
+          "10.0.0.4:11111",
+          "10.0.0.5:11111",
+          "10.0.0.6:11111"
+        ]
+      }
+    }
+  })";
+  opts.thread_affinity = true;
+  opts.num_proxies = 3;
+  opts.server_timeout_ms = 1;
+  opts.miss_on_get_errors = true;
+
+  auto router = CarbonRouterInstance<MemcacheRouterInfo>::init(
+      "basicUsageRemoteThreadClientThreadAffinityMulti", opts);
+
+  auto client = router->createClient(
+      0 /* max_outstanding_requests */,
+      false /* max_outstanding_requests_error */);
+
+  std::vector<McGetRequest> requests{McGetRequest("key1"),
+                                     McGetRequest("key2"),
+                                     McGetRequest("key3"),
+                                     McGetRequest("key4"),
+                                     McGetRequest("key5"),
+                                     McGetRequest("key6"),
+                                     McGetRequest("key7"),
+                                     McGetRequest("key8"),
+                                     McGetRequest("key9"),
+                                     McGetRequest("key10"),
+                                     McGetRequest("key11"),
+                                     McGetRequest("key12"),
+                                     McGetRequest("key13"),
+                                     McGetRequest("key14"),
+                                     McGetRequest("key15")};
+  folly::fibers::Baton baton;
+  std::atomic<size_t> replyCount = 0;
+
+  client->send(
+      requests.begin(),
+      requests.end(),
+      [&baton, &replyCount, &requests](
+          const McGetRequest&, McGetReply&& reply) {
+        EXPECT_EQ(carbon::Result::NOTFOUND, reply.result());
+        if (++replyCount == requests.size()) {
+          baton.post();
+        }
+      });
+
+  // Ensure proxies have a chance to send all outstanding requests. Note the
+  // extra synchronization required when using a remote-thread client.
+  baton.wait();
+  EXPECT_EQ(requests.size(), replyCount.load());
+
+  // Make sure that all proxies were notified, and that each proxy was notified
+  // just once.
+  const auto& proxies = router->getProxies();
+  for (size_t i = 0; i < proxies.size(); ++i) {
+    EXPECT_EQ(
+        1,
+        proxies[i]->stats().getValue(
+            facebook::memcache::mcrouter::client_queue_notifications_stat));
+  }
+  EXPECT_EQ(3, proxies.size());
+
+  router->shutdown();
 }
 
 TEST(CarbonRouterClient, remoteThreadStatsRequestUsage) {

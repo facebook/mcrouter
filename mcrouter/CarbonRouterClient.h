@@ -153,6 +153,9 @@ class CarbonRouterClient : public CarbonRouterClientBase {
   const std::vector<Proxy<RouterInfo>*>& proxies_;
   // The proxy to use when either on FixedRemoteThread or on SameThread mode.
   size_t proxyIdx_{0};
+  // Keeps track of proxies with notification pending.
+  // Only used for multi-request send() calls.
+  std::vector<bool> proxiesToNotify_;
 
   CacheClientStats stats_;
 
@@ -191,15 +194,10 @@ class CarbonRouterClient : public CarbonRouterClientBase {
   bool sendMultiImpl(size_t nreqs, F&& makeNextPreq, G&& failRemaining);
 
   void sendRemoteThread(
-      std::unique_ptr<ProxyRequestContextWithInfo<RouterInfo>> req);
+      std::unique_ptr<ProxyRequestContextWithInfo<RouterInfo>> req,
+      bool skipNotification);
   void sendSameThread(
       std::unique_ptr<ProxyRequestContextWithInfo<RouterInfo>> req);
-
-  /**
-   * Returns the proxy that should be used to route the request.
-   */
-  template <class Request>
-  Proxy<RouterInfo>* getProxy(const Request& req) const;
 
   /**
    * Finds the best proxy to be used to route the request.
@@ -217,12 +215,27 @@ class CarbonRouterClient : public CarbonRouterClientBase {
       uint64_t>::type
   findAffinitizedProxyIdx(const Request& req) const;
 
+  /**
+   * Creates the ProxyRequestContext that represents the given request.
+   *
+   * @param req         The request to be routed.
+   * @param callback    The callback function to be called once the reply
+   *                    is received.
+   * @param ipAddr      The ip address of the caller (can be empty).
+   * @param inBatch     Whether or not the given request is part of a batch
+   *                    of requests.
+   *
+   * @return            The ProxyRequestContext.
+   */
   template <class Request, class CallbackFunc>
   std::unique_ptr<ProxyRequestContextWithInfo<RouterInfo>>
   makeProxyRequestContext(
       const Request& req,
       CallbackFunc&& callback,
-      folly::StringPiece ipAddr);
+      folly::StringPiece ipAddr,
+      bool inBatch);
+
+  bool shouldDelayNotification(size_t batchSize) const;
 
   friend class CarbonRouterInstance<RouterInfo>;
 };
