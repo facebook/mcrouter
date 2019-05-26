@@ -6,6 +6,7 @@
  */
 #pragma once
 
+#include <folly/Likely.h>
 #include <functional>
 #include <memory>
 #include <vector>
@@ -30,11 +31,11 @@ class RouteHandleTraverser {
 
   template <class Request>
   bool operator()(const RouteHandleIf& r, const Request& req) const {
-    if (start_) {
+    if (UNLIKELY(start_ != nullptr)) {
       start_(r);
     }
     auto stopTraversal = r.traverse(req, *this);
-    if (end_) {
+    if (UNLIKELY(end_ != nullptr)) {
       end_();
     }
     return stopTraversal;
