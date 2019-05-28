@@ -1,9 +1,8 @@
-/*
- *  Copyright (c) 2014-present, Facebook, Inc.
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the MIT license found in the LICENSE
- *  file in the root directory of this source tree.
- *
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
 #pragma once
 
@@ -15,6 +14,7 @@
 
 #include "mcrouter/ProxyRequestPriority.h"
 #include "mcrouter/config-impl.h"
+#include "mcrouter/lib/PoolContext.h"
 #include "mcrouter/lib/carbon/Result.h"
 
 namespace facebook {
@@ -32,12 +32,6 @@ class ProxyRoute;
 class ProxyBase;
 class CarbonRouterClientBase;
 class ShardSplitter;
-
-struct PoolContext {
-  folly::StringPiece poolName;
-  size_t indexInPool;
-  bool isShadow;
-};
 
 /**
  * This object is alive for the duration of user's request,
@@ -210,6 +204,6 @@ class ProxyRequestContext {
   friend class ProxyBase;
 };
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

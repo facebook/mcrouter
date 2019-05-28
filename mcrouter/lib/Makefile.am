@@ -35,7 +35,7 @@ libmcrouter_a_SOURCES = \
   MessageQueue.h \
   McResUtil.h \
   Operation.h \
-  OperationTraits.h \
+  PoolContext.h \
   Ref.h \
   RendezvousHashFunc.cpp \
   RendezvousHashFunc.h \

@@ -59,7 +59,6 @@ class fiber_local {
     RequestClass requestClass;
     bool failoverTag{false};
     bool failoverDisabled{false};
-    bool traverseEarlyExit{false};
   };
 
  public:
@@ -184,20 +183,6 @@ class fiber_local {
    */
   static bool getFailoverDisabled() {
     return folly::fibers::local<McrouterFiberContext>().failoverDisabled;
-  }
-
-  /**
-   * Set early exit for route traversal to be used by thread affinity
-   */
-  static void setTraverseEarlyExit(bool value) {
-    folly::fibers::local<McrouterFiberContext>().traverseEarlyExit = value;
-  }
-
-  /**
-   * Get early exit for route traversal to be used by thread affinity
-   */
-  static bool getTraverseEarlyExit() {
-    return folly::fibers::local<McrouterFiberContext>().traverseEarlyExit;
   }
 
   static void setServerLoad(ServerLoad load) {

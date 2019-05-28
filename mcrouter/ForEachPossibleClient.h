@@ -12,6 +12,7 @@
 #include "mcrouter/Proxy.h"
 #include "mcrouter/ProxyConfig.h"
 #include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/lib/PoolContext.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/ProxyRoute.h"
@@ -37,16 +38,14 @@ foreachPossibleClient(
     folly::StringPiece key,
     std::function<void(const PoolContext&, const AccessPoint&)> clientCallback,
     std::function<void(const ShardSplitter&)> spCallback = nullptr,
-    bool includeFailoverDestinations = false,
-    bool traverseEarlyExit = false) {
+    bool includeFailoverDestinations = false) {
   Request req(key);
   foreachPossibleClient(
       proxy,
       req,
       std::move(clientCallback),
       std::move(spCallback),
-      includeFailoverDestinations,
-      traverseEarlyExit);
+      includeFailoverDestinations);
 }
 
 template <class Request, class RouterInfo>
@@ -58,24 +57,22 @@ foreachPossibleClient(
     const Request& req,
     std::function<void(const PoolContext&, const AccessPoint&)> clientCallback,
     std::function<void(const ShardSplitter&)> spCallback = nullptr,
-    bool includeFailoverDestinations = false,
-    bool traverseEarlyExit = false) {
+    bool includeFailoverDestinations = false) {
   auto ctx = ProxyRequestContextWithInfo<RouterInfo>::createRecording(
       proxy, std::move(clientCallback), std::move(spCallback));
   {
     auto p = proxy.getConfigLocked();
-    fiber_local<RouterInfo>::runWithLocals([&p,
-                                            &req,
-                                            ctx = std::move(ctx),
-                                            includeFailoverDestinations,
-                                            traverseEarlyExit]() mutable {
-      fiber_local<RouterInfo>::setSharedCtx(std::move(ctx));
-      fiber_local<RouterInfo>::setFailoverDisabled(
-          !includeFailoverDestinations);
-      fiber_local<RouterInfo>::setTraverseEarlyExit(traverseEarlyExit);
-      RouteHandleTraverser<typename RouterInfo::RouteHandleIf> t;
-      p.second.proxyRoute().traverse(req, t);
-    });
+    fiber_local<RouterInfo>::runWithLocals(
+        [&p,
+         &req,
+         ctx = std::move(ctx),
+         includeFailoverDestinations]() mutable {
+          fiber_local<RouterInfo>::setSharedCtx(std::move(ctx));
+          fiber_local<RouterInfo>::setFailoverDisabled(
+              !includeFailoverDestinations);
+          RouteHandleTraverser<typename RouterInfo::RouteHandleIf> t;
+          p.second.proxyRoute().traverse(req, t);
+        });
   }
 }
 

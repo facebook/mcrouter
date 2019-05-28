@@ -9,6 +9,7 @@
 #include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/ForEachPossibleClient.h"
 #include "mcrouter/ProxyRequestContextTyped.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 
 namespace facebook {
 namespace memcache {
@@ -196,17 +197,27 @@ typename std::enable_if<
 CarbonRouterClient<RouterInfo>::findAffinitizedProxyIdx(
     const Request& req) const {
   assert(mode_ == ThreadMode::AffinitizedRemoteThread);
+
+  // Create a traverser
   uint64_t hash = 0;
-  foreachPossibleClient<Request>(
-      *(proxies_[0]),
-      req,
-      [&hash](
-          const memcache::mcrouter::PoolContext&,
-          const memcache::AccessPoint& ap) mutable { hash = ap.getHash(); },
-      /* spCallback */ nullptr,
-      /* includeFailoverDestinations */ true,
-      /* traverseEarlyExit */ true);
-  /* Hash on ipv6 address */
+  RouteHandleTraverser<typename RouterInfo::RouteHandleIf> t(
+      /* start */ nullptr,
+      /* end */ nullptr,
+      [&hash](const AccessPoint& ap, const PoolContext& poolContext) mutable {
+        if (!poolContext.isShadow) {
+          hash = ap.getHash();
+          // if it's not a shadow and got the hash, we should stop the traversal
+          return true;
+        }
+        return false;
+      });
+
+  // Traverse the routing tree.
+  {
+    auto config = proxies_[proxyIdx_]->getConfigLocked();
+    config.second.proxyRoute().traverse(req, t);
+  }
+
   return hash % proxies_.size();
 }
 
