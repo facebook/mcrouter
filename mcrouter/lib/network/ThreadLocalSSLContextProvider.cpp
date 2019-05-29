@@ -35,6 +35,8 @@ namespace memcache {
 namespace {
 /* Sessions are valid for upto 24 hours */
 constexpr size_t kSessionLifeTime = 86400;
+/* Handshakes are valid for 1 week */
+constexpr size_t kHandshakeValidity = 604800;
 
 struct ContextKey {
   folly::StringPiece pemCertPath;
@@ -243,6 +245,7 @@ std::shared_ptr<SSLContext> createServerSSLContext(
   // we'll use our own internal session cache instead of openssl's
   wangle::SSLCacheOptions cacheOpts;
   cacheOpts.sslCacheTimeout = std::chrono::seconds(kSessionLifeTime);
+  cacheOpts.handshakeValidity = std::chrono::seconds(kHandshakeValidity);
   // defaults from wangle/acceptor/ServerSocketConfig.h
   cacheOpts.maxSSLCacheSize = 20480;
   cacheOpts.sslCacheFlushSize = 200;
