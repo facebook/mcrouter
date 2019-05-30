@@ -35,6 +35,9 @@ mcpiper_LDADD = \
 	-lthriftcpp2 \
 	-lthriftprotocol \
 	-ltransport \
+	-lthrift-core \
+	-lfizz \
+	-lwangle \
 	-lfolly
 
 mcpiper_CPPFLAGS = -I$(top_srcdir)/..
