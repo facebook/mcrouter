@@ -28,6 +28,7 @@ sudo apt-get install -y \
     libboost-regex1.58-dev \
     libboost-program-options1.58-dev \
     libbz2-dev \
+    libfmt-dev \
     libdouble-conversion-dev \
     libevent-dev \
     libgflags-dev \
