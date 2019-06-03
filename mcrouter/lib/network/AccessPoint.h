@@ -30,7 +30,8 @@ struct AccessPoint {
    * @param apString accepts host:port, host:port:protocol and
    *                 host:port:protocol:(ssl|plain):(compressed|notcompressed)
    * @param defaultProtocol this is the protocol used if no protocol specified
-   * @param defaultUseSsl this is the protocol used if no protocol specified
+   * @param defaultMech this is the default security protocol used if
+                        not specified
    * @param portOverride This overrides the port. If 0, port from
    *                     hostPortProtocol used
    * @param defaultCompressed The is the compression config to use if it's not
