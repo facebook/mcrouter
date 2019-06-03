@@ -31,7 +31,8 @@ using FizzContextAndVerifier = std::pair<
 FizzContextAndVerifier createClientFizzContextAndVerifier(
     std::string certData,
     std::string keyData,
-    folly::StringPiece pemCaPath);
+    folly::StringPiece pemCaPath,
+    bool preferOcbCipher);
 
 std::shared_ptr<fizz::server::FizzServerContext> createFizzServerContext(
     folly::StringPiece pemCertPath,

@@ -258,6 +258,7 @@ TestClient::TestClient(
     opts.securityOpts.sslServiceIdentity = serviceIdentity;
     opts.securityOpts.tfoEnabledForSsl = enableTfo;
     opts.securityOpts.sslHandshakeOffload = offloadHandshakes;
+    opts.securityOpts.tlsPreferOcbCipher = ssl->useOcbCipher;
   }
   if (qosClass != 0 || qosPath != 0) {
     opts.enableQoS = true;

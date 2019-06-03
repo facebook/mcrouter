@@ -421,7 +421,10 @@ FizzContextAndVerifier getFizzClientConfig(const SecurityOptions& opts) {
     auto certData = readFile(opts.sslPemCertPath);
     auto keyData = readFile(opts.sslPemKeyPath);
     auto fizzData = createClientFizzContextAndVerifier(
-        std::move(certData), std::move(keyData), opts.sslPemCaPath);
+        std::move(certData),
+        std::move(keyData),
+        opts.sslPemCaPath,
+        opts.tlsPreferOcbCipher);
     info.setFizzData(std::move(fizzData), now);
   }
   return info.fizzData;

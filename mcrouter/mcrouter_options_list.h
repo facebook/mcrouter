@@ -773,6 +773,13 @@ MCROUTER_OPTION_TOGGLE(
     "enable TFO when connecting/accepting via SSL")
 
 MCROUTER_OPTION_TOGGLE(
+    tls_prefer_ocb_cipher,
+    false,
+    "tls-prefer-ocb-cipher",
+    no_short,
+    "Prefer AES-OCB cipher for TLSv1.3 connections if available")
+
+MCROUTER_OPTION_TOGGLE(
     thread_affinity,
     false,
     "thread-affinity",

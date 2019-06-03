@@ -175,6 +175,7 @@ struct SSLTestPaths {
   std::string sslKeyPath;
   std::string sslCaPath;
   SecurityMech mech{SecurityMech::TLS};
+  bool useOcbCipher{false};
 };
 
 // valid Client SSL Certs

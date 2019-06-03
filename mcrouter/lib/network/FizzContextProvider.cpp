@@ -33,7 +33,8 @@ constexpr size_t kSessionLifeTime = 86400;
 FizzContextAndVerifier createClientFizzContextAndVerifier(
     std::string certData,
     std::string keyData,
-    folly::StringPiece pemCaPath) {
+    folly::StringPiece pemCaPath,
+    bool preferOcbCipher) {
   // global session cache
   static auto SESSION_CACHE =
       std::make_shared<fizz::client::SynchronizedLruPskCache>(100);
@@ -52,6 +53,17 @@ FizzContextAndVerifier createClientFizzContextAndVerifier(
     verifier = fizz::DefaultCertificateVerifier::createFromCAFile(
         fizz::VerificationContext::Client, pemCaPath.str());
   }
+
+  if (preferOcbCipher) {
+#if FOLLY_OPENSSL_IS_110 && !defined(OPENSSL_NO_OCB)
+    auto ciphers = folly::copy(ctx->getSupportedCiphers());
+    ciphers.insert(
+        ciphers.begin(),
+        fizz::CipherSuite::TLS_AES_128_OCB_SHA256_EXPERIMENTAL);
+    ctx->setSupportedCiphers(std::move(ciphers));
+#endif
+  }
+
   return FizzContextAndVerifier(std::move(ctx), std::move(verifier));
 }
 

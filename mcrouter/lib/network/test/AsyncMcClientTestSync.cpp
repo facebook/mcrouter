@@ -47,6 +47,12 @@ folly::Optional<SSLTestPaths> getFizzSSL() {
   return res;
 }
 
+folly::Optional<SSLTestPaths> getFizzSSLWithOCB() {
+  auto res = getFizzSSL();
+  res->useOcbCipher = true;
+  return res;
+}
+
 folly::Optional<SSLTestPaths> getKtlsSSL() {
   auto res = validClientSsl();
   res.mech = SecurityMech::KTLS12;
@@ -57,13 +63,23 @@ class AsyncMcClientSimpleTest
     : public TestWithParam<folly::Optional<SSLTestPaths>> {
  public:
   ~AsyncMcClientSimpleTest() override = default;
+
+  void applySSLTestPaths(
+      const folly::Optional<SSLTestPaths>& ssl,
+      TestServer::Config& config) {
+    config.useSsl = ssl.hasValue();
+    if (config.useSsl) {
+      config.tlsPreferOcbCipher = ssl->useOcbCipher;
+    }
+  }
 };
 
 TEST_P(AsyncMcClientSimpleTest, serverShutdownTest) {
   auto ssl = GetParam();
   TestServer::Config config;
   config.outOfOrder = false;
-  config.useSsl = ssl.hasValue();
+  applySSLTestPaths(ssl, config);
+
   auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
@@ -94,9 +110,15 @@ TEST_P(AsyncMcClientSimpleTest, serverShutdownTest) {
   } else {
     EXPECT_EQ(ssl->mech, SecurityMech::TLS13_FIZZ);
     EXPECT_EQ(transport->getSecurityProtocol(), "Fizz");
-    EXPECT_NE(
-        transport->getUnderlyingTransport<fizz::client::AsyncFizzClient>(),
-        nullptr);
+    auto fizzTransport =
+        transport->getUnderlyingTransport<fizz::client::AsyncFizzClient>();
+    EXPECT_NE(fizzTransport, nullptr);
+    if (ssl->useOcbCipher) {
+      const auto cipher = fizzTransport->getCipher();
+      EXPECT_TRUE(cipher.hasValue());
+      EXPECT_EQ(
+          fizz::CipherSuite::TLS_AES_128_OCB_SHA256_EXPERIMENTAL, *cipher);
+    }
   }
 
   server->join();
@@ -107,7 +129,8 @@ TEST_P(AsyncMcClientSimpleTest, asciiTimeout) {
   auto ssl = GetParam();
   TestServer::Config config;
   config.outOfOrder = false;
-  config.useSsl = ssl.hasValue();
+  applySSLTestPaths(ssl, config);
+
   auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
@@ -124,7 +147,8 @@ TEST_P(AsyncMcClientSimpleTest, asciiTimeout) {
 TEST_P(AsyncMcClientSimpleTest, caretTimeout) {
   auto ssl = GetParam();
   TestServer::Config config;
-  config.useSsl = ssl.hasValue();
+  applySSLTestPaths(ssl, config);
+
   auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_caret_protocol, ssl);
@@ -156,7 +180,8 @@ TEST_P(AsyncMcClientSimpleTest, inflightThrottle) {
   auto ssl = GetParam();
   TestServer::Config config;
   config.outOfOrder = false;
-  config.useSsl = ssl.hasValue();
+  applySSLTestPaths(ssl, config);
+
   auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
@@ -177,7 +202,8 @@ TEST_P(AsyncMcClientSimpleTest, inflightThrottleFlush) {
   auto ssl = GetParam();
   TestServer::Config config;
   config.outOfOrder = false;
-  config.useSsl = ssl.hasValue();
+  applySSLTestPaths(ssl, config);
+
   auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
@@ -199,7 +225,8 @@ TEST_P(AsyncMcClientSimpleTest, outstandingThrottle) {
   auto ssl = GetParam();
   TestServer::Config config;
   config.outOfOrder = false;
-  config.useSsl = ssl.hasValue();
+  applySSLTestPaths(ssl, config);
+
   auto server = TestServer::create(std::move(config));
   TestClient client(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
@@ -221,7 +248,8 @@ TEST_P(AsyncMcClientSimpleTest, connectionError) {
   auto ssl = GetParam();
   TestServer::Config config;
   config.outOfOrder = false;
-  config.useSsl = ssl.hasValue();
+  applySSLTestPaths(ssl, config);
+
   auto server = TestServer::create(std::move(config));
   TestClient client1(
       "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
@@ -244,6 +272,7 @@ INSTANTIATE_TEST_CASE_P(
         validClientSsl(),
         getTlsToPtSSL(),
         getFizzSSL(),
+        getFizzSSLWithOCB(),
         getKtlsSSL()));
 
 void testCerts(
