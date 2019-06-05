@@ -261,6 +261,7 @@ enum mc_msg_flags_t {
   MC_MSG_FLAG_HOT_KEY = 0x20000,
   MC_MSG_FLAG_ZSTD_COMPRESSED = 0x40000,
   MC_MSG_FLAG_MANAGED_COMPRESSION_COMPRESSED = 0x80000,
+  MC_MSG_FLAG_HACK_ARRAY_SERIALIZED = 0x100000,
   /* Bits reserved for application-specific extension flags: */
   MC_MSG_FLAG_USER_1 = 0x100000000LL,
   MC_MSG_FLAG_USER_2 = 0x200000000LL,
@@ -308,6 +309,8 @@ static inline const char* mc_flag_to_string(const enum mc_msg_flags_t flag) {
       return "ZSTD_COMPRESSED";
     case MC_MSG_FLAG_MANAGED_COMPRESSION_COMPRESSED:
       return "MANAGED_COMPRESSION_COMPRESSED";
+    case MC_MSG_FLAG_HACK_ARRAY_SERIALIZED:
+      return "HACK_ARRAY_SERIALIZED";
     case MC_MSG_FLAG_HOT_KEY:
       return "HOT_KEY";
     case MC_MSG_FLAG_USER_1:
