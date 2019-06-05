@@ -28,6 +28,8 @@ void initSSL() {
 
 /* Sessions are valid for upto 24 hours */
 constexpr size_t kSessionLifeTime = 86400;
+/* Handshakes are valid for up to 1 week */
+constexpr size_t kHandshakeValidity = 604800;
 } // namespace
 
 FizzContextAndVerifier createClientFizzContextAndVerifier(
@@ -135,7 +137,8 @@ std::shared_ptr<fizz::server::FizzServerContext> createFizzServerContext(
     }
     auto cipher = std::make_shared<fizz::server::AES128TicketCipher>();
     cipher->setTicketSecrets(std::move(ticketSecrets));
-    cipher->setValidity(std::chrono::seconds(kSessionLifeTime));
+    cipher->setTicketValidity(std::chrono::seconds(kSessionLifeTime));
+    cipher->setHandshakeValidity(std::chrono::seconds(kHandshakeValidity));
     ctx->setTicketCipher(std::move(cipher));
   }
   // TODO: allow for custom FizzFactory
