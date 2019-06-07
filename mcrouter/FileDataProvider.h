@@ -9,6 +9,9 @@
 #include <string>
 
 #include <folly/File.h>
+#include <gflags/gflags.h>
+
+DECLARE_bool(mcrouter_enable_inotify_watch);
 
 namespace facebook {
 namespace memcache {
