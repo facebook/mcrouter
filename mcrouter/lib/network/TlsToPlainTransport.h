@@ -31,6 +31,11 @@ class TlsToPlainTransport : public folly::AsyncSocket {
     return stats_;
   }
 
+  void setAddresses(folly::SocketAddress local, folly::SocketAddress peer) {
+    localAddr_ = std::move(local);
+    addr_ = std::move(peer);
+  }
+
  private:
   SecurityTransportStats stats_;
 };

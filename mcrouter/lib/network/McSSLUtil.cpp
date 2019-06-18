@@ -152,6 +152,12 @@ folly::AsyncTransportWrapper::UniquePtr McSSLUtil::moveToPlaintext(
     return nullptr;
   }
 
+  /// get the addresses out of the sock
+  folly::SocketAddress local;
+  folly::SocketAddress peer;
+  sock.getLocalAddress(&local);
+  sock.getPeerAddress(&peer);
+
   // Get the stats for the socket
   SecurityTransportStats stats;
   stats.tfoSuccess = sock.getTFOSucceded();
@@ -182,6 +188,7 @@ folly::AsyncTransportWrapper::UniquePtr McSSLUtil::moveToPlaintext(
   res->setSelfCertificate(std::move(selfCert));
   res->setPeerCertificate(std::move(peerCert));
   res->setStats(stats);
+  res->setAddresses(std::move(local), std::move(peer));
   return res;
 }
 
