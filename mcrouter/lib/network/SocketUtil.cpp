@@ -165,6 +165,7 @@ createSocket(
     if (securityOpts.tfoEnabledForSsl) {
       sslSocket->enableTFO();
     }
+    sslSocket->forceCacheAddrOnFailure(true);
     socket.reset(sslSocket);
   } else {
     // tls 13 fizz
