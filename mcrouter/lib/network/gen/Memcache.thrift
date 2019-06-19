@@ -117,6 +117,7 @@ struct McReplaceReply {
 
 struct McGetsRequest {
   1: carbon.IOBufKey key
+  2: i64 (cpp.type = "uint64_t") flags
 }
 
 struct McGetsReply {

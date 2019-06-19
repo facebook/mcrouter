@@ -615,6 +615,7 @@ template <class Writer>
 void McGetsRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
   writer.writeField(1 /* field id */, key());
+  writer.writeField(2 /* field id */, flags());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
@@ -624,11 +625,17 @@ void McGetsRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", this->key())) {
     return;
   }
+  if (!v.visitField(2, "flags", this->flags())) {
+    return;
+  }
 }
 
 template <class V>
 void McGetsRequest::visitFields(V&& v) const {
   if (!v.visitField(1, "key", this->key())) {
+    return;
+  }
+  if (!v.visitField(2, "flags", this->flags())) {
     return;
   }
 }

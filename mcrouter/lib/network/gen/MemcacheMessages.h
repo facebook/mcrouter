@@ -1372,7 +1372,7 @@ class McGetsRequest : public carbon::RequestCommon {
  public:
   using reply_type = McGetsReply;
   static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
+  static constexpr bool hasFlags = true;
   static constexpr bool hasKey = true;
   static constexpr bool hasValue = false;
   static constexpr size_t typeId = 15;
@@ -1398,7 +1398,11 @@ class McGetsRequest : public carbon::RequestCommon {
     return underlyingThriftStruct_.key;
   }
   uint64_t flags() const {
-    return 0;
+    return underlyingThriftStruct_.flags;
+  }
+  uint64_t& flags() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_.flags;
   }
   int32_t exptime() const {
     return 0;

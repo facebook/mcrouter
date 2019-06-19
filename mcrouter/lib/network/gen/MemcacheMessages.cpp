@@ -563,6 +563,10 @@ void McGetsRequest::deserialize(carbon::CarbonProtocolReader& reader) {
         reader.readField(key(), fieldType);
         break;
       }
+      case 2: {
+        reader.readField(flags(), fieldType);
+        break;
+      }
       default: {
         reader.skip(fieldType);
         break;
