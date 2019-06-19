@@ -737,7 +737,7 @@ class TestMcrouterBasicL1L2(McrouterTestCase):
 
     def test_l1_l2_get(self):
         """
-        Tests that gets using l1/l2 caching and result upgrading is working
+        Tests that get requests using l1/l2 caching and result upgrading is working
         """
         mcr = self.get_mcrouter(self.config)
 
@@ -948,6 +948,97 @@ class TestMcrouterBasicL1L2SizeSplit(McrouterTestCase):
         self.assertEqual(self.l1.get("key"), "")
         self.assertFalse(mcr.get("key"))
 
+    def test_l1_l2_cas(self):
+        """
+        Tests that gets requests using l1/l2 caching and result upgrading is working
+        """
+        mcr = self.get_mcrouter(self.config)
+
+        # get a non-existent key
+        self.assertFalse(mcr.get("key"))
+
+        # set small key which should go to L1
+        mcr.set("key", "value1")
+
+        # Do a gets on key
+        res = mcr.gets("key")
+        self.assertIsNotNone(res)
+
+        # Get cas token
+        cas = res['cas']
+        self.assertTrue(mcr.cas('key', 'value2', cas))
+
+        # Do another gets and check that cas token has changed
+        res = mcr.gets("key")
+        self.assertIsNotNone(res)
+        self.assertEqual(res["value"], "value2")
+        self.assertNotEqual(cas, res["cas"])
+
+        # Check item on L1 is not a sentinel
+        l1res = self.l1.get("key", return_all_info=True)
+        self.assertIsNotNone(l1res)
+        self.assertFalse(l1res["flags"] & self.MC_MSG_FLAG_SIZE_SPLIT)
+
+    def test_l1_l2_cas_large(self):
+        """
+        Tests that large gets requests using l1/l2 caching / result upgrading.
+        """
+        mcr = self.get_mcrouter(self.config)
+
+        # get a non-existent key
+        self.assertFalse(mcr.get("key1"))
+
+        # set large key which should go to L2
+        value = "foo" * 200
+        mcr.set("key", value)
+
+        # Do a gets on key and check its a hit
+        res = mcr.gets("key")
+        self.assertIsNotNone(res)
+
+        # Do a cas on item and check successful
+        cas = res['cas']
+        self.assertTrue(mcr.cas('key', 'value_modified', cas))
+
+        # Do another gets and check that cas token has changed
+        res = mcr.gets("key")
+        self.assertIsNotNone(res)
+        self.assertNotEqual(cas, res["cas"])
+
+        # Check item on L1 is not sentinel given that CAS always sets to L1
+        l1res = self.l1.get("key", return_all_info=True)
+        self.assertIsNotNone(l1res)
+        self.assertFalse(l1res["flags"] & self.MC_MSG_FLAG_SIZE_SPLIT)
+        self.assertEqual(l1res["value"], "value_modified")
+
+    def test_l1_l2_cas_large_fail(self):
+        """
+        Tests that subsequent cas using same token fail in L1/L2 caching fail
+        """
+        mcr = self.get_mcrouter(self.config)
+
+        # get a non-existent key
+        self.assertFalse(mcr.get("key1"))
+
+        # set large key which should go to L2
+        value = "foo" * 200
+        mcr.set("key", value)
+
+        # Do a gets on key and check its a hit
+        res = mcr.gets("key")
+        self.assertIsNotNone(res)
+
+        # Do a cas on item and check successful
+        cas = res['cas']
+        self.assertTrue(mcr.cas('key', 'value_modified', cas))
+
+        # Do another gets and check that cas token has changed
+        res = mcr.gets("key")
+        self.assertIsNotNone(res)
+        self.assertNotEqual(cas, res["cas"])
+
+        # Do another cas using the same token and check it fails
+        self.assertFalse(mcr.cas('key', 'value_modified2', cas))
 
 class TestMcrouterPortOverride(McrouterTestCase):
     config = './mcrouter/test/mcrouter_test_portoverride.json'

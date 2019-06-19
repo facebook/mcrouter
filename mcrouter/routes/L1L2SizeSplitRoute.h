@@ -14,6 +14,7 @@
 #include <folly/Conv.h>
 #include <folly/Random.h>
 #include <folly/Range.h>
+#include <folly/fibers/FiberManager.h>
 #include <folly/io/IOBuf.h>
 
 #include "mcrouter/lib/McKey.h"
@@ -41,9 +42,9 @@ namespace mcrouter {
  * a small sentinel value is left in the L1 pool. Optionally, full data
  * can be written to both pools.
  *
- * Currently, only plain sets and gets are supported.
+ * Operations supported are set, get, lease-set, lease-get, gets and cas.
+ * All other operations will go to L1.
  *
- * There are potential consistency issues in both routes, no lease support, etc.
  */
 class L1L2SizeSplitRoute {
  public:
@@ -79,17 +80,44 @@ class L1L2SizeSplitRoute {
     folly::Random::seed(randomGenerator_);
   }
 
+  // Get will go to L1 and if it receives sentinel, to L2.
   McGetReply route(const McGetRequest& req) const;
+
+  // If below threshold_ set to L1 without sentinel flag set.
+  // If above threshold_ set to L2 and also set sentinel to L1.
   McSetReply route(const McSetRequest& req) const;
 
-  McLeaseGetReply route(const McLeaseGetRequest& req) const;
+  // If below threshold_ set to L1 without sentinel flag set.
+  // If above threshold_ set to L2 with a custom key using hash alias and also
+  // set sentinel to L1.
   McLeaseSetReply route(const McLeaseSetRequest& req) const;
 
-  // All other operations should route to L1
+  // McLeaseGet: lease-get will go to L1 and if it receives sentinel, to L2 with
+  // a custom key using the hash alias and the integer value in the sentinel.
+  // Gets: Gets to L1, if sentinel then fetch value from L2.
   template <class Request>
-  ReplyT<Request> route(const Request& req) const {
+  typename std::enable_if<
+      folly::IsOneOf<Request, McLeaseGetRequest, McGetsRequest>::value,
+      ReplyT<Request>>::type
+  route(const Request& req) const {
+    return doRoute(req, 1 /* retriesLeft */);
+  }
+
+  // All other operations should route to L1, including CAS which to guarantee
+  // consistency, will go to L1 only.
+  template <class Request>
+  typename std::enable_if<
+      !folly::IsOneOf<Request, McLeaseGetRequest, McGetsRequest>::value,
+      ReplyT<Request>>::type
+  route(const Request& req) const {
     return l1_->route(req);
   }
+
+  template <class Request>
+  typename std::enable_if<
+      folly::IsOneOf<Request, McLeaseGetRequest, McGetsRequest>::value,
+      ReplyT<Request>>::type
+  doRoute(const Request& req, size_t retriesLeft) const;
 
  private:
   static constexpr folly::StringPiece kHashAlias = "|==|";
@@ -121,6 +149,17 @@ class L1L2SizeSplitRoute {
         (ttlThreshold_ != 0 && req.exptime() < ttlThreshold_) ||
         req.key().fullKey().size() + kExtraKeySpaceNeeded > kMaxMcKeyLength;
   }
+  void augmentReply(McGetsReply& reply, const McGetsReply& l1Reply) const {
+    reply.casToken() = l1Reply.casToken();
+  }
+  void augmentReply(
+      McLeaseGetReply& /* unused */,
+      const McLeaseGetReply& /* unused */) const {}
+
+  folly::Optional<McLeaseGetReply> doFilter(const McLeaseGetReply& reply) const;
+
+  template <class Reply>
+  folly::Optional<Reply> doFilter(const Reply& reply) const;
 };
 
 std::shared_ptr<MemcacheRouteHandleIf> makeL1L2SizeSplitRoute(

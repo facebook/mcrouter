@@ -68,24 +68,39 @@ McSetReply L1L2SizeSplitRoute::route(const McSetRequest& req) const {
         r.flags() |= MC_MSG_FLAG_SIZE_SPLIT;
         return r;
       }();
-      reply = l1_->route(l1Sentinel);
+      return l1_->route(l1Sentinel);
     }
     return reply;
   }
 }
 
-McLeaseGetReply L1L2SizeSplitRoute::route(const McLeaseGetRequest& req) const {
-  return doLeaseGetRoute(req, 1 /* retriesLeft */);
+folly::Optional<McLeaseGetReply> L1L2SizeSplitRoute::doFilter(
+    const McLeaseGetReply& reply) const {
+  folly::Optional<McLeaseGetReply> ret;
+  constexpr uint64_t kHotMissToken = 1;
+  // We got an L1 sentinel, but a nonzero lease token. Note that we may convert
+  // a stale hit on a sentinel to a regular lease miss or hot miss.
+  if (static_cast<uint64_t>(reply.leaseToken()) >= kHotMissToken) {
+    McLeaseGetReply r(carbon::Result::NOTFOUND);
+    r.leaseToken() = reply.leaseToken();
+    ret.assign(std::move(r));
+  }
+  return ret;
 }
 
-McLeaseGetReply L1L2SizeSplitRoute::doLeaseGetRoute(
-    const McLeaseGetRequest& req,
-    size_t retriesLeft) const {
-  constexpr uint64_t kHotMissToken = 1;
+template <class Reply>
+folly::Optional<Reply> L1L2SizeSplitRoute::doFilter(
+    const Reply& /* unused */) const {
+  return folly::none;
+}
 
+template <class Request>
+typename std::enable_if<
+    folly::IsOneOf<Request, McLeaseGetRequest, McGetsRequest>::value,
+    ReplyT<Request>>::type
+L1L2SizeSplitRoute::doRoute(const Request& req, size_t retriesLeft) const {
   // Set flag on the read path. Server will only return back sentinel values
   // when this flag is present in order to accommodate old clients.
-  // TODO It's probably fine to const_cast and avoid the copy here
   const auto l1ReqWithFlag = [&req]() {
     auto r = req;
     r.flags() |= MC_MSG_FLAG_SIZE_SPLIT;
@@ -98,12 +113,9 @@ McLeaseGetReply L1L2SizeSplitRoute::doLeaseGetRoute(
     return l1Reply;
   }
 
-  // We got an L1 sentinel, but a nonzero lease token. Note that we may convert
-  // a stale hit on a sentinel to a regular lease miss or hot miss.
-  if (static_cast<uint64_t>(l1Reply.leaseToken()) >= kHotMissToken) {
-    McLeaseGetReply reply(carbon::Result::NOTFOUND);
-    reply.leaseToken() = l1Reply.leaseToken();
-    return reply;
+  // Operation specific filtering on reply from L1
+  if (auto optReply = doFilter(l1Reply)) {
+    return optReply.value();
   }
 
   // At this point, we got a non-stale sentinel hit from L1.
@@ -114,14 +126,15 @@ McLeaseGetReply L1L2SizeSplitRoute::doLeaseGetRoute(
 
   auto l2Reply = l2_->route(l2Req);
   if (isHitResult(l2Reply.result())) {
-    McLeaseGetReply reply(carbon::Result::FOUND);
+    ReplyT<Request> reply(carbon::Result::FOUND);
     reply.flags() = l2Reply.flags();
     reply.value().move_from(l2Reply.value());
+    augmentReply(reply, l1Reply);
     return reply;
   }
 
   if (isErrorResult(l2Reply.result())) {
-    return McLeaseGetReply(l2Reply.result());
+    return ReplyT<Request>(l2Reply.result());
   } else if (retriesLeft != 0) {
     [&]() {
       McGetsRequest l1GetsRequest(req.key().fullKey());
@@ -134,9 +147,9 @@ McLeaseGetReply L1L2SizeSplitRoute::doLeaseGetRoute(
         l1_->route(l1CasRequest);
       }
     }();
-    return doLeaseGetRoute(req, retriesLeft - 1);
+    return doRoute(req, retriesLeft - 1);
   } else {
-    return McLeaseGetReply(carbon::Result::LOCAL_ERROR);
+    return ReplyT<Request>(carbon::Result::LOCAL_ERROR);
   }
 }
 
