@@ -89,12 +89,14 @@ McClientRequestContext<Request>::waitForReply(
     case ReqState::PENDING_QUEUE:
       // Request wasn't sent to the network yet, reply with timeout.
       queue_.removePending(*this);
-      return Reply(carbon::Result::TIMEOUT);
+      return createReply<Request>(
+          ErrorReply, carbon::Result::TIMEOUT, "Client queue timeout");
     case ReqState::PENDING_REPLY_QUEUE:
       // Request was sent to the network, but wasn't replied yet,
       // reply with timeout.
       queue_.removePendingReply(*this);
-      return Reply(carbon::Result::TIMEOUT);
+      return createReply<Request>(
+          ErrorReply, carbon::Result::TIMEOUT, "Reply timeout");
     case ReqState::COMPLETE:
       assert(replyStorage_.hasValue());
       return std::move(replyStorage_.value());
