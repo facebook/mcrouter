@@ -159,12 +159,16 @@ std::string getThreadName() {
   return "unknown";
 }
 
+// TODO make this return a class containing folly::dynamic and
+// folly::json::metadata_map as suggested by Andre in the comments of
+// D15286671
 folly::dynamic parseJsonString(
     folly::StringPiece s,
+    folly::json::metadata_map* metadataMap,
     bool allow_trailing_comma) {
   folly::json::serialization_opts opts;
   opts.allow_trailing_comma = allow_trailing_comma;
-  return folly::parseJson(s, opts);
+  return folly::parseJsonWithMetadata(s, opts, metadataMap);
 }
 
 std::string shorten(folly::StringPiece s, size_t maxLength) {

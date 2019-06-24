@@ -27,7 +27,10 @@ class RouteHandleTestBase : public ::testing::Test {
       : router_(memcache::mcrouter::CarbonRouterInstance<RouterInfo>::init(
             "testRouter",
             getOpts())),
-        poolFactory_(folly::dynamic::object(), router_->configApi()),
+        poolFactory_(
+            folly::dynamic::object(),
+            router_->configApi(),
+            folly::json::metadata_map{}),
         rhProvider_(*router_->getProxy(0), poolFactory_),
         rhFactory_(rhProvider_, 0) {}
 

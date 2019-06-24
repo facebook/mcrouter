@@ -28,6 +28,14 @@ PoolFactory::PoolFactory(const folly::dynamic& config, ConfigApiIf& configApi)
   }
 }
 
+PoolFactory::PoolFactory(
+    const folly::dynamic& config,
+    ConfigApiIf& configApi,
+    folly::json::metadata_map configMetadataMap)
+    : PoolFactory(config, configApi) {
+  configMetadataMap_ = std::move(configMetadataMap);
+}
+
 PoolFactory::PoolJson PoolFactory::parseNamedPool(folly::StringPiece name) {
   auto existingIt = pools_.find(name);
   if (existingIt == pools_.end()) {

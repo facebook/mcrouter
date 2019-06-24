@@ -60,8 +60,9 @@ void runCase(
   folly::dynamic obj =
       folly::dynamic::object("consts", consts)("macros", macros)("orig", orig);
   MockImportResolver resolver;
+  folly::json::metadata_map configMetadataMap;
   auto result = ConfigPreprocessor::getConfigWithoutMacros(
-      folly::toJson(obj), resolver, kGlobalParams);
+      folly::toJson(obj), resolver, kGlobalParams, &configMetadataMap);
 
   auto origExpand = result["orig"];
 
@@ -123,8 +124,9 @@ TEST(ConfigPreprocessorTest, errors) {
     LOG(INFO) << "Case: " << testCase.first.asString();
     auto caseStr = folly::toJson(testCase.second);
     try {
+      folly::json::metadata_map configMetadataMap;
       ConfigPreprocessor::getConfigWithoutMacros(
-          caseStr, resolver, kGlobalParams);
+          caseStr, resolver, kGlobalParams, &configMetadataMap);
     } catch (const std::logic_error& e) {
       LOG(INFO) << "success " << e.what();
       continue;
@@ -141,8 +143,9 @@ TEST(ConfigPreprocessorTest, comments) {
     FAIL() << "can not read test file " << kTestFileErrors;
   }
 
+  folly::json::metadata_map configMetadataMap;
   auto json = ConfigPreprocessor::getConfigWithoutMacros(
-      jsonStr, resolver, kGlobalParams);
+      jsonStr, resolver, kGlobalParams, &configMetadataMap);
 
   folly::json::serialization_opts opts;
   opts.sort_keys = true;

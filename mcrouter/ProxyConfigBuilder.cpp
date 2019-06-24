@@ -36,6 +36,7 @@ ProxyConfigBuilder::ProxyConfigBuilder(
       {"router-name", opts.router_name},
       {"service-name", opts.service_name}};
   auto additionalParams = additionalConfigParams();
+  folly::json::metadata_map configMetadataMap;
   for (auto& it : additionalParams) {
     globalParams.emplace(it.first, std::move(it.second));
   }
@@ -44,9 +45,10 @@ ProxyConfigBuilder::ProxyConfigBuilder(
   }
 
   json_ = ConfigPreprocessor::getConfigWithoutMacros(
-      jsonC, importResolver, std::move(globalParams));
+      jsonC, importResolver, std::move(globalParams), &configMetadataMap);
 
-  poolFactory_ = std::make_unique<PoolFactory>(json_, configApi);
+  poolFactory_ = std::make_unique<PoolFactory>(
+      json_, configApi, std::move(configMetadataMap));
 
   configMd5Digest_ = Md5Hash(jsonC);
 }

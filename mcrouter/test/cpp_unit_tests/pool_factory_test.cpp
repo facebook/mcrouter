@@ -73,7 +73,8 @@ TEST(PoolFactory, inherit_loop) {
       }
     }
   })"),
-      api);
+      api,
+      folly::json::metadata_map{});
   try {
     factory.parsePool("A");
   } catch (const std::logic_error& e) {
@@ -103,7 +104,8 @@ TEST(PoolFactory, inherit_cache) {
       }
     }
   })"),
-      api);
+      api,
+      folly::json::metadata_map{});
   auto poolA = factory.parsePool("A");
   EXPECT_EQ("A", poolA.name.str());
   EXPECT_EQ(5, poolA.json["server_timeout"].getInt());

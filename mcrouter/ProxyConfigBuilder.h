@@ -11,6 +11,7 @@
 
 #include <folly/Range.h>
 #include <folly/dynamic.h>
+#include <folly/json.h>
 
 #include "mcrouter/PoolFactory.h"
 #include "mcrouter/options.h"

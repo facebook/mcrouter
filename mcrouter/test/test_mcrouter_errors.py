@@ -268,7 +268,7 @@ class TestMcrouterGeneratedErrors(McrouterTestCase):
     def test_timeout_set(self):
         mcrouter = self.getMcrouter(SleepServer())
         res = mcrouter.issue_command(self.set_cmd)
-        self.assertEqual('SERVER_ERROR timeout\r\n', res)
+        self.assertEqual('SERVER_ERROR Reply timeout\r\n', res)
 
     def test_timeout_get(self):
         mcrouter = self.getMcrouter(SleepServer())
@@ -420,11 +420,11 @@ class TestMcrouterParseError(McrouterTestCase):
         # server cannot parse further.
         sock.sendall(self.get_cmd)
 
-        self.assertEquals('SERVER_ERROR timeout', fd.readline().strip())
+        self.assertEquals('SERVER_ERROR Reply timeout', fd.readline().strip())
         self.assertEquals('CLIENT_ERROR malformed request',
                           fd.readline().strip())
 
         # Check that mcrouter is still alive.
         self.assertTrue(mcrouter.is_alive())
         res = mcrouter.issue_command(self.get_cmd)
-        self.assertEquals('SERVER_ERROR timeout\r\n', res)
+        self.assertEquals('SERVER_ERROR Reply timeout\r\n', res)

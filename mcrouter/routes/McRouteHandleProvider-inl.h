@@ -528,7 +528,17 @@ McRouteHandleProvider<RouterInfo>::create(
     return ret;
   }
 
-  throwLogic("Unknown RouteHandle: {}", type);
+  const auto& configMetadataMap = poolFactory_.getConfigMetadataMap();
+  auto jType = json.get_ptr("type");
+  auto typeMetadata = configMetadataMap.find(jType);
+  if (typeMetadata != configMetadataMap.end()) {
+    // The line numbers returned by the folly API are 0-based. Make them
+    // 1-based.
+    auto line = typeMetadata->second.value_range.begin.line + 1;
+    throwLogic("Unknown RouteHandle: {} line: {}", type, line);
+  } else {
+    throwLogic("Unknown RouteHandle: {}", type);
+  }
 }
 
 template <class RouterInfo>

@@ -1651,8 +1651,9 @@ class ConfigPreprocessor::BuiltIns {
 ConfigPreprocessor::ConfigPreprocessor(
     ImportResolverIf& importResolver,
     folly::StringKeyedUnorderedMap<dynamic> globals,
+    folly::json::metadata_map& configMetadataMap,
     size_t nestedLimit)
-    : nestedLimit_(nestedLimit) {
+    : configMetadataMap_(configMetadataMap), nestedLimit_(nestedLimit) {
   for (auto& it : globals) {
     addConst(it.first, std::move(it.second));
   }
@@ -1998,6 +1999,24 @@ dynamic ConfigPreprocessor::expandMacros(dynamic json, const Context& context)
         checkLogic(nKey.isString(), "Expanded key is not a string");
         result.insert(
             std::move(nKey), expandMacros(std::move(value), localContext));
+        // Since new json is being created with expanded macros we need
+        // to re-populate the config metadata map with new dynamic objects
+        // created in the process.
+        const auto nKeyPtr = result.get_ptr(it.first);
+        const auto nKeyJsonPtr = json.get_ptr(it.first);
+        if (nKeyPtr && nKeyJsonPtr) {
+          const auto resMetadataPtr = configMetadataMap_.find(nKeyJsonPtr);
+          const auto jsonMetadataPtr = configMetadataMap_.find(nKeyPtr);
+          if (resMetadataPtr != configMetadataMap_.end()) {
+            // If it already exists in the map, replace it
+            // Otherwise, create an entry in the map
+            if (jsonMetadataPtr == configMetadataMap_.end()) {
+              configMetadataMap_.emplace(nKeyPtr, resMetadataPtr->second);
+            } else {
+              jsonMetadataPtr->second = resMetadataPtr->second;
+            }
+          }
+        }
       } catch (const std::logic_error& e) {
         throwLogic(
             "Raw object property '{}':\n{}", it.first.stringPiece(), e.what());
@@ -2074,11 +2093,13 @@ dynamic ConfigPreprocessor::getConfigWithoutMacros(
     StringPiece jsonC,
     ImportResolverIf& importResolver,
     folly::StringKeyedUnorderedMap<dynamic> globalParams,
+    folly::json::metadata_map* configMetadataMap,
     size_t nestedLimit) {
-  auto config = parseJsonString(stripComments(jsonC));
+  auto config = parseJsonString(stripComments(jsonC), configMetadataMap);
   checkLogic(config.isObject(), "config is not an object");
 
-  ConfigPreprocessor prep(importResolver, std::move(globalParams), nestedLimit);
+  ConfigPreprocessor prep(
+      importResolver, std::move(globalParams), *configMetadataMap, nestedLimit);
 
   // parse and add macros
   auto jmacros = config.get_ptr("macros");

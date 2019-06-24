@@ -14,6 +14,7 @@
 #include <folly/Format.h>
 #include <folly/Likely.h>
 #include <folly/Range.h>
+#include <folly/json.h>
 
 using timeval_t = struct timeval;
 
@@ -218,10 +219,17 @@ typename std::enable_if<RNG::word_size == 64, uint64_t>::type randomInt64(
 std::string getThreadName();
 
 /**
- * Parse json string with `allow_trailing_comma` enabled by default
+ * Parse json string
+ *
+ * @param s - pointer to json formatted string
+ * @param metadatamap - if non-null, will be populated with parse metadata
+ * @param allow_trailing_comma - enabled to allow trailing comma by default
+ *
+ * @return dynamic struct containing the parsed json
  */
 folly::dynamic parseJsonString(
     folly::StringPiece s,
+    folly::json::metadata_map* metadataMap = nullptr,
     bool allow_trailing_comma = true);
 
 /**
