@@ -136,6 +136,7 @@ std::pair<std::string, HandlerFunc> throwLogicError() {
 const char* const Category::kBadEnvironment = "bad-environment";
 const char* const Category::kInvalidOption = "invalid-option";
 const char* const Category::kInvalidConfig = "invalid-config";
+const char* const Category::kInvalidDynamicSampler = "invalid-dynamic-sampler";
 const char* const Category::kOutOfResources = "out-of-resources";
 const char* const Category::kBrokenLogic = "broken-logic";
 const char* const Category::kSystemError = "system-error";

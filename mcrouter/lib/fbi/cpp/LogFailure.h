@@ -34,6 +34,10 @@ class Category {
    */
   static const char* const kInvalidConfig;
   /**
+   * Dynamic configuration is broken.
+   */
+  static const char* const kInvalidDynamicSampler;
+  /**
    * Out of memory, not enough disk space, etc.
    */
   static const char* const kOutOfResources;
