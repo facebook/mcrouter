@@ -9,12 +9,9 @@
 #include <chrono>
 
 #include <folly/Range.h>
+#include <folly/dynamic.h>
 
 #include "mcrouter/config.h"
-
-namespace folly {
-struct dynamic;
-} // namespace folly
 
 namespace facebook {
 namespace memcache {
