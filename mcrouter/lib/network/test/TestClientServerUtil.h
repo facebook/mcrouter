@@ -108,6 +108,7 @@ class TestServer {
     std::function<void(McServerSession&)> onConnectionAcceptedAdditionalCb;
     size_t tcpZeroCopyThresholdBytes = 0;
     bool useKtls12 = false;
+    bool tosReflection = false;
   };
 
   template <class OnRequest = TestServerOnRequest>

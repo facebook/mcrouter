@@ -157,6 +157,7 @@ TestServer::TestServer(Config config)
       std::chrono::milliseconds{config.goAwayTimeoutMs};
   opts_.setMaxConnections(config.maxConns, opts_.numThreads);
   opts_.worker.tcpZeroCopyThresholdBytes = config.tcpZeroCopyThresholdBytes;
+  opts_.worker.tosReflection = config.tosReflection;
   if (config.useSsl) {
     opts_.pemKeyPath = config.keyPath;
     opts_.pemCertPath = config.certPath;

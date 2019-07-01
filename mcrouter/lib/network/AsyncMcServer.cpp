@@ -418,6 +418,7 @@ class McServerThread {
           bool zeroCopyApplied = socket_->setZeroCopy(true);
           checkLogic(zeroCopyApplied, "Failed to set TCP zero copy on socket");
         }
+        socket_->setTosReflect(server_.opts_.worker.tosReflection);
       }
       if (!server_.opts_.sslPorts.empty()) {
         checkLogic(
@@ -437,6 +438,7 @@ class McServerThread {
           checkLogic(
               zeroCopyApplied, "Failed to set TCP zero copy on ssl socket");
         }
+        sslSocket_->setTosReflect(server_.opts_.worker.tosReflection);
       }
     }
 

@@ -126,6 +126,11 @@ struct AsyncMcServerWorkerOptions {
    * Whether to try KTLS for accepted TLS 1.2 connections
    */
   bool useKtls12{false};
+
+  /**
+   * Whether to enable tos reflection
+   */
+  bool tosReflection{false};
 };
 } // namespace memcache
 } // namespace facebook
