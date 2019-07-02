@@ -75,12 +75,12 @@ AccessPoint::AccessPoint(
       securityMech_(mech),
       compressed_(compressed),
       unixDomainSocket_(unixDomainSocket) {
-  try {
+  if (folly::IPAddress::validate(host)) {
     folly::IPAddress ip(host);
     host_ = ip.toFullyQualified();
     hash_ = folly::hash_value(ip);
     isV6_ = ip.isV6();
-  } catch (const folly::IPAddressFormatException& e) {
+  } else {
     // host is not an IP address (e.g. 'localhost')
     host_ = host.str();
     isV6_ = false;
