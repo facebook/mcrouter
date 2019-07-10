@@ -1,6 +1,7 @@
 namespace carbon::test;
 
 import "mcrouter/lib/carbon/test/a/b/B.idl"
+import "mcrouter/lib/carbon/test/a/C.idl"
 import "mcrouter/lib/carbon/test/b/B.idl"
 
 request AnotherRequest {

@@ -1,0 +1,12 @@
+namespace carbon::test_enum;
+
+thrift_namespace carbon.test_enum.thrift;
+
+enum Foo {
+  BAR = 1,
+  BAZ = 2,
+};
+
+struct StructWithEnumField {
+  1: Foo test;
+};
