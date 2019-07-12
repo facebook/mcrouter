@@ -31,7 +31,7 @@ ReplyT<Request> AsyncMcClientImpl::sendSync(
 
   // We need to send fbtrace before serializing, or otherwise we are going to
   // miss fbtrace id.
-  fbTraceOnSend(request, *connectionOptions_.accessPoint);
+  facebook::mcrouter::fbTraceOnSend(request, *connectionOptions_.accessPoint);
 
   McClientRequestContext<Request> ctx(
       request,

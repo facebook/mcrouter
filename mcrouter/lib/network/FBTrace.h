@@ -17,7 +17,7 @@ struct mc_fbtrace_info_s;
 typedef mc_fbtrace_info_s mc_fbtrace_info_t;
 
 namespace facebook {
-namespace memcache {
+namespace mcrouter {
 
 /**
  * Class that uses SFINAE to check if Request type provides fbtraceInfo method.
@@ -34,7 +34,7 @@ class RequestHasFbTraceInfo {
 };
 
 template <class Request>
-bool fbTraceOnSend(const Request& request, const AccessPoint& ap);
+bool fbTraceOnSend(const Request& request, const memcache::AccessPoint& ap);
 
 inline void fbTraceOnReceive(
     const mc_fbtrace_info_s* fbtraceInfo,
@@ -46,7 +46,7 @@ bool traceCheckRateLimit();
 // Returns the cumulative number of traces logged.
 uint64_t traceGetCount();
 
-} // namespace memcache
+} // namespace mcrouter
 } // namespace facebook
 
 #include "FBTrace-inl.h"

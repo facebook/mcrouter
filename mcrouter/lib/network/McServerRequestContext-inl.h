@@ -7,6 +7,10 @@
 #include "mcrouter/lib/network/McServerSession.h"
 #include "mcrouter/lib/network/WriteBuffer.h"
 
+#ifndef LIBMC_FBTRACE_DISABLE
+#include "mcrouter/facebook/ArtilleryTracing.h"
+#endif
+
 namespace facebook {
 namespace memcache {
 
@@ -68,6 +72,14 @@ void McServerRequestContext::replyImpl2(
     DestructorFunc destructor,
     void* toDestruct,
     bool flush) {
+#ifndef LIBMC_FBTRACE_DISABLE
+  if (UNLIKELY(ctx.isTraced_)) {
+    auto tracer = facebook::mcrouter::getCurrentTracer();
+    if (LIKELY(tracer != nullptr)) {
+      reply.setTraceContext(tracer->sendResponse());
+    }
+  }
+#endif
   ctx.replied_ = true;
   // Note: 'SessionType' being a template parameter allows the use of
   // McServerSession members, otherwise there's a circular dependency preventing

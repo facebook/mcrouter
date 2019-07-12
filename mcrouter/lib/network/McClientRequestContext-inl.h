@@ -134,7 +134,7 @@ McClientRequestContext<Request>::McClientRequestContext(
       requestTraceContext_(request.traceContext())
 #ifndef LIBMC_FBTRACE_DISABLE
       ,
-      fbtraceInfo_(getFbTraceInfo(request))
+      fbtraceInfo_(facebook::mcrouter::getFbTraceInfo(request))
 #endif
 {
 }
@@ -142,7 +142,8 @@ McClientRequestContext<Request>::McClientRequestContext(
 template <class Request>
 void McClientRequestContext<Request>::sendTraceOnReply() {
 #ifndef LIBMC_FBTRACE_DISABLE
-  fbTraceOnReceive(fbtraceInfo_, replyStorage_.value().result());
+  facebook::mcrouter::fbTraceOnReceive(
+      fbtraceInfo_, replyStorage_.value().result());
 #endif
 }
 

@@ -104,5 +104,13 @@ folly::EventBase& McServerRequestContext::getSessionEventBase() const noexcept {
   return session_->getEventBase();
 }
 
+void McServerRequestContext::markAsTraced() {
+  isTraced_ = true;
+}
+
+void markContextAsTraced(McServerRequestContext& ctx) {
+  ctx.markAsTraced();
+}
+
 } // namespace memcache
 } // namespace facebook
