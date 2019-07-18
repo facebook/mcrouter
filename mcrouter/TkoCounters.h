@@ -7,6 +7,7 @@
 #pragma once
 
 #include <atomic>
+#include <cstddef>
 
 namespace facebook {
 namespace memcache {

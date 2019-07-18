@@ -21,6 +21,7 @@ namespace facebook {
 namespace memcache {
 
 struct CodecIdRange;
+struct CaretMessageInfo;
 class CompressionCodec;
 
 /**

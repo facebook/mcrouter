@@ -15,6 +15,7 @@
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
+#include "mcrouter/lib/network/RpcStatsContext.h"
 #include "mcrouter/lib/network/Transport.h"
 
 namespace facebook {
