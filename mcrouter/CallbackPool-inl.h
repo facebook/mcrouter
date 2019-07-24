@@ -4,12 +4,10 @@
  * This source code is licensed under the MIT license found in the LICENSE
  * file in the root directory of this source tree.
  */
-#include <mutex>
 #include <set>
 
+#include <folly/SharedMutex.h>
 #include <glog/logging.h>
-
-#include "mcrouter/lib/fbi/cpp/sfrlock.h"
 
 namespace facebook {
 namespace memcache {
@@ -22,7 +20,7 @@ struct CallbackPool<Args...>::CallbackHandleImpl {
   CallbackHandleImpl(const CallbackHandleImpl&) = delete;
   CallbackHandleImpl& operator=(const CallbackHandleImpl&) = delete;
   ~CallbackHandleImpl() {
-    std::lock_guard<SFRWriteLock> lck(data_->callbackLock.writeLock());
+    folly::SharedMutex::WriteHolder lck(data_->callbackLock);
     data_->callbacks.erase(this);
   }
 
@@ -34,7 +32,7 @@ struct CallbackPool<Args...>::CallbackHandleImpl {
 
   CallbackHandleImpl(std::shared_ptr<Data> data, OnUpdateFunc func)
       : data_(std::move(data)), func_(std::move(func)) {
-    std::lock_guard<SFRWriteLock> lck(data_->callbackLock.writeLock());
+    folly::SharedMutex::WriteHolder lck(data_->callbackLock);
     data_->callbacks.insert(this);
   }
 };
@@ -43,7 +41,7 @@ struct CallbackPool<Args...>::CallbackHandleImpl {
 template <typename... Args>
 struct CallbackPool<Args...>::Data {
   std::set<CallbackHandleImpl*> callbacks;
-  SFRLock callbackLock;
+  folly::SharedMutex callbackLock;
 };
 
 /* CallbackPool */
@@ -53,7 +51,7 @@ CallbackPool<Args...>::CallbackPool() : data_(std::make_shared<Data>()) {}
 
 template <typename... Args>
 void CallbackPool<Args...>::notify(Args... args) {
-  std::lock_guard<SFRReadLock> lck(data_->callbackLock.readLock());
+  folly::SharedMutex::ReadHolder lck(data_->callbackLock);
   for (auto& it : data_->callbacks) {
     try {
       it->func_(args...);
