@@ -288,6 +288,10 @@ void McServerSession::onRequest(
     bool /* noreply = false */) {
   uint64_t reqid = 0;
   if (!parser_.outOfOrder()) {
+    /* If we're already done streaming */
+    if (state_ != STREAMING) {
+      return;
+    }
     reqid = tailReqid_++;
   }
 

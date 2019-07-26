@@ -127,6 +127,15 @@ TEST(Session, quit) {
       t.flushWrites());
 }
 
+/* Same as McServerAsciiParserHarness.quitWithVersion, except Async */
+TEST(Session, quitWithVersion) {
+  AsyncMcServerWorkerOptions opts;
+  SessionTestHarness t(opts);
+  t.inputPackets("quit\r\nversion");
+
+  EXPECT_EQ(vector<string>({}), t.flushWrites());
+}
+
 TEST(Session, closeBeforeReply) {
   struct Callbacks : public McServerSession::StateCallback {
    public:

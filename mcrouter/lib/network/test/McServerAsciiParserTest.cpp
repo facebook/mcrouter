@@ -529,6 +529,15 @@ TEST(McServerAsciiParserHarness, version) {
       .run("version    \r\n");
 }
 
+TEST(McServerAsciiParserHarness, quitWithVersion) {
+  TestRunner()
+      .expectNext(McQuitRequest(), true)
+      .expectNext(McVersionRequest())
+      .run(
+          "quit\r\n"
+          "version\r\n");
+}
+
 TEST(McServerAsciiParserHarness, shutdown) {
   TestRunner()
       .expectNext(McShutdownRequest())
