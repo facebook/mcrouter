@@ -106,6 +106,7 @@ class CarbonRequestHandler : public facebook::memcache::CarbonMessageDispatcher<
     if (tracingData != nullptr) {
       // Mark the context as being traced by Artillery
       markContextAsTraced(ctx);
+      tracingData->startCounters();
     }
     callOnRequest(
         std::move(ctx),
@@ -114,6 +115,9 @@ class CarbonRequestHandler : public facebook::memcache::CarbonMessageDispatcher<
         reqBuf,
         carbon::detail::CanHandleRequestWithBuffer::
             value<Request, OnRequest>());
+    if (tracingData != nullptr) {
+      tracingData->tracer->end();
+    }
   }
 
   template <class Request>
