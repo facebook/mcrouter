@@ -101,6 +101,7 @@ class CarbonRequestHandler : public facebook::memcache::CarbonMessageDispatcher<
       Request&& req,
       const facebook::memcache::CaretMessageInfo* headerInfo,
       const folly::IOBuf* reqBuf) {
+    folly::RequestContextScopeGuard requestContextGuard;
     auto tracingData =
         facebook::mcrouter::traceRequestReceived(std::cref(req).get());
     if (tracingData != nullptr) {
@@ -115,9 +116,6 @@ class CarbonRequestHandler : public facebook::memcache::CarbonMessageDispatcher<
         reqBuf,
         carbon::detail::CanHandleRequestWithBuffer::
             value<Request, OnRequest>());
-    if (tracingData != nullptr) {
-      tracingData->tracer->end();
-    }
   }
 
   template <class Request>
