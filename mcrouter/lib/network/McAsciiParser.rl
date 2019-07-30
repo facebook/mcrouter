@@ -137,6 +137,10 @@ exptime_req = negative? uint %{
 
 value_bytes = uint %{
   remainingIOBufLength_ = static_cast<size_t>(currentUInt_);
+  // Enforce maximum on value size obtained from parser                       
+  if (remainingIOBufLength_ > maxValueBytes) {
+    remainingIOBufLength_ = maxValueBytes;                                    
+  }
 };
 
 cas_id = uint %{

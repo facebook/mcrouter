@@ -81,6 +81,9 @@ class McAsciiParserBase {
       const char* posStart,
       const char* posEnd);
 
+  // limit the value size.
+  static constexpr uint32_t maxValueBytes = 1 * 1024 * 1024 * 1024; // 1GB
+
   std::string currentErrorDescription_;
 
   uint64_t currentUInt_{0};
