@@ -64,8 +64,6 @@ double ThriftTransportBase::getRetransmitsPerKb() {
   return 0.0;
 }
 
-void ThriftTransportBase::setFlushList(FlushList* /* flushList */) {}
-
 apache::thrift::async::TAsyncTransport::UniquePtr
 ThriftTransportBase::getConnectingSocket() {
   return folly::fibers::runInMainContext([this] {

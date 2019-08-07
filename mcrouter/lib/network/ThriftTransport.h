@@ -70,8 +70,6 @@ class ThriftTransportBase : public Transport,
 
   double getRetransmitsPerKb() override final;
 
-  void setFlushList(FlushList* /* flushList */) override final;
-
  protected:
   folly::EventBase& eventBase_;
   const ConnectionOptions connectionOptions_;
@@ -142,6 +140,8 @@ class ThriftTransport : public ThriftTransportBase {
   }
 
   void resetClient() override final {}
+
+  void setFlushList(FlushList* /* flushList */) override final {}
 };
 
 } // namespace memcache

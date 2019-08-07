@@ -35,6 +35,15 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       : ThriftTransportBase(eventBase, std::move(options)) {}
   ~ThriftTransport() override final = default;
 
+  void setFlushList(FlushList* flushList) override final {
+    flushList_ = flushList;
+    if (thriftClient_) {
+      auto* channel = static_cast<apache::thrift::RocketClientChannel*>(
+          thriftClient_->getChannel());
+      channel->setFlushList(flushList_);
+    }
+  }
+
   McAddReply sendSync(
       const McAddRequest& request,
       std::chrono::milliseconds timeout,
@@ -417,10 +426,16 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
 
  private:
   std::unique_ptr<thrift::MemcacheAsyncClient> thriftClient_;
+  FlushList* flushList_{nullptr};
 
   thrift::MemcacheAsyncClient* getThriftClient() {
     if (!thriftClient_) {
       thriftClient_ = createThriftClient<thrift::MemcacheAsyncClient>();
+      if (flushList_) {
+        auto* channel = static_cast<apache::thrift::RocketClientChannel*>(
+            thriftClient_->getChannel());
+        channel->setFlushList(flushList_);
+      }
     }
     return thriftClient_.get();
   }

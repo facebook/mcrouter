@@ -35,6 +35,15 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
       : ThriftTransportBase(eventBase, std::move(options)) {}
   ~ThriftTransport() override final = default;
 
+  void setFlushList(FlushList* flushList) override final {
+    flushList_ = flushList;
+    if (thriftClient_) {
+      auto* channel = static_cast<apache::thrift::RocketClientChannel*>(
+          thriftClient_->getChannel());
+      channel->setFlushList(flushList_);
+    }
+  }
+
   hellogoodbye::GoodbyeReply sendSync(
       const hellogoodbye::GoodbyeRequest& request,
       std::chrono::milliseconds timeout,
@@ -94,10 +103,16 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
 
  private:
   std::unique_ptr<hellogoodbye::thrift::HelloGoodbyeAsyncClient> thriftClient_;
+  FlushList* flushList_{nullptr};
 
   hellogoodbye::thrift::HelloGoodbyeAsyncClient* getThriftClient() {
     if (!thriftClient_) {
       thriftClient_ = createThriftClient<hellogoodbye::thrift::HelloGoodbyeAsyncClient>();
+      if (flushList_) {
+        auto* channel = static_cast<apache::thrift::RocketClientChannel*>(
+            thriftClient_->getChannel());
+        channel->setFlushList(flushList_);
+      }
     }
     return thriftClient_.get();
   }
