@@ -30,14 +30,21 @@ constexpr uint64_t kAdjustBufferSizeCpuCycles = 1UL << 31;
 constexpr size_t kMaxBodySize = 1UL << 30;
 
 #ifdef FOLLY_JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
-
 folly::ThreadLocal<folly::JemallocNodumpAllocator> allocator;
+void (*noDumpDeallocate)(void*, void*) =
+    folly::JemallocNodumpAllocator::deallocate;
+
+bool shouldSlowReserveNodumpBuffer(
+    const folly::IOBuf& readBuffer,
+    size_t bufSize) {
+  return (readBuffer.tailroom() < bufSize);
+}
 
 folly::IOBuf copyToNodumpBuffer(
-    const CaretMessageInfo& umMsgInfo,
-    const folly::IOBuf& readBuffer) {
+    const folly::IOBuf& readBuffer,
+    size_t bufSize) {
+  assert(bufSize >= readBuffer.length());
   // Allocate buffer
-  const size_t bufSize = umMsgInfo.headerSize + umMsgInfo.bodySize;
   void* p = allocator->allocate(bufSize);
   if (!p) {
     LOG(WARNING) << "Not enough memory to create a nodump buffer";
@@ -52,10 +59,9 @@ folly::IOBuf copyToNodumpBuffer(
       p,
       bufSize,
       readBuffer.length(),
-      folly::JemallocNodumpAllocator::deallocate,
+      noDumpDeallocate,
       reinterpret_cast<void*>(allocator->getFlags()));
 }
-
 #endif
 
 } // namespace
@@ -68,11 +74,16 @@ McParser::McParser(
     ConnectionFifo* debugFifo)
     : callback_(callback),
       bufferSize_(minBufferSize),
+      minBufferSize_(minBufferSize),
       maxBufferSize_(maxBufferSize),
       debugFifo_(debugFifo),
       readBuffer_(folly::IOBuf::CREATE, bufferSize_),
       useJemallocNodumpAllocator_(useJemallocNodumpAllocator) {
-#ifndef FOLLY_JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
+#ifdef FOLLY_JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
+  if (useJemallocNodumpAllocator_) {
+    readBuffer_ = copyToNodumpBuffer(readBuffer_, readBuffer_.capacity());
+  }
+#else
   useJemallocNodumpAllocator_ = false;
 #endif
 }
@@ -93,9 +104,22 @@ std::pair<void*, size_t> McParser::getReadBuffer() {
     readBuffer_.retreat(readBuffer_.headroom());
   } else {
     /* Reallocate more space if necessary */
-    readBuffer_.reserve(0, bufferSize_);
+    readBuffReserve(minBufferSize_);
   }
   return std::make_pair(readBuffer_.writableTail(), readBuffer_.tailroom());
+}
+
+void McParser::readBuffReserve(size_t minTailRoom) {
+#ifdef FOLLY_JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
+  if (useJemallocNodumpAllocator_) {
+    if (shouldSlowReserveNodumpBuffer(readBuffer_, minTailRoom)) {
+      readBuffer_ =
+          copyToNodumpBuffer(readBuffer_, readBuffer_.length() + minTailRoom);
+    }
+    return;
+  }
+#endif
+  readBuffer_.reserve(0 /* minHeadroom */, minTailRoom);
 }
 
 bool McParser::readCaretData() {
@@ -163,13 +187,16 @@ bool McParser::readCaretData() {
       }
       readBuffer_.unshareOne();
       bufferSize_ = std::max<size_t>(bufferSize_, messageSize);
-      readBuffer_.reserve(
-          0 /* minHeadroom */,
-          bufferSize_ - readBuffer_.length() /* minTailroom */);
+      readBuffReserve(bufferSize_ - readBuffer_.length());
     }
 #ifdef FOLLY_JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
-    if (useJemallocNodumpAllocator_) {
-      readBuffer_ = copyToNodumpBuffer(msgInfo_, readBuffer_);
+    // This is an ugly patch to handle the case that somehow the readBuf got
+    // reallocated. This could happen for
+    // instance by calling IOBuf::reserve or IOBuf::unshare
+    if (useJemallocNodumpAllocator_ &&
+        readBuffer_.getFreeFn() != noDumpDeallocate) {
+      readBuffer_ =
+          copyToNodumpBuffer(readBuffer_, readBuffer_.length() + bufferSize_);
     }
 #endif
     return true;
@@ -177,11 +204,18 @@ bool McParser::readCaretData() {
 
   // We parsed everything, read buffer is empty.
   // Try to shrink it to reduce memory footprint
+  // TODO: should compare the readbuffer capacity not bufferSize
   if (bufferSize_ > maxBufferSize_) {
     auto curCycles = cycles::getCpuCycles();
     if (curCycles > lastShrinkCycles_ + kAdjustBufferSizeCpuCycles) {
       lastShrinkCycles_ = curCycles;
       bufferSize_ = maxBufferSize_;
+#ifdef FOLLY_JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
+      if (useJemallocNodumpAllocator_) {
+        readBuffer_ = copyToNodumpBuffer(readBuffer_, bufferSize_);
+        return true;
+      }
+#endif
       readBuffer_ = folly::IOBuf(folly::IOBuf::CREATE, bufferSize_);
     }
   }

@@ -116,6 +116,7 @@ class McParser {
 
   ParserCallback& callback_;
   size_t bufferSize_{256};
+  size_t minBufferSize_{256};
   size_t maxBufferSize_{4096};
 
   ConnectionFifo* debugFifo_{nullptr};
@@ -135,6 +136,7 @@ class McParser {
   bool useJemallocNodumpAllocator_{false};
 
   bool readCaretData();
+  void readBuffReserve(size_t bufSize);
 };
 
 inline McParser::ParserCallback::~ParserCallback() {}
