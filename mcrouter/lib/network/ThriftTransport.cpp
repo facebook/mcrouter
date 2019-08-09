@@ -85,25 +85,18 @@ ThriftTransportBase::getConnectingSocket() {
       return apache::thrift::async::TAsyncTransport::UniquePtr{};
     }
     folly::SocketAddress address = std::move(sockAddressExpected).value();
-
     auto socketOptions = createSocketOptions(address, connectionOptions_);
-    const auto mech = connectionOptions_.accessPoint->getSecurityMech();
     connectionState_ = ConnectionState::Connecting;
-    if (mech == SecurityMech::TLS13_FIZZ) {
-      auto fizzClient = socket->getUnderlyingTransport<McFizzClient>();
-      fizzClient->connect(
-          this,
-          address,
-          connectionOptions_.connectTimeout.count(),
-          socketOptions);
-    } else {
-      auto asyncSock = socket->getUnderlyingTransport<folly::AsyncSocket>();
-      asyncSock->connect(
-          this,
-          address,
-          connectionOptions_.connectTimeout.count(),
-          socketOptions);
-    }
+    DCHECK(
+        connectionOptions_.accessPoint->getSecurityMech() ==
+        SecurityMech::NONE);
+
+    auto asyncSock = socket->getUnderlyingTransport<folly::AsyncSocket>();
+    asyncSock->connect(
+        this,
+        address,
+        connectionOptions_.connectTimeout.count(),
+        socketOptions);
     return socket;
   });
 }

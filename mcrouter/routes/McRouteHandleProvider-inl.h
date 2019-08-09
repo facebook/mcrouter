@@ -303,6 +303,10 @@ McRouteHandleProvider<RouterInfo>::makePool(
       folly::StringPiece nameSp = it->first;
 
       if (ap->getProtocol() == mc_thrift_protocol) {
+        checkLogic(
+            ap->getSecurityMech() == SecurityMech::NONE,
+            "mcrouter ThriftTransport currently only supports plaintext");
+
         using Transport = ThriftTransport<RouterInfo>;
         destinations.push_back(createDestinationRoute<Transport>(
             std::move(ap),
