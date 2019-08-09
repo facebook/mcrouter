@@ -19,7 +19,6 @@ typedef enum mc_protocol_e {
   mc_umbrella_protocol_DONOTUSE = 3, /* New code should use Caret or ASCII */
   mc_caret_protocol = 4,
   mc_thrift_protocol = 5,
-  mc_noop_protocol = 6,
   mc_nprotocols, // placeholder
 } mc_protocol_t;
 
@@ -34,20 +33,13 @@ static inline mc_protocol_t mc_string_to_protocol(const char* str) {
     return mc_caret_protocol;
   } else if (!strcmp(str, "thrift")) {
     return mc_thrift_protocol;
-  } else if (!strcmp(str, "noop")) {
-    return mc_noop_protocol;
   } else {
     return mc_unknown_protocol;
   }
 }
 
 static inline const char* mc_protocol_to_string(const mc_protocol_t value) {
-  static const char* const strings[] = {"unknown-protocol",
-                                        "ascii",
-                                        "binary",
-                                        "umbrella",
-                                        "caret",
-                                        "thrift",
-                                        "noop"};
+  static const char* const strings[] = {
+      "unknown-protocol", "ascii", "binary", "umbrella", "caret", "thrift"};
   return strings[value < mc_nprotocols ? value : mc_unknown_protocol];
 }

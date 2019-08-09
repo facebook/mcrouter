@@ -21,7 +21,6 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/network/AccessPoint.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
-#include "mcrouter/lib/network/NoOpTransport.h"
 #include "mcrouter/lib/network/SecurityOptions.h"
 #include "mcrouter/lib/network/ThriftTransport.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
@@ -163,8 +162,6 @@ McRouteHandleProvider<RouterInfo>::makePool(
         protocol = mc_caret_protocol;
       } else if (equalStr("thrift", str, folly::AsciiCaseInsensitive())) {
         protocol = mc_thrift_protocol;
-      } else if (equalStr("noop", str, folly::AsciiCaseInsensitive())) {
-        protocol = mc_noop_protocol;
       } else {
         throwLogic("Unknown protocol '{}'", str);
       }
@@ -307,18 +304,6 @@ McRouteHandleProvider<RouterInfo>::makePool(
 
       if (ap->getProtocol() == mc_thrift_protocol) {
         using Transport = ThriftTransport<RouterInfo>;
-        destinations.push_back(createDestinationRoute<Transport>(
-            std::move(ap),
-            timeout,
-            connectTimeout,
-            qosClass,
-            qosPath,
-            nameSp,
-            i,
-            poolStatIndex,
-            keepRoutingPrefix));
-      } else if (ap->getProtocol() == mc_noop_protocol) {
-        using Transport = NoOpTransport;
         destinations.push_back(createDestinationRoute<Transport>(
             std::move(ap),
             timeout,

@@ -217,7 +217,6 @@ libmcrouter_a_SOURCES = \
   network/MemcacheMessageHelpers.h \
   network/MultiOpParent.cpp \
   network/MultiOpParent.h \
-	network/NoOpTransport.h \
   network/SecurityOptions.cpp \
   network/SecurityOptions.h \
   network/ServerLoad.cpp \
