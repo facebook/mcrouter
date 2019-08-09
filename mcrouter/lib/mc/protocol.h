@@ -16,7 +16,6 @@ typedef enum mc_protocol_e {
   mc_unknown_protocol = 0,
   mc_ascii_protocol = 1,
   mc_binary_protocol = 2,
-  mc_umbrella_protocol_DONOTUSE = 3, /* New code should use Caret or ASCII */
   mc_caret_protocol = 4,
   mc_thrift_protocol = 5,
   mc_nprotocols, // placeholder
@@ -27,8 +26,6 @@ static inline mc_protocol_t mc_string_to_protocol(const char* str) {
     return mc_ascii_protocol;
   } else if (!strcmp(str, "binary")) {
     return mc_binary_protocol;
-  } else if (!strcmp(str, "umbrella")) {
-    return mc_umbrella_protocol_DONOTUSE;
   } else if (!strcmp(str, "caret")) {
     return mc_caret_protocol;
   } else if (!strcmp(str, "thrift")) {
@@ -39,7 +36,17 @@ static inline mc_protocol_t mc_string_to_protocol(const char* str) {
 }
 
 static inline const char* mc_protocol_to_string(const mc_protocol_t value) {
-  static const char* const strings[] = {
-      "unknown-protocol", "ascii", "binary", "umbrella", "caret", "thrift"};
-  return strings[value < mc_nprotocols ? value : mc_unknown_protocol];
+  switch (value) {
+    case mc_ascii_protocol:
+      return "ascii";
+    case mc_binary_protocol:
+      return "binary";
+    case mc_caret_protocol:
+      return "caret";
+    case mc_thrift_protocol:
+      return "thrift";
+    case mc_unknown_protocol:
+    default:
+      return "unknown-protocol";
+  }
 }
