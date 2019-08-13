@@ -101,6 +101,7 @@ class CarbonRequestHandler : public facebook::memcache::CarbonMessageDispatcher<
       Request&& req,
       const facebook::memcache::CaretMessageInfo* headerInfo,
       const folly::IOBuf* reqBuf) {
+#ifndef LIBMC_FBTRACE_DISABLE
     folly::RequestContextScopeGuard requestContextGuard;
     auto tracingData =
         facebook::mcrouter::traceRequestReceived(std::cref(req).get());
@@ -109,6 +110,7 @@ class CarbonRequestHandler : public facebook::memcache::CarbonMessageDispatcher<
       markContextAsTraced(ctx);
       tracingData->startCounters();
     }
+#endif
     callOnRequest(
         std::move(ctx),
         std::move(req),
