@@ -119,7 +119,6 @@ libmcrouter_a_SOURCES = \
   fbi/cpp/globals.h \
   fbi/cpp/ParsingUtil.cpp \
   fbi/cpp/ParsingUtil.h \
-  fbi/cpp/sfrlock.h \
   fbi/cpp/util.cpp \
   fbi/cpp/util.h \
   fbi/decls.h \
@@ -130,8 +129,6 @@ libmcrouter_a_SOURCES = \
   fbi/network.c \
   fbi/network.h \
   fbi/queue.h \
-  fbi/sfrlock.cpp \
-  fbi/sfrlock.h \
   fbi/time.h \
   fbi/util.h \
   mc/msg.cpp \

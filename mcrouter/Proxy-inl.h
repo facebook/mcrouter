@@ -247,24 +247,26 @@ Proxy<RouterInfo>* Proxy<RouterInfo>::createProxy(
 template <class RouterInfo>
 std::shared_ptr<ProxyConfig<RouterInfo>> Proxy<RouterInfo>::getConfigUnsafe()
     const {
-  std::lock_guard<SFRReadLock> lg(const_cast<SFRLock&>(configLock_).readLock());
+  folly::SharedMutex::ReadHolder lg(configLock_);
   return config_;
 }
 
 template <class RouterInfo>
-std::pair<std::unique_lock<SFRReadLock>, ProxyConfig<RouterInfo>&>
+std::pair<
+    std::unique_ptr<folly::SharedMutex::ReadHolder>,
+    ProxyConfig<RouterInfo>&>
 Proxy<RouterInfo>::getConfigLocked() const {
-  std::unique_lock<SFRReadLock> lock(
-      const_cast<SFRLock&>(configLock_).readLock());
+  auto lock = std::make_unique<folly::SharedMutex::ReadHolder>(configLock_);
   /* make_pair strips the reference, so construct directly */
-  return std::pair<std::unique_lock<SFRReadLock>, ProxyConfig<RouterInfo>&>(
-      std::move(lock), *config_);
+  return std::pair<
+      std::unique_ptr<folly::SharedMutex::ReadHolder>,
+      ProxyConfig<RouterInfo>&>(std::move(lock), *config_);
 }
 
 template <class RouterInfo>
 std::shared_ptr<ProxyConfig<RouterInfo>> Proxy<RouterInfo>::swapConfig(
     std::shared_ptr<ProxyConfig<RouterInfo>> newConfig) {
-  std::lock_guard<SFRWriteLock> lg(configLock_.writeLock());
+  folly::SharedMutex::WriteHolder lg(configLock_);
   auto old = std::move(config_);
   config_ = std::move(newConfig);
   return old;

@@ -8,8 +8,9 @@
 
 #include <functional>
 
+#include <folly/SharedMutex.h>
+
 #include "mcrouter/CallbackPool.h"
-#include "mcrouter/lib/fbi/cpp/sfrlock.h"
 
 namespace facebook {
 namespace memcache {
@@ -80,7 +81,7 @@ class Observable {
   CallbackPool<const Data&, const Data&> pool_;
   Data data_;
 
-  SFRLock dataLock_;
+  folly::SharedMutex dataLock_;
 };
 }
 }

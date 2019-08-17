@@ -5,8 +5,6 @@ mcrouter_fbi_test_SOURCES = \
   sem_test.cpp \
   test_util.cpp \
 	hash_test
-#  Too slow
-#  sfrlock_test.cpp
 
 mcrouter_fbi_test_CPPFLAGS = \
 	-I$(top_srcdir)/.. \

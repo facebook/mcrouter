@@ -24,7 +24,7 @@ typename Observable<Data>::CallbackHandle Observable<Data>::subscribe(
 template <class Data>
 typename Observable<Data>::CallbackHandle Observable<Data>::subscribeAndCall(
     OnUpdateOldNew callback) {
-  std::lock_guard<SFRReadLock> lck(dataLock_.readLock());
+  folly::SharedMutex::ReadHolder lck(dataLock_);
   try {
     callback(Data(), data_);
   } catch (const std::exception& e) {
@@ -44,13 +44,13 @@ typename Observable<Data>::CallbackHandle Observable<Data>::subscribeAndCall(
 
 template <class Data>
 Data Observable<Data>::get() {
-  std::lock_guard<SFRReadLock> lck(dataLock_.readLock());
+  folly::SharedMutex::ReadHolder lck(dataLock_);
   return data_;
 }
 
 template <class Data>
 void Observable<Data>::set(Data data) {
-  std::lock_guard<SFRWriteLock> lck(dataLock_.writeLock());
+  folly::SharedMutex::WriteHolder lck(dataLock_);
   auto old = std::move(data_);
   data_ = std::move(data);
   // no copy here, because old and data are passed by const reference

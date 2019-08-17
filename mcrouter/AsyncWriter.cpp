@@ -13,7 +13,6 @@
 
 #include "mcrouter/AsyncWriterEntry.h"
 #include "mcrouter/McrouterLogFailure.h"
-#include "mcrouter/lib/fbi/cpp/sfrlock.h"
 
 namespace facebook {
 namespace memcache {
@@ -35,7 +34,7 @@ AsyncWriter::~AsyncWriter() {
 
 void AsyncWriter::stop() noexcept {
   {
-    std::lock_guard<SFRWriteLock> lock(runLock_.writeLock());
+    folly::SharedMutex::WriteHolder lock(runLock_);
     if (stopped_) {
       return;
     }
@@ -53,7 +52,7 @@ void AsyncWriter::stop() noexcept {
 }
 
 bool AsyncWriter::start(folly::StringPiece threadName) {
-  std::lock_guard<SFRWriteLock> lock(runLock_.writeLock());
+  folly::SharedMutex::WriteHolder lock(runLock_);
   if (thread_.joinable() || stopped_) {
     return false;
   }
@@ -83,7 +82,7 @@ bool AsyncWriter::start(folly::StringPiece threadName) {
 }
 
 bool AsyncWriter::run(std::function<void()> f) {
-  std::lock_guard<SFRReadLock> lock(runLock_.readLock());
+  folly::SharedMutex::ReadHolder lock(runLock_);
   if (stopped_) {
     return false;
   }
@@ -110,7 +109,7 @@ bool AsyncWriter::run(std::function<void()> f) {
 }
 
 void AsyncWriter::increaseMaxQueueSize(size_t add) {
-  std::lock_guard<SFRWriteLock> lock(runLock_.writeLock());
+  folly::SharedMutex::WriteHolder lock(runLock_);
   // Don't touch maxQueueSize_ if it's already unlimited (zero).
   if (maxQueueSize_ != 0) {
     maxQueueSize_ += add;
@@ -118,7 +117,7 @@ void AsyncWriter::increaseMaxQueueSize(size_t add) {
 }
 
 void AsyncWriter::makeQueueSizeUnlimited() {
-  std::lock_guard<SFRWriteLock> lock(runLock_.writeLock());
+  folly::SharedMutex::WriteHolder lock(runLock_);
   maxQueueSize_ = 0;
 }
 
