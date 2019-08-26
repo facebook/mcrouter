@@ -195,6 +195,7 @@ void McDeleteRequest::serialize(Writer&& writer) const {
   writer.writeField(2 /* field id */, flags());
   writer.writeField(3 /* field id */, exptime());
   writer.writeField(4 /* field id */, value());
+  writer.writeField(5 /* field id */, attributes());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
@@ -213,6 +214,9 @@ void McDeleteRequest::visitFields(V&& v) {
   if (!v.visitField(4, "value", this->value())) {
     return;
   }
+  if (!v.visitField(5, "attributes", this->attributes())) {
+    return;
+  }
 }
 
 template <class V>
@@ -227,6 +231,9 @@ void McDeleteRequest::visitFields(V&& v) const {
     return;
   }
   if (!v.visitField(4, "value", this->value())) {
+    return;
+  }
+  if (!v.visitField(5, "attributes", this->attributes())) {
     return;
   }
 }

@@ -51,6 +51,7 @@ struct McDeleteRequest {
   2: i64 (cpp.type = "uint64_t") flags
   3: i32 exptime
   4: binary (cpp.type = "folly::IOBuf") value
+  5: map<string, i64 (cpp.type = "uint64_t")> (cpp.type = "std::unordered_map<std::string, uint64_t>") attributes
 }
 
 struct McDeleteReply {

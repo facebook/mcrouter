@@ -51,6 +51,7 @@ request McDeleteRequest {
   2: uint64_t flags;
   3: int32_t exptime;
   4: folly::IOBuf value;
+  5: std::unordered_map <std::string, uint64_t> attributes;
 };
 
 reply McDeleteReply {

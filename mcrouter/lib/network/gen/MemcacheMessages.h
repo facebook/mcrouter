@@ -468,6 +468,13 @@ class McDeleteRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return underlyingThriftStruct_.value;
   }
+  const std::unordered_map<std::string, uint64_t>& attributes() const {
+    return underlyingThriftStruct_.attributes;
+  }
+  std::unordered_map<std::string, uint64_t>& attributes() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_.attributes;
+  }
   const facebook::memcache::thrift::McDeleteRequest& getThriftStruct() const {
     return underlyingThriftStruct_;
   }

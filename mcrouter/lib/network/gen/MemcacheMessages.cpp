@@ -199,6 +199,10 @@ void McDeleteRequest::deserialize(carbon::CarbonProtocolReader& reader) {
         reader.readField(value(), fieldType);
         break;
       }
+      case 5: {
+        reader.readField(attributes(), fieldType);
+        break;
+      }
       default: {
         reader.skip(fieldType);
         break;
