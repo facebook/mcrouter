@@ -37,6 +37,7 @@ mcpiper_LDADD = \
 	-ltransport \
 	-lthrift-core \
 	-lfizz \
+	-lfmt \
 	-lwangle \
 	-lfolly
 

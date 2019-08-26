@@ -21,6 +21,7 @@ mock_mc_server_LDADD = \
 	-lconcurrency \
 	-lprotocol \
 	-lthrift-core \
+	-lfmt \
 	-lfizz \
 	-lwangle \
 	-lfolly
@@ -43,6 +44,7 @@ mock_mc_thrift_server_LDADD = \
 	-lconcurrency \
 	-lprotocol \
 	-lthrift-core \
+	-lfmt \
 	-lfizz \
 	-lwangle \
 	-lfolly
