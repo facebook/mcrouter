@@ -31,8 +31,10 @@ namespace memcache {
 template <>
 class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
  public:
-  ThriftTransport(folly::VirtualEventBase& eventBase, ConnectionOptions options)
+  ThriftTransport(folly::EventBase& eventBase, ConnectionOptions options)
       : ThriftTransportBase(eventBase, std::move(options)) {}
+  ThriftTransport(folly::VirtualEventBase& eventBase, ConnectionOptions options)
+      : ThriftTransportBase(eventBase.getEventBase(), std::move(options)) {}
   ~ThriftTransport() override final = default;
 
   void setFlushList(FlushList* flushList) override final {

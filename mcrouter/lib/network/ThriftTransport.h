@@ -37,9 +37,7 @@ class ThriftTransportBase : public Transport,
                             private folly::AsyncSocket::ConnectCallback,
                             private apache::thrift::CloseCallback {
  public:
-  ThriftTransportBase(
-      folly::VirtualEventBase& eventBase,
-      ConnectionOptions options);
+  ThriftTransportBase(folly::EventBase& eventBase, ConnectionOptions options);
   virtual ~ThriftTransportBase() override = default;
 
   static constexpr folly::StringPiece name() {
@@ -127,7 +125,7 @@ template <class RouterInfo>
 class ThriftTransport : public ThriftTransportBase {
  public:
   ThriftTransport(folly::VirtualEventBase& eventBase, ConnectionOptions options)
-      : ThriftTransportBase(eventBase, std::move(options)) {}
+      : ThriftTransportBase(eventBase.getEventBase(), std::move(options)) {}
   ~ThriftTransport() override final = default;
 
   template <class Request>

@@ -8,7 +8,6 @@
 
 #include <folly/fibers/FiberManager.h>
 #include <folly/io/async/EventBase.h>
-#include <folly/io/async/VirtualEventBase.h>
 #include <thrift/lib/cpp/async/TAsyncSocket.h>
 #include <thrift/lib/cpp2/async/RequestChannel.h>
 
@@ -24,10 +23,9 @@ namespace facebook {
 namespace memcache {
 
 ThriftTransportBase::ThriftTransportBase(
-    folly::VirtualEventBase& eventBase,
+    folly::EventBase& eventBase,
     ConnectionOptions options)
-    : eventBase_(eventBase.getEventBase()),
-      connectionOptions_(std::move(options)) {}
+    : eventBase_(eventBase), connectionOptions_(std::move(options)) {}
 
 void ThriftTransportBase::closeNow() {
   resetClient();
