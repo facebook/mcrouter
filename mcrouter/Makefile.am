@@ -224,6 +224,7 @@ mcrouter_LDADD = \
   -lconcurrency \
   -lprotocol \
   -lthrift-core \
+	-lfmt \
   -lwangle \
   -lfolly
 
