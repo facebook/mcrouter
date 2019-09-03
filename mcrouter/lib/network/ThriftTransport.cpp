@@ -7,11 +7,14 @@
 #include "mcrouter/lib/network/ThriftTransport.h"
 
 #include <folly/fibers/FiberManager.h>
+#include <folly/io/async/AsyncSSLSocket.h>
+#include <folly/io/async/AsyncSocket.h>
 #include <folly/io/async/EventBase.h>
 #include <thrift/lib/cpp/async/TAsyncSocket.h>
 #include <thrift/lib/cpp2/async/RequestChannel.h>
 
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
+#include "mcrouter/lib/network/AsyncTlsToPlaintextSocket.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
 #include "mcrouter/lib/network/McFizzClient.h"
 #include "mcrouter/lib/network/SecurityOptions.h"
@@ -64,39 +67,54 @@ double ThriftTransportBase::getRetransmitsPerKb() {
 
 apache::thrift::async::TAsyncTransport::UniquePtr
 ThriftTransportBase::getConnectingSocket() {
-  return folly::fibers::runInMainContext([this] {
-    // TODO(@aap): Replace with createSocket() once Thrift works with
-    // AsyncTransportWrapper.
-    apache::thrift::async::TAsyncTransport::UniquePtr socket(
-        new apache::thrift::async::TAsyncSocket(&eventBase_));
+  return folly::fibers::runInMainContext(
+      [this]() -> apache::thrift::async::TAsyncTransport::UniquePtr {
+        auto expectedSocket =
+            createTAsyncSocket(eventBase_, connectionOptions_);
+        if (expectedSocket.hasError()) {
+          LOG_FAILURE(
+              "ThriftTransport",
+              failure::Category::kBadEnvironment,
+              "{}",
+              expectedSocket.error().what());
+          return {};
+        }
+        auto socket = std::move(expectedSocket).value();
 
-    socket->setSendTimeout(connectionOptions_.writeTimeout.count());
+        auto sockAddressExpected = getSocketAddress(connectionOptions_);
+        if (sockAddressExpected.hasError()) {
+          const auto& ex = sockAddressExpected.error();
+          LOG_FAILURE(
+              "ThriftTransport",
+              failure::Category::kBadEnvironment,
+              "{}",
+              ex.what());
+          return {};
+        }
+        folly::SocketAddress address = std::move(sockAddressExpected).value();
+        auto socketOptions = createSocketOptions(address, connectionOptions_);
+        connectionState_ = ConnectionState::Connecting;
 
-    auto sockAddressExpected = getSocketAddress(connectionOptions_);
-    if (sockAddressExpected.hasError()) {
-      const auto& ex = sockAddressExpected.error();
-      LOG_FAILURE(
-          "ThriftTransport",
-          failure::Category::kBadEnvironment,
-          "{}",
-          ex.what());
-      return apache::thrift::async::TAsyncTransport::UniquePtr{};
-    }
-    folly::SocketAddress address = std::move(sockAddressExpected).value();
-    auto socketOptions = createSocketOptions(address, connectionOptions_);
-    connectionState_ = ConnectionState::Connecting;
-    DCHECK(
-        connectionOptions_.accessPoint->getSecurityMech() ==
-        SecurityMech::NONE);
-
-    auto asyncSock = socket->getUnderlyingTransport<folly::AsyncSocket>();
-    asyncSock->connect(
-        this,
-        address,
-        connectionOptions_.connectTimeout.count(),
-        socketOptions);
-    return socket;
-  });
+        const auto securityMech =
+            connectionOptions_.accessPoint->getSecurityMech();
+        if (securityMech == SecurityMech::TLS_TO_PLAINTEXT) {
+          socket->setSendTimeout(connectionOptions_.writeTimeout.count());
+          socket->getUnderlyingTransport<AsyncTlsToPlaintextSocket>()->connect(
+              this,
+              address,
+              connectionOptions_.connectTimeout,
+              std::move(socketOptions));
+        } else {
+          DCHECK(securityMech == SecurityMech::NONE);
+          socket->setSendTimeout(connectionOptions_.writeTimeout.count());
+          socket->getUnderlyingTransport<folly::AsyncSocket>()->connect(
+              this,
+              address,
+              connectionOptions_.connectTimeout.count(),
+              socketOptions);
+        }
+        return socket;
+      });
 }
 
 apache::thrift::RocketClientChannel::Ptr ThriftTransportBase::createChannel() {

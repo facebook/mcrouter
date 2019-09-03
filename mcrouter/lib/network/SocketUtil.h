@@ -11,6 +11,8 @@
 #include <folly/io/async/AsyncSocket.h>
 #include <folly/io/async/AsyncTransport.h>
 
+#include <thrift/lib/cpp/async/TAsyncTransport.h>
+
 namespace folly {
 class AsyncSocketException;
 class EventBase;
@@ -39,6 +41,17 @@ createSocket(
     folly::EventBase& eventBase,
     const ConnectionOptions& connectionOptions);
 
+/**
+ * Like createSocket(), but instead creates a TAsyncSocket-based socket that
+ * plays well with Thrift clients and channels; all AsyncSocketExceptions are
+ * automatically converted into TAsyncTransportExceptions.
+ */
+folly::Expected<
+    apache::thrift::async::TAsyncTransport::UniquePtr,
+    folly::AsyncSocketException>
+createTAsyncSocket(
+    folly::EventBase& eventBase,
+    const ConnectionOptions& connectionOptions);
 /**
  * Get the socket address based on the given options.
  */

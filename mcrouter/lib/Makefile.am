@@ -149,6 +149,8 @@ libmcrouter_a_SOURCES = \
   network/AsyncMcServerWorker.cpp \
   network/AsyncMcServerWorker.h \
   network/AsyncMcServerWorkerOptions.h \
+  network/AsyncTlsToPlaintextSocket.cpp \
+  network/AsyncTlsToPlaintextSocket.h \
   network/CarbonMessageDispatcher.h \
   network/CarbonMessageList.h \
   network/CarbonMessageTraits.h \

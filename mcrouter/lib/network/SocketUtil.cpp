@@ -6,6 +6,8 @@
  */
 #include "mcrouter/lib/network/SocketUtil.h"
 
+#include <type_traits>
+
 #include <folly/Expected.h>
 #include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/io/async/AsyncSocket.h>
@@ -13,7 +15,11 @@
 #include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/EventBase.h>
 
+#include <thrift/lib/cpp/async/TAsyncSSLSocket.h>
+#include <thrift/lib/cpp/async/TAsyncSocket.h>
+
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
+#include "mcrouter/lib/network/AsyncTlsToPlaintextSocket.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
 #include "mcrouter/lib/network/McFizzClient.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
@@ -120,6 +126,77 @@ void createQoSClassOption(
 
 } // namespace
 
+template <bool CreateThriftFriendlySocket>
+folly::Expected<
+    std::conditional_t<
+        CreateThriftFriendlySocket,
+        apache::thrift::async::TAsyncTransport::UniquePtr,
+        folly::AsyncTransportWrapper::UniquePtr>,
+    folly::AsyncSocketException>
+createSocketCommon(
+    folly::EventBase& eventBase,
+    const ConnectionOptions& connectionOptions) {
+  using AsyncSocketT = std::conditional_t<
+      CreateThriftFriendlySocket,
+      apache::thrift::async::TAsyncSocket,
+      folly::AsyncSocket>;
+  using AsyncSSLSocketT = std::conditional_t<
+      CreateThriftFriendlySocket,
+      apache::thrift::async::TAsyncSSLSocket,
+      folly::AsyncSSLSocket>;
+  using Ptr = std::conditional_t<
+      CreateThriftFriendlySocket,
+      apache::thrift::async::TAsyncTransport::UniquePtr,
+      folly::AsyncTransportWrapper::UniquePtr>;
+
+  Ptr socket;
+
+  const auto mech = connectionOptions.accessPoint->getSecurityMech();
+  if (mech == SecurityMech::NONE) {
+    socket.reset(new AsyncSocketT(&eventBase));
+    return socket;
+  }
+
+  // Only AsyncMcClient sockets support Fizz; that creation logic lives outside
+  // this helper function.
+  DCHECK(isAsyncSSLSocketMech(mech));
+  // Creating a secure transport - make sure it isn't over a unix domain sock
+  if (connectionOptions.accessPoint->isUnixDomainSocket()) {
+    return folly::makeUnexpected(folly::AsyncSocketException(
+        folly::AsyncSocketException::BAD_ARGS,
+        "SSL protocol is not applicable for Unix Domain Sockets"));
+  }
+  const auto& securityOpts = connectionOptions.securityOpts;
+  const auto& serviceId = getServiceIdentity(connectionOptions);
+  // openssl based tls
+  auto sslContext = getClientContext(securityOpts, mech);
+  if (!sslContext) {
+    return folly::makeUnexpected(folly::AsyncSocketException(
+        folly::AsyncSocketException::SSL_ERROR,
+        "SSLContext provider returned nullptr, "
+        "check SSL certificates"));
+  }
+
+  typename AsyncSSLSocketT::UniquePtr sslSocket(
+      new AsyncSSLSocketT(sslContext, &eventBase));
+  if (securityOpts.sessionCachingEnabled) {
+    if (auto clientCtx =
+            std::dynamic_pointer_cast<ClientSSLContext>(sslContext)) {
+      sslSocket->setSessionKey(serviceId);
+      auto session = clientCtx->getCache().getSSLSession(serviceId);
+      if (session) {
+        sslSocket->setSSLSession(session.release(), true);
+      }
+    }
+  }
+  if (securityOpts.tfoEnabledForSsl) {
+    sslSocket->enableTFO();
+  }
+  sslSocket->forceCacheAddrOnFailure(true);
+  socket.reset(sslSocket.release());
+  return socket;
+}
+
 folly::Expected<
     folly::AsyncTransportWrapper::UniquePtr,
     folly::AsyncSocketException>
@@ -129,10 +206,11 @@ createSocket(
   folly::AsyncTransportWrapper::UniquePtr socket;
 
   const auto mech = connectionOptions.accessPoint->getSecurityMech();
-  if (mech == SecurityMech::NONE) {
-    socket.reset(new folly::AsyncSocket(&eventBase));
-    return socket;
+  if (mech == SecurityMech::NONE || isAsyncSSLSocketMech(mech)) {
+    return createSocketCommon<false>(eventBase, connectionOptions);
   }
+
+  DCHECK(mech == SecurityMech::TLS13_FIZZ);
   // creating a secure transport - make sure it isn't over a unix domain sock
   if (connectionOptions.accessPoint->isUnixDomainSocket()) {
     return folly::makeUnexpected(folly::AsyncSocketException(
@@ -141,55 +219,43 @@ createSocket(
   }
   const auto& securityOpts = connectionOptions.securityOpts;
   const auto& serviceId = getServiceIdentity(connectionOptions);
-  if (isAsyncSSLSocketMech(mech)) {
-    // openssl based tls
-    auto sslContext = getClientContext(securityOpts, mech);
-    if (!sslContext) {
-      return folly::makeUnexpected(folly::AsyncSocketException(
-          folly::AsyncSocketException::SSL_ERROR,
-          "SSLContext provider returned nullptr, "
-          "check SSL certificates"));
-    }
-
-    auto sslSocket = new folly::AsyncSSLSocket(sslContext, &eventBase);
-    if (securityOpts.sessionCachingEnabled) {
-      if (auto clientCtx =
-              std::dynamic_pointer_cast<ClientSSLContext>(sslContext)) {
-        sslSocket->setSessionKey(serviceId);
-        auto session = clientCtx->getCache().getSSLSession(serviceId);
-        if (session) {
-          sslSocket->setSSLSession(session.release(), true);
-        }
-      }
-    }
-    if (securityOpts.tfoEnabledForSsl) {
-      sslSocket->enableTFO();
-    }
-    sslSocket->forceCacheAddrOnFailure(true);
-    socket.reset(sslSocket);
-  } else {
-    // tls 13 fizz
-    auto fizzContextAndVerifier = getFizzClientConfig(securityOpts);
-    if (!fizzContextAndVerifier.first) {
-      return folly::makeUnexpected(folly::AsyncSocketException(
-          folly::AsyncSocketException::SSL_ERROR,
-          "Fizz context provider returned nullptr, "
-          "check SSL certificates"));
-    }
-    auto fizzClient = new McFizzClient(
-        &eventBase,
-        std::move(fizzContextAndVerifier.first),
-        std::move(fizzContextAndVerifier.second));
-    fizzClient->setSessionKey(serviceId);
-    if (securityOpts.tfoEnabledForSsl) {
-      if (auto socket =
-              fizzClient->getUnderlyingTransport<folly::AsyncSocket>()) {
-        socket->enableTFO();
-      }
-    }
-    socket.reset(fizzClient);
+  // tls 13 fizz
+  auto fizzContextAndVerifier = getFizzClientConfig(securityOpts);
+  if (!fizzContextAndVerifier.first) {
+    return folly::makeUnexpected(folly::AsyncSocketException(
+        folly::AsyncSocketException::SSL_ERROR,
+        "Fizz context provider returned nullptr, "
+        "check SSL certificates"));
   }
+  auto fizzClient = new McFizzClient(
+      &eventBase,
+      std::move(fizzContextAndVerifier.first),
+      std::move(fizzContextAndVerifier.second));
+  fizzClient->setSessionKey(serviceId);
+  if (securityOpts.tfoEnabledForSsl) {
+    if (auto underlyingSocket =
+            fizzClient->getUnderlyingTransport<folly::AsyncSocket>()) {
+      underlyingSocket->enableTFO();
+    }
+  }
+  socket.reset(fizzClient);
   return socket;
+}
+
+folly::Expected<
+    apache::thrift::async::TAsyncTransport::UniquePtr,
+    folly::AsyncSocketException>
+createTAsyncSocket(
+    folly::EventBase& eventBase,
+    const ConnectionOptions& connectionOptions) {
+  auto socket = createSocketCommon<true>(eventBase, connectionOptions);
+
+  const auto mech = connectionOptions.accessPoint->getSecurityMech();
+  if (mech == SecurityMech::NONE || socket.hasError()) {
+    return socket;
+  }
+  DCHECK(mech == SecurityMech::TLS_TO_PLAINTEXT);
+  return AsyncTlsToPlaintextSocket::create(std::move(socket).value());
 }
 
 folly::Expected<folly::SocketAddress, folly::AsyncSocketException>
