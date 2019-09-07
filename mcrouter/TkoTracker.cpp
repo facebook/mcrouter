@@ -46,6 +46,7 @@ void TkoTracker::incrementSoftTkoCount() {
 void TkoTracker::decrementSoftTkoCount() {
   // Decrement the counter and ensure we haven't gone below 0
   size_t oldSoftTkos = trackerMap_.globalTkos_.softTkos.fetch_sub(1);
+  (void)oldSoftTkos;
   assert(oldSoftTkos != 0);
 }
 

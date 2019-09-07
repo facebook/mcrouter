@@ -1159,7 +1159,6 @@ TEST_P(AsyncMcClientSSLOffloadTest, clientReset) {
   auto lc = std::make_unique<folly::fibers::EventBaseLoopController>();
   lc->attachEventBase(evb);
   folly::fibers::FiberManager fm(std::move(lc));
-  folly::Optional<ConnectionDownReason> downReason;
   auto client = std::make_unique<AsyncMcClient>(evb, opts);
   auto clientPtr = client.get();
   fm.addTask([clientPtr] {

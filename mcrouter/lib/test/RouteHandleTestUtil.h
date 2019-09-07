@@ -71,6 +71,7 @@ class SimpleRouteHandleProvider : public RouteHandleProviderIf<RouteHandleIf> {
 
     if (jsonPtr->isArray()) {
       for (const auto& child : *jsonPtr) {
+        (void)child;
         result.push_back(mcrouter::createNullRoute<RouteHandleIf>());
       }
     } else {

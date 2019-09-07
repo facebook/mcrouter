@@ -306,6 +306,7 @@ size_t Lz4Immutable::compressCommon(
   // Lower and upper limit to where the output buffer can go.
   const uint8_t* const outputStart = output;
   const uint8_t* const outputLimit = output + maxOutputSize;
+  (void)outputLimit;
 
   // Controls the compression main loop.
   bool running = true;
@@ -499,6 +500,7 @@ std::unique_ptr<folly::IOBuf> Lz4Immutable::decompress(
   // Lower and upper limit to where the output buffer can go.
   const uint8_t* outputStart = output;
   const uint8_t* outputLimit = output + uncompressedSize;
+  (void)outputLimit;
 
   IovecCursor source(iov, iovcnt);
   IovecCursor match = dicCursor;
