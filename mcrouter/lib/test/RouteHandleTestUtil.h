@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include <folly/Optional.h>
 #include <folly/Traits.h>
 #include <folly/fibers/FiberManager.h>
 #include <folly/fibers/SimpleLoopController.h>
@@ -150,6 +151,9 @@ struct TestHandleImpl {
 
   std::vector<folly::fibers::Promise<void>> promises_;
 
+  folly::Optional<std::function<carbon::Result(std::string reqKey)>>
+      resultGenerator_;
+
   explicit TestHandleImpl(GetRouteTestData td)
       : rh(makeRouteHandle<RouteHandleIf, RecordingRoute>(
             td,
@@ -216,6 +220,15 @@ struct TestHandleImpl {
       promises_.push_back(std::move(promise));
     });
     isPaused = false;
+  }
+
+  void setResultGenerator(
+      std::function<carbon::Result(std::string reqKey)> getResult) {
+    resultGenerator_ = std::move(getResult);
+  }
+
+  void resetResultGenerator() {
+    resultGenerator_ = folly::none;
   }
 };
 
@@ -309,7 +322,9 @@ struct RecordingRoute {
     h_->sawExptimes.push_back(req.exptime());
     recordShadowId(req);
     if (carbon::GetLike<Request>::value) {
-      reply.result() = dataGet_.result_;
+      reply.result() = h_->resultGenerator_.hasValue()
+          ? (*h_->resultGenerator_)(req.key().fullKey().str())
+          : dataGet_.result_;
       detail::setReplyValue(reply, dataGet_.value_);
       detail::testSetFlags(reply, dataGet_.flags_);
       setAppspecificErrorCode(reply);
@@ -321,12 +336,16 @@ struct RecordingRoute {
         folly::StringPiece sp_value = coalesceAndGetRange(val);
         h_->sawValues.push_back(sp_value.str());
       }
-      reply.result() = dataUpdate_.result_;
+      reply.result() = h_->resultGenerator_.hasValue()
+          ? (*h_->resultGenerator_)(req.key().fullKey().str())
+          : dataUpdate_.result_;
       detail::testSetFlags(reply, dataUpdate_.flags_);
       return reply;
     }
     if (carbon::DeleteLike<Request>::value) {
-      reply.result() = dataDelete_.result_;
+      reply.result() = h_->resultGenerator_.hasValue()
+          ? (*h_->resultGenerator_)(req.key().fullKey().str())
+          : dataDelete_.result_;
       return reply;
     }
     return createReply(DefaultReply, req);

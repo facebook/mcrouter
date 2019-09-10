@@ -222,6 +222,46 @@ TEST_F(KeySplitRouteTest, LeasesGetTest) {
   testLeases(req);
 }
 
+TEST_F(KeySplitRouteTest, FirstHitTest) {
+  constexpr folly::StringPiece key = "abc";
+  McLeaseGetRequest req(key);
+
+  auto th = std::make_shared<TestHandle>(GetRouteTestData());
+  th->setResultGenerator([key](std::string reqKey) {
+    return reqKey == key ? carbon::Result::FOUND : carbon::Result::NOTFOUND;
+  });
+  auto rh = std::make_shared<RouteHandle>(RouteHandle(th->rh, 3, true, true));
+
+  // create expected keys, the first key is not modified.
+  std::vector<std::string> expectedKeys;
+  expectedKeys.push_back(key.toString());
+  for (size_t i = 1; i < 3; ++i) {
+    expectedKeys.push_back(
+        folly::to<std::string>(key, kMemcacheReplicaSeparator, i));
+  }
+
+  TestFiberManager fm;
+  fm.runAll({[&]() {
+    auto reply = rh->route(req);
+    EXPECT_EQ(reply.result(), carbon::Result::FOUND);
+  }});
+  EXPECT_FALSE(th->saw_keys.empty());
+
+  EXPECT_EQ(vector<std::string>{expectedKeys}, th->saw_keys);
+
+  th->setResultGenerator([key](std::string reqKey) {
+    return reqKey != key ? carbon::Result::FOUND : carbon::Result::NOTFOUND;
+  });
+  th->saw_keys = {};
+
+  fm.runAll({[&]() {
+    auto reply = rh->route(req);
+    EXPECT_EQ(reply.result(), carbon::Result::FOUND);
+  }});
+
+  EXPECT_EQ(vector<std::string>{expectedKeys}, th->saw_keys);
+}
+
 TEST_F(KeySplitRouteTest, FirstHitWorstCaseTest) {
   constexpr folly::StringPiece key = "abc";
   McLeaseGetRequest req(key);
