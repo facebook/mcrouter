@@ -34,6 +34,12 @@ std::shared_ptr<MemcacheRouteHandleIf> makeKeySplitRoute(
   checkLogic(
       json["all_sync"].isBool(), "KeySplitRoute: all_sync is not a boolean");
 
+  auto isFirstHit = json.get_ptr("first_hit");
+  if (isFirstHit) {
+    checkLogic(
+        isFirstHit->isBool(), "KeySplitRoute: first_hit is not a boolean");
+  }
+
   size_t replicas = json["replicas"].getInt();
   bool all_sync = json["all_sync"].getBool();
   checkLogic(
@@ -44,7 +50,10 @@ std::shared_ptr<MemcacheRouteHandleIf> makeKeySplitRoute(
       "KeySplitRoute: there should no more than 1000 replicas");
 
   return std::make_shared<MemcacheRouteHandle<KeySplitRoute>>(
-      factory.create(json["destination"]), replicas, all_sync);
+      factory.create(json["destination"]),
+      replicas,
+      all_sync,
+      isFirstHit ? isFirstHit->asBool() : false);
 }
 
 } // namespace mcrouter

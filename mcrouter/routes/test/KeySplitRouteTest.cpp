@@ -34,7 +34,7 @@ using RouteHandle = McrouterRouteHandle<KeySplitRoute>;
 
 class KeySplitRouteTest : public RouteHandleTestBase<HelloGoodbyeRouterInfo> {
  public:
-  void testCreate(size_t numReplicas, bool allSync) {
+  void testCreate(size_t numReplicas, bool allSync, bool firstHit = false) {
     // set up the route handle under test
     if (th_)
       th_.reset();
@@ -43,9 +43,10 @@ class KeySplitRouteTest : public RouteHandleTestBase<HelloGoodbyeRouterInfo> {
     th_ = std::make_shared<TestHandle>(
         GetRouteTestData(carbon::Result::FOUND, "a"));
     rh_ = std::make_shared<RouteHandle>(
-        RouteHandle(th_->rh, numReplicas, allSync));
+        RouteHandle(th_->rh, numReplicas, allSync, firstHit));
     replicas_ = numReplicas;
     allSync_ = allSync;
+    firstHit_ = firstHit;
   }
 
   std::string expectedKey(folly::StringPiece key, size_t hostid) {
@@ -117,6 +118,7 @@ class KeySplitRouteTest : public RouteHandleTestBase<HelloGoodbyeRouterInfo> {
   folly::StringPiece key_;
   size_t replicas_;
   bool allSync_;
+  bool firstHit_;
 };
 
 constexpr folly::StringPiece KeySplitRouteTest::kMemcacheReplicaSeparator;
@@ -218,6 +220,33 @@ TEST_F(KeySplitRouteTest, LeasesGetTest) {
   McLeaseGetRequest req(key);
 
   testLeases(req);
+}
+
+TEST_F(KeySplitRouteTest, FirstHitWorstCaseTest) {
+  constexpr folly::StringPiece key = "abc";
+  McLeaseGetRequest req(key);
+
+  auto th = std::make_shared<TestHandle>(
+      GetRouteTestData(carbon::Result::NOTFOUND, "a"));
+  auto rh = std::make_shared<RouteHandle>(RouteHandle(th->rh, 3, true, true));
+
+  // create expected keys, the first key is not modified.
+  std::vector<std::string> expectedKeys;
+  expectedKeys.push_back(key.toString());
+  for (size_t i = 1; i < 3; ++i) {
+    expectedKeys.push_back(
+        folly::to<std::string>(key, kMemcacheReplicaSeparator, i));
+  }
+
+  TestFiberManager fm;
+  fm.runAll({[&]() {
+    auto reply = rh->route(req);
+    EXPECT_EQ(reply.result(), carbon::Result::NOTFOUND);
+  }});
+
+  EXPECT_FALSE(th->saw_keys.empty());
+  std::sort(th->saw_keys.begin(), th->saw_keys.end());
+  EXPECT_EQ(vector<std::string>{expectedKeys}, th->saw_keys);
 }
 
 TEST_F(KeySplitRouteTest, TestReplicaCounts) {

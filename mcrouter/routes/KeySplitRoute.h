@@ -34,15 +34,36 @@ namespace mcrouter {
  *
  * This is done by rehashing the key with a value and routing based on the
  * new key.
+ *
+ * @param   child     Child route handle to route request to
+ * @param   replicas  Number of ways to split keys
+ * @param   allSync   Sync sets and deletes amongst all children
+ * @param   firstHit  returns the result of the first hit. NOTE: This should NOT
+ *                    be used for hot key routing
  */
 class KeySplitRoute {
  public:
+  KeySplitRoute(
+      std::shared_ptr<MemcacheRouteHandleIf> child,
+      size_t replicas,
+      bool allSync,
+      bool firstHit = false)
+      : child_(std::move(child)),
+        replicas_(replicas),
+        allSync_(allSync),
+        firstHit_(firstHit) {
+    assert(child_ != nullptr);
+    assert(replicas_ >= kMinReplicaCount);
+    assert(replicas_ <= kMaxReplicaCount);
+  }
+
   std::string routeName() const {
     uint64_t replicaId = getReplicaId();
     return folly::sformat(
-        "keysplit|replicas={}|all-sync={}|replicaId={}",
+        "keysplit|replicas={}|all-sync={}|first-hit={}|replicaId={}",
         replicas_,
         allSync_,
+        firstHit_,
         replicaId);
   }
 
@@ -60,17 +81,8 @@ class KeySplitRoute {
     return t(*child_, req);
   }
 
-  KeySplitRoute(
-      std::shared_ptr<MemcacheRouteHandleIf> child,
-      size_t replicas,
-      bool allSync)
-      : child_(std::move(child)), replicas_(replicas), allSync_(allSync) {
-    assert(child_ != nullptr);
-    assert(replicas_ >= kMinReplicaCount);
-    assert(replicas_ <= kMaxReplicaCount);
-  }
-
-  // Route only to 1 replica.
+  // Route only to 1 replica if first_hit is not set, otherwise return first
+  // result that is not an error or miss or the last reply.
   template <class Request>
   typename std::enable_if<
       folly::
@@ -82,6 +94,9 @@ class KeySplitRoute {
       return child_->route(req);
     }
 
+    if (firstHit_) {
+      return routeAllFastest(req);
+    }
     // always retrieve from 1 replica
     uint64_t replicaId = getReplicaId();
     return routeOne(req, replicaId);
@@ -148,6 +163,7 @@ class KeySplitRoute {
   const std::shared_ptr<MemcacheRouteHandleIf> child_;
   const size_t replicas_{2};
   const bool allSync_{false};
+  const bool firstHit_{false};
 
   template <class Request>
   bool canAugmentRequest(const Request& req) const {
@@ -194,6 +210,52 @@ class KeySplitRoute {
     }
 
     return routeOne(req, replicaId);
+  }
+
+  template <class Request>
+  typename std::enable_if<
+      folly::
+          IsOneOf<Request, McGetRequest, McLeaseGetRequest, McLeaseSetRequest>::
+              value,
+      ReplyT<Request>>::type
+  routeAllFastest(const Request& req) const {
+    using Reply = ReplyT<Request>;
+
+    std::vector<std::function<Reply()>> funcs;
+    funcs.reserve(replicas_);
+    for (size_t id = 0; id < replicas_; ++id) {
+      auto reqCopy = shouldAugmentRequest(id)
+          ? std::make_shared<Request>(copyAndAugment(req, id))
+          : std::make_shared<Request>(req);
+      funcs.push_back(
+          [reqCopy, child = child_]() { return child->route(*reqCopy); });
+    }
+    auto taskIt = folly::fibers::addTasks(funcs.begin(), funcs.end());
+    while (true) {
+      auto reply = taskIt.awaitNext();
+      if (folly::IsOneOf<Request, McGetRequest, McLeaseGetRequest>::value) {
+        if (isHitResult(reply.result()) || !taskIt.hasNext()) {
+          return reply;
+        }
+      } else {
+        if (isStoredResult(reply.result()) || !taskIt.hasNext()) {
+          return reply;
+        }
+      }
+    }
+  }
+
+  // if its not a get  or leaseset request then just do a normal route all
+  // Note: This will not be called.
+  template <class Request>
+  typename std::enable_if<
+      !folly::
+          IsOneOf<Request, McGetRequest, McLeaseGetRequest, McLeaseSetRequest>::
+              value,
+      ReplyT<Request>>::type
+  routeAllFastest(const Request& req) const {
+    uint64_t replicaId = getReplicaId();
+    return routeAll(req, replicaId);
   }
 
   uint64_t getReplicaId() const {
