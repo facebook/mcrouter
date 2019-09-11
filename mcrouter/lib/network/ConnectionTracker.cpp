@@ -16,7 +16,8 @@ McServerSession& ConnectionTracker::add(
     std::shared_ptr<McServerOnRequest> cb,
     const AsyncMcServerWorkerOptions& options,
     void* userCtxt,
-    const CompressionCodecMap* compressionCodecMap) {
+    const CompressionCodecMap* compressionCodecMap,
+    McServerSession::KeepAlive keepAlive) {
   if (maxConns_ != 0 && sessions_.size() >= maxConns_) {
     evict();
   }
@@ -28,7 +29,8 @@ McServerSession& ConnectionTracker::add(
       options,
       userCtxt,
       &sessions_,
-      compressionCodecMap);
+      compressionCodecMap,
+      std::move(keepAlive));
 
   return session;
 }

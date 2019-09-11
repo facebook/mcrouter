@@ -805,6 +805,30 @@ class MockMemcachedThrift(MCProcess):
             listen_sock.close()
 
 
+class MockMemcachedDual(MCProcess):
+    def __init__(self, thriftPort=None, asyncPort=None):
+        args = [McrouterGlobals.binPath('mockmcdual')]
+        listen_sock = None
+        if thriftPort is None:
+            self.listenSocketThrift = create_listen_socket()
+            thriftPort = self.listenSocketThrift.getsockname()[1]
+            args.extend(['-t', str(self.listenSocketThrift.fileno())])
+        else:
+            args.extend(['-p', str(thriftPort)])
+
+        if asyncPort is None:
+            self.listenSocketAsyncMc = create_listen_socket()
+            asyncPort = self.listenSocketAsyncMc.getsockname()[1]
+            args.extend(['-T', str(self.listenSocketAsyncMc.fileno())])
+        else:
+            args.extend(['-P', str(asyncPort)])
+
+        MCProcess.__init__(self, args, asyncPort)
+
+        if listen_sock is not None:
+            listen_sock.close()
+
+
 class Memcached(MCProcess):
     def __init__(self, port=None):
         args = [McrouterGlobals.binPath('prodmc')]

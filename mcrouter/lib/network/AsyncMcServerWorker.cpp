@@ -13,6 +13,7 @@
 #include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/EventBase.h>
 #include <folly/io/async/SSLContext.h>
+#include <folly/io/async/VirtualEventBase.h>
 
 #include "mcrouter/lib/network/McFizzServer.h"
 #include "mcrouter/lib/network/McServerSession.h"
@@ -23,7 +24,18 @@ namespace memcache {
 AsyncMcServerWorker::AsyncMcServerWorker(
     AsyncMcServerWorkerOptions opts,
     folly::EventBase& eventBase)
-    : opts_(std::move(opts)), eventBase_(eventBase), tracker_(opts_.maxConns) {}
+    : opts_(std::move(opts)),
+      eventBase_(&eventBase),
+      virtualEventBase_(nullptr),
+      tracker_(opts_.maxConns) {}
+
+AsyncMcServerWorker::AsyncMcServerWorker(
+    AsyncMcServerWorkerOptions opts,
+    folly::VirtualEventBase* virtualEventBase)
+    : opts_(std::move(opts)),
+      eventBase_(nullptr),
+      virtualEventBase_(virtualEventBase),
+      tracker_(opts_.maxConns) {}
 
 bool AsyncMcServerWorker::addSecureClientSocket(
     int fd,
@@ -31,7 +43,7 @@ bool AsyncMcServerWorker::addSecureClientSocket(
     void* userCtxt) {
   McFizzServer::UniquePtr socket(new McFizzServer(
       folly::AsyncSocket::UniquePtr(new folly::AsyncSocket(
-          &eventBase_, folly::NetworkSocket::fromFd(fd))),
+          getEventBase(), folly::NetworkSocket::fromFd(fd))),
       std::move(contexts.second),
       std::move(contexts.first)));
   return addClientSocket(std::move(socket), userCtxt);
@@ -39,7 +51,7 @@ bool AsyncMcServerWorker::addSecureClientSocket(
 
 bool AsyncMcServerWorker::addClientSocket(int fd, void* userCtxt) {
   auto socket = folly::AsyncSocket::UniquePtr(
-      new folly::AsyncSocket(&eventBase_, folly::NetworkSocket::fromFd(fd)));
+      new folly::AsyncSocket(getEventBase(), folly::NetworkSocket::fromFd(fd)));
   return addClientSocket(std::move(socket), userCtxt);
 }
 
@@ -65,7 +77,8 @@ McServerSession* AsyncMcServerWorker::addClientTransport(
         onRequest_,
         opts_,
         userCtxt,
-        compressionCodecMap_));
+        compressionCodecMap_,
+        folly::getKeepAliveToken<folly::VirtualEventBase>(virtualEventBase_)));
   } catch (const std::exception& ex) {
     LOG(ERROR) << "Error creating new session: " << ex.what();
     return nullptr;

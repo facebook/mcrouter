@@ -1,3 +1,8 @@
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the LICENSE
+# file in the root directory of this source tree.
+
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -5,6 +10,7 @@ from __future__ import unicode_literals
 import random
 
 from mcrouter.test.MCProcess import MockMemcached, MockMemcachedThrift
+from mcrouter.test.MCProcess import MockMemcachedDual
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 from mcrouter.test.mock_servers import DeadServer
 from mcrouter.test.mock_servers import SleepServer
@@ -89,3 +95,10 @@ class TestThriftSanityMock(TestMcrouterSanityMock):
 
     def make_memcached(self):
         return MockMemcachedThrift()
+
+
+class TestDualCaretSanityMock(TestMcrouterSanityMock):
+    config = './mcrouter/test/test_caret.json'
+
+    def make_memcached(self):
+        return MockMemcachedDual()

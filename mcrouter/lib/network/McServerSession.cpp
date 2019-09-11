@@ -8,7 +8,9 @@
 
 #include <memory>
 
+#include <folly/Executor.h>
 #include <folly/io/async/AsyncSSLSocket.h>
+#include <folly/io/async/VirtualEventBase.h>
 #include <folly/small_vector.h>
 
 #include "mcrouter/lib/debug/FifoManager.h"
@@ -48,14 +50,16 @@ McServerSession& McServerSession::create(
     const AsyncMcServerWorkerOptions& options,
     void* userCtxt,
     McServerSession::Queue* queue,
-    const CompressionCodecMap* codecMap) {
+    const CompressionCodecMap* codecMap,
+    KeepAlive keepAlive) {
   auto ptr = new McServerSession(
       std::move(transport),
       std::move(cb),
       stateCb,
       options,
       userCtxt,
-      codecMap);
+      codecMap,
+      keepAlive);
 
   assert(ptr->state_ == STREAMING);
   DestructorGuard dg(ptr);
@@ -96,10 +100,12 @@ McServerSession::McServerSession(
     StateCallback& stateCb,
     const AsyncMcServerWorkerOptions& options,
     void* userCtxt,
-    const CompressionCodecMap* codecMap)
+    const CompressionCodecMap* codecMap,
+    KeepAlive keepAlive)
     : options_(options),
       transport_(std::move(transport)),
       eventBase_(*transport_->getEventBase()),
+      keepAlive_(std::move(keepAlive)),
       onRequest_(std::move(cb)),
       stateCb_(stateCb),
       sendWritesCallback_(*this),

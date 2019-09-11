@@ -15,6 +15,7 @@
 #include <sys/socket.h>
 
 #include <folly/SharedMutex.h>
+#include <folly/io/async/VirtualEventBase.h>
 #include <wangle/ssl/TLSTicketKeySeeds.h>
 
 #include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
@@ -114,9 +115,16 @@ class AsyncMcServer {
     uint32_t tfoQueueSize{0};
 
     /**
-     * Number of threads to spawn, must be positive.
+     * Number of threads to spawn, must be positive if number if virtual event
+     * base mode is not used.
      */
     size_t numThreads{1};
+
+    /**
+     * If set, AsyncMcServer does not own create threads/EventBases and uses
+     * the event bases in this vector to create Virtual Event Bases.
+     */
+    std::vector<folly::EventBase*> eventBases;
 
     /**
      * Number of threads that will listen for new connections. Must be > 0 &&
@@ -173,6 +181,16 @@ class AsyncMcServer {
       void(size_t, folly::EventBase&, facebook::memcache::AsyncMcServerWorker&)>
       LoopFn;
 
+  /**
+   * User-defined init function to be used in Virtual Event Base mode.
+   * Args are threadId (0 to numThreads - 1), eventBase and the thread's worker
+   */
+  typedef std::function<void(
+      size_t,
+      folly::VirtualEventBase&,
+      facebook::memcache::AsyncMcServerWorker&)>
+      InitFn;
+
   explicit AsyncMcServer(Options opts);
   ~AsyncMcServer();
 
@@ -194,6 +212,21 @@ class AsyncMcServer {
    *   If bind or listen fails.
    */
   void spawn(LoopFn fn, std::function<void()> onShutdown = nullptr);
+
+  /**
+   * Spawn the required number of worker objets and run setup for each of them
+   * on the provided event bases. This mode enables AsyncMcServer to be run on
+   * external event bases, where it is not responsible for running the loop fn.
+   *
+   * @param onShutdown  called on shutdown. Worker objects will be stopped only
+   *                    after the callback completes. It may be called from any
+   *                    thread, but it is guaranteed the callback will be
+   *                    executed exactly one time.
+   *
+   * @throws folly::AsyncSocketException
+   *   If bind or listen fails.
+   */
+  void startOnVirtualEB(InitFn fn, std::function<void()> onShutdown = nullptr);
 
   /**
    * Start shutting down all processing gracefully.  Will ensure that any
@@ -223,7 +256,9 @@ class AsyncMcServer {
   void shutdownFromSignalHandler();
 
   /**
-   * Join all spawned threads.  Will exit upon server shutdown.
+   * Join all spawned threads.  Will exit upon server shutdown. When using
+   * virtual event bases, this will block until the thread objects have
+   * shutdown.
    */
   void join();
 
@@ -232,6 +267,10 @@ class AsyncMcServer {
    */
   void setTicketKeySeeds(wangle::TLSTicketKeySeeds seeds);
   wangle::TLSTicketKeySeeds getTicketKeySeeds() const;
+
+  bool virtualEventBaseEnabled() const {
+    return virtualEventBaseMode_;
+  }
 
  private:
   std::unique_ptr<folly::ScopedEventBaseThread> auxiliaryEvbThread_;
@@ -247,14 +286,30 @@ class AsyncMcServer {
   std::atomic<bool> alive_{true};
   bool spawned_{false};
 
+  bool virtualEventBaseMode_{false};
+  std::vector<std::unique_ptr<folly::VirtualEventBase>> shutdownVEBs_;
+  folly::SharedMutex shutdownVEBLock_;
+
   enum class SignalShutdownState : uint64_t { STARTUP, SHUTDOWN, SPAWNED };
   std::atomic<SignalShutdownState> signalShutdownState_{
       SignalShutdownState::STARTUP};
 
   void startPollingTicketKeySeeds();
 
+  void start(std::function<void()> onShutdown = nullptr);
+
   AsyncMcServer(const AsyncMcServer&) = delete;
   AsyncMcServer& operator=(const AsyncMcServer&) = delete;
+
+  /*
+   * Called from the McServerThread to synchronize the shutdown of the
+   * VirtualEventBases with the shutdown of AsyncMcServer.
+   */
+  void addVirtualEventBaseForShutdown(
+      std::unique_ptr<folly::VirtualEventBase> virtualEventBase) {
+    folly::SharedMutex::WriteHolder lg(shutdownVEBLock_);
+    shutdownVEBs_.push_back(std::move(virtualEventBase));
+  }
 
   friend class McServerThread;
 };

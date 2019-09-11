@@ -45,6 +45,7 @@ class McServerSession
   folly::SafeIntrusiveListHook hook_;
 
  public:
+  using KeepAlive = folly::Executor::KeepAlive<folly::VirtualEventBase>;
   using Queue =
       folly::CountedIntrusiveList<McServerSession, &McServerSession::hook_>;
 
@@ -154,7 +155,9 @@ class McServerSession
       const AsyncMcServerWorkerOptions& options,
       void* userCtxt,
       McServerSession::Queue* queue,
-      const CompressionCodecMap* codecMap = nullptr);
+      const CompressionCodecMap* codecMap = nullptr,
+      KeepAlive keepAlive = nullptr);
+  //      folly::VirtualEventBase* virtualEventBase = nullptr);
 
   /**
    * Set appropriate socket options on an AsyncSocket
@@ -271,6 +274,9 @@ class McServerSession
 
   folly::AsyncTransportWrapper::UniquePtr transport_;
   folly::EventBase& eventBase_;
+  // When using the virtual event base mode, McServerSession is kept
+  // alive by the KeepAlive
+  KeepAlive keepAlive_;
   std::shared_ptr<McServerOnRequest> onRequest_;
   StateCallback& stateCb_;
 
@@ -492,7 +498,9 @@ class McServerSession
       StateCallback& stateCb,
       const AsyncMcServerWorkerOptions& options,
       void* userCtxt,
-      const CompressionCodecMap* codecMap);
+      const CompressionCodecMap* codecMap,
+      KeepAlive keepAlive = nullptr);
+  //     folly::VirtualEventBase* virtualEventBase = nullptr);
 
   McServerSession(const McServerSession&) = delete;
   McServerSession& operator=(const McServerSession&) = delete;

@@ -9,6 +9,9 @@
 #include <functional>
 #include <memory>
 
+#include <folly/io/async/EventBase.h>
+#include <folly/io/async/VirtualEventBase.h>
+
 #include "mcrouter/lib/network/McServerSession.h"
 
 namespace facebook {
@@ -59,7 +62,8 @@ class ConnectionTracker : public McServerSession::StateCallback {
       std::shared_ptr<McServerOnRequest> cb,
       const AsyncMcServerWorkerOptions& options,
       void* userCtxt,
-      const CompressionCodecMap* compressionCodecMap);
+      const CompressionCodecMap* compressionCodecMap,
+      McServerSession::KeepAlive keepAlive = nullptr);
 
   /**
    * Close all connections (sessions)
@@ -91,5 +95,5 @@ class ConnectionTracker : public McServerSession::StateCallback {
   void onCloseFinish(McServerSession& session, bool onAcceptedCalled) final;
   void onShutdown() final;
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook
