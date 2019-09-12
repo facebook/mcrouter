@@ -19,26 +19,41 @@ class TestAsyncFiles(McrouterTestCase):
     config = './mcrouter/test/mcrouter_test_basic_1_1_1.json'
     extra_args = ['--stats-logging-interval', '100', '--use-asynclog-version2']
 
-    def check_stats(self, stats_dir):
+    def check_stats(self, stats_dir, retries=5, sleep_interval=1):
         file_stat = os.path.join(stats_dir, self.stat_prefix + 'stats')
         file_startup_options = os.path.join(
             stats_dir, self.stat_prefix + 'startup_options')
         file_config_sources = os.path.join(
             stats_dir, self.stat_prefix + 'config_sources_info')
 
-        self.assertTrue(os.path.exists(file_stat),
+        fileStatExists = False
+        fileStartupExists = False
+        fileConfigExists = False
+        while retries > 0:
+            retries -= 1
+            if not fileStatExists:
+                fileStatExists = os.path.exists(file_stat)
+            if not fileStartupExists:
+                fileStartupExists = os.path.exists(file_startup_options)
+            if not fileConfigExists:
+                fileConfigExists = os.path.exists(file_config_sources)
+            if fileStatExists and fileStartupExists and fileConfigExists:
+                break
+            # Sleep between retry intervals
+            time.sleep(sleep_interval)
+
+        self.assertTrue(fileStatExists,
                         "{} doesn't exist".format(file_stat))
-        self.assertTrue(os.path.exists(file_startup_options),
+        self.assertTrue(fileStartupExists,
                         "{} doesn't exist".format(file_startup_options))
-        self.assertTrue(os.path.exists(file_config_sources),
+        self.assertTrue(fileConfigExists,
                         "{} doesn't exist".format(file_config_sources))
 
         return (file_stat, file_startup_options, file_config_sources)
 
     def test_stats_no_requests(self):
         mcrouter = self.add_mcrouter(self.config, extra_args=self.extra_args)
-        # wait for files
-        time.sleep(3)
+        # check will wait for files
         self.check_stats(mcrouter.stats_dir)
 
     def test_async_files(self):
