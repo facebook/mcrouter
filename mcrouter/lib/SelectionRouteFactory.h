@@ -8,7 +8,10 @@
 
 #include <vector>
 
+#include <folly/Optional.h>
+
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
+#include "mcrouter/lib/routes/DefaultShadowSelectorPolicy.h"
 #include "mcrouter/lib/routes/SelectionRoute.h"
 #include "mcrouter/routes/ErrorRoute.h"
 
@@ -26,11 +29,20 @@ namespace memcache {
  *                                routed if selector.select() returns a value
  *                                that is >= than children.size().
  */
-template <class RouterInfo, class Selector>
+template <
+    class RouterInfo,
+    class Selector,
+    class ShadowSelectorPolicy = DefaultShadowSelectorPolicy>
 typename RouterInfo::RouteHandlePtr createSelectionRoute(
     std::vector<typename RouterInfo::RouteHandlePtr> children,
     Selector selector,
-    typename RouterInfo::RouteHandlePtr outOfRangeDestination = nullptr) {
+    typename RouterInfo::RouteHandlePtr outOfRangeDestination = nullptr,
+    std::vector<typename RouterInfo::RouteHandlePtr> shadowChildren = {},
+    folly::Optional<Selector> shadowSelector = folly::none,
+    std::vector<uint16_t> shadowProbabilities = {},
+    const folly::Optional<ShadowSelectorPolicy>& shadowSelectorPolicy =
+        folly::none,
+    const uint32_t seed = mcrouter::nowUs()) {
   if (!outOfRangeDestination) {
     outOfRangeDestination =
         mcrouter::createErrorRoute<RouterInfo>("Invalid destination index.");
@@ -38,11 +50,20 @@ typename RouterInfo::RouteHandlePtr createSelectionRoute(
   if (children.empty()) {
     return std::move(outOfRangeDestination);
   }
-  return makeRouteHandleWithInfo<RouterInfo, SelectionRoute, Selector>(
+  return makeRouteHandleWithInfo<
+      RouterInfo,
+      SelectionRoute,
+      Selector,
+      ShadowSelectorPolicy>(
       std::move(children),
       std::move(selector),
-      std::move(outOfRangeDestination));
+      std::move(outOfRangeDestination),
+      std::move(shadowChildren),
+      std::move(shadowSelector),
+      std::move(shadowProbabilities),
+      std::move(shadowSelectorPolicy),
+      seed);
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

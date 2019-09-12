@@ -83,23 +83,51 @@ const folly::dynamic& getPoolJson(
 }
 
 template <class RouterInfo>
+bool hasShardsJson(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json,
+    const folly::StringPiece shardString = "shards") {
+  const auto jPools = [&json]() {
+    auto poolsJson = json.get_ptr("pools");
+    checkLogic(
+        poolsJson && poolsJson->isArray(),
+        "EagerShardSelectionRoute: 'pools' not found");
+    return *poolsJson;
+  }();
+
+  for (const auto& jPool : jPools) {
+    const auto& poolJson = getPoolJson<RouterInfo>(factory, jPool);
+    const auto* shardsJson = poolJson.get_ptr(shardString);
+    if (!shardsJson) {
+      shardsJson = jPool.get_ptr(shardString);
+    }
+    if (!shardsJson) {
+      return false;
+    }
+  }
+  return true;
+}
+
+template <class RouterInfo>
 const folly::dynamic& getShardsJson(
     RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
-    const folly::dynamic& json) {
+    const folly::dynamic& json,
+    const folly::StringPiece shardString = "shards") {
   assert(json.isObject());
 
   // first, look for shards inside the pool.
   const auto& poolJson = getPoolJson<RouterInfo>(factory, json);
-  const auto* shardsJson = poolJson.get_ptr("shards");
+  const auto* shardsJson = poolJson.get_ptr(shardString);
 
   // if not found, look outside.
   // TODO: kill this fallback logic when every client is at version >= 28
   if (!shardsJson) {
-    shardsJson = json.get_ptr("shards");
+    shardsJson = json.get_ptr(shardString);
   }
   checkLogic(
       shardsJson && shardsJson->isArray(),
-      "ShardSelectionRoute: 'shards' not found or not an array");
+      "ShardSelectionRoute: '{}' not found or not an array",
+      shardString);
   return *shardsJson;
 }
 
@@ -142,13 +170,18 @@ MapType getShardsMap(const folly::dynamic& json, size_t numDestinations) {
 }
 
 template <class RouterInfo>
+using ShardDestinationsMapCustomFn = std::function<
+    void(uint32_t, std::vector<typename RouterInfo::RouteHandlePtr>&)>;
+
+template <class RouterInfo>
 using ShardDestinationsMap = std::
     unordered_map<uint32_t, std::vector<typename RouterInfo::RouteHandlePtr>>;
 
 template <class RouterInfo>
 ShardDestinationsMap<RouterInfo> getShardDestinationsMap(
     RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
-    const folly::dynamic& json) {
+    const folly::dynamic& json,
+    const folly::StringPiece shardName = "shards") {
   const auto jPools = [&json]() {
     auto poolsJson = json.get_ptr("pools");
     checkLogic(
@@ -161,12 +194,13 @@ ShardDestinationsMap<RouterInfo> getShardDestinationsMap(
   for (const auto& jPool : jPools) {
     auto poolJson = getPoolJson<RouterInfo>(factory, jPool);
     auto destinations = factory.createList(poolJson);
-    auto shardsJson = getShardsJson<RouterInfo>(factory, jPool);
+    auto shardsJson = getShardsJson<RouterInfo>(factory, jPool, shardName);
     checkLogic(
         shardsJson.size() == destinations.size(),
         folly::sformat(
-            "EagerShardSelectionRoute: 'shards' must have the same number of "
+            "EagerShardSelectionRoute: '{}' must have the same number of "
             "entries as servers in 'pool'. Servers size: {}. Shards size: {}.",
+            shardName,
             destinations.size(),
             shardsJson.size()));
     if (destinations.empty()) {
@@ -196,13 +230,17 @@ void buildChildrenLatestRoutes(
     const folly::dynamic& json,
     const ShardDestinationsMap<RouterInfo>& shardMap,
     std::vector<typename RouterInfo::RouteHandlePtr>& destinations,
-    MapType& shardToDestinationIndexMap) {
+    MapType& shardToDestinationIndexMap,
+    ShardDestinationsMapCustomFn<RouterInfo> customFn = nullptr) {
   LatestRouteOptions options =
       parseLatestRouteJson(json, factory.getThreadId());
   std::for_each(shardMap.begin(), shardMap.end(), [&](auto& item) {
     auto shardId = item.first;
     auto childrenRouteHandles = std::move(item.second);
     size_t numChildren = childrenRouteHandles.size();
+    if (customFn) {
+      customFn(shardId, childrenRouteHandles);
+    }
     destinations.push_back(createLatestRoute<RouterInfo>(
         json,
         std::move(childrenRouteHandles),
@@ -218,12 +256,16 @@ void buildChildrenLoadBalancerRoutes(
     const folly::dynamic& json,
     const ShardDestinationsMap<RouterInfo>& shardMap,
     std::vector<typename RouterInfo::RouteHandlePtr>& destinations,
-    MapType& shardToDestinationIndexMap) {
+    MapType& shardToDestinationIndexMap,
+    ShardDestinationsMapCustomFn<RouterInfo> customFn = nullptr) {
   LoadBalancerRouteOptions<RouterInfo> options =
       parseLoadBalancerRouteJson<RouterInfo>(json);
   std::for_each(shardMap.begin(), shardMap.end(), [&](auto& item) {
     auto shardId = item.first;
     auto childrenRouteHandles = std::move(item.second);
+    if (customFn) {
+      customFn(shardId, childrenRouteHandles);
+    }
     destinations.push_back(createLoadBalancerRoute<RouterInfo>(
         std::move(childrenRouteHandles), options));
     shardToDestinationIndexMap[shardId] = destinations.size() - 1;
@@ -237,10 +279,14 @@ void buildChildrenCustomRoutesFromMap(
     const ShardDestinationsMap<RouterInfo>& shardMap,
     const RouteHandleWithChildrenFactoryFn<RouterInfo>& createCustomRh,
     std::vector<typename RouterInfo::RouteHandlePtr>& destinations,
-    MapType& shardToDestinationIndexMap) {
+    MapType& shardToDestinationIndexMap,
+    ShardDestinationsMapCustomFn<RouterInfo> customFn = nullptr) {
   std::for_each(shardMap.begin(), shardMap.end(), [&](auto& item) {
     auto shardId = item.first;
     auto childrenRouteHandles = std::move(item.second);
+    if (customFn) {
+      customFn(shardId, childrenRouteHandles);
+    }
     destinations.push_back(
         createCustomRh(factory, json, std::move(childrenRouteHandles)));
     shardToDestinationIndexMap[shardId] = destinations.size() - 1;
@@ -390,6 +436,228 @@ typename RouterInfo::RouteHandlePtr createEagerShardSelectionRoute(
       std::move(destinations),
       std::move(selector),
       std::move(outOfRangeDestination));
+}
+
+template <
+    class RouterInfo,
+    class ShardSelector,
+    class MapType,
+    class ShadowSelectorPolicy>
+typename RouterInfo::RouteHandlePtr createEagerShardSelectionShadowRoute(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json,
+    const ChildrenFactoryMap<RouterInfo>& childrenFactoryMap,
+    const ChildrenFactoryMap<RouterInfo>& shadowChildrenFactoryMap,
+    const folly::Optional<ShadowSelectorPolicy>& shadowSelectorPolicy,
+    const uint32_t seed) {
+  checkLogic(
+      json.isObject(),
+      "EagerShardSelectionShadowRoute config should be an object");
+
+  const auto childrenType = [&json]() {
+    auto jChildType = json.get_ptr("children_type");
+    checkLogic(
+        jChildType && jChildType->isString(),
+        "EagerShardSelectionShadowRoute: 'children_type' not found or is not a "
+        "string");
+    return jChildType->stringPiece();
+  }();
+
+  const auto& childrenSettings = [&json]() {
+    auto jSettings = json.get_ptr("children_settings");
+    checkLogic(
+        jSettings && jSettings->isObject(),
+        "EagerShardSelectionShadowRoute: 'children_settings' not found or not an "
+        "object");
+    return *jSettings;
+  }();
+
+  std::vector<typename RouterInfo::RouteHandlePtr> destinations;
+  auto shardMap = detail::getShardDestinationsMap<RouterInfo>(factory, json);
+  MapType shardToDestinationIndexMap = detail::prepareMap<MapType>(
+      shardMap.size(), detail::getMaxShardId(shardMap));
+  if (!shardMap.empty()) {
+    if (childrenType == "LoadBalancerRoute") {
+      detail::buildChildrenLoadBalancerRoutes<RouterInfo, MapType>(
+          factory,
+          childrenSettings,
+          shardMap,
+          destinations,
+          shardToDestinationIndexMap);
+    } else if (childrenType == "LatestRoute") {
+      detail::buildChildrenLatestRoutes<RouterInfo, MapType>(
+          factory,
+          childrenSettings,
+          shardMap,
+          destinations,
+          shardToDestinationIndexMap);
+    } else if (childrenType == "CustomJsonmRoute") {
+      detail::buildChildrenCustomJsonmRoutes<RouterInfo, MapType>(
+          factory,
+          childrenSettings,
+          shardMap,
+          destinations,
+          shardToDestinationIndexMap);
+    } else {
+      auto it = childrenFactoryMap.find(childrenType.str());
+      if (it != childrenFactoryMap.end()) {
+        detail::buildChildrenCustomRoutesFromMap<RouterInfo, MapType>(
+            factory,
+            childrenSettings,
+            shardMap,
+            it->second,
+            destinations,
+            shardToDestinationIndexMap);
+      } else {
+        throwLogic(
+            "EagerShardSelectionRoute: 'children_type' {} not supported",
+            childrenType);
+      }
+    }
+  }
+
+  // Out Of Range Destinations
+  typename RouterInfo::RouteHandlePtr outOfRangeDestination = nullptr;
+  if (auto outOfRangeJson = json.get_ptr("out_of_range")) {
+    outOfRangeDestination = factory.create(*outOfRangeJson);
+  }
+
+  // If shard map is empty, the selector will mark everything out_of_range
+  ShardSelector selector(std::move(shardToDestinationIndexMap));
+
+  /**
+   * Shadow settings
+   */
+
+  // Shadow children type
+  const auto shadowChildrenType = [&json]() {
+    auto jChildType = json.get_ptr("shadow_children_type");
+    checkLogic(
+        jChildType && jChildType->isString(),
+        "EagerShardSelectionShadowRoute: 'shadow_children_type' not found or is not a "
+        "string");
+    return jChildType->stringPiece();
+  }();
+
+  // Shadow children settings
+  const auto& shadowChildrenSettings = [&json]() {
+    auto jSettings = json.get_ptr("shadow_children_settings");
+    checkLogic(
+        jSettings && jSettings->isObject(),
+        "EagerShardSelectionShadowRoute: 'shadow_children_settings' not found or not an "
+        "object");
+    return *jSettings;
+  }();
+
+  // Weight of hosts in shadow shard map. If > 1.0, hosts in shadow shard map
+  // will receive more shadow requests. If < 1.0, hosts in shadow shard map
+  // will receive less shadow requests.
+  double shadowWeights = 1.0;
+  if (auto jShadowWeights = json.get_ptr("shadow_weights")) {
+    checkLogic(jShadowWeights->isDouble(), "shadow_weights is not a double");
+    shadowWeights = jShadowWeights->asDouble();
+  }
+
+  constexpr folly::StringPiece shadowShardName = "shadow_shards";
+  if (detail::hasShardsJson<RouterInfo>(factory, json, shadowShardName) ==
+      false) {
+    // Shadow shards property is missing, create a regular selection route
+    return createSelectionRoute<RouterInfo, ShardSelector>(
+        std::move(destinations),
+        std::move(selector),
+        std::move(outOfRangeDestination));
+  }
+
+  // Create Shadow Shard Map
+  auto shadowShardMap = detail::getShardDestinationsMap<RouterInfo>(
+      factory, json, shadowShardName);
+  if (shadowShardMap.empty()) {
+    // Shard and Shadow Shard maps are empty, create error route.
+    if (shardMap.empty()) {
+      return mcrouter::createErrorRoute<RouterInfo>(
+          "EagerShardSelectionShadowRoute has an empty list of destinations");
+    } else {
+      // Shadow shards are empty, create a regular selection route
+      return createSelectionRoute<RouterInfo, ShardSelector>(
+          std::move(destinations),
+          std::move(selector),
+          std::move(outOfRangeDestination));
+    }
+  }
+
+  // Builds vector containing the probabilities
+  std::vector<uint16_t> shadowProbabilities;
+  detail::ShardDestinationsMapCustomFn<RouterInfo> probabilityBuilderFn =
+      [&shadowProbabilities, &shardMap, &shadowWeights](
+          uint32_t shardId,
+          std::vector<typename RouterInfo::RouteHandlePtr>&
+              childrenRouteHandles) {
+        auto it = shardMap.find(shardId);
+        size_t shardSize = 0;
+        if (it != shardMap.end()) {
+          // Implementation goes here
+          shardSize = it->second.size();
+        }
+        // Entries in vector are from (0,100] representing % of time that if
+        // selected by shadowSelector that request will be shadowed to child
+        // route handle.
+        uint16_t probability =
+            (((uint16_t)(100 * childrenRouteHandles.size() * shadowWeights)) /
+             (shardSize + childrenRouteHandles.size()));
+        shadowProbabilities.push_back(probability);
+      };
+
+  MapType shadowShardToDestinationIndexMap = detail::prepareMap<MapType>(
+      shadowShardMap.size(), detail::getMaxShardId(shadowShardMap));
+  std::vector<typename RouterInfo::RouteHandlePtr> shadowDestinations;
+  if (shadowChildrenType == "LoadBalancerRoute") {
+    detail::buildChildrenLoadBalancerRoutes<RouterInfo, MapType>(
+        factory,
+        shadowChildrenSettings,
+        shadowShardMap,
+        shadowDestinations,
+        shadowShardToDestinationIndexMap,
+        probabilityBuilderFn);
+  } else if (shadowChildrenType == "LatestRoute") {
+    detail::buildChildrenLatestRoutes<RouterInfo, MapType>(
+        factory,
+        shadowChildrenSettings,
+        shadowShardMap,
+        shadowDestinations,
+        shadowShardToDestinationIndexMap,
+        probabilityBuilderFn);
+  } else if (shadowChildrenType == "CustomJsonmRoute") {
+    throwLogic(
+        "EagerShardSelectionShadowRoute: {} not supported", shadowChildrenType);
+  } else {
+    auto it = shadowChildrenFactoryMap.find(shadowChildrenType.str());
+    if (it != shadowChildrenFactoryMap.end()) {
+      detail::buildChildrenCustomRoutesFromMap<RouterInfo, MapType>(
+          factory,
+          shadowChildrenSettings,
+          shadowShardMap,
+          it->second,
+          shadowDestinations,
+          shadowShardToDestinationIndexMap,
+          probabilityBuilderFn);
+    } else {
+      throwLogic(
+          "EagerShardSelectionRoute: 'shadow_children_type' {} not supported",
+          shadowChildrenType);
+    }
+  }
+
+  ShardSelector shadowSelector(std::move(shadowShardToDestinationIndexMap));
+
+  return createSelectionRoute<RouterInfo, ShardSelector, ShadowSelectorPolicy>(
+      std::move(destinations),
+      std::move(selector),
+      std::move(outOfRangeDestination),
+      std::move(shadowDestinations),
+      std::move(shadowSelector),
+      std::move(shadowProbabilities),
+      std::move(shadowSelectorPolicy),
+      seed);
 }
 
 } // namespace mcrouter
