@@ -21,6 +21,7 @@
 #include "mcrouter/lib/routes/AllSyncRoute.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/lib/routes/SelectionRoute.h"
+#include "mcrouter/lib/test/AllSyncCollectionRoute.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/lib/test/TestRouteHandle.h"
 
@@ -377,4 +378,29 @@ TEST(routeHandleTest, hashSalt) {
     /* 21 % 3 == 0 */
     EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
   });
+}
+
+TEST(routeHandleTest, allSyncCollector) {
+  vector<std::shared_ptr<TestHandle>> test_handles{
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::FOUND, "a")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::NOTFOUND, "b")),
+      make_shared<TestHandle>(
+          GetRouteTestData(carbon::Result::REMOTE_ERROR, "c"))};
+
+  TestFiberManager fm;
+
+  TestRouteHandle<AllSyncCollectionRoute<TestRouterInfo>> rh(
+      get_route_handles(test_handles));
+
+  fm.runAll({[&]() {
+    auto reply = rh.route(McGetRequest("key"));
+
+    /* Check that we got the worst result back */
+    EXPECT_EQ(carbon::Result::REMOTE_ERROR, reply.result());
+    EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
+
+    for (auto& h : test_handles) {
+      EXPECT_EQ(vector<string>{"key"}, h->saw_keys);
+    }
+  }});
 }
