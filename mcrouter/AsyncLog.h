@@ -7,6 +7,7 @@
 #pragma once
 
 #include <memory>
+#include <unordered_map>
 
 #include <folly/File.h>
 #include <folly/Range.h>
@@ -31,7 +32,8 @@ class AsyncLog {
   void writeDelete(
       const AccessPoint& ap,
       folly::StringPiece key,
-      folly::StringPiece poolName);
+      folly::StringPiece poolName,
+      std::unordered_map<std::string, uint64_t> attributes = {});
 
  private:
   const McrouterOptions& options_;

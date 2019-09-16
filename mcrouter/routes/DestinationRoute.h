@@ -259,9 +259,10 @@ class DestinationRoute {
     auto& ap = *destination_->accessPoint();
     folly::fibers::Baton b;
     auto res = false;
+    auto attr = req.attributes();
     if (auto asyncWriter = proxy->router().asyncWriter()) {
-      res = asyncWriter->run([&b, &ap, proxy, key, asynclogName]() {
-        proxy->asyncLog().writeDelete(ap, key, asynclogName);
+      res = asyncWriter->run([&b, &ap, &attr, proxy, key, asynclogName]() {
+        proxy->asyncLog().writeDelete(ap, key, asynclogName, attr);
         b.post();
       });
     }

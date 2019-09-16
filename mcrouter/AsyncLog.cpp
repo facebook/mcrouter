@@ -213,7 +213,8 @@ AsyncLog::AsyncLog(const McrouterOptions& options) : options_(options) {}
 void AsyncLog::writeDelete(
     const AccessPoint& ap,
     folly::StringPiece key,
-    folly::StringPiece poolName) {
+    folly::StringPiece poolName,
+    std::unordered_map<std::string, uint64_t> attributes) {
   dynamic json = dynamic::array;
   const auto& host = ap.getHost();
   const auto port = options_.asynclog_port_override == 0
@@ -226,6 +227,9 @@ void AsyncLog::writeDelete(
     json["h"] = folly::sformat("[{}]:{}", host, port);
     json["p"] = poolName.str();
     json["k"] = key.str();
+    if (attributes.size() != 0) {
+      json["a"] = folly::toDynamic(attributes);
+    }
   } else {
     /* ["host", port, escaped_command] */
     json.push_back(host);
