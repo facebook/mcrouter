@@ -118,6 +118,13 @@ ThriftTransportBase::getConnectingSocket() {
 }
 
 apache::thrift::RocketClientChannel::Ptr ThriftTransportBase::createChannel() {
+  // HHVM supports Debian 8 (EOL 2020-06-30), which includes OpenSSL 1.0.1;
+  // Rocket/RSocket require ALPN, which requiers 1.0.2.
+  //
+  // For these platforms, build MCRouter client without a functional
+  // Thrift transport, but continue to permit use as an async Memcache client
+  // library for Hack
+#ifndef MCROUTER_NOOP_THRIFT_CLIENT
   auto socket = getConnectingSocket();
   if (!socket) {
     return nullptr;
@@ -127,6 +134,9 @@ apache::thrift::RocketClientChannel::Ptr ThriftTransportBase::createChannel() {
   channel->setProtocolId(apache::thrift::protocol::T_COMPACT_PROTOCOL);
   channel->setCloseCallback(this);
   return channel;
+#else
+  return nullptr;
+#endif
 }
 
 apache::thrift::RpcOptions ThriftTransportBase::getRpcOptions(
