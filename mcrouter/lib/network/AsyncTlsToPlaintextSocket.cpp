@@ -39,12 +39,23 @@ class AsyncTlsToPlaintextSocket::ConnectCallback
     };
 
     auto& impl = me_.impl_;
+    auto activateSocket = [&] {
+      impl->setSendTimeout(me_.writeTimeout_.count());
+      impl->setReadCB(std::exchange(me_.readCallback_, nullptr));
+
+      me_.state_ = State::CONNECTED;
+      me_.flushWrites();
+    };
+
     auto* tlsSocket =
         impl->getUnderlyingTransport<apache::thrift::async::TAsyncSSLSocket>();
     CHECK(tlsSocket);
     if (tlsSocket->getApplicationProtocol() != kMcSecurityTlsToPlaintextProto) {
       FB_LOG_EVERY_MS(ERROR, 10)
           << "Failed to negotiate plaintext fallback. Falling back to full TLS.";
+      // Even if the server fails the handshake, we must be sure to drain any
+      // pending writes
+      activateSocket();
       return;
     }
 
@@ -60,11 +71,7 @@ class AsyncTlsToPlaintextSocket::ConnectCallback
     DCHECK_EQ(0, tlsSocket->getZeroCopyBufId());
     impl.reset(new apache::thrift::async::TAsyncSocket(
         &me_.evb_, tlsSocket->detachNetworkSocket().toFd()));
-    impl->setSendTimeout(me_.writeTimeout_.count());
-    impl->setReadCB(std::exchange(me_.readCallback_, nullptr));
-
-    me_.state_ = State::CONNECTED;
-    me_.flushWrites();
+    activateSocket();
   }
 
   void connectErr(const folly::AsyncSocketException& ex) noexcept override {
