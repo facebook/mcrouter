@@ -180,12 +180,12 @@ class McServerThread {
   explicit McServerThread(
       AsyncMcServer& server,
       size_t id,
-      folly::EventBase& evb)
+      folly::VirtualEventBase* vevb)
       : server_(server),
         evb_(nullptr),
-        vevb_(std::make_unique<folly::VirtualEventBase>(evb)),
+        vevb_(vevb),
         id_(id),
-        worker_(server.opts_.worker, vevb_.get()),
+        worker_(server.opts_.worker, vevb_),
         acceptCallback_(this, false),
         sslAcceptCallback_(this, true),
         accepting_(false) {
@@ -214,12 +214,12 @@ class McServerThread {
       AsyncMcServer& server,
       size_t id,
       bool reusePort,
-      folly::EventBase& evb)
+      folly::VirtualEventBase* vevb)
       : server_(server),
         evb_(nullptr),
-        vevb_(std::make_unique<folly::VirtualEventBase>(evb)),
+        vevb_(vevb),
         id_(id),
-        worker_(server.opts_.worker, vevb_.get()),
+        worker_(server.opts_.worker, vevb_),
         acceptCallback_(this, false),
         sslAcceptCallback_(this, true),
         accepting_(true),
@@ -302,7 +302,6 @@ class McServerThread {
 
   void shutdownVirtualEventBase() {
     if (isVirtualEventBase()) {
-      server_.addVirtualEventBaseForShutdown(std::move(vevb_));
       shutdownPromise_.set_value();
     }
   }
@@ -398,7 +397,7 @@ class McServerThread {
 
   AsyncMcServer& server_;
   std::unique_ptr<folly::EventBase> evb_;
-  std::unique_ptr<folly::VirtualEventBase> vevb_;
+  folly::VirtualEventBase* vevb_;
   size_t id_;
   AsyncMcServerWorker worker_;
   AcceptCallback acceptCallback_;
@@ -681,6 +680,11 @@ AsyncMcServer::AsyncMcServer(Options opts) : opts_(std::move(opts)) {
           opts_.numListeningSockets));
     }
 
+    for (auto evb : opts_.eventBases) {
+      virtualEventBases_.push_back(
+          std::make_unique<folly::VirtualEventBase>(*evb));
+    }
+
     threadsSpawnController_ = std::make_unique<McServerThreadSpawnController>(
         opts_.numListeningSockets);
 
@@ -692,12 +696,12 @@ AsyncMcServer::AsyncMcServer(Options opts) : opts_(std::move(opts)) {
           *this,
           id,
           (opts_.numListeningSockets > 1),
-          *opts_.eventBases[id]));
+          virtualEventBases_[id].get()));
     }
     // Now the rest
     for (; id < opts_.numThreads; ++id) {
-      threads_.emplace_back(
-          std::make_unique<McServerThread>(*this, id, *opts_.eventBases[id]));
+      threads_.emplace_back(std::make_unique<McServerThread>(
+          *this, id, virtualEventBases_[id].get()));
     }
   } else {
     if (opts_.numThreads == 0) {
@@ -745,12 +749,6 @@ AsyncMcServer::~AsyncMcServer() {
      translation unit that knows about McServerThread */
   if (opts_.worker.cpuController) {
     opts_.worker.cpuController->stop();
-  }
-
-  /* If any Virtual Event Bases have been passed, clean them up */
-  {
-    folly::SharedMutex::WriteHolder lg(shutdownVEBLock_);
-    shutdownVEBs_.clear();
   }
 
   /* In case some signal handlers are still registered */
@@ -866,6 +864,10 @@ void AsyncMcServer::join() {
   }
   for (auto& thread : threads_) {
     thread->join();
+  }
+  if (virtualEventBaseMode_) {
+    // Once all threads joined, clear virtual event bases
+    virtualEventBases_.clear();
   }
 }
 

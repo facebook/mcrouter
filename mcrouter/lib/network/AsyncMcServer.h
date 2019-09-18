@@ -287,8 +287,7 @@ class AsyncMcServer {
   bool spawned_{false};
 
   bool virtualEventBaseMode_{false};
-  std::vector<std::unique_ptr<folly::VirtualEventBase>> shutdownVEBs_;
-  folly::SharedMutex shutdownVEBLock_;
+  std::vector<std::unique_ptr<folly::VirtualEventBase>> virtualEventBases_;
 
   enum class SignalShutdownState : uint64_t { STARTUP, SHUTDOWN, SPAWNED };
   std::atomic<SignalShutdownState> signalShutdownState_{
@@ -300,16 +299,6 @@ class AsyncMcServer {
 
   AsyncMcServer(const AsyncMcServer&) = delete;
   AsyncMcServer& operator=(const AsyncMcServer&) = delete;
-
-  /*
-   * Called from the McServerThread to synchronize the shutdown of the
-   * VirtualEventBases with the shutdown of AsyncMcServer.
-   */
-  void addVirtualEventBaseForShutdown(
-      std::unique_ptr<folly::VirtualEventBase> virtualEventBase) {
-    folly::SharedMutex::WriteHolder lg(shutdownVEBLock_);
-    shutdownVEBs_.push_back(std::move(virtualEventBase));
-  }
 
   friend class McServerThread;
 };
