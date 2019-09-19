@@ -6,6 +6,7 @@
  */
 #include <chrono>
 
+#include <folly/CppAttributes.h>
 #include <folly/fibers/FiberManagerMap.h>
 #include <folly/init/Init.h>
 #include <folly/io/async/EventBase.h>
@@ -108,7 +109,7 @@ AsyncMcServer::Options getOpts(uint16_t port) {
   return opts;
 }
 
-void testClientServer() {
+FOLLY_MAYBE_UNUSED void testClientServer() {
   // Run simple HelloGoodbye server
   AsyncMcServer server(getOpts(kPort));
   spawnServer(server);
@@ -170,7 +171,7 @@ void sendHelloRequestSync(
   baton.wait();
 }
 
-void testRouter() {
+FOLLY_MAYBE_UNUSED void testRouter() {
   // Run 2 simple HelloGoodbye server
   AsyncMcServer server1(getOpts(kPort));
   spawnServer(server1);
@@ -221,7 +222,7 @@ void testRouter() {
   }
 }
 
-void testCarbonLookasideRouter() {
+FOLLY_MAYBE_UNUSED void testCarbonLookasideRouter() {
   // Run 2 simple HelloGoodbye server
   AsyncMcServer server1(getOpts(kPort));
   spawnServer(server1);
@@ -299,7 +300,7 @@ std::thread startThriftServer(
   return serverThread;
 }
 
-void testCarbonThriftServer() {
+FOLLY_MAYBE_UNUSED void testCarbonThriftServer() {
   // Run one simple HelloGoodbye thrift server.
   auto server1 = std::make_shared<apache::thrift::ThriftServer>();
   auto server2 = std::make_shared<apache::thrift::ThriftServer>();
