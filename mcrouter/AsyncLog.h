@@ -27,9 +27,9 @@ class AsyncLog {
   /**
    * Appends a 'delete' request entry to the asynclog.
    * This call blocks until the entry is written to the file
-   * or an error occurs.
+   * or an error occurs. Returns true if the write was successful, false if not.
    */
-  void writeDelete(
+  bool writeDelete(
       const AccessPoint& ap,
       folly::StringPiece key,
       folly::StringPiece poolName,

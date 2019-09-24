@@ -139,8 +139,12 @@ STUI(fibers_stack_high_watermark, 0, 0)
  * Stats about routing
  */
 #define GROUP ods_stats | basic_stats
-// number of requests that were spooled to disk
+// number of requests that were attempted to be spooled to disk
 STUI(asynclog_requests, 0, 1)
+// number of requests that were spooled successfully
+STUI(asynclog_spool_success, 0, 1)
+// avg time spent for asynclog spooling
+STAT(asynclog_duration_us, stat_double, 0, .dbl = 0.0)
 // Proxy requests that are currently being routed.
 STUI(proxy_reqs_processing, 0, 1)
 // Proxy requests queued up and not routed yet

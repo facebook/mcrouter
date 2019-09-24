@@ -55,6 +55,10 @@ class ProxyStats {
     return inactiveConnectionClosedIntervalSec_;
   }
 
+  ExponentialSmoothData<64>& asyncLogDurationUs() {
+    return asyncLogDurationUs_;
+  }
+
   size_t numBinsUsed() const {
     return numBinsUsed_;
   }
@@ -185,6 +189,9 @@ class ProxyStats {
   ExponentialSmoothData<64> durationUpdateUs_;
 
   ExponentialSmoothData<64> inactiveConnectionClosedIntervalSec_;
+
+  // Time spent for asynclog spooling
+  ExponentialSmoothData<64> asyncLogDurationUs_;
 
   // we are wasting some memory here to get faster mapping from stat name to
   // statsBin_[] and statsNumWithinWindow_[] entry. i.e., the statsBin_[]

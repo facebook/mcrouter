@@ -210,7 +210,7 @@ bool AsyncLog::openFile() {
 AsyncLog::AsyncLog(const McrouterOptions& options) : options_(options) {}
 
 /** Adds an asynchronous request to the event log. */
-void AsyncLog::writeDelete(
+bool AsyncLog::writeDelete(
     const AccessPoint& ap,
     folly::StringPiece key,
     folly::StringPiece poolName,
@@ -244,7 +244,7 @@ void AsyncLog::writeDelete(
         "asynclog_open() failed (key {}, pool {})",
         key,
         poolName);
-    return;
+    return false;
   }
 
   // ["AS1.0", 1289416829.836, "C", ["10.0.0.1", 11302, "delete foo\r\n"]]
@@ -276,7 +276,9 @@ void AsyncLog::writeDelete(
         "Error fully writing asynclog request (key {}, pool {})",
         key,
         poolName);
+    return false;
   }
+  return true;
 }
 
 } // mcrouter

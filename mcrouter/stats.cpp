@@ -515,6 +515,8 @@ void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
     stats[inactive_connection_closed_interval_sec_stat].data.dbl +=
         pr->stats().inactiveConnectionClosedIntervalSec().value();
     stats[client_queue_notify_period_stat].data.dbl += pr->queueNotifyPeriod();
+    stats[asynclog_duration_us_stat].data.dbl +=
+        pr->stats().asyncLogDurationUs().value();
   }
 
   if (router.opts().num_proxies > 0) {
@@ -525,6 +527,7 @@ void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
         router.opts().num_proxies;
     stats[client_queue_notify_period_stat].data.dbl /=
         router.opts().num_proxies;
+    stats[asynclog_duration_us_stat].data.dbl /= router.opts().num_proxies;
   }
 
   for (int i = 0; i < num_stats; i++) {
