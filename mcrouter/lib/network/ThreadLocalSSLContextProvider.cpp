@@ -305,9 +305,20 @@ std::shared_ptr<SSLContext> createClientSSLContext(
     SecurityOptions opts,
     SecurityMech mech) {
   auto context = std::make_shared<ClientSSLContext>(ticketCache.get());
+  auto ciphers = folly::ssl::SSLCommonOptions::ciphers();
+  std::vector<std::string> cVec(ciphers.begin(), ciphers.end());
+#if FOLLY_OPENSSL_HAS_ALPN
+  if (mech == SecurityMech::TLS_TO_PLAINTEXT) {
+    // Prepend ECDHE-RSA-NULL-SHA to make it obvious from the ClientHello
+    // that we may not be using encryption.
+    cVec.insert(cVec.begin(), "ECDHE-RSA-NULL-SHA");
+    context->setAdvertisedNextProtocols({kMcSecurityTlsToPlaintextProto.str()});
+  }
+#endif
   // note we use setCipherSuites instead of setClientOptions since client
   // options will enable false start by default.
-  folly::ssl::setCipherSuites<folly::ssl::SSLCommonOptions>(*context);
+  folly::ssl::setCipherSuites(*context, cVec);
+
   const auto& pemCertPath = opts.sslPemCertPath;
   const auto& pemKeyPath = opts.sslPemKeyPath;
   const auto& pemCaPath = opts.sslPemCaPath;
@@ -334,11 +345,6 @@ std::shared_ptr<SSLContext> createClientSSLContext(
     context->setVerificationOption(
         folly::SSLContext::SSLVerifyPeerEnum::VERIFY);
   }
-#if FOLLY_OPENSSL_HAS_ALPN
-  if (mech == SecurityMech::TLS_TO_PLAINTEXT) {
-    context->setAdvertisedNextProtocols({kMcSecurityTlsToPlaintextProto.str()});
-  }
-#endif
   return context;
 }
 
@@ -485,5 +491,5 @@ ServerContextPair getServerContexts(
   return ServerContextPair(info.context, info.fizzContext);
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
