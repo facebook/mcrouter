@@ -135,10 +135,10 @@ void AsyncMcClientImpl::setConnectionStatusCallbacks(
     ConnectionStatusCallbacks callbacks) {
   DestructorGuard dg(this);
 
-  statusCallbacks_ = std::move(callbacks);
+  connectionCallbacks_ = std::move(callbacks);
 
-  if (connectionState_ == ConnectionState::Up && statusCallbacks_.onUp) {
-    statusCallbacks_.onUp(*socket_, getNumConnectRetries());
+  if (connectionState_ == ConnectionState::Up && connectionCallbacks_.onUp) {
+    connectionCallbacks_.onUp(*socket_, getNumConnectRetries());
   }
 }
 
@@ -494,8 +494,8 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
     }
   }
 
-  if (statusCallbacks_.onUp) {
-    statusCallbacks_.onUp(*socket_, getNumConnectRetries());
+  if (connectionCallbacks_.onUp) {
+    connectionCallbacks_.onUp(*socket_, getNumConnectRetries());
   }
 
   numConnectTimeoutRetriesLeft_ = connectionOptions_.numConnectTimeoutRetries;
@@ -553,8 +553,8 @@ void AsyncMcClientImpl::connectErr(
     attemptConnection();
   } else {
     queue_.failAllPending(error, errorMessage);
-    if (statusCallbacks_.onDown) {
-      statusCallbacks_.onDown(reason, getNumConnectRetries());
+    if (connectionCallbacks_.onDown) {
+      connectionCallbacks_.onDown(reason, getNumConnectRetries());
     }
     numConnectTimeoutRetriesLeft_ = connectionOptions_.numConnectTimeoutRetries;
   }
@@ -587,8 +587,8 @@ void AsyncMcClientImpl::processShutdown(folly::StringPiece errorMessage) {
 
         // This is a last processShutdown() for this error and it is safe
         // to go DOWN.
-        if (statusCallbacks_.onDown) {
-          statusCallbacks_.onDown(
+        if (connectionCallbacks_.onDown) {
+          connectionCallbacks_.onDown(
               isAborting_ ? ConnectionDownReason::ABORTED
                           : ConnectionDownReason::ERROR,
               getNumConnectRetries());
@@ -734,8 +734,8 @@ void AsyncMcClientImpl::handleConnectionControlMessage(
       if (connectionState_ != ConnectionState::Up) {
         break;
       }
-      if (statusCallbacks_.onDown) {
-        statusCallbacks_.onDown(
+      if (connectionCallbacks_.onDown) {
+        connectionCallbacks_.onDown(
             ConnectionDownReason::SERVER_GONE_AWAY, getNumConnectRetries());
       }
       pendingGoAwayReply_ = true;

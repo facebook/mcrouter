@@ -71,6 +71,7 @@ class ThriftTransportBase : public Transport,
  protected:
   folly::EventBase& eventBase_;
   const ConnectionOptions connectionOptions_;
+  std::shared_ptr<apache::thrift::RocketClientChannel> channel_;
 
   // Callbacks
   ConnectionStatusCallbacks connectionCallbacks_;

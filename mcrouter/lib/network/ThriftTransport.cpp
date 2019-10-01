@@ -37,6 +37,11 @@ void ThriftTransportBase::closeNow() {
 void ThriftTransportBase::setConnectionStatusCallbacks(
     ConnectionStatusCallbacks callbacks) {
   connectionCallbacks_ = std::move(callbacks);
+
+  if (connectionState_ == ConnectionState::Up && connectionCallbacks_.onUp) {
+    // Connection retries not currently supported in thrift transport so pass 0
+    connectionCallbacks_.onUp(*channel_->getTransport(), 0);
+  }
 }
 
 void ThriftTransportBase::setRequestStatusCallbacks(
@@ -150,6 +155,10 @@ apache::thrift::RpcOptions ThriftTransportBase::getRpcOptions(
 void ThriftTransportBase::connectSuccess() noexcept {
   assert(connectionState_ == ConnectionState::Connecting);
   connectionState_ = ConnectionState::Up;
+  if (connectionCallbacks_.onUp) {
+    // Connection retries not currently supported in thrift transport so pass 0
+    connectionCallbacks_.onUp(*channel_->getTransport(), 0);
+  }
   VLOG(5) << "[ThriftTransport] Connection successfully established!";
 }
 
@@ -160,12 +169,24 @@ void ThriftTransportBase::connectErr(
   connectionState_ = ConnectionState::Error;
   connectionTimedOut_ =
       (ex.getType() == folly::AsyncSocketException::TIMED_OUT);
-
+  if (connectionCallbacks_.onDown) {
+    ConnectionDownReason reason = ConnectionDownReason::CONNECT_ERROR;
+    if (connectionTimedOut_) {
+      reason = ConnectionDownReason::CONNECT_ERROR;
+    }
+    connectionCallbacks_.onDown(reason, 0);
+  }
   VLOG(2) << "[ThriftTransport] Error connecting: " << ex.what();
 }
 
 void ThriftTransportBase::channelClosed() {
   VLOG(3) << "[ThriftTransport] Channel closed.";
+  // If callbacks configured and connection up, defer reset
+  // to the callback
+  if (connectionCallbacks_.onDown && connectionState_ == ConnectionState::Up) {
+    connectionState_ = ConnectionState::Down;
+    connectionCallbacks_.onDown(ConnectionDownReason::ABORTED, 0);
+  }
   resetClient();
 }
 

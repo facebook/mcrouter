@@ -13,11 +13,11 @@ namespace memcache {
 
 template <class ThriftClient>
 std::unique_ptr<ThriftClient> ThriftTransportBase::createThriftClient() {
-  auto channel = createChannel();
-  if (!channel) {
+  channel_ = createChannel();
+  if (!channel_) {
     return nullptr;
   }
-  auto ret = std::make_unique<ThriftClient>(std::move(channel));
+  auto ret = std::make_unique<ThriftClient>(channel_);
   // Avoid any static default-registered event handlers.
   ret->clearEventHandlers();
   return ret;

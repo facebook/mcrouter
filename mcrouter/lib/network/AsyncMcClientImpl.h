@@ -101,7 +101,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   // Socket related variables.
   ConnectionState connectionState_{ConnectionState::Down};
   folly::AsyncTransportWrapper::UniquePtr socket_;
-  ConnectionStatusCallbacks statusCallbacks_;
+  ConnectionStatusCallbacks connectionCallbacks_;
   RequestStatusCallbacks requestStatusCallbacks_;
   int32_t numConnectTimeoutRetriesLeft_{0};
 
