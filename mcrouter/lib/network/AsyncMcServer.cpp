@@ -269,7 +269,12 @@ class McServerThread {
         // In this case evb_.reset() will loop the EventBase until we are done
         // releasing all keepAlive tokens, so we can safely destroy
         // VirtualEventBase from main thread.
-        evb_.reset();
+        std::unique_ptr<folly::EventBase> evbToDestroy;
+        {
+          std::lock_guard<std::mutex> lock(evbDestroyMutex_);
+          evbToDestroy.swap(evb_);
+        }
+        evbToDestroy.reset();
       };
 
       try {
@@ -306,18 +311,53 @@ class McServerThread {
     }
   }
 
-  /* Safe to call from other threads */
-  void shutdown() {
+  /**
+   * The first of 2 shutdown steps will release the sockets from acceptor
+   * threads to guarantee that no new connections are established once shutdown
+   * has proceeded to the workers. shutdownAcceptor() must be called on all
+   * threads before calling shutdownWorker() on any thread.
+   *
+   * Safe to call from other threads.
+   */
+  void shutdownAcceptor() {
+    if (!accepting_) {
+      return;
+    }
+    auto keepAlive = getKeepAlive();
+    if (!keepAlive) {
+      // The worker must have already shutdown and closed the sockets.
+      return;
+    }
     auto shutdownFn = [&]() {
-      if (accepting_) {
-        socket_.reset();
-        sslSocket_.reset();
-        for (auto& keepAlive : acceptorsKeepAlive_) {
-          auto evb = keepAlive.get();
-          evb->add([ka = std::move(keepAlive)]() {});
-        }
-        acceptorsKeepAlive_.clear();
+      socket_.reset();
+      sslSocket_.reset();
+      for (auto& acceptorKeepAlive : acceptorsKeepAlive_) {
+        auto evb = acceptorKeepAlive.get();
+        evb->add([ka = std::move(acceptorKeepAlive)]() {});
       }
+      acceptorsKeepAlive_.clear();
+    };
+    // We must wait for sockets to be released to guarantee that there are no
+    // new connections once we proceed to the worker shutdown step.
+    if (keepAlive->inRunningEventBaseThread()) {
+      shutdownFn();
+    } else {
+      // Since this is blocking, it can be scheduled directly on the EventBase
+      // and does not need to go through the VirtualEventBase.
+      keepAlive->runInEventBaseThreadAndWait(std::move(shutdownFn));
+    }
+  }
+
+  /**
+   * The second of 2 shutdown steps will close all existing connections and
+   * possibly begin releasing worker resources. There must be no new connections
+   * established once worker shutdown has started. shutdownAcceptor() must be
+   * called on all threads before calling shutdownWorker() on any thread.
+   *
+   * Safe to call from other threads.
+   */
+  void shutdownWorker() {
+    auto shutdownFn = [&]() {
       if (shutdownPipe_) {
         shutdownPipe_->unregisterHandler();
       }
@@ -325,9 +365,13 @@ class McServerThread {
       shutdownVirtualEventBase();
     };
     if (isVirtualEventBase()) {
-      vevb_->runInEventBaseThread(shutdownFn);
-    } else {
-      evb_->runInEventBaseThread(shutdownFn);
+      // Schedule the shutdown function through the VirtualEventBase so that
+      // we can wait for its completion on VirtualEventBase destruction.
+      vevb_->runInEventBaseThread(std::move(shutdownFn));
+    } else if (auto keepAlive = getKeepAlive()) {
+      // Schedule the shutdown function on the EventBase if it is still alive,
+      // otherwise the worker must have already shutdown.
+      keepAlive->runInEventBaseThread(std::move(shutdownFn));
     }
   }
 
@@ -404,6 +448,7 @@ class McServerThread {
   AcceptCallback sslAcceptCallback_;
   bool accepting_{false};
   bool reusePort_{false};
+  std::mutex evbDestroyMutex_;
   std::thread thread_;
 
   folly::AsyncServerSocket::UniquePtr socket_;
@@ -417,6 +462,17 @@ class McServerThread {
 
   AsyncMcServer::InitFn initFn_;
   AsyncMcServer::LoopFn loopFn_;
+
+  folly::Executor::KeepAlive<folly::EventBase> getKeepAlive() {
+    std::lock_guard<std::mutex> lock(evbDestroyMutex_);
+    if (vevb_) {
+      return getKeepAliveToken(vevb_->getEventBase());
+    } else if (evb_) {
+      return getKeepAliveToken(*evb_);
+    } else {
+      return folly::Executor::KeepAlive<folly::EventBase>();
+    }
+  }
 
   bool isVirtualEventBase() {
     return (vevb_ != nullptr);
@@ -813,8 +869,14 @@ void AsyncMcServer::shutdown() {
     onShutdown_();
   }
 
+  // We must shutdown all acceptor sockets before shutting down any workers to
+  // guarantee that no new connections can be established after worker resources
+  // have been released.
   for (auto& thread : threads_) {
-    thread->shutdown();
+    thread->shutdownAcceptor();
+  }
+  for (auto& thread : threads_) {
+    thread->shutdownWorker();
   }
 }
 
