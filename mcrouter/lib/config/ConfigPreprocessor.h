@@ -43,7 +43,7 @@ class ConfigPreprocessor {
       folly::StringPiece jsonC,
       ImportResolverIf& importResolver,
       folly::StringKeyedUnorderedMap<folly::dynamic> globalParams,
-      folly::json::metadata_map* configMetadataMap = nullptr,
+      folly::json::metadata_map* configMetadataMap,
       size_t nestedLimit = 250);
 
  private:
