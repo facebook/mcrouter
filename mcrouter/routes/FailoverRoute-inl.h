@@ -186,6 +186,24 @@ makeFailoverRouteWithFailoverErrorSettings(
           *jFailoverPolicy,
           std::move(failoverErrors),
           std::forward<Args>(args)...);
+    } else if (
+        parseString(*jPolicyType, "type") == "DeterministicOrderPolicy") {
+      using FailoverPolicyT =
+          FailoverDeterministicOrderPolicy<typename RouterInfo::RouteHandleIf>;
+      folly::dynamic newFailoverPolicy = *jFailoverPolicy;
+      if (auto jHash = json.get_ptr("hash")) {
+        newFailoverPolicy.insert("hash", *jHash);
+      }
+      return makeFailoverRouteWithPolicyAndFailoverError<
+          RouterInfo,
+          RouteHandle,
+          FailoverPolicyT,
+          FailoverErrorsSettingsT>(
+          json,
+          std::move(children),
+          newFailoverPolicy,
+          std::move(failoverErrors),
+          std::forward<Args>(args)...);
     }
   }
   using FailoverPolicyT =

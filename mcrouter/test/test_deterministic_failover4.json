@@ -1,0 +1,16 @@
+{
+  "routes": {
+      "/Route/A/": "Route_A"
+  },
+  "named_handles": {
+      "Route_A": {
+        "type": "SaltedFailoverRoute",
+        "pool": "smc:tao.wildcard.altoona",
+        "failover_policy": {
+          "type": "DeterministicOrderPolicy",
+          "max_tries": 25,
+          "max_error_tries": 3
+        }
+      }
+  }
+}
