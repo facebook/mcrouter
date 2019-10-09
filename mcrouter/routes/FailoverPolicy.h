@@ -203,9 +203,11 @@ class FailoverDeterministicOrderPolicy {
 
    private:
     void increment() {
+      uint32_t numAttempts = 0;
+      auto nChildren = policy_.children_.size();
+      constexpr uint32_t maxAttempts = 100;
       do {
         salt_++;
-        auto nChildren = policy_.children_.size();
         // For now only Ch3Hash, and WeightedCh3Hash are supported
         if (funcType_ == Ch3HashFunc::type()) {
           index_ = HashSelector<Ch3HashFunc>(
@@ -220,7 +222,7 @@ class FailoverDeterministicOrderPolicy {
           throwLogic("Unknown hash function: {}", funcType_);
         }
         collisions_++;
-      } while (usedIndexes_.test(index_));
+      } while (usedIndexes_.test(index_) && (numAttempts++ < maxAttempts));
       collisions_--;
       usedIndexes_.set(index_);
       ++id_;
