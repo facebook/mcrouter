@@ -505,9 +505,6 @@ McRouteHandleProvider<RouterInfo>::create(
     return makeShadowRoutes(factory, json, proxy_, *extraProvider_);
   } else if (type == "SaltedFailoverRoute") {
     auto jPool = json.get_ptr("pool");
-    if (!jPool->isString()) {
-      throwLogic("pool is not string");
-    }
     // Create two children with first one for Normal Route and the second
     // one for failover route. The Normal route would be Pool Route with
     // Pool Name and Hash object shared with Failover Route. So insert
@@ -516,12 +513,24 @@ McRouteHandleProvider<RouterInfo>::create(
     folly::dynamic children = folly::dynamic::array;
     folly::dynamic normalRoute = folly::dynamic::object;
     normalRoute.insert("type", "PoolRoute");
-    normalRoute.insert("pool", jPool->asString());
+    if (jPool->isString()) {
+      normalRoute.insert("pool", jPool->asString());
+    } else if (jPool->isObject()) {
+      normalRoute.insert("pool", *jPool);
+    } else {
+      throwLogic("pool needs to be either a string or an object");
+    }
     if (auto jHash = json.get_ptr("hash")) {
       normalRoute.insert("hash", *jHash);
     }
     children.push_back(normalRoute);
-    children.push_back("Pool|" + jPool->asString());
+    if (jPool->isString()) {
+      children.push_back("Pool|" + jPool->asString());
+    } else if (jPool->isObject()) {
+      children.push_back(*jPool);
+    } else {
+      throwLogic("pool needs to be either a string or an object");
+    }
     newJson.erase("children");
     newJson.insert("children", children);
     return {makeFailoverRoute(factory, newJson, *extraProvider_)};
