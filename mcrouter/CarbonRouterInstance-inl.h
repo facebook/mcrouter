@@ -18,6 +18,7 @@
 #include "mcrouter/CarbonRouterInstanceBase.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/McrouterLogger.h"
+#include "mcrouter/McrouterManager.h"
 #include "mcrouter/Proxy.h"
 #include "mcrouter/ProxyConfig.h"
 #include "mcrouter/ProxyConfigBuilder.h"
@@ -35,64 +36,6 @@ namespace detail {
 
 bool isValidRouterName(folly::StringPiece name);
 
-class McrouterManager {
- public:
-  McrouterManager();
-
-  ~McrouterManager();
-
-  void freeAllMcrouters();
-
-  template <class RouterInfo>
-  CarbonRouterInstance<RouterInfo>* mcrouterGetCreate(
-      folly::StringPiece persistenceId,
-      const McrouterOptions& options,
-      const std::vector<folly::EventBase*>& evbs) {
-    std::shared_ptr<CarbonRouterInstanceBase> mcrouterBase;
-
-    {
-      std::lock_guard<std::mutex> lg(mutex_);
-      mcrouterBase = folly::get_default(mcrouters_, persistenceId.str());
-    }
-    if (!mcrouterBase) {
-      std::lock_guard<std::mutex> ilg(initMutex_);
-      {
-        std::lock_guard<std::mutex> lg(mutex_);
-        mcrouterBase = folly::get_default(mcrouters_, persistenceId.str());
-      }
-      if (!mcrouterBase) {
-        std::shared_ptr<CarbonRouterInstance<RouterInfo>> mcrouter =
-            CarbonRouterInstance<RouterInfo>::create(options.clone(), evbs);
-        if (mcrouter) {
-          std::lock_guard<std::mutex> lg(mutex_);
-          mcrouters_[persistenceId.str()] = mcrouter;
-          return mcrouter.get();
-        }
-      }
-    }
-    return dynamic_cast<CarbonRouterInstance<RouterInfo>*>(mcrouterBase.get());
-  }
-
-  template <class RouterInfo>
-  CarbonRouterInstance<RouterInfo>* mcrouterGet(
-      folly::StringPiece persistenceId) {
-    std::lock_guard<std::mutex> lg(mutex_);
-    auto mcrouterBase =
-        folly::get_default(mcrouters_, persistenceId.str(), nullptr).get();
-    return dynamic_cast<CarbonRouterInstance<RouterInfo>*>(mcrouterBase);
-  }
-
- private:
-  std::unordered_map<std::string, std::shared_ptr<CarbonRouterInstanceBase>>
-      mcrouters_;
-  // protects mcrouters_
-  std::mutex mutex_;
-  // initMutex_ must not be taken under mutex_, otherwise deadlock is possible
-  std::mutex initMutex_;
-};
-
-extern folly::Singleton<McrouterManager> gMcrouterManager;
-
 } // namespace detail
 
 template <class RouterInfo>
@@ -101,7 +44,7 @@ CarbonRouterInstance<RouterInfo>::init(
     folly::StringPiece persistenceId,
     const McrouterOptions& options,
     const std::vector<folly::EventBase*>& evbs) {
-  if (auto manager = detail::gMcrouterManager.try_get()) {
+  if (auto manager = detail::McrouterManager::getSingletonInstance()) {
     return manager->mcrouterGetCreate<RouterInfo>(persistenceId, options, evbs);
   }
 
@@ -111,7 +54,7 @@ CarbonRouterInstance<RouterInfo>::init(
 template <class RouterInfo>
 CarbonRouterInstance<RouterInfo>* CarbonRouterInstance<RouterInfo>::get(
     folly::StringPiece persistenceId) {
-  if (auto manager = detail::gMcrouterManager.try_get()) {
+  if (auto manager = detail::McrouterManager::getSingletonInstance()) {
     return manager->mcrouterGet<RouterInfo>(persistenceId);
   }
 
@@ -554,20 +497,22 @@ CarbonRouterInstance<RouterInfo>::createConfigBuilder() {
 
 template <class RouterInfo>
 void CarbonRouterInstance<RouterInfo>::registerOnUpdateCallbackForRxmits() {
-  rxmitHandle_ = rtVarsData().subscribeAndCall([this](
-      std::shared_ptr<const RuntimeVarsData> /* oldVars */,
-      std::shared_ptr<const RuntimeVarsData> newVars) {
-    if (!newVars) {
-      return;
-    }
-    const auto val = newVars->getVariableByName("disable_rxmit_reconnection");
-    if (val != nullptr) {
-      checkLogic(
-          val.isBool(),
-          "runtime vars 'disable_rxmit_reconnection' is not a boolean");
-      disableRxmitReconnection_ = val.asBool();
-    }
-  });
+  rxmitHandle_ = rtVarsData().subscribeAndCall(
+      [this](
+          std::shared_ptr<const RuntimeVarsData> /* oldVars */,
+          std::shared_ptr<const RuntimeVarsData> newVars) {
+        if (!newVars) {
+          return;
+        }
+        const auto val =
+            newVars->getVariableByName("disable_rxmit_reconnection");
+        if (val != nullptr) {
+          checkLogic(
+              val.isBool(),
+              "runtime vars 'disable_rxmit_reconnection' is not a boolean");
+          disableRxmitReconnection_ = val.asBool();
+        }
+      });
 }
 
 template <class RouterInfo>
@@ -575,6 +520,6 @@ template <class RouterInfo>
   freeAllRouters();
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

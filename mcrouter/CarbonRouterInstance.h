@@ -27,8 +27,9 @@
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
-
+namespace detail {
 class McrouterManager;
+}
 
 class ProxyThread;
 
@@ -232,7 +233,7 @@ class CarbonRouterInstance
  private:
   friend class LegacyPrivateAccessor;
   friend class CarbonRouterClient<RouterInfo>;
-  friend class McrouterManager;
+  friend class detail::McrouterManager;
   friend class ProxyDestinationMap;
 };
 
@@ -241,8 +242,8 @@ class CarbonRouterInstance
  */
 void freeAllRouters();
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 #include "CarbonRouterInstance-inl.h"

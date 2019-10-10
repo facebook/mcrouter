@@ -58,6 +58,8 @@ libmcroutercore_a_SOURCES = \
   McrouterLogFailure.h \
   McrouterLogger.cpp \
   McrouterLogger.h \
+  McrouterManager.cpp\
+  McrouterManager.h\
   Observable-inl.h \
   Observable.h \
   options-template.h \

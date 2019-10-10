@@ -18,22 +18,6 @@ namespace mcrouter {
 
 namespace detail {
 
-McrouterManager::McrouterManager() {
-  scheduleSingletonCleanup();
-  // Instantiate AuxiliaryCPUThreadPoolSingleton to make sure that it gets
-  // destroyed after McrouterManager is destroyed.
-  AuxiliaryCPUThreadPoolSingleton::try_get();
-}
-
-McrouterManager::~McrouterManager() {
-  freeAllMcrouters();
-}
-
-void McrouterManager::freeAllMcrouters() {
-  std::lock_guard<std::mutex> lg(mutex_);
-  mcrouters_.clear();
-}
-
 bool isValidRouterName(folly::StringPiece name) {
   if (name.empty()) {
     return false;
@@ -49,16 +33,13 @@ bool isValidRouterName(folly::StringPiece name) {
   return true;
 }
 
-folly::Singleton<McrouterManager> gMcrouterManager;
-
-} // detail
+} // namespace detail
 
 void freeAllRouters() {
-  if (auto manager = detail::gMcrouterManager.try_get()) {
+  if (auto manager = detail::McrouterManager::getSingletonInstance()) {
     manager->freeAllMcrouters();
   }
 }
-
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
