@@ -92,7 +92,7 @@ Engineering discussions and support: https://www.facebook.com/groups/mcrouter
 
 ## License
 
-Copyright (c) 2016, Facebook, Inc.
+Copyright (c) Facebook, Inc. and its affiliates.
 
 Licensed under the MIT license:
 https://github.com/facebook/mcrouter/blob/master/LICENSE
