@@ -135,11 +135,11 @@ class EagerShardSelectionShadowRouteTest
       EXPECT_EQ(
           "error|log|mc_res_local_error|EagerShardSelectionShadowRoute has an empty list of destinations",
           rh->routeName());
-    } else if (!shards) {
+    } else if (!shards && shadowShards) {
       EXPECT_EQ(
-          "error|log|mc_res_local_error|Invalid destination index.",
+          "selection|basic-shadow-shard-selector|shadow_enabled",
           rh->routeName());
-    } else if (!shadowShards) {
+    } else if (shards && !shadowShards) {
       EXPECT_EQ("selection|basic-shadow-shard-selector", rh->routeName());
     } else {
       EXPECT_EQ(
@@ -1232,6 +1232,139 @@ TEST_F(EagerShardSelectionShadowRouteTest, basicShadowShardWithShardTest) {
     shadowTotal += kv.second;
   }
   EXPECT_TRUE(shadowTotal == 100);
+}
+
+TEST_F(EagerShardSelectionShadowRouteTest, basicShadowShardWithNoShardTest) {
+  constexpr folly::StringPiece kSelectionRouteConfig = R"(
+  {
+    "children_type": "LoadBalancerRoute",
+    "pools": [
+      {
+        "pool": {
+          "type": "Pool",
+          "name": "pool1",
+          "servers": [
+            {
+              "type": "ErrorRoute",
+              "response": "h1",
+              "enable_logging": false
+            },
+            {
+              "type": "ErrorRoute",
+              "response": "h2",
+              "enable_logging": false
+            },
+            {
+              "type": "ErrorRoute",
+              "response": "h3",
+              "enable_logging": false
+            },
+            {
+              "type": "ErrorRoute",
+              "response": "h4",
+              "enable_logging": false
+            },
+            {
+              "type": "ErrorRoute",
+              "response": "h5",
+              "enable_logging": false
+            },
+            {
+              "type": "ErrorRoute",
+              "response": "h6",
+              "enable_logging": false
+            },
+            {
+              "type": "ErrorRoute",
+              "response": "h7",
+              "enable_logging": false
+            },
+            {
+              "type": "ErrorRoute",
+              "response": "h8",
+              "enable_logging": false
+            },
+            {
+              "type": "ErrorRoute",
+              "response": "h9",
+              "enable_logging": false
+            }
+          ],
+          "protocol": "caret"
+        },
+        "shards": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "shadow_shards": [
+          "1",
+          "1",
+          "",
+          "",
+          "1",
+          "",
+          "1",
+          "",
+          ""
+        ]
+      }
+    ],
+    "out_of_range": "ErrorRoute|Out of range!",
+    "children_settings" : {
+      "load_ttl_ms": 100,
+      "algorithm": "two-random-choices"
+    },
+    "shadow_children_type": "LoadBalancerRoute",
+    "shadow_children_settings" : {
+      "load_ttl_ms": 10,
+      "algorithm": "two-random-choices"
+    }
+  }
+  )";
+
+  TestFiberManager fm{FiberManagerContextTag()};
+  std::unordered_map<std::string, size_t> shadowResults;
+  EagerShardShadowSelectorPolicy policy(shadowResults);
+  auto rh =
+      getEagerShardSelectionShadowRoute(kSelectionRouteConfig, {}, {}, policy);
+
+  auto ctx = getContext();
+  fm.run([&]() {
+    for (int i = 0; i < 100; i++) {
+      GoodbyeRequest req;
+      req.shardId() = 1;
+      auto reply = rh->route(req);
+      EXPECT_EQ("Out of range!", reply.message());
+    }
+  });
+  // 100 requests on shadow path
+  int32_t shadowTotal = 0;
+  for (const auto& kv : shadowResults) {
+    shadowTotal += kv.second;
+  }
+  EXPECT_TRUE(shadowTotal == 100);
+  // 25 requests should hit h1 through shadow path
+  EXPECT_TRUE(shadowResults["h1"] >= 15 && shadowResults["h1"] <= 35);
+  // 25 requests should hit h2 through shadow path
+  EXPECT_TRUE(shadowResults["h2"] >= 15 && shadowResults["h2"] <= 35);
+  // 25 requests should hit h3 through shadow path
+  EXPECT_TRUE(shadowResults["h5"] >= 15 && shadowResults["h3"] <= 35);
+  // 25 requests should hit h4 through shadow path
+  EXPECT_TRUE(shadowResults["h7"] >= 15 && shadowResults["h4"] <= 35);
+
+  // All others should receive no traffic
+  EXPECT_EQ(shadowResults["h3"], 0);
+  EXPECT_EQ(shadowResults["h4"], 0);
+  EXPECT_EQ(shadowResults["h6"], 0);
+  EXPECT_EQ(shadowResults["h8"], 0);
+  EXPECT_EQ(shadowResults["h9"], 0);
 }
 
 } // namespace mcrouter

@@ -101,7 +101,7 @@ class SelectionRoute {
         shadowProbabilities_(shadowProbabilities),
         shadowSelectorPolicy_(shadowSelectorPolicy),
         gen_(seed) {
-    assert(!children_.empty());
+    assert(!(children_.empty() && shadowChildren_.empty()));
     assert(outOfRangeDestination_);
     if (shadowChildren_.size() > 0) {
       assert(shadowSelector_.hasValue() && shadowProbabilities_.size() > 0);
