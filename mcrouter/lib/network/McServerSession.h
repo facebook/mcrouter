@@ -219,6 +219,13 @@ class McServerSession
   }
 
   /**
+   * Get the socket's local address
+   */
+  const folly::SocketAddress getLocalAddress() const noexcept {
+    return transport_->getLocalAddress();
+  }
+
+  /**
    * @return  the client's common name obtained from the
    *          SSL cert if this is an SSL session. Else it
    *          returns empty string.
