@@ -101,8 +101,8 @@ if test "$mcrouter_cv_prog_cc_gflags" != "yes"; then
 fi
 
 # check for boost libs
-AX_BOOST_BASE([1.51.0], [], [AC_MSG_ERROR(
-              [Please install boost >= 1.51.0 (context, filesystem, program_options, regex and system)])])
+AX_BOOST_BASE([1.65.1], [], [AC_MSG_ERROR(
+              [Please install boost >= 1.65.1 (context, filesystem, program_options, regex and system)])])
 # TODO: also check boost::ctx, not only boost::context
 AX_BOOST_CONTEXT
 AX_BOOST_FILESYSTEM

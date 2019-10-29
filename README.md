@@ -13,18 +13,14 @@ See https://github.com/facebook/mcrouter/wiki to get started.
 
 ### New! Ubuntu package available
 
-Currently, we support Ubuntu Xenial (16.04) and Bionic (18.04) amd64.
+Currently, we support Ubuntu Bionic (18.04) amd64.
 Here is how to install it:
 
 Add the repo key:
 
-    $ wget -O - https://facebook.github.io/mcrouter/debrepo/xenial/PUBLIC.KEY | sudo apt-key add
+    $ wget -O - https://facebook.github.io/mcrouter/debrepo/bionic/PUBLIC.KEY | sudo apt-key add
 
-For Xenial: add the following line to apt sources file /etc/apt/sources.list
-
-    deb https://facebook.github.io/mcrouter/debrepo/xenial xenial contrib
-
-For Bionic: add the following line to apt sources file /etc/apt/sources.list
+Add the following line to apt sources file /etc/apt/sources.list
 
     deb https://facebook.github.io/mcrouter/debrepo/bionic bionic contrib
 
