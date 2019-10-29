@@ -104,10 +104,46 @@ class RouteHandleTraverser {
     return false;
   }
 
+  // options that may be used to control traversal action
+  class Options {
+   private:
+    /**
+     * Split size to use for shard split routing.
+     * It is not specified by default, in which case split size in routing
+     * config will be used.
+     */
+    size_t splitSize_{0};
+
+   public:
+    /**
+     * Set splitSize
+     */
+    void setSplitSize(size_t value) {
+      splitSize_ = value;
+    }
+
+    /**
+     * Get splitSize option
+     */
+    size_t getSplitSize() const {
+      return splitSize_;
+    }
+  };
+
  private:
   StartFunc start_;
   EndFunc end_;
   AccessPointFunc accessPointFn_;
+  Options options_;
+
+ public:
+  const Options& options() const {
+    return options_;
+  }
+
+  Options& options() {
+    return options_;
+  }
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

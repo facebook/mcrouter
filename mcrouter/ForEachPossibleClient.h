@@ -39,14 +39,16 @@ foreachPossibleClient(
     folly::StringPiece key,
     std::function<void(const PoolContext&, const AccessPoint&)> clientCallback,
     std::function<void(const ShardSplitter&)> spCallback = nullptr,
-    bool includeFailoverDestinations = false) {
+    bool includeFailoverDestinations = false,
+    size_t splitSize = 0) {
   Request req(key);
   foreachPossibleClient(
       proxy,
       req,
       std::move(clientCallback),
       std::move(spCallback),
-      includeFailoverDestinations);
+      includeFailoverDestinations,
+      splitSize);
 }
 
 template <class Request, class RouterInfo>
@@ -58,25 +60,29 @@ foreachPossibleClient(
     const Request& req,
     std::function<void(const PoolContext&, const AccessPoint&)> clientCallback,
     std::function<void(const ShardSplitter&)> spCallback = nullptr,
-    bool includeFailoverDestinations = false) {
+    bool includeFailoverDestinations = false,
+    size_t splitSize = 0) {
   auto ctx = ProxyRequestContextWithInfo<RouterInfo>::createRecording(
       proxy, std::move(clientCallback), std::move(spCallback));
   {
     auto p = proxy.getConfigLocked();
-    fiber_local<RouterInfo>::runWithLocals(
-        [&p,
-         &req,
-         ctx = std::move(ctx),
-         includeFailoverDestinations]() mutable {
-          fiber_local<RouterInfo>::setSharedCtx(std::move(ctx));
-          fiber_local<RouterInfo>::setFailoverDisabled(
-              !includeFailoverDestinations);
-          RouteHandleTraverser<typename RouterInfo::RouteHandleIf> t;
-          p.second.proxyRoute().traverse(req, t);
-        });
+    fiber_local<RouterInfo>::runWithLocals([&p,
+                                            &req,
+                                            ctx = std::move(ctx),
+                                            includeFailoverDestinations,
+                                            splitSize]() mutable {
+      fiber_local<RouterInfo>::setSharedCtx(std::move(ctx));
+      fiber_local<RouterInfo>::setFailoverDisabled(
+          !includeFailoverDestinations);
+      RouteHandleTraverser<typename RouterInfo::RouteHandleIf> t;
+      if (splitSize > 0) {
+        t.options().setSplitSize(splitSize);
+      }
+      p.second.proxyRoute().traverse(req, t);
+    });
   }
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

@@ -24,6 +24,7 @@
 #include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
+#include "mcrouter/routes/ShardHashFunc.h"
 #include "mcrouter/routes/ShardSplitter.h"
 
 namespace facebook {
@@ -94,14 +95,26 @@ class ShardSplitRoute {
     }
 
     folly::StringPiece shard;
-    auto split = shardSplitter_.getShardSplit(req.key().routingKey(), shard);
-
-    if (split == nullptr) {
+    if (!getShardId(req.key().routingKey(), shard)) {
+      // key does not contain shard id, just do regular routing
       return t(*rh_, req);
     }
 
-    auto splitSize = split->getSplitSizeForCurrentHost();
-    if (carbon::DeleteLike<Request>::value && split->fanoutDeletesEnabled()) {
+    // get splitSize to use from traverser options
+    auto splitSize = t.options().getSplitSize();
+    // use true value for fanoutDeletesEnabled when splitSize is specified
+    bool fanoutDeletesEnabled = true;
+
+    if (splitSize == 0) {
+      // if splitSize is not set in traverser options, get related info from
+      // shardSplitter
+
+      auto split = shardSplitter_.getShardSplit(shard);
+      splitSize = split.getSplitSizeForCurrentHost();
+      fanoutDeletesEnabled = split.fanoutDeletesEnabled();
+    }
+
+    if (carbon::DeleteLike<Request>::value && fanoutDeletesEnabled) {
       // Note: the order here is part of the API and must not be changed.
       // We traverse the primary split and then other splits in order.
       if (t(*rh_, req)) {
@@ -140,7 +153,7 @@ class ShardSplitRoute {
     if (carbon::DeleteLike<Request>::value && split->fanoutDeletesEnabled()) {
       for (size_t i = 1; i < splitSize; ++i) {
         folly::fibers::addTask(
-            [ r = rh_, req_ = splitReq(req, i, shard) ]() { r->route(req_); });
+            [r = rh_, req_ = splitReq(req, i, shard)]() { r->route(req_); });
       }
       return rh_->route(req);
     } else {
