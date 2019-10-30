@@ -146,7 +146,7 @@ apache::thrift::RocketClientChannel::Ptr ThriftTransportBase::createChannel() {
 }
 
 apache::thrift::RpcOptions ThriftTransportBase::getRpcOptions(
-    std::chrono::milliseconds timeout) const {
+    std::chrono::milliseconds timeout) {
   apache::thrift::RpcOptions rpcOptions;
   rpcOptions.setTimeout(timeout);
   rpcOptions.setClientOnlyTimeouts(true);

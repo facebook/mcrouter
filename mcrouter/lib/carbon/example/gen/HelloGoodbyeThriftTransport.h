@@ -52,16 +52,17 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
       const hellogoodbye::GoodbyeRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout]() {
-      hellogoodbye::GoodbyeReply reply;
+    return sendSyncImpl([this, &request, timeout] {
+      folly::Try<apache::thrift::RpcResponseComplete<hellogoodbye::GoodbyeReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        thriftClient->sync_goodbye(rpcOptions, reply, request);
+        reply = thriftClient->sync_complete_goodbye(
+            rpcOptions, request);
       } else {
-        setReplyResultAndMessage(
-          reply,
-          carbon::Result::CONNECT_ERROR,
-          "Error creating thrift client.");
+        reply.emplaceException(
+            folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
+              apache::thrift::transport::TTransportException::NOT_OPEN,
+              "Error creating thrift client."));
       }
       return reply;
     });
@@ -71,16 +72,17 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
       const hellogoodbye::HelloRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout]() {
-      hellogoodbye::HelloReply reply;
+    return sendSyncImpl([this, &request, timeout] {
+      folly::Try<apache::thrift::RpcResponseComplete<hellogoodbye::HelloReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        thriftClient->sync_hello(rpcOptions, reply, request);
+        reply = thriftClient->sync_complete_hello(
+            rpcOptions, request);
       } else {
-        setReplyResultAndMessage(
-          reply,
-          carbon::Result::CONNECT_ERROR,
-          "Error creating thrift client.");
+        reply.emplaceException(
+            folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
+              apache::thrift::transport::TTransportException::NOT_OPEN,
+              "Error creating thrift client."));
       }
       return reply;
     });
@@ -90,16 +92,17 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
       const McVersionRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout]() {
-      McVersionReply reply;
+    return sendSyncImpl([this, &request, timeout] {
+      folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        thriftClient->sync_mcVersion(rpcOptions, reply, request);
+        reply = thriftClient->sync_complete_mcVersion(
+            rpcOptions, request);
       } else {
-        setReplyResultAndMessage(
-          reply,
-          carbon::Result::CONNECT_ERROR,
-          "Error creating thrift client.");
+        reply.emplaceException(
+            folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
+              apache::thrift::transport::TTransportException::NOT_OPEN,
+              "Error creating thrift client."));
       }
       return reply;
     });

@@ -16,6 +16,7 @@
 #include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/VirtualEventBase.h>
 #include <thrift/lib/cpp/async/TAsyncTransport.h>
+#include <thrift/lib/cpp2/async/RequestCallback.h>
 #include <thrift/lib/cpp2/async/RequestChannel.h>
 #include <thrift/lib/cpp2/async/RocketClientChannel.h>
 
@@ -89,8 +90,8 @@ class ThriftTransportBase : public Transport,
   template <class ThriftClient>
   std::unique_ptr<ThriftClient> createThriftClient();
 
-  apache::thrift::RpcOptions getRpcOptions(
-      std::chrono::milliseconds timeout) const;
+  static apache::thrift::RpcOptions getRpcOptions(
+      std::chrono::milliseconds timeout);
 
   /**
    * Resets the client pointer.
@@ -99,7 +100,7 @@ class ThriftTransportBase : public Transport,
   virtual void resetClient() = 0;
 
   template <class F>
-  std::result_of_t<F()> sendSyncImpl(F&& sendFunc);
+  auto sendSyncImpl(F&& sendFunc);
 
  private:
   // AsyncSocket::ConnectCallback overrides
