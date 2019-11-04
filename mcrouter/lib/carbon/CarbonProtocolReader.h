@@ -245,8 +245,10 @@ class CarbonProtocolReader {
   }
 
   void readStructEnd() {
-    lastFieldId_ = nestedStructFieldIds_.back();
-    nestedStructFieldIds_.pop_back();
+    if (!nestedStructFieldIds_.empty()) {
+      lastFieldId_ = nestedStructFieldIds_.back();
+      nestedStructFieldIds_.pop_back();
+    }
   }
 
   std::pair<std::pair<FieldType, FieldType>, uint32_t>

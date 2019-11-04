@@ -78,13 +78,11 @@ void CarbonProtocolReader::skip(const FieldType ft) {
     }
     case FieldType::Struct: {
       readStructBegin();
-      while (true) {
-        const auto fieldType = readFieldHeader().first;
-        if (fieldType == FieldType::Stop) {
-          break;
-        }
-        skip(fieldType);
-      }
+      const auto next = readFieldHeader().first;
+      skip(next);
+      break;
+    }
+    case FieldType::Stop: {
       readStructEnd();
       break;
     }
@@ -96,8 +94,10 @@ void CarbonProtocolReader::skip(const FieldType ft) {
       skipKVContainer();
       break;
     }
-    default: { break; }
+    default: {
+      break;
+    }
   }
 }
 
-} // carbon
+} // namespace carbon
