@@ -28,9 +28,10 @@
 
 namespace carbon {
 
-class CarbonProtocolWriter {
+template <class TS>
+class CarbonProtocolWriterImpl {
  public:
-  explicit CarbonProtocolWriter(CarbonQueueAppenderStorage& storage)
+  explicit CarbonProtocolWriterImpl(TS& storage)
       : appender_(&storage, 0 /* unused */) {}
 
   // The writeField() member functions serialize the field header (field type
@@ -560,9 +561,12 @@ class CarbonProtocolWriter {
     appender_.write(bytes);
   }
 
-  CarbonQueueAppender appender_;
+  CarbonQueueAppender<TS> appender_;
   folly::small_vector<int16_t, detail::kDefaultStackSize> nestedStructFieldIds_;
   int16_t lastFieldId_{0};
 };
+
+using CarbonProtocolWriter =
+    CarbonProtocolWriterImpl<CarbonQueueAppenderStorage>;
 
 } // namespace carbon

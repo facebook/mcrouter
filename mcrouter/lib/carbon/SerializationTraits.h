@@ -10,7 +10,14 @@
 namespace carbon {
 
 class CarbonProtocolReader;
-class CarbonProtocolWriter;
+
+class CarbonQueueAppenderStorage;
+
+template <class TS>
+class CarbonProtocolWriterImpl;
+
+using CarbonProtocolWriter =
+    CarbonProtocolWriterImpl<CarbonQueueAppenderStorage>;
 
 /*
  * A user type may be used in a Carbon structure if the user provides an
@@ -27,4 +34,4 @@ class CarbonProtocolWriter;
 template <class T, class Enable = void>
 struct SerializationTraits;
 
-} // carbon
+} // namespace carbon
