@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <array>
+
 #include <folly/Optional.h>
 #include <folly/fibers/AddTasks.h>
 #include <folly/fibers/FiberManager.h>
@@ -206,9 +208,9 @@ class StagingRoute {
     using Reply = ReplyT<Request>;
 
     // send to both routes simutanously and return the worse reply.
-    std::vector<std::function<Reply()>> fs;
-    fs.push_back([warm = warm_, &req]() { return warm->route(req); });
-    fs.push_back([staging = staging_, &req]() { return staging->route(req); });
+    std::array<std::function<Reply()>, 2> fs;
+    fs[0] = [warm = warm_, &req]() { return warm->route(req); };
+    fs[1] = [staging = staging_, &req]() { return staging->route(req); };
 
     Reply reply;
     bool bFirstReply = true;

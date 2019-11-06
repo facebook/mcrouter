@@ -26,6 +26,7 @@ std::vector<typename RouterInfo::RouteHandlePtr> getFailoverChildren(
     std::vector<typename RouterInfo::RouteHandlePtr> failover,
     int32_t failoverExptime) {
   std::vector<typename RouterInfo::RouteHandlePtr> children;
+  children.reserve(1 + failover.size());
   children.push_back(std::move(normal));
   for (auto& frh : failover) {
     auto rh =
@@ -36,7 +37,7 @@ std::vector<typename RouterInfo::RouteHandlePtr> getFailoverChildren(
   return children;
 }
 
-} // detail
+} // namespace detail
 
 template <class RouterInfo>
 typename RouterInfo::RouteHandlePtr createFailoverWithExptimeRoute(
@@ -85,6 +86,6 @@ typename RouterInfo::RouteHandlePtr makeFailoverWithExptimeRoute(
   return makeFailoverRouteDefault<RouterInfo, FailoverRoute>(
       json, std::move(children));
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

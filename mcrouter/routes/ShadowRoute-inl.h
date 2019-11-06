@@ -73,6 +73,7 @@ makeShadowRoutes(
   }
 
   ShadowData<RouterInfo> data;
+  data.reserve(jshadows->size());
   for (auto& shadow : *jshadows) {
     if (!shadow.isObject()) {
       MC_LOG_FAILURE(
@@ -141,6 +142,6 @@ makeShadowRoutes(
   return children;
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

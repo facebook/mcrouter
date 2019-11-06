@@ -213,14 +213,18 @@ ShardDestinationsMap<RouterInfo> getShardDestinationsMap(
         auto rh = destinations[j];
         auto it = shardMap.find(shard);
         if (it == shardMap.end()) {
-          it = shardMap
-                   .insert({shard,
-                            std::vector<typename RouterInfo::RouteHandlePtr>()})
-                   .first;
+          it =
+              shardMap
+                  .emplace(
+                      shard, std::vector<typename RouterInfo::RouteHandlePtr>())
+                  .first;
         }
         it->second.push_back(std::move(rh));
       }
     }
+  }
+  for (auto& it : shardMap) {
+    it.second.shrink_to_fit();
   }
   return shardMap;
 }
@@ -235,6 +239,7 @@ void buildChildrenLatestRoutes(
     ShardDestinationsMapCustomFn<RouterInfo> customFn = nullptr) {
   LatestRouteOptions options =
       parseLatestRouteJson(json, factory.getThreadId());
+  destinations.reserve(shardMap.size());
   std::for_each(shardMap.begin(), shardMap.end(), [&](auto& item) {
     auto shardId = item.first;
     auto childrenRouteHandles = std::move(item.second);
@@ -261,6 +266,7 @@ void buildChildrenLoadBalancerRoutes(
     ShardDestinationsMapCustomFn<RouterInfo> customFn = nullptr) {
   LoadBalancerRouteOptions<RouterInfo> options =
       parseLoadBalancerRouteJson<RouterInfo>(json);
+  destinations.reserve(shardMap.size());
   std::for_each(shardMap.begin(), shardMap.end(), [&](auto& item) {
     auto shardId = item.first;
     auto childrenRouteHandles = std::move(item.second);
@@ -282,6 +288,7 @@ void buildChildrenCustomRoutesFromMap(
     std::vector<typename RouterInfo::RouteHandlePtr>& destinations,
     MapType& shardToDestinationIndexMap,
     ShardDestinationsMapCustomFn<RouterInfo> customFn = nullptr) {
+  destinations.reserve(shardMap.size());
   std::for_each(shardMap.begin(), shardMap.end(), [&](auto& item) {
     auto shardId = item.first;
     auto childrenRouteHandles = std::move(item.second);
@@ -301,6 +308,7 @@ void buildChildrenCustomJsonmRoutes(
     const ShardDestinationsMap<RouterInfo>& shardMap,
     std::vector<typename RouterInfo::RouteHandlePtr>& destinations,
     MapType& shardToDestinationIndexMap) {
+  destinations.reserve(shardMap.size());
   std::for_each(shardMap.begin(), shardMap.end(), [&](auto& item) {
     auto shardId = item.first;
     auto childrenList = std::move(item.second);
@@ -649,7 +657,7 @@ typename RouterInfo::RouteHandlePtr createEagerShardSelectionShadowRoute(
   }
 
   ShardSelector shadowSelector(std::move(shadowShardToDestinationIndexMap));
-
+  shadowProbabilities.shrink_to_fit();
   return createSelectionRoute<RouterInfo, ShardSelector, ShadowSelectorPolicy>(
       std::move(destinations),
       std::move(selector),

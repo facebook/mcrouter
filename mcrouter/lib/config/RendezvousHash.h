@@ -26,6 +26,7 @@ class RendezvousHash {
    */
   template <class Iterator>
   RendezvousHash(Iterator begin, Iterator end) {
+    nodes_.reserve(std::distance(begin, end));
     for (auto it = begin; it != end; ++it) {
       if (it->second < 0.0) {
         throw std::invalid_argument("Weight should be greater than 0");
@@ -54,5 +55,5 @@ class RendezvousHash {
    */
   void normalizeWeights();
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

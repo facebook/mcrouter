@@ -96,6 +96,7 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> createHashRoute(
         jtags->size() == rh.size(),
         "HashRoute: number of tags doesn't match number of route handles");
 
+    endpoints.reserve(jtags->size());
     for (const auto& jtag : *jtags) {
       checkLogic(jtag.isString(), "HashRoute: tag is not a string");
       endpoints.push_back(jtag.stringPiece());
@@ -129,6 +130,6 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeHashRoute(
       json, std::move(children), factory.getThreadId());
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

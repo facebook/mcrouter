@@ -22,7 +22,7 @@
 
 namespace folly {
 struct dynamic;
-} // folly
+} // namespace folly
 
 namespace facebook {
 namespace memcache {
@@ -68,6 +68,9 @@ class McRouteHandleProvider
   folly::StringKeyedUnorderedMap<
       std::vector<std::shared_ptr<const AccessPoint>>>
   releaseAccessPoints() {
+    for (auto& it : accessPoints_) {
+      it.second.shrink_to_fit();
+    }
     return std::move(accessPoints_);
   }
 
@@ -124,8 +127,8 @@ class McRouteHandleProvider
   std::unique_ptr<ExtraRouteHandleProviderIf<RouterInfo>> buildExtraProvider();
 };
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 #include "McRouteHandleProvider-inl.h"

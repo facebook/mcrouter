@@ -91,6 +91,7 @@ RouteHandleFactory<RouteHandleIf>::createList(const folly::dynamic& json) {
         ret.push_back(std::move(listIt));
       }
     }
+    ret.shrink_to_fit();
     return ret;
   } else if (json.isObject()) {
     auto jName = json.get_ptr("name");

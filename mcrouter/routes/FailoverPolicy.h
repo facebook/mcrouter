@@ -398,6 +398,7 @@ class FailoverLeastFailuresPolicy {
  private:
   std::vector<size_t> getLeastFailureRouteIndices() const {
     std::vector<size_t> indices;
+    indices.reserve(recentErrorCount_.size());
     for (size_t i = 0; i < recentErrorCount_.size(); ++i) {
       indices.push_back(i);
     }
@@ -416,6 +417,6 @@ class FailoverLeastFailuresPolicy {
 
   std::vector<size_t> recentErrorCount_;
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

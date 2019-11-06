@@ -437,6 +437,7 @@ folly::Expected<folly::Unit, std::string>
 CarbonRouterInstance<RouterInfo>::configure(const ProxyConfigBuilder& builder) {
   VLOG_IF(0, !opts_.constantly_reload_configs) << "started reconfiguring";
   std::vector<std::shared_ptr<ProxyConfig<RouterInfo>>> newConfigs;
+  newConfigs.reserve(opts_.num_proxies);
   try {
     for (size_t i = 0; i < opts_.num_proxies; i++) {
       newConfigs.push_back(builder.buildConfig<RouterInfo>(*getProxy(i)));

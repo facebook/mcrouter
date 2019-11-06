@@ -44,6 +44,7 @@ std::vector<std::shared_ptr<RouteHandleIf>> getTargets(
   if (!salt.empty()) {
     hashKey = folly::Hash()(hashKey, salt);
   }
+  failovers.reserve(failoverCount);
   for (size_t i = 0; i < failoverCount; ++i) {
     auto id =
         WeightedCh3HashFunc::hash(folly::to<std::string>(hashKey), weights);
@@ -57,7 +58,7 @@ std::vector<std::shared_ptr<RouteHandleIf>> getTargets(
   return failovers;
 }
 
-} // detail
+} // namespace detail
 
 struct LatestRouteOptions {
   FailoverErrorsSettings errorsSettings;
@@ -166,6 +167,6 @@ typename RouterInfo::RouteHandlePtr createLatestRoute(
       json, std::move(children), factory.getThreadId());
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

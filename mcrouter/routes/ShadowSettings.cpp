@@ -58,9 +58,10 @@ std::shared_ptr<ShadowSettings> ShadowSettings::create(
       const auto keysToShadow =
           folly::convertTo<std::vector<std::string>>(*jKeysToShadow);
       checkLogic(
-          keysToShadow.empty() || (!json.get_ptr("index_range") &&
-                                   !json.get_ptr("key_fraction_range") &&
-                                   !json.get_ptr("key_fraction_range_rv")),
+          keysToShadow.empty() ||
+              (!json.get_ptr("index_range") &&
+               !json.get_ptr("key_fraction_range") &&
+               !json.get_ptr("key_fraction_range_rv")),
           "Cannot mix nonempty keys_to_shadow array with index_range,"
           " key_fraction_range, or key_fraction_range_rv");
       result->setKeysToShadow(keysToShadow);
@@ -103,6 +104,7 @@ ShadowSettings::~ShadowSettings() {
 
 void ShadowSettings::setKeysToShadow(const std::vector<std::string>& keys) {
   keysToShadow_.clear();
+  keysToShadow_.reserve(keys.size());
   for (const auto& key : keys) {
     const auto hash = carbon::Keys<std::string>(key).routingKeyHash();
     keysToShadow_.emplace_back(hash, key);
@@ -112,35 +114,36 @@ void ShadowSettings::setKeysToShadow(const std::vector<std::string>& keys) {
 
 void ShadowSettings::registerOnUpdateCallback(
     CarbonRouterInstanceBase& router) {
-  handle_ = router.rtVarsData().subscribeAndCall([this](
-      std::shared_ptr<const RuntimeVarsData> /* oldVars */,
-      std::shared_ptr<const RuntimeVarsData> newVars) {
-    if (!newVars || keyFractionRangeRv_.empty()) {
-      return;
-    }
-    auto val = newVars->getVariableByName(keyFractionRangeRv_);
-    if (val != nullptr) {
-      checkLogic(
-          val.isArray(),
-          "runtime vars: {} is not an array",
-          keyFractionRangeRv_);
-      checkLogic(
-          val.size() == 2,
-          "runtime vars: size of {} is not 2",
-          keyFractionRangeRv_);
-      checkLogic(
-          val[0].isNumber(),
-          "runtime vars: {}#0 is not a number",
-          keyFractionRangeRv_);
-      checkLogic(
-          val[1].isNumber(),
-          "runtime vars: {}#1 is not a number",
-          keyFractionRangeRv_);
-      setKeyRange(val[0].asDouble(), val[1].asDouble());
-    }
-  });
+  handle_ = router.rtVarsData().subscribeAndCall(
+      [this](
+          std::shared_ptr<const RuntimeVarsData> /* oldVars */,
+          std::shared_ptr<const RuntimeVarsData> newVars) {
+        if (!newVars || keyFractionRangeRv_.empty()) {
+          return;
+        }
+        auto val = newVars->getVariableByName(keyFractionRangeRv_);
+        if (val != nullptr) {
+          checkLogic(
+              val.isArray(),
+              "runtime vars: {} is not an array",
+              keyFractionRangeRv_);
+          checkLogic(
+              val.size() == 2,
+              "runtime vars: size of {} is not 2",
+              keyFractionRangeRv_);
+          checkLogic(
+              val[0].isNumber(),
+              "runtime vars: {}#0 is not a number",
+              keyFractionRangeRv_);
+          checkLogic(
+              val[1].isNumber(),
+              "runtime vars: {}#1 is not a number",
+              keyFractionRangeRv_);
+          setKeyRange(val[0].asDouble(), val[1].asDouble());
+        }
+      });
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
