@@ -330,6 +330,24 @@ MCROUTER_OPTION_STRING(
     "The service identity of the destination service when SSL is used")
 
 MCROUTER_OPTION_TOGGLE(
+    ssl_service_identity_authorization_log,
+    false,
+    "ssl-service-identity-authorization-log",
+    no_short,
+    "The configured service identity of the client is compared against the "
+    "service identity of the server in the peer certificate. Log if they "
+    "match.")
+
+MCROUTER_OPTION_TOGGLE(
+    ssl_service_identity_authorization_enforce,
+    false,
+    "ssl-service-identity-authorization-log",
+    no_short,
+    "The configured service identity of the client is compared against the "
+    "service identity of the server in the peer certificate. Fail to "
+    "connect if they do not match.")
+
+MCROUTER_OPTION_TOGGLE(
     enable_qos,
     false,
     "enable-qos",

@@ -105,6 +105,11 @@ CarbonRouterInstanceBase::CarbonRouterInstanceBase(McrouterOptions inputOptions)
       LOG(ERROR) << "Invalid pool-stats-config-file : " << e.what();
     }
   }
+  if (opts_.ssl_service_identity_authorization_log ||
+      opts_.ssl_service_identity_authorization_enforce) {
+    setSvcIdentAuthCallbackFunc(
+        facebook::memcache::mcrouter::getAuthChecker(opts_));
+  }
 }
 
 void CarbonRouterInstanceBase::setUpCompressionDictionaries(
@@ -112,8 +117,8 @@ void CarbonRouterInstanceBase::setUpCompressionDictionaries(
   if (codecConfigs.empty() || compressionCodecManager_ != nullptr) {
     return;
   }
-  compressionCodecManager_ = std::make_unique<const CompressionCodecManager>(
-      std::move(codecConfigs));
+  compressionCodecManager_ =
+      std::make_unique<const CompressionCodecManager>(std::move(codecConfigs));
 }
 
 void CarbonRouterInstanceBase::addStartupOpts(
@@ -220,6 +225,6 @@ int32_t CarbonRouterInstanceBase::getStatsEnabledPoolIndex(
   return longestPrefixMatchIndex;
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

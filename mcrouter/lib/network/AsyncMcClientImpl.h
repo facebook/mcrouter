@@ -46,6 +46,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   using FlushList = Transport::FlushList;
   using ConnectionStatusCallbacks = Transport::ConnectionStatusCallbacks;
   using RequestStatusCallbacks = Transport::RequestStatusCallbacks;
+  using AuthorizationCallbacks = Transport::AuthorizationCallbacks;
   using RequestQueueStats = Transport::RequestQueueStats;
 
   static std::shared_ptr<AsyncMcClientImpl> create(
@@ -61,6 +62,8 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   void setConnectionStatusCallbacks(ConnectionStatusCallbacks callbacks);
 
   void setRequestStatusCallbacks(RequestStatusCallbacks callbacks);
+
+  void setAuthorizationCallbacks(AuthorizationCallbacks callbacks);
 
   template <class Request>
   ReplyT<Request> sendSync(
@@ -104,6 +107,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   folly::AsyncTransportWrapper::UniquePtr socket_;
   ConnectionStatusCallbacks connectionCallbacks_;
   RequestStatusCallbacks requestStatusCallbacks_;
+  AuthorizationCallbacks authorizationCallbacks_;
   int32_t numConnectTimeoutRetriesLeft_{0};
 
   // Debug pipe.

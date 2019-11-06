@@ -182,6 +182,9 @@ class MCProcess(ProcessBase):
     def getport(self):
         return self.port
 
+    def getsslport(self):
+        return None
+
     def connect(self):
         self.socket = socket.socket(self.addr_family, socket.SOCK_STREAM)
         self.socket.connect(self.addr)
@@ -698,7 +701,7 @@ class McrouterBase(MCProcess):
 class Mcrouter(McrouterBase):
     def __init__(self, config, port=None, default_route=None, extra_args=None,  # noqa: C901
                  base_dir=None, substitute_config_ports=None,
-                 substitute_port_map=None, replace_map=None):
+                 substitute_port_map=None, replace_map=None, flavor=None):
         if base_dir is None:
             base_dir = BaseDirectory('mcrouter')
 
@@ -719,8 +722,12 @@ class Mcrouter(McrouterBase):
                 config_file.write(replaced_config)
 
         self.config = config
-        args = [McrouterGlobals.binPath('mcrouter'),
-                '--config', 'file:' + config]
+        if (flavor):
+            args = [McrouterGlobals.binPath('mcrouter'), 'file:' + flavor,
+                    '--config', 'file:' + config]
+        else:
+            args = [McrouterGlobals.binPath('mcrouter'),
+                    '--config', 'file:' + config]
 
         if default_route:
             args.extend(['-R', default_route])
@@ -830,7 +837,9 @@ class MockMemcachedDual(MCProcess):
 
 
 class Memcached(MCProcess):
-    def __init__(self, port=None):
+    ssl_port = None
+
+    def __init__(self, port=None, ssl_port=None, extra_args=None):
         args = [McrouterGlobals.binPath('prodmc')]
         listen_sock = None
 
@@ -856,13 +865,20 @@ class Memcached(MCProcess):
                 '--enable_unchecked_l1_sentinel_reads',
                 '--reaper_throttle=100',
                 '--ini_hashpower=16',
+                '--num_listening_sockets=1',
             ])
+            if (extra_args):
+                args.extend(extra_args)
             if port is None:
                 listen_sock = create_listen_socket()
                 port = listen_sock.getsockname()[1]
                 args.extend(['--listen_sock_fd', str(listen_sock.fileno())])
             else:
                 args.extend(['-p', str(port)])
+
+            if ssl_port:
+                self.ssl_port = ssl_port
+                args.extend(['--ssl_port', str(self.ssl_port)])
 
             MCProcess.__init__(self, args, port)
 
@@ -881,6 +897,9 @@ class Memcached(MCProcess):
                 time.sleep(0.5)
                 tries -= 1
             self.disconnect()
+
+    def getsslport(self):
+        return self.ssl_port
 
 
 class Mcpiper(ProcessBase):

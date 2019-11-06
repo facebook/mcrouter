@@ -27,6 +27,9 @@ class MockServer(threading.Thread):
     def getport(self):
         return self.port
 
+    def getsslport(self):
+        return None
+
     def ensure_connected(self):
         self.start()
         self.port_event.wait()

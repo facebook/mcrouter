@@ -20,6 +20,7 @@
 #include "mcrouter/lib/network/McFizzClient.h"
 #include "mcrouter/lib/network/SecurityOptions.h"
 #include "mcrouter/lib/network/SocketUtil.h"
+#include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 
 using apache::thrift::async::TAsyncSocket;
 
@@ -48,6 +49,11 @@ void ThriftTransportBase::setConnectionStatusCallbacks(
 void ThriftTransportBase::setRequestStatusCallbacks(
     RequestStatusCallbacks callbacks) {
   requestCallbacks_ = std::move(callbacks);
+}
+
+void ThriftTransportBase::setAuthorizationCallbacks(
+    AuthorizationCallbacks callbacks) {
+  authorizationCallbacks_ = std::move(callbacks);
 }
 
 void ThriftTransportBase::setThrottle(size_t maxInflight, size_t maxPending) {
@@ -154,8 +160,24 @@ apache::thrift::RpcOptions ThriftTransportBase::getRpcOptions(
 }
 
 void ThriftTransportBase::connectSuccess() noexcept {
-  assert(connectionState_ == ConnectionState::Connecting);
+  auto transport = channel_->getTransport();
+  assert(
+      transport != nullptr && connectionState_ == ConnectionState::Connecting);
   connectionState_ = ConnectionState::Up;
+  McSSLUtil::finalizeClientTransport(transport);
+  if (isAsyncSSLSocketMech(connectionOptions_.accessPoint->getSecurityMech())) {
+    if (authorizationCallbacks_.onAuthorize &&
+        !authorizationCallbacks_.onAuthorize(
+            *transport->getUnderlyingTransport<TAsyncSocket>(),
+            connectionOptions_)) {
+      if (connectionOptions_.securityOpts.sslAuthorizationEnforce) {
+        // Enforcement is enabled, close the connection.
+        closeNow();
+        return;
+      }
+    }
+  }
+
   if (connectionCallbacks_.onUp) {
     // Connection retries not currently supported in thrift transport so pass 0
     connectionCallbacks_.onUp(*channel_->getTransport(), 0);

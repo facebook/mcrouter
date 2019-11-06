@@ -150,6 +150,11 @@ void AsyncMcClientImpl::setRequestStatusCallbacks(
   requestStatusCallbacks_ = std::move(callbacks);
 }
 
+void AsyncMcClientImpl::setAuthorizationCallbacks(
+    AuthorizationCallbacks callbacks) {
+  authorizationCallbacks_ = std::move(callbacks);
+}
+
 AsyncMcClientImpl::~AsyncMcClientImpl() {
   assert(queue_.getPendingRequestCount() == 0);
   assert(queue_.getInflightRequestCount() == 0);
@@ -468,6 +473,16 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
     }
   }
   McSSLUtil::finalizeClientTransport(socket_.get());
+
+  // Now authorize the connection
+  if (isAsyncSSLSocketMech(mech) && authorizationCallbacks_.onAuthorize &&
+      !authorizationCallbacks_.onAuthorize(*socket_, connectionOptions_)) {
+    if (connectionOptions_.securityOpts.sslAuthorizationEnforce) {
+      // Enforcement is enabled, close the connection.
+      closeNow();
+      return;
+    }
+  }
 
   assert(queue_.getInflightRequestCount() == 0);
   assert(queue_.getParserInitializer() == nullptr);

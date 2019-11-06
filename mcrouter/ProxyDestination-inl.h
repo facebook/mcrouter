@@ -307,6 +307,8 @@ void ProxyDestination<Transport>::initializeTransport() {
     options.securityOpts.sessionCachingEnabled = opts.ssl_connection_cache;
     options.securityOpts.sslHandshakeOffload = opts.ssl_handshake_offload;
     options.securityOpts.sslServiceIdentity = opts.ssl_service_identity;
+    options.securityOpts.sslAuthorizationEnforce =
+        opts.ssl_service_identity_authorization_enforce;
     options.securityOpts.tfoEnabledForSsl = opts.enable_ssl_tfo;
     options.securityOpts.tlsPreferOcbCipher = opts.tls_prefer_ocb_cipher;
   }
@@ -465,6 +467,19 @@ void ProxyDestination<Transport>::initializeTransport() {
 
         pdstn->proxy().stats().increment(
             num_connect_retries_stat, numConnectRetries);
+      }});
+
+  transport_->setAuthorizationCallbacks(AuthorizationCallbacks{
+      [this](
+          const folly::AsyncTransportWrapper& socket,
+          const ConnectionOptions& connectionOptions) mutable {
+        if (auto& callback = proxy().router().svcIdentAuthCallbackFunc()) {
+          if (!callback(socket, connectionOptions)) {
+            proxy().stats().increment(num_authorization_failures_stat);
+            return false;
+          }
+        }
+        return true;
       }});
 
   if (opts.target_max_inflight_requests > 0) {

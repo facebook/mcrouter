@@ -75,6 +75,11 @@ struct SecurityOptions {
   std::string sslServiceIdentity;
 
   /**
+   * Client service identity must match server service identity
+   */
+  bool sslAuthorizationEnforce{false};
+
+  /**
    * Whether TFO is enabled for SSL connections
    */
   bool tfoEnabledForSsl{false};

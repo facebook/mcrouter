@@ -24,6 +24,7 @@
 #include "mcrouter/Observable.h"
 #include "mcrouter/PoolStats.h"
 #include "mcrouter/TkoTracker.h"
+#include "mcrouter/lib/network/Transport.h"
 #include "mcrouter/options.h"
 
 namespace facebook {
@@ -56,6 +57,8 @@ using LogPostprocessCallbackFunc = std::function<void(
 
 class CarbonRouterInstanceBase {
  public:
+  using SvcIdentAuthCallbackFunc = Transport::SvcIdentAuthCallbackFunc;
+
   explicit CarbonRouterInstanceBase(McrouterOptions inputOptions);
   virtual ~CarbonRouterInstanceBase() = default;
 
@@ -120,6 +123,14 @@ class CarbonRouterInstanceBase {
 
   void setPostprocessCallback(LogPostprocessCallbackFunc&& newCallback) {
     postprocessCallback_ = std::move(newCallback);
+  }
+
+  const SvcIdentAuthCallbackFunc& svcIdentAuthCallbackFunc() const {
+    return svcIdentAuthCallback_;
+  }
+
+  void setSvcIdentAuthCallbackFunc(SvcIdentAuthCallbackFunc&& newCallback) {
+    svcIdentAuthCallback_ = std::move(newCallback);
   }
 
   /**
@@ -202,6 +213,7 @@ class CarbonRouterInstanceBase {
   const std::unique_ptr<ConfigApi> configApi_;
 
   LogPostprocessCallbackFunc postprocessCallback_;
+  SvcIdentAuthCallbackFunc svcIdentAuthCallback_;
 
   // These next four fields are used for stats
   uint64_t startTime_{0};

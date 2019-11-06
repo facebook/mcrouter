@@ -41,6 +41,11 @@ class AsyncTlsToPlaintextSocket final
     return Ptr(new AsyncTlsToPlaintextSocket(std::move(impl)));
   }
 
+  virtual const folly::AsyncTransportWrapper* getWrappedTransport()
+      const override {
+    return impl_.get();
+  }
+
   void connect(
       folly::AsyncSocket::ConnectCallback* connectCallback,
       const folly::SocketAddress& address,

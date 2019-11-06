@@ -16,6 +16,6 @@ namespace mcrouter {
 std::string routerName(const McrouterOptions& opts) {
   return "libmcrouter." + opts.service_name + "." + opts.router_name;
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

@@ -68,6 +68,9 @@ class AsyncMcClient : public Transport {
   void setRequestStatusCallbacks(
       RequestStatusCallbacks callbacks) override final;
 
+  void setAuthorizationCallbacks(
+      AuthorizationCallbacks callbacks) override final;
+
   /**
    * Send request synchronously (i.e. blocking call).
    * NOTE: it must be called only from fiber context. It will block the current

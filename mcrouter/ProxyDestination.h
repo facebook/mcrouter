@@ -46,6 +46,7 @@ class ProxyDestination : public ProxyDestinationBase {
   using ConnectionStatusCallbacks =
       typename Transport::ConnectionStatusCallbacks;
   using RequestStatusCallbacks = typename Transport::RequestStatusCallbacks;
+  using AuthorizationCallbacks = typename Transport::AuthorizationCallbacks;
   using RequestQueueStats = typename Transport::RequestQueueStats;
 
   ~ProxyDestination();

@@ -14,6 +14,7 @@
 #include <folly/GLog.h>
 #include <folly/ScopeGuard.h>
 #include <folly/io/async/AsyncSocket.h>
+#include <folly/io/async/ssl/BasicTransportCertificate.h>
 #include <folly/portability/OpenSSL.h>
 
 #include <thrift/lib/cpp/async/TAsyncSSLSocket.h>
@@ -60,6 +61,10 @@ class AsyncTlsToPlaintextSocket::ConnectCallback
       return;
     }
 
+    // Save peerCert
+    auto peerCert = folly::ssl::BasicTransportCertificate::create(
+        tlsSocket->getPeerCertificate());
+
     // We need to mark the SSL as shutdown here, but need to do
     // it quietly so no alerts are sent over the wire.
     // This prevents SSL thinking we are shutting down in a bad state
@@ -73,6 +78,8 @@ class AsyncTlsToPlaintextSocket::ConnectCallback
     impl.reset(new apache::thrift::async::TAsyncSocket(
         &me_.evb_, tlsSocket->detachNetworkSocket().toFd()));
     activateSocket();
+    impl->getUnderlyingTransport<apache::thrift::async::TAsyncSocket>()
+        ->setPeerCertificate(std::move(peerCert));
   }
 
   void connectErr(const folly::AsyncSocketException& ex) noexcept override {

@@ -24,10 +24,12 @@ static_assert(false, "mcrouter: invalid build");
 
 #include <folly/Range.h>
 #include <folly/experimental/observer/Observer.h>
+#include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/EventBase.h>
 
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/carbon/NoopAdditionalLogger.h"
+#include "mcrouter/lib/network/Transport.h"
 
 #define MCROUTER_RUNTIME_VARS_DEFAULT ""
 #define MCROUTER_STATS_ROOT_DEFAULT "/var/mcrouter/stats"
@@ -171,6 +173,11 @@ startObservingRuntimeVarsFileCustom(
 
 inline bool isInLocalDatacenter(const std::string& /* host */) {
   return false;
+}
+
+inline Transport::SvcIdentAuthCallbackFunc getAuthChecker(
+    const McrouterOptions& opts) {
+  return nullptr;
 }
 
 } // mcrouter

@@ -28,7 +28,10 @@ class McrouterTestCase(unittest.TestCase):
         self.ensureClassVariables()
         server.ensure_connected()
         self.open_servers.append(server)
-        self.open_ports.append(server.getport())
+        if server.getsslport() is not None:
+            self.open_ports.append(server.getsslport())
+        else:
+            self.open_ports.append(server.getport())
 
         if logical_port:
             if 'port_map' not in self.__dict__:
@@ -41,7 +44,8 @@ class McrouterTestCase(unittest.TestCase):
         return server
 
     def add_mcrouter(self, config, route=None, extra_args=None,
-                     replace_map=None, bg_mcrouter=False, replace_ports=True):
+                     replace_map=None, bg_mcrouter=False, replace_ports=True,
+                     flavor=None):
         self.ensureClassVariables()
         substitute_ports = None
         if replace_ports:
@@ -53,7 +57,8 @@ class McrouterTestCase(unittest.TestCase):
                             substitute_config_ports=substitute_ports,
                             default_route=route,
                             extra_args=extra_args,
-                            replace_map=replace_map)
+                            replace_map=replace_map,
+                            flavor=flavor)
         mcrouter.ensure_connected()
 
         if bg_mcrouter:

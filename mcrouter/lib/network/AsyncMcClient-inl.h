@@ -32,6 +32,11 @@ inline void AsyncMcClient::setRequestStatusCallbacks(
   base_->setRequestStatusCallbacks(std::move(callbacks));
 }
 
+inline void AsyncMcClient::setAuthorizationCallbacks(
+    AuthorizationCallbacks callbacks) {
+  base_->setAuthorizationCallbacks(std::move(callbacks));
+}
+
 template <class Request>
 ReplyT<Request> AsyncMcClient::sendSync(
     const Request& request,

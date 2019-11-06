@@ -58,6 +58,9 @@ class ThriftTransportBase : public Transport,
   void setRequestStatusCallbacks(
       RequestStatusCallbacks callbacks) override final;
 
+  void setAuthorizationCallbacks(
+      AuthorizationCallbacks callbacks) override final;
+
   void setThrottle(size_t maxInflight, size_t maxPending) override final;
 
   RequestQueueStats getRequestQueueStats() const override final;
@@ -78,6 +81,7 @@ class ThriftTransportBase : public Transport,
   // Callbacks
   ConnectionStatusCallbacks connectionCallbacks_;
   RequestStatusCallbacks requestCallbacks_;
+  AuthorizationCallbacks authorizationCallbacks_;
 
   // Throttle options (disabled by default).
   size_t maxInflight_{0};
