@@ -4,6 +4,13 @@ all: .folly-done .fizz-done .wangle-done .rsocket-done .fmt-done .fbthrift-done
 	${RECIPES_DIR}/mcrouter.sh $(PKG_DIR) $(INSTALL_DIR) $(INSTALL_AUX_DIR)
 	touch $@
 
+mcrouter:
+	${RECIPES_DIR}/mcrouter.sh $(PKG_DIR) $(INSTALL_DIR) $(INSTALL_AUX_DIR)
+	touch $@
+
+deps: .folly-done .fizz-done .wangle-done .rsocket-done .fmt-done .fbthrift-done
+	touch $@
+
 .folly-done:
 	${RECIPES_DIR}/folly.sh $(PKG_DIR) $(INSTALL_DIR) $(INSTALL_AUX_DIR)
 	touch $@

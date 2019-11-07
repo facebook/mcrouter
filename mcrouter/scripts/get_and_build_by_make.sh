@@ -7,11 +7,13 @@
 set -ex
 
 MAKE_FILE="$1"
-PKG_DIR="${2%/}"/pkgs
-INSTALL_DIR="${2%/}"/install
-INSTALL_AUX_DIR="${2%/}"/install/aux
+TARGET="$2"
+PKG_DIR="${3%/}"/pkgs
+INSTALL_DIR="${3%/}"/install
+INSTALL_AUX_DIR="${3%/}"/install/aux
 
-shift 2
+[ -n "$MAKE_FILE" ] || ( echo "Make file missing"; exit 1 )
+[ -n "$TARGET" ] || ( echo "Target missing"; exit 1 )
 
 mkdir -p "$PKG_DIR" "$INSTALL_DIR" "$INSTALL_AUX_DIR"
 
@@ -22,6 +24,6 @@ export REPO_BASE_DIR
 
 export LDFLAGS="-ljemalloc $LDFLAGS"
 
-make all -j3 -f "$MAKE_FILE" PKG_DIR="$PKG_DIR" INSTALL_DIR="$INSTALL_DIR" INSTALL_AUX_DIR="$INSTALL_AUX_DIR"
+make "$TARGET" -j3 -f "$MAKE_FILE" PKG_DIR="$PKG_DIR" INSTALL_DIR="$INSTALL_DIR" INSTALL_AUX_DIR="$INSTALL_AUX_DIR"
 
-printf "%s\n" "Mcrouter installed in $INSTALL_DIR/bin/mcrouter"
+printf "%s\n" "make $TARGET for $MAKE_FILE done"
