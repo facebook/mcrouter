@@ -93,7 +93,7 @@ class MissFailoverRoute {
 
     // Failover
     return fiber_local<RouterInfo>::runWithLocals(
-        [ this, &req, bestReply = std::move(reply) ]() mutable {
+        [this, &req, bestReply = std::move(reply)]() mutable {
           fiber_local<RouterInfo>::addRequestClass(RequestClass::kFailover);
           for (size_t i = 1; i < targets_.size(); ++i) {
             auto failoverReply = targets_[i]->route(req);
@@ -112,10 +112,9 @@ class MissFailoverRoute {
               bestReply = std::move(failoverReply);
             }
           }
-          return bestReply;
+          return std::move(bestReply);
         });
   }
-
 };
 
 namespace detail {
@@ -136,7 +135,7 @@ typename RouterInfo::RouteHandlePtr makeMissFailoverRoute(
       std::move(targets), returnBestOnError);
 }
 
-} // detail
+} // namespace detail
 
 template <class RouterInfo>
 typename RouterInfo::RouteHandlePtr makeMissFailoverRoute(
@@ -161,6 +160,6 @@ typename RouterInfo::RouteHandlePtr makeMissFailoverRoute(
   return detail::makeMissFailoverRoute<RouterInfo>(
       std::move(children), returnBestOnError);
 }
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
