@@ -200,9 +200,8 @@ ProxyDestination<Transport>::create(
     ProxyBase& proxy,
     std::shared_ptr<AccessPoint> ap,
     std::chrono::milliseconds timeout,
-    uint64_t qosClass,
-    uint64_t qosPath,
-    folly::StringPiece routerInfoName) {
+    uint32_t qosClass,
+    uint32_t qosPath) {
   checkLogic(
       Transport::isCompatible(ap->getProtocol()),
       "Transport {} not compatible with {} protocol.",
@@ -210,7 +209,7 @@ ProxyDestination<Transport>::create(
       mc_protocol_to_string(ap->getProtocol()));
   std::shared_ptr<ProxyDestination<Transport>> ptr(
       new ProxyDestination<Transport>(
-          proxy, std::move(ap), timeout, qosClass, qosPath, routerInfoName));
+          proxy, std::move(ap), timeout, qosClass, qosPath));
   ptr->selfPtr_ = ptr;
   return ptr;
 }
@@ -240,16 +239,9 @@ ProxyDestination<Transport>::ProxyDestination(
     ProxyBase& proxy,
     std::shared_ptr<AccessPoint> ap,
     std::chrono::milliseconds timeout,
-    uint64_t qosClass,
-    uint64_t qosPath,
-    folly::StringPiece routerInfoName)
-    : ProxyDestinationBase(
-          proxy,
-          std::move(ap),
-          timeout,
-          qosClass,
-          qosPath,
-          routerInfoName),
+    uint32_t qosClass,
+    uint32_t qosPath)
+    : ProxyDestinationBase(proxy, std::move(ap), timeout, qosClass, qosPath),
       rxmitsToCloseConnection_(
           proxy.router().opts().min_rxmit_reconnect_threshold) {}
 
@@ -279,7 +271,7 @@ void ProxyDestination<Transport>::initializeTransport() {
   options.numConnectTimeoutRetries = opts.connect_timeout_retries;
   options.connectTimeout = shortestConnectTimeout();
   options.writeTimeout = shortestWriteTimeout();
-  options.routerInfoName = routerInfoName();
+  options.routerInfoName = proxy().router().routerInfoName();
   options.payloadFormat = opts.use_compact_serialization
       ? PayloadFormat::CompactProtocolCompatibility
       : PayloadFormat::Carbon;

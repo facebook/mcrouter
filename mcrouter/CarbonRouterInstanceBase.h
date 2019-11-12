@@ -197,6 +197,11 @@ class CarbonRouterInstanceBase {
    */
   std::shared_ptr<folly::FunctionScheduler> functionScheduler();
 
+  /**
+   * Returns name of router e.g. Memcache"
+   */
+  virtual folly::StringPiece routerInfoName() const = 0;
+
  protected:
   /**
    * Register this instance for periodic stats updates.

@@ -33,12 +33,11 @@ template <class Transport>
 std::shared_ptr<ProxyDestination<Transport>> ProxyDestinationMap::emplace(
     std::shared_ptr<AccessPoint> ap,
     std::chrono::milliseconds timeout,
-    uint64_t qosClass,
-    uint64_t qosPath,
-    folly::StringPiece routerInfoName) {
+    uint32_t qosClass,
+    uint32_t qosPath) {
   auto key = genProxyDestinationKey(*ap, timeout);
   auto destination = ProxyDestination<Transport>::create(
-      *proxy_, std::move(ap), timeout, qosClass, qosPath, routerInfoName);
+      *proxy_, std::move(ap), timeout, qosClass, qosPath);
   {
     std::lock_guard<std::mutex> lck(destinationsLock_);
     auto destIt = destinations_.emplace(key, destination);

@@ -178,8 +178,8 @@ McRouteHandleProvider<RouterInfo>::makePool(
       keepRoutingPrefix = parseBool(*jKeepRoutingPrefix, "keep_routing_prefix");
     }
 
-    uint64_t qosClass = opts.default_qos_class;
-    uint64_t qosPath = opts.default_qos_path;
+    uint32_t qosClass = opts.default_qos_class;
+    uint32_t qosPath = opts.default_qos_path;
     if (auto jQos = json.get_ptr("qos")) {
       checkLogic(jQos->isObject(), "qos must be an object.");
       if (auto jClass = jQos->get_ptr("class")) {
@@ -351,8 +351,8 @@ McRouteHandleProvider<RouterInfo>::createDestinationRoute(
     std::shared_ptr<AccessPoint> ap,
     std::chrono::milliseconds timeout,
     std::chrono::milliseconds connectTimeout,
-    uint64_t qosClass,
-    uint64_t qosPath,
+    uint32_t qosClass,
+    uint32_t qosPath,
     folly::StringPiece poolName,
     size_t indexInPool,
     int32_t poolStatIndex,
@@ -360,7 +360,7 @@ McRouteHandleProvider<RouterInfo>::createDestinationRoute(
   auto pdstn = proxy_.destinationMap()->template find<Transport>(*ap, timeout);
   if (!pdstn) {
     pdstn = proxy_.destinationMap()->template emplace<Transport>(
-        std::move(ap), timeout, qosClass, qosPath, RouterInfo::name);
+        std::move(ap), timeout, qosClass, qosPath);
   }
   pdstn->updateShortestTimeout(connectTimeout, timeout);
 

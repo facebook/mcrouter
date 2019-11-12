@@ -65,9 +65,8 @@ class ProxyDestinationBase {
       ProxyBase& proxy,
       std::shared_ptr<const AccessPoint> ap,
       std::chrono::milliseconds timeout,
-      uint64_t qosClass,
-      uint64_t qosPath,
-      folly::StringPiece routerInfoName);
+      uint32_t qosClass,
+      uint32_t qosPath);
   virtual ~ProxyDestinationBase();
 
   /**
@@ -163,14 +162,11 @@ class ProxyDestinationBase {
   std::chrono::milliseconds shortestWriteTimeout() const {
     return shortestWriteTimeout_;
   }
-  uint64_t qosClass() const {
+  uint32_t qosClass() const {
     return qosClass_;
   }
-  uint64_t qosPath() const {
+  uint32_t qosPath() const {
     return qosPath_;
-  }
-  folly::StringPiece routerInfoName() const {
-    return routerInfoName_;
   }
   bool probeInflight() const {
     return probeInflight_;
@@ -184,9 +180,8 @@ class ProxyDestinationBase {
   const std::shared_ptr<const AccessPoint> accessPoint_;
   std::chrono::milliseconds shortestConnectTimeout_{0};
   std::chrono::milliseconds shortestWriteTimeout_{0};
-  const uint64_t qosClass_{0};
-  const uint64_t qosPath_{0};
-  const folly::StringPiece routerInfoName_;
+  const uint32_t qosClass_{0};
+  const uint32_t qosPath_{0};
 
   Stats stats_;
 

@@ -136,6 +136,10 @@ class CarbonRouterInstance
 
   const std::vector<Proxy<RouterInfo>*>& getProxies() const;
 
+  folly::StringPiece routerInfoName() const override {
+    return RouterInfo::name;
+  }
+
   CarbonRouterInstance(const CarbonRouterInstance&) = delete;
   CarbonRouterInstance& operator=(const CarbonRouterInstance&) = delete;
   CarbonRouterInstance(CarbonRouterInstance&&) noexcept = delete;

@@ -107,9 +107,8 @@ class ProxyDestination : public ProxyDestinationBase {
       ProxyBase& proxy,
       std::shared_ptr<AccessPoint> ap,
       std::chrono::milliseconds timeout,
-      uint64_t qosClass,
-      uint64_t qosPath,
-      folly::StringPiece routerInfoName);
+      uint32_t qosClass,
+      uint32_t qosPath);
 
   Transport& getTransport();
   void initializeTransport();
@@ -118,9 +117,8 @@ class ProxyDestination : public ProxyDestinationBase {
       ProxyBase& proxy,
       std::shared_ptr<AccessPoint> ap,
       std::chrono::milliseconds timeout,
-      uint64_t qosClass,
-      uint64_t qosPath,
-      folly::StringPiece routerInfoName);
+      uint32_t qosClass,
+      uint32_t qosPath);
 
   // Process tko, stats and duration timer.
   void onReply(

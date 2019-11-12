@@ -38,16 +38,14 @@ ProxyDestinationBase::ProxyDestinationBase(
     ProxyBase& proxy,
     std::shared_ptr<const AccessPoint> ap,
     std::chrono::milliseconds timeout,
-    uint64_t qosClass,
-    uint64_t qosPath,
-    folly::StringPiece routerInfoName)
+    uint32_t qosClass,
+    uint32_t qosPath)
     : proxy_(proxy),
       accessPoint_(std::move(ap)),
       shortestConnectTimeout_(timeout),
       shortestWriteTimeout_(timeout),
       qosClass_(qosClass),
-      qosPath_(qosPath),
-      routerInfoName_(routerInfoName) {
+      qosPath_(qosPath) {
   proxy_.stats().increment(num_servers_new_stat);
   proxy_.stats().increment(num_servers_stat);
   if (accessPoint()->useSsl()) {

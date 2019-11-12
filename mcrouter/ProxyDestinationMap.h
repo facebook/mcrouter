@@ -69,9 +69,8 @@ class ProxyDestinationMap {
   std::shared_ptr<ProxyDestination<Transport>> emplace(
       std::shared_ptr<AccessPoint> ap,
       std::chrono::milliseconds timeout,
-      uint64_t qosClass,
-      uint64_t qosPath,
-      folly::StringPiece routerInfoName);
+      uint32_t qosClass,
+      uint32_t qosPath);
 
   /**
    * Remove destination from both active and inactive lists
