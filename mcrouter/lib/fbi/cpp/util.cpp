@@ -127,9 +127,9 @@ bool atomicallyWriteFileToDisk(
 
     boost::filesystem::rename(tempFilePath, filePath);
     return true;
-  } catch (const boost::filesystem::filesystem_error& e) {
+  } catch (const boost::filesystem::filesystem_error&) {
     return false;
-  } catch (const boost::system::system_error& e) {
+  } catch (const boost::system::system_error&) {
     return false;
   }
 }

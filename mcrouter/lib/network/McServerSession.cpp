@@ -367,7 +367,7 @@ void McServerSession::caretRequestReady(
   } else {
     try {
       onRequest_->caretRequestReady(headerInfo, reqBody, std::move(ctx));
-    } catch (const std::exception& e) {
+    } catch (const std::exception&) {
       // Ideally, ctx would be created after successful parsing of Caret data.
       // For now, if ctx hasn't been moved out of, mark as replied.
       ctx.replied_ = true;

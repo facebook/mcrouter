@@ -59,7 +59,7 @@ CompressionCodecManager::CompressionCodecManager(
           config->filteringOptions,
           config->compressionLevel);
       largestId = std::max<int64_t>(largestId, codecId);
-    } catch (const std::exception& e) {
+    } catch (const std::exception&) {
       badCodecConfigs.push_back(codecId);
       LOG(ERROR) << "Compression codec config [" << codecId << "] is invalid.";
     }

@@ -101,7 +101,7 @@ TEST(McRouteHandleProviderTest, sanity) {
 TEST(McRouteHandleProviderTest, invalid_func) {
   try {
     auto rh = TestSetup().getRoute(kInvalidHashFunc);
-  } catch (const std::logic_error& e) {
+  } catch (const std::logic_error&) {
     return;
   }
   FAIL() << "No exception thrown";
