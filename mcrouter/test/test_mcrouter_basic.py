@@ -1040,6 +1040,7 @@ class TestMcrouterBasicL1L2SizeSplit(McrouterTestCase):
         # Do another cas using the same token and check it fails
         self.assertFalse(mcr.cas('key', 'value_modified2', cas))
 
+
 class TestMcrouterPortOverride(McrouterTestCase):
     config = './mcrouter/test/mcrouter_test_portoverride.json'
 
@@ -1050,3 +1051,21 @@ class TestMcrouterPortOverride(McrouterTestCase):
         mcr = self.add_mcrouter(self.config, extra_args=extra_args)
         self.assertTrue(mcr.set('key', 'value'))
         self.assertEqual(mcr.get('key'), 'value')
+
+
+class TestMcrouterWithRetries(McrouterTestCase):
+    valid_config_with_retries = \
+        "./mcrouter/test/test_basic_l1_l2_sizesplit_retry_valid.json"
+    invalid_config_with_retries = \
+        "./mcrouter/test/test_basic_l1_l2_sizesplit_retry_invalid.json"
+    extra_args = []
+
+    def test_valid_retries(self):
+        mcr = self.add_mcrouter(self.valid_config_with_retries,
+                                extra_args=self.extra_args)
+        self.assertTrue(self._is_mcrouter_running(mcr))
+
+    def test_invalid_retries(self):
+        mcr = self.add_mcrouter(self.invalid_config_with_retries,
+                                extra_args=self.extra_args)
+        self.assertFalse(self._is_mcrouter_running(mcr))

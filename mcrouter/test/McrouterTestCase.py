@@ -97,3 +97,12 @@ class McrouterTestCase(unittest.TestCase):
             now = time.time()
             if (now - start_time > timeout):
                 return False
+
+    def _is_mcrouter_running(self, mcrouter):
+        try:
+            mcrouter.stats()
+
+            return True
+        except Exception as e:
+            self.assertTrue("Connection reset by peer" in e)
+            return False

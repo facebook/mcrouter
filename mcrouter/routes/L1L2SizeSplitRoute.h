@@ -49,6 +49,8 @@ namespace mcrouter {
  */
 class L1L2SizeSplitRoute {
  public:
+  static constexpr uint32_t kDefaultNumRetries = 1;
+  static constexpr uint32_t kMaxNumRetries = 10;
   static std::string routeName() {
     return "l1l2-sizesplit";
   }
@@ -69,13 +71,15 @@ class L1L2SizeSplitRoute {
       size_t threshold,
       int32_t ttlThreshold,
       int32_t failureTtl,
-      bool bothFullSet)
+      bool bothFullSet,
+      uint32_t numRetries)
       : l1_(std::move(l1)),
         l2_(std::move(l2)),
         threshold_(threshold),
         ttlThreshold_(ttlThreshold),
         failureTtl_(failureTtl),
-        bothFullSet_(bothFullSet) {
+        bothFullSet_(bothFullSet),
+        numRetries_(numRetries) {
     assert(l1_ != nullptr);
     assert(l2_ != nullptr);
     folly::Random::seed(randomGenerator_);
@@ -101,7 +105,7 @@ class L1L2SizeSplitRoute {
       folly::IsOneOf<Request, McLeaseGetRequest, McGetsRequest>::value,
       ReplyT<Request>>::type
   route(const Request& req) const {
-    return doRoute(req, 1 /* retriesLeft */);
+    return doRoute(req, numRetries_ /* retriesLeft */);
   }
 
   // All other operations should route to L1, including CAS which to guarantee
@@ -132,6 +136,7 @@ class L1L2SizeSplitRoute {
   const int32_t ttlThreshold_{0};
   const int32_t failureTtl_{0};
   const bool bothFullSet_{false};
+  const uint32_t numRetries_{kDefaultNumRetries};
   mutable std::mt19937 randomGenerator_;
 
   McLeaseGetReply doLeaseGetRoute(

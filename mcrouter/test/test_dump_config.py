@@ -41,15 +41,6 @@ class TestDumpConfig(McrouterTestCase):
         os.remove(config_path)
         shutil.copyfile(self.invalid_config, config_path)
 
-    def _is_mcrouter_running(self, mcrouter):
-        try:
-            mcrouter.stats()
-
-            return True
-        except Exception as e:
-            self.assertTrue("Connection reset by peer" in e)
-            return False
-
     def _get_dumped_config_root(self):
         return '{}/mcrouter/0'.format(self.config_dump_root.path)
 
