@@ -20,6 +20,7 @@
 
 namespace folly {
 struct dynamic;
+class Executor;
 } // folly
 
 namespace facebook {
@@ -145,7 +146,7 @@ class ConfigApi : public ConfigApiIf {
   void dumpConfigSourceToDisk(
       const std::string& sourcePrefix,
       const std::string& name,
-      const std::string& contents,
+      std::string contents,
       const std::string& md5OrVersion);
 
   /**
@@ -196,9 +197,8 @@ class ConfigApi : public ConfigApiIf {
 
   bool isFirstConfig_{true};
 
-  const bool dumpConfigToDisk_{false};
+  std::unique_ptr<folly::Executor> dumpConfigToDiskExecutor_;
   bool readFromBackupFiles_{false};
-  bool lastConfigFromBackupFiles_{false};
 
   void configThreadRun();
 
