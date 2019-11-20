@@ -12,6 +12,7 @@
 #include <list>
 #include <memory>
 
+#include <folly/Likely.h>
 #include <folly/ScopeGuard.h>
 #include <folly/SocketAddress.h>
 #include <folly/io/async/AsyncSocket.h>
@@ -63,7 +64,7 @@ class AsyncTlsToPlaintextSocket final
         folly::AsyncSocketException{folly::AsyncSocketException::END_OF_FILE,
                                     "AsyncTlsToPlaintextSocket closed"});
     if (auto* readCallback = std::exchange(readCallback_, nullptr)) {
-      readCallback_->readEOF();
+      readCallback->readEOF();
     }
     impl_->close();
   }
@@ -72,7 +73,7 @@ class AsyncTlsToPlaintextSocket final
         folly::AsyncSocketException{folly::AsyncSocketException::END_OF_FILE,
                                     "AsyncTlsToPlaintextSocket closed"});
     if (auto* readCallback = std::exchange(readCallback_, nullptr)) {
-      readCallback_->readEOF();
+      readCallback->readEOF();
     }
     impl_->closeNow();
   }
@@ -148,8 +149,9 @@ class AsyncTlsToPlaintextSocket final
     }
   }
   folly::AsyncTransportWrapper::ReadCallback* getReadCallback() const override {
-    DCHECK(!readCallback_);
-    DCHECK(state_ == State::CONNECTED);
+    if (state_ == State::CONNECTING) {
+      return readCallback_;
+    }
     return impl_->getReadCallback();
   }
 
@@ -157,7 +159,7 @@ class AsyncTlsToPlaintextSocket final
       folly::AsyncTransportWrapper::WriteCallback* callback,
       std::unique_ptr<folly::IOBuf>&& buf,
       folly::WriteFlags flags = folly::WriteFlags::NONE) override {
-    if (state_ == State::CONNECTING) {
+    if (UNLIKELY(state_ == State::CONNECTING)) {
       bufferedWrites_.push_back(BufferedWrite{callback, std::move(buf)});
     } else {
       impl_->writeChain(callback, std::move(buf), flags);
