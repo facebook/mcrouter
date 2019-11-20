@@ -11,7 +11,7 @@ mcrouter:
 deps: .folly-done .fizz-done .wangle-done .rsocket-done .fmt-done .fbthrift-done
 	touch $@
 
-.folly-done:
+.folly-done: .fmt-done
 	${RECIPES_DIR}/folly.sh $(PKG_DIR) $(INSTALL_DIR) $(INSTALL_AUX_DIR)
 	touch $@
 
