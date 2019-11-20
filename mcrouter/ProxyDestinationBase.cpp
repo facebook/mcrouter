@@ -302,7 +302,7 @@ void ProxyDestinationBase::setState(State newState) {
   }
 
   auto logUtil = [this](const char* s) {
-    VLOG(3) << "server " << key_ << " " << s << " ("
+    VLOG(3) << "server " << ProxyDestinationKey(*this).str() << " " << s << " ("
             << proxy().stats().getValue(num_servers_up_stat) << " of "
             << proxy().stats().getValue(num_servers_stat) << ")";
   };

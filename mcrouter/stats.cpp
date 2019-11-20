@@ -251,7 +251,7 @@ static std::string stat_to_str(const stat_t* stat, void* /* ptr */) {
   }
 }
 
-void init_stats(stat_t* stats) {
+void init_stats(stat_t* stats){
 #define STAT(_name, _type, _aggregate, _data_assignment) \
   {                                                      \
     stat_t& s = stats[_name##_stat];                     \
@@ -662,9 +662,9 @@ McStatsReply stats_reply(ProxyBase* proxy, folly::StringPiece group_str) {
     auto& router = proxy->router();
     for (size_t i = 0; i < router.opts().num_proxies; ++i) {
       router.getProxyBase(i)->destinationMap()->foreachDestinationSynced(
-          [&serverStats](
-              folly::StringPiece key, const ProxyDestinationBase& pdstn) {
-            auto& stat = serverStats[key];
+          [&serverStats](const ProxyDestinationBase& pdstn) {
+            ProxyDestinationKey key(pdstn);
+            auto& stat = serverStats[key.str()];
             stat.isHardTko = pdstn.tracker()->isHardTko();
             stat.isSoftTko = pdstn.tracker()->isSoftTko();
             if (pdstn.stats().results) {
@@ -720,6 +720,6 @@ void set_standalone_args(folly::StringPiece args) {
   ::memcpy(gStandaloneArgs, args.begin(), args.size());
   gStandaloneArgs[args.size()] = 0;
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

@@ -121,17 +121,6 @@ class ProxyDestinationBase {
   void setPoolStatsIndex(int32_t index);
   void updatePoolStatConnections(bool connected);
 
-  /**
-   * Sets the key for this proxy destination. This proxy destination will only
-   * store the StringPiece, so the string has to be kept alive by the caller.
-   */
-  void setKey(folly::StringPiece key) {
-    key_ = key;
-  }
-  folly::StringPiece key() const {
-    return key_;
-  }
-
   virtual RequestQueueStats getRequestStats() const = 0;
 
   /**
@@ -190,9 +179,6 @@ class ProxyDestinationBase {
   int probeDelayNextMs{0};
   bool probeInflight_{false};
 
-  // The string is stored in ProxyDestinationMap::destinations_
-  folly::StringPiece key_; ///< consists of AccessPoint, and timeout
-
   void* stateList_{nullptr};
   folly::IntrusiveListHook stateListHook_;
 
@@ -204,6 +190,7 @@ class ProxyDestinationBase {
 
   void onTransitionImpl(State state, bool to);
 
+  friend struct ProxyDestinationKey;
   friend class ProxyDestinationMap;
 };
 

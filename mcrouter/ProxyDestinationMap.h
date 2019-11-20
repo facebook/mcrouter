@@ -15,7 +15,7 @@
 #include <vector>
 
 #include <folly/Range.h>
-#include <folly/experimental/StringKeyedUnorderedMap.h>
+#include <folly/container/F14Set.h>
 #include <folly/io/async/AsyncTimeout.h>
 
 namespace facebook {
@@ -29,6 +29,7 @@ class ProxyBase;
 template <class Transport>
 class ProxyDestination;
 class ProxyDestinationBase;
+struct ProxyDestinationKey;
 
 /**
  * Manages lifetime of ProxyDestinations. Main goal is to reuse same
@@ -50,14 +51,6 @@ class ProxyDestinationMap {
  public:
   explicit ProxyDestinationMap(ProxyBase* proxy);
 
-  /**
-   * If ProxyDestination is already stored in this object - returns it;
-   * otherwise, returns nullptr.
-   */
-  template <class Transport>
-  std::shared_ptr<ProxyDestination<Transport>> find(
-      const AccessPoint& ap,
-      std::chrono::milliseconds timeout) const;
   /**
    * If ProxyDestination is already stored in this object - returns it;
    * otherwise creates a new one.
@@ -96,22 +89,16 @@ class ProxyDestinationMap {
   void setResetTimer(std::chrono::milliseconds interval);
 
   /**
-   * Calls f(Key, const ProxyDestination&) for each destination stored
+   * Calls f(const ProxyDestination&) for each destination stored
    * in ProxyDestinationMap. The whole map is locked during the call.
    *
    * TODO: replace with getStats()
    */
   template <typename Func>
-  void foreachDestinationSynced(Func&& f) {
+  void foreachDestinationSynced(Func&& f) const {
     std::lock_guard<std::mutex> lock(destinationsLock_);
-    for (auto& it : destinations_) {
-      if (std::shared_ptr<const ProxyDestinationBase> dst = it.second.lock()) {
-        f(it.first, *dst);
-        // Disposal of the ProxyDestination object should execute on the proxy
-        // thread to prevent races in accessing members of ProxyDestination
-        // that are only accessed within eventbase-executed methods.
-        releaseProxyDestinationRef(std::move(dst));
-      }
+    for (const auto* dst : destinations_) {
+      f(*dst);
     }
   }
 
@@ -119,10 +106,23 @@ class ProxyDestinationMap {
 
  private:
   struct StateList;
+  struct DestHasher {
+    using is_transparent = void;
+    size_t operator()(const ProxyDestinationBase* dest) const;
+    size_t operator()(const ProxyDestinationKey& key) const;
+  };
+
+  struct DestEq {
+    using is_transparent = void;
+    bool operator()(
+        const ProxyDestinationBase* x,
+        const ProxyDestinationBase* y) const;
+    bool operator()(const ProxyDestinationKey& x, const ProxyDestinationBase* y)
+        const;
+  };
 
   ProxyBase* proxy_;
-  folly::StringKeyedUnorderedMap<std::weak_ptr<ProxyDestinationBase>>
-      destinations_;
+  folly::F14ValueSet<ProxyDestinationBase*, DestHasher, DestEq> destinations_;
   mutable std::mutex destinationsLock_;
 
   std::unique_ptr<StateList> active_;
@@ -132,31 +132,11 @@ class ProxyDestinationMap {
   std::unique_ptr<folly::AsyncTimeout> resetTimer_;
 
   /**
-   * If ProxyDestination is already stored in this object - returns it;
-   * otherwise, returns nullptr.
-   * Note: caller must be holding destionationsLock_.
-   */
-  std::shared_ptr<ProxyDestinationBase> find(const std::string& key) const;
-
-  /**
    * Schedules timeout for resetting inactive connections.
    *
    * @param initial  true iff this an initial attempt to schedule timer.
    */
   void scheduleTimer(bool initialAttempt);
-
-  /**
-   * Generates the key to be used in this map for a given (pdst, timeout) pair.
-   */
-  std::string genProxyDestinationKey(
-      const AccessPoint& ap,
-      std::chrono::milliseconds timeout) const;
-
-  /*
-   * Releases the shared_ptr reference on the destination's event-base.
-   */
-  static void releaseProxyDestinationRef(
-      std::shared_ptr<const ProxyDestinationBase>&& destination);
 };
 
 } // namespace mcrouter

@@ -357,11 +357,8 @@ McRouteHandleProvider<RouterInfo>::createDestinationRoute(
     size_t indexInPool,
     int32_t poolStatIndex,
     bool keepRoutingPrefix) {
-  auto pdstn = proxy_.destinationMap()->template find<Transport>(*ap, timeout);
-  if (!pdstn) {
-    pdstn = proxy_.destinationMap()->template emplace<Transport>(
-        std::move(ap), timeout, qosClass, qosPath);
-  }
+  auto pdstn = proxy_.destinationMap()->template emplace<Transport>(
+      std::move(ap), timeout, qosClass, qosPath);
   pdstn->updateShortestTimeout(connectTimeout, timeout);
 
   return makeDestinationRoute<RouterInfo, Transport>(

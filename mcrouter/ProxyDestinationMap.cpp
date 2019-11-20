@@ -25,16 +25,25 @@ namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
-std::string ProxyDestinationMap::genProxyDestinationKey(
-    const AccessPoint& ap,
-    std::chrono::milliseconds timeout) const {
-  if (ap.getProtocol() == mc_ascii_protocol) {
-    // we cannot send requests with different timeouts for ASCII, since
-    // it will break in-order nature of the protocol
-    return folly::sformat("{}-{}", ap.toString(), timeout.count());
-  } else {
-    return ap.toString();
-  }
+size_t ProxyDestinationMap::DestHasher::operator()(
+    const ProxyDestinationBase* dest) const {
+  return ProxyDestinationKey(*dest).hash();
+}
+
+size_t ProxyDestinationMap::DestHasher::operator()(
+    const ProxyDestinationKey& key) const {
+  return key.hash();
+}
+
+bool ProxyDestinationMap::DestEq::operator()(
+    const ProxyDestinationBase* x,
+    const ProxyDestinationBase* y) const {
+  return ProxyDestinationKey(*x) == ProxyDestinationKey(*y);
+}
+bool ProxyDestinationMap::DestEq::operator()(
+    const ProxyDestinationKey& x,
+    const ProxyDestinationBase* y) const {
+  return x == ProxyDestinationKey(*y);
 }
 
 struct ProxyDestinationMap::StateList {
@@ -50,16 +59,6 @@ ProxyDestinationMap::ProxyDestinationMap(ProxyBase* proxy)
       inactive_(std::make_unique<StateList>()),
       inactivityTimeout_(0) {}
 
-// Note: caller must be holding destionationsLock_.
-std::shared_ptr<ProxyDestinationBase> ProxyDestinationMap::find(
-    const std::string& key) const {
-  auto it = destinations_.find(key);
-  if (it == destinations_.end()) {
-    return nullptr;
-  }
-  return it->second.lock();
-}
-
 void ProxyDestinationMap::removeDestination(ProxyDestinationBase& destination) {
   if (destination.stateList_ == active_.get()) {
     active_->list.erase(StateList::List::s_iterator_to(destination));
@@ -68,7 +67,7 @@ void ProxyDestinationMap::removeDestination(ProxyDestinationBase& destination) {
   }
   {
     std::lock_guard<std::mutex> lck(destinationsLock_);
-    destinations_.erase(destination.key());
+    destinations_.erase(&destination);
   }
 }
 
@@ -111,12 +110,6 @@ void ProxyDestinationMap::scheduleTimer(bool initialAttempt) {
         "failed to {}schedule inactivity timer",
         initialAttempt ? "" : "re-");
   }
-}
-
-void ProxyDestinationMap::releaseProxyDestinationRef(
-    std::shared_ptr<const ProxyDestinationBase>&& destination) {
-  ProxyBase& proxy = destination->proxy();
-  proxy.eventBase().runInEventBaseThread([dst = std::move(destination)]() {});
 }
 
 ProxyDestinationMap::~ProxyDestinationMap() {}
