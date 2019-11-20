@@ -30,12 +30,10 @@ auto ThriftTransportBase::sendSyncImpl(F&& sendFunc) {
   typename std::result_of_t<F()>::element_type::response_type reply;
   auto tryReply = sendFunc();
 
-  if (tryReply.hasValue() && tryReply->response.hasValue()) {
-    reply = std::move(*tryReply->response);
-    return reply;
+  if (LIKELY(tryReply.hasValue() && tryReply->response.hasValue())) {
+    return std::move(*tryReply->response);
   }
 
-  // TODO Double-check there's no copy here
   const auto& ew = tryReply.hasException() ? tryReply.exception()
                                            : tryReply->response.exception();
   if (ew.with_exception([&](const apache::thrift::transport::

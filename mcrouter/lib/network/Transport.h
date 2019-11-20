@@ -219,7 +219,7 @@ class Transport {
   virtual const folly::AsyncTransportWrapper* getTransport() const = 0;
 
   /**
-   * Return retransmits information about this conneciton.
+   * Return retransmit information about this connection.
    *
    * @return  Number of retransmits per KB of data transfered.
    */
