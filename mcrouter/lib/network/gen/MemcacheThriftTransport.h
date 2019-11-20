@@ -453,7 +453,7 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
   FlushList* flushList_{nullptr};
 
   thrift::MemcacheAsyncClient* getThriftClient() {
-    if (!thriftClient_) {
+    if (UNLIKELY(!thriftClient_)) {
       thriftClient_ = createThriftClient<thrift::MemcacheAsyncClient>();
       if (flushList_) {
         auto* channel = static_cast<apache::thrift::RocketClientChannel*>(
