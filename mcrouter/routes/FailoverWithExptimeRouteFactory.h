@@ -29,10 +29,14 @@ std::vector<typename RouterInfo::RouteHandlePtr> getFailoverChildren(
   children.reserve(1 + failover.size());
   children.push_back(std::move(normal));
   for (auto& frh : failover) {
-    auto rh =
-        makeRouteHandle<typename RouterInfo::RouteHandleIf, ModifyExptimeRoute>(
-            std::move(frh), failoverExptime, ModifyExptimeAction::Min);
-    children.push_back(std::move(rh));
+    if (failoverExptime > 0) {
+      auto rh = makeRouteHandle<
+          typename RouterInfo::RouteHandleIf,
+          ModifyExptimeRouteMin>(std::move(frh), failoverExptime);
+      children.push_back(std::move(rh));
+    } else {
+      children.push_back(std::move(frh));
+    }
   }
   return children;
 }
