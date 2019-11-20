@@ -37,6 +37,7 @@
 #include "mcrouter/routes/OperationSelectorRoute.h"
 #include "mcrouter/routes/OutstandingLimitRoute.h"
 #include "mcrouter/routes/RandomRouteFactory.h"
+#include "mcrouter/routes/RoutingGroupRoute.h"
 #include "mcrouter/routes/ShadowRoute.h"
 #include "mcrouter/routes/StagingRoute.h"
 
@@ -144,6 +145,7 @@ McRouteHandleProvider<MemcacheRouterInfo>::buildRouteMap() {
        [](McRouteHandleFactory& factory, const folly::dynamic& json) {
          return makeRateLimitRoute(factory, json);
        }},
+      {"RoutingGroupRoute", &makeRoutingGroupRoute<MemcacheRouterInfo>},
       {"StagingRoute", &makeStagingRoute},
       {"WarmUpRoute", &makeWarmUpRoute},
   };

@@ -10,7 +10,14 @@
 #include <cstdlib>
 #include <type_traits>
 
+#include <folly/FixedString.h>
+
 namespace carbon {
+
+constexpr auto kArithmeticKey = folly::makeFixedString("arithmetic_like");
+constexpr auto kDeleteKey = folly::makeFixedString("delete_like");
+constexpr auto kGetKey = folly::makeFixedString("get_like");
+constexpr auto kUpdateKey = folly::makeFixedString("update_like");
 
 /**
  * Routing groups allow grouping requests with similar semantics. This way
@@ -133,4 +140,20 @@ struct OtherThan<Request, ArithmeticLike<>> {
 template <typename Request, typename... RequestTraitOrType>
 using OtherThanT = typename std::
     enable_if<OtherThan<Request, RequestTraitOrType...>::value, void*>::type;
-} // carbon
+
+template <class Request>
+static const std::string getRoutingGroupName() {
+  if (ArithmeticLike<Request>::value) {
+    return kArithmeticKey;
+  } else if (DeleteLike<Request>::value) {
+    return kDeleteKey;
+  } else if (GetLike<Request>::value) {
+    return kGetKey;
+  } else if (UpdateLike<Request>::value) {
+    return kUpdateKey;
+  } else {
+    return "";
+  }
+}
+
+} // namespace carbon
