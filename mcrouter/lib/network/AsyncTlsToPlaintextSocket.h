@@ -182,6 +182,16 @@ class AsyncTlsToPlaintextSocket final
     LOG(FATAL) << "Unimplemented";
   }
 
+  enum class SessionResumptionStatus : uint8_t {
+    RESUMPTION_NOT_ATTEMPTED,
+    RESUMPTION_ATTEMPTED_AND_FAILED,
+    RESUMPTION_ATTEMPTED_AND_SUCCEEDED,
+  };
+
+  SessionResumptionStatus getSessionResumptionStatus() const {
+    return resumptionStatus_;
+  }
+
  private:
   apache::thrift::async::TAsyncTransport::UniquePtr impl_;
   folly::EventBase& evb_;
@@ -204,6 +214,8 @@ class AsyncTlsToPlaintextSocket final
   State state_{State::CONNECTING};
   folly::AsyncTransportWrapper::ReadCallback* readCallback_{nullptr};
   std::chrono::milliseconds writeTimeout_{std::chrono::milliseconds::zero()};
+  SessionResumptionStatus resumptionStatus_{
+      SessionResumptionStatus::RESUMPTION_NOT_ATTEMPTED};
 
   explicit AsyncTlsToPlaintextSocket(
       apache::thrift::async::TAsyncTransport::UniquePtr impl)

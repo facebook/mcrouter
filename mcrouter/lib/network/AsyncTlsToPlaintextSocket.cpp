@@ -52,6 +52,14 @@ class AsyncTlsToPlaintextSocket::ConnectCallback
     auto* tlsSocket =
         impl->getUnderlyingTransport<apache::thrift::async::TAsyncSSLSocket>();
     CHECK(tlsSocket);
+
+    // Save state regarding session resumption
+    if (tlsSocket->sessionResumptionAttempted()) {
+      me_.resumptionStatus_ = tlsSocket->getSSLSessionReused()
+          ? SessionResumptionStatus::RESUMPTION_ATTEMPTED_AND_SUCCEEDED
+          : SessionResumptionStatus::RESUMPTION_ATTEMPTED_AND_FAILED;
+    }
+
     if (tlsSocket->getApplicationProtocol() != kMcSecurityTlsToPlaintextProto) {
       FB_LOG_EVERY_MS(ERROR, 10)
           << "Failed to negotiate plaintext fallback. Falling back to full TLS.";
@@ -61,7 +69,7 @@ class AsyncTlsToPlaintextSocket::ConnectCallback
       return;
     }
 
-    // Save peerCert
+    // Save peer cert
     auto peerCert = folly::ssl::BasicTransportCertificate::create(
         tlsSocket->getPeerCertificate());
 

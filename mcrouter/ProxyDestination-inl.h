@@ -19,6 +19,7 @@
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/mc/protocol.h"
+#include "mcrouter/lib/network/AsyncTlsToPlaintextSocket.h"
 #include "mcrouter/lib/network/ConnectionDownReason.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
 #include "mcrouter/lib/network/McFizzClient.h"
@@ -364,6 +365,23 @@ void ProxyDestination<Transport>::initializeTransport() {
               proxy().stats().increment(
                   num_tls_to_plain_resumption_successes_stat);
             }
+          } else if (
+              const auto* thriftTlsToPlainSock =
+                  socket.getUnderlyingTransport<AsyncTlsToPlaintextSocket>()) {
+            proxy().stats().increment(num_tls_to_plain_connections_opened_stat);
+
+            using Status = AsyncTlsToPlaintextSocket::SessionResumptionStatus;
+            switch (thriftTlsToPlainSock->getSessionResumptionStatus()) {
+              case Status::RESUMPTION_NOT_ATTEMPTED:
+                break;
+              case Status::RESUMPTION_ATTEMPTED_AND_SUCCEEDED:
+                proxy().stats().increment(
+                    num_tls_to_plain_resumption_successes_stat);
+                FOLLY_FALLTHROUGH;
+              case Status::RESUMPTION_ATTEMPTED_AND_FAILED:
+                proxy().stats().increment(
+                    num_tls_to_plain_resumption_attempts_stat);
+            };
           } else {
             proxy().stats().increment(num_tls_to_plain_fallback_failures_stat);
           }
