@@ -247,7 +247,7 @@ class DestinationRoute {
   }
 
   template <class Request>
-  bool spool(const Request& req) const {
+  FOLLY_NOINLINE bool spool(const Request& req) const {
     auto asynclogName = fiber_local<RouterInfo>::getAsynclogName();
     if (asynclogName.empty()) {
       return false;
