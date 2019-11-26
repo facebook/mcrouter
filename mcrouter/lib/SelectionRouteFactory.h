@@ -51,9 +51,15 @@ typename RouterInfo::RouteHandlePtr createSelectionRoute(
   if (children.empty() && shadowChildren.empty()) {
     return std::move(outOfRangeDestination);
   }
+  if (shadowChildren.empty()) {
+    return makeRouteHandleWithInfo<RouterInfo, SelectionRoute, Selector>(
+        std::move(children),
+        std::move(selector),
+        std::move(outOfRangeDestination));
+  }
   return makeRouteHandleWithInfo<
       RouterInfo,
-      SelectionRoute,
+      SelectionRouteWithShadow,
       Selector,
       ShadowSelectorPolicy>(
       std::move(children),

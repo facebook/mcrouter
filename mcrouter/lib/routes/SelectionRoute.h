@@ -44,10 +44,7 @@ inline int64_t nowUs() {
  *                      implement "makePostShadowReplyFn()"
  *
  */
-template <
-    class RouterInfo,
-    typename Selector,
-    typename ShadowSelectorPolicy = DefaultShadowSelectorPolicy>
+template <class RouterInfo, typename Selector>
 class SelectionRoute {
  private:
   using RouteHandleIf = typename RouterInfo::RouteHandleIf;
@@ -55,13 +52,68 @@ class SelectionRoute {
 
  public:
   std::string routeName() const {
-    const std::string name = "selection";
-    const auto nameWithProps =
-        folly::to<std::string>(name, "|", selector_.type());
-    if (shadowChildren_.size() > 0) {
-      return folly::to<std::string>(nameWithProps, "|shadow_enabled");
+    return folly::to<std::string>("selection|", selector_.type());
+  }
+
+  /**
+   * Constructs SelectionRoute.
+   *
+   * @param children                List of children route handles.
+   * @param selector                Selector responsible for choosing to which
+   *                                of the children the request should be sent
+   *                                to.
+   * @param outOfRangeDestination   The destination to which the request will be
+   */
+  SelectionRoute(
+      std::vector<RouteHandlePtr> children,
+      Selector selector,
+      RouteHandlePtr outOfRangeDestination)
+      : children_(std::move(children)),
+        selector_(std::move(selector)),
+        outOfRangeDestination_(std::move(outOfRangeDestination)) {
+    assert(outOfRangeDestination_);
+  }
+
+  template <class Request>
+  bool traverse(
+      const Request& req,
+      const RouteHandleTraverser<RouteHandleIf>& t) const {
+    return t(select(req), req);
+  }
+
+  template <class Request>
+  ReplyT<Request> route(const Request& req) {
+    return select(req).route(req);
+  }
+
+ protected:
+  const std::vector<RouteHandlePtr> children_;
+  const Selector selector_;
+  const RouteHandlePtr outOfRangeDestination_;
+
+  template <class Request>
+  RouteHandleIf& select(const Request& req) const {
+    size_t idx = selector_.select(req, children_.size());
+    if (idx >= children_.size()) {
+      return *outOfRangeDestination_;
     }
-    return nameWithProps;
+    return *children_[idx];
+  }
+};
+
+template <
+    class RouterInfo,
+    typename Selector,
+    typename ShadowSelectorPolicy = DefaultShadowSelectorPolicy>
+class SelectionRouteWithShadow : public SelectionRoute<RouterInfo, Selector> {
+ private:
+  using RouteHandleIf = typename RouterInfo::RouteHandleIf;
+  using RouteHandlePtr = typename RouterInfo::RouteHandlePtr;
+
+ public:
+  std::string routeName() const {
+    return folly::to<std::string>(
+        "selection|", this->selector_.type(), "|shadow_enabled");
   }
 
   /**
@@ -84,7 +136,7 @@ class SelectionRoute {
    *                                time to shadow to this destination when
    *                                selected.
    */
-  SelectionRoute(
+  SelectionRouteWithShadow(
       std::vector<RouteHandlePtr> children,
       Selector selector,
       RouteHandlePtr outOfRangeDestination,
@@ -93,63 +145,53 @@ class SelectionRoute {
       std::vector<uint16_t> shadowProbabilities = {},
       folly::Optional<ShadowSelectorPolicy> shadowSelectorPolicy = folly::none,
       uint32_t seed = detail::nowUs())
-      : children_(std::move(children)),
-        selector_(std::move(selector)),
-        outOfRangeDestination_(std::move(outOfRangeDestination)),
+      : SelectionRoute<RouterInfo, Selector>(
+            std::move(children),
+            std::move(selector),
+            std::move(outOfRangeDestination)),
         shadowChildren_(std::move(shadowChildren)),
         shadowSelector_(std::move(shadowSelector)),
         shadowProbabilities_(shadowProbabilities),
         shadowSelectorPolicy_(shadowSelectorPolicy),
         gen_(seed) {
-    assert(!(children_.empty() && shadowChildren_.empty()));
-    assert(outOfRangeDestination_);
-    if (shadowChildren_.size() > 0) {
-      assert(shadowSelector_.hasValue() && shadowProbabilities_.size() > 0);
-    }
+    assert(!shadowChildren_.empty());
+    assert(shadowSelector_.hasValue() && shadowProbabilities_.size() > 0);
   }
 
   template <class Request>
   bool traverse(
       const Request& req,
       const RouteHandleTraverser<RouteHandleIf>& t) const {
-    if (t(select(req), req)) {
+    if (t(this->select(req), req)) {
       return true;
     }
-    if (shadowChildren_.size() > 0) {
-      return mcrouter::fiber_local<RouterInfo>::runWithLocals(
-          [this, &req, &t]() mutable {
-            mcrouter::fiber_local<RouterInfo>::addRequestClass(
-                mcrouter::RequestClass::kShadow);
-            return (t(*shadowSelect<Request>(shadowSelectIdx(req)), req));
-          });
-    }
-    return false;
+    return mcrouter::fiber_local<RouterInfo>::runWithLocals(
+        [this, &req, &t]() mutable {
+          mcrouter::fiber_local<RouterInfo>::addRequestClass(
+              mcrouter::RequestClass::kShadow);
+          return (t(*shadowSelect<Request>(shadowSelectIdx(req)), req));
+        });
   }
 
   template <class Request>
   ReplyT<Request> route(const Request& req) {
-    if (shadowChildren_.size() > 0) {
-      auto idx = shadowSelectIdx(req);
-      if (shouldShadow(idx)) {
-        auto adjustedNormalReq = std::make_shared<Request>(req);
-        assert(adjustedNormalReq);
-        dispatchShadowRequest(
-            idx,
-            adjustedNormalReq,
-            shadowSelectorPolicy_.hasValue()
-                ? shadowSelectorPolicy_
-                      ->template makePostShadowReplyFn<ReplyT<Request>>()
-                : nullptr);
-        return select(*adjustedNormalReq).route(*adjustedNormalReq);
-      }
+    auto idx = shadowSelectIdx(req);
+    if (shouldShadow(idx)) {
+      auto adjustedNormalReq = std::make_shared<Request>(req);
+      assert(adjustedNormalReq);
+      dispatchShadowRequest(
+          idx,
+          adjustedNormalReq,
+          shadowSelectorPolicy_.hasValue()
+              ? shadowSelectorPolicy_
+                    ->template makePostShadowReplyFn<ReplyT<Request>>()
+              : nullptr);
+      return this->select(*adjustedNormalReq).route(*adjustedNormalReq);
     }
-    return select(req).route(req);
+    return this->select(req).route(req);
   }
 
  private:
-  const std::vector<RouteHandlePtr> children_;
-  const Selector selector_;
-  const RouteHandlePtr outOfRangeDestination_;
   const std::vector<RouteHandlePtr> shadowChildren_;
   const folly::Optional<Selector> shadowSelector_;
   // Probability vector to shadow request to rh
@@ -161,15 +203,6 @@ class SelectionRoute {
   std::ranlux24_base gen_;
 
   template <class Request>
-  RouteHandleIf& select(const Request& req) const {
-    size_t idx = selector_.select(req, children_.size());
-    if (idx >= children_.size()) {
-      return *outOfRangeDestination_;
-    }
-    return *children_[idx];
-  }
-
-  template <class Request>
   size_t shadowSelectIdx(const Request& req) const {
     return shadowSelector_->select(req, shadowChildren_.size());
   }
@@ -177,7 +210,7 @@ class SelectionRoute {
   template <class Request>
   RouteHandlePtr shadowSelect(size_t idx) const {
     if (idx >= shadowChildren_.size()) {
-      return outOfRangeDestination_;
+      return this->outOfRangeDestination_;
     }
     return shadowChildren_[idx];
   }
