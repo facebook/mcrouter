@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <folly/fibers/FiberManager.h>
+
 namespace facebook {
 namespace memcache {
 
@@ -34,38 +36,41 @@ McSerializedRequest::McSerializedRequest(
     const CodecIdRange& compressionCodecs,
     PayloadFormat payloadFormat)
     : protocol_(protocol), typeId_(Request::typeId) {
-  switch (protocol_) {
-    case mc_ascii_protocol:
-      new (&asciiRequest_) AsciiSerializedRequest;
-      if (detail::getKeySize(req) > MC_KEY_MAX_LEN_ASCII) {
-        result_ = Result::BAD_KEY;
-        return;
-      }
-      if (!asciiRequest_.prepare(req, iovsBegin_, iovsCount_)) {
+  folly::fibers::runInMainContext([&] {
+    switch (protocol_) {
+      case mc_ascii_protocol:
+        new (&asciiRequest_) AsciiSerializedRequest;
+        if (detail::getKeySize(req) > MC_KEY_MAX_LEN_ASCII) {
+          result_ = Result::BAD_KEY;
+          return;
+        }
+        if (!asciiRequest_.prepare(req, iovsBegin_, iovsCount_)) {
+          result_ = Result::ERROR;
+        }
+        break;
+      case mc_caret_protocol:
+        new (&caretRequest_) CaretSerializedMessage;
+        if (detail::getKeySize(req) > MC_KEY_MAX_LEN_CARET) {
+          result_ = Result::BAD_KEY;
+          return;
+        }
+        if (!caretRequest_.prepare(
+                req,
+                reqId,
+                compressionCodecs,
+                iovsBegin_,
+                iovsCount_,
+                payloadFormat)) {
+          result_ = Result::ERROR;
+        }
+        break;
+      default:
+        checkLogic(
+            false, "Used unsupported protocol! Value: {}", (int)protocol_);
         result_ = Result::ERROR;
-      }
-      break;
-    case mc_caret_protocol:
-      new (&caretRequest_) CaretSerializedMessage;
-      if (detail::getKeySize(req) > MC_KEY_MAX_LEN_CARET) {
-        result_ = Result::BAD_KEY;
-        return;
-      }
-      if (!caretRequest_.prepare(
-              req,
-              reqId,
-              compressionCodecs,
-              iovsBegin_,
-              iovsCount_,
-              payloadFormat)) {
-        result_ = Result::ERROR;
-      }
-      break;
-    default:
-      checkLogic(false, "Used unsupported protocol! Value: {}", (int)protocol_);
-      result_ = Result::ERROR;
-      iovsCount_ = 0;
-  }
+        iovsCount_ = 0;
+    }
+  });
 }
 
 } // namespace memcache
