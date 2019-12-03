@@ -87,6 +87,11 @@ DEFINE_bool(
     thread_affinity,
     true,
     "Enables/disables thread affinity in CarbonRouterClient");
+DEFINE_string(ssl_service_identity, "memcache", "Service Identity to use");
+DEFINE_bool(
+    ssl_service_identity_authorization_log,
+    false,
+    "Enables/disables client authorization logging");
 DEFINE_validator(num_proxies, &ValidateNumProxies);
 DEFINE_validator(num_clients, &ValidateNumClients);
 DEFINE_validator(num_req_per_client, &ValidateNumRequestsPerClient);
@@ -103,6 +108,13 @@ int main(int argc, char** argv) {
     flavorOverrides.emplace("thread_affinity", "true");
   } else {
     flavorOverrides.emplace("thread_affinity", "false");
+  }
+  // Service identity
+  flavorOverrides.emplace("ssl_service_identity", FLAGS_ssl_service_identity);
+  if (FLAGS_ssl_service_identity_authorization_log) {
+    flavorOverrides.emplace("ssl_service_identity_authorization_log", "true");
+  } else {
+    flavorOverrides.emplace("ssl_service_identity_authorization_log", "false");
   }
 
   std::shared_ptr<CarbonRouterInstance<MemcacheRouterInfo>> router;
@@ -148,6 +160,16 @@ int main(int argc, char** argv) {
         "Total Connections proxy_{}: {}",
         i,
         router->getProxyBase(i)->stats().getValue(num_servers_up_stat));
+  }
+  if (FLAGS_ssl_service_identity_authorization_log) {
+    for (int i = 0; i < FLAGS_num_proxies; ++i) {
+      XLOGF(
+          INFO,
+          "Authorization Failures proxy_{}: {}",
+          i,
+          router->getProxyBase(i)->stats().getValue(
+              num_authorization_failures_stat));
+    }
   }
   return 0;
 }
