@@ -1,12 +1,9 @@
+#!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
 
 import time
 
@@ -74,7 +71,8 @@ class TestMigratedPools(McrouterTestCase):
         # first we are in the old domain make sure all ops go to
         # the old host only
         # note: only run if we're still in phase 1
-        if int(time.time()) < phase_2_time:
+        if int(time.time()) < phase_2_time - 0.5:
+            # we have at least 500ms to run this test
             self.assertEqual(mcr.get("get-key-1"), str(1))
             mcr.set("set-key-1", str(42))
             self.assertEqual(self.wild_old.get("set-key-1"), str(42))
@@ -87,7 +85,8 @@ class TestMigratedPools(McrouterTestCase):
         # next phase (2)
         time.sleep(phase_2_time - int(time.time()))
         # note: only run if we're still in phase 2
-        if int(time.time()) < phase_3_time:
+        if int(time.time()) < phase_3_time - 0.5:
+            # we have at least 500ms to run this test
             # gets/sets go to the old place
             self.assertEqual(mcr.get("get-key-2"), str(2))
             mcr.set("set-key-2", str(4242))
@@ -105,7 +104,8 @@ class TestMigratedPools(McrouterTestCase):
         # gets/sets may go to either the old or new place depending on the
         # specific key and when the request is made during the migration period.
         # note: only run if we're still in phase 3
-        if int(time.time()) < phase_4_time:
+        if int(time.time()) < phase_4_time - 0.5:
+            # we have at least 500ms to run this test
             value = mcr.get("get-key-3")
             self.assertTrue(value == "3" or value == "300")
             mcr.set("set-key-3", str(424242))
@@ -445,10 +445,10 @@ class TestFailoverWithLimit(McrouterTestCase):
 
         # first 12 requests should succeed (9.8 - 1 + 0.2 * 11 - 11 = 0)
         self.assertTrue(mcr.set('key', 'value.gut'))
-        for _i in range(11):
+        for _ in range(11):
             self.assertEqual(mcr.get('key'), 'value.gut')
         # now every 5th request should succeed
-        for _i in range(10):
-            for _j in range(4):
+        for _ in range(10):
+            for _ in range(4):
                 self.assertIsNone(mcr.get('key'))
             self.assertEqual(mcr.get('key'), 'value.gut')

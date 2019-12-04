@@ -1,16 +1,15 @@
+#!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+
 import errno
 import socket
 import threading
 import time
+
 
 class MockServer(threading.Thread):
     def __init__(self, port=0):
@@ -18,7 +17,7 @@ class MockServer(threading.Thread):
         Chosen port will be set at self.port,
         after self.port_event is signalled."""
 
-        super(MockServer, self).__init__()
+        super().__init__()
         self.daemon = True
         self.port = port
         self.port_event = threading.Event()
@@ -45,7 +44,7 @@ class MockServer(threading.Thread):
         else:
             self.listen_socket = socket.socket(socket.AF_INET,
                                                socket.SOCK_STREAM)
-        self.listen_socket.setblocking(0)
+        self.listen_socket.setblocking(False)
         self.listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.listen_socket.bind(('', self.port))
         self.listen_socket.listen(5)
@@ -87,7 +86,7 @@ class CustomErrorServer(MockServer):
     """A server that responds with a custom message after reading expected
     amount of bytes"""
     def __init__(self, expected_bytes=0, error_message='SERVER_ERROR'):
-        super(CustomErrorServer, self).__init__()
+        super().__init__()
         self.expected_bytes = expected_bytes
         self.reply_after = expected_bytes
         self.sleep_after_reply = None
@@ -107,28 +106,28 @@ class CustomErrorServer(MockServer):
         self.error_message = error_message
 
     def runServer(self, client_socket, client_address):
-        f = client_socket.makefile()
-        f.read(self.reply_after)
-        client_socket.send(self.error_message + '\r\n')
+        client_socket.recv(self.reply_after)
+        error_message = "{}{}".format(self.error_message, "\r\n")
+        if type(error_message) is not bytes:
+            error_message = error_message.encode()
+        client_socket.sendall(error_message)
         if self.sleep_after_reply is not None:
             time.sleep(self.sleep_after_reply)
         if self.reply_after != self.expected_bytes:
-            f.read(self.expected_bytes - self.reply_after)
-        f.close()
+            client_socket.recv(self.expected_bytes - self.reply_after)
+
 
 class StoreServer(MockServer):
     """A server that responds to requests with 'STORED' after reading expected
     amount of bytes"""
     def __init__(self, expected_key, expected_value):
-        super(StoreServer, self).__init__()
+        super().__init__()
         self.expected_bytes = len("set  0 0 \r\n\r\n")
         self.expected_bytes += len(expected_key) + len(expected_value)
 
     def runServer(self, client_socket, client_address):
-        f = client_socket.makefile()
-        f.read(self.expected_bytes)
-        f.close()
-        client_socket.send('STORED\r\n')
+        client_socket.recv(self.expected_bytes)
+        client_socket.send(b'STORED\r\n')
 
 class DeadServer(MockServer):
     """ Simple server that hard fails all the time """
@@ -144,7 +143,7 @@ class TkoServer(MockServer):
         then next 'period' requests will be slow; and so on.
         Always responds to 'version' requests without changing state.
         """
-        super(TkoServer, self).__init__()
+        super().__init__()
         self.period = period
         self.step = phase
         self.tmo = tmo
@@ -152,21 +151,23 @@ class TkoServer(MockServer):
 
     def runServer(self, client_socket, client_address):
         while not self.is_stopped():
-            f = client_socket.makefile()
-            cmd = f.readline()
+            f = client_socket.makefile(mode='rb')
+            cmd = f.readline().decode()
             f.close()
             if not cmd:
                 continue
             if cmd == 'version\r\n':
-                client_socket.send('VERSION TKO_SERVER\r\n')
+                client_socket.send(b'VERSION TKO_SERVER\r\n')
                 continue
             # fast 'period' times in a row, then slow 'period' times in a row
             if self.step % (2 * self.period) >= self.period:
                 time.sleep(self.tmo)
             self.step += 1
             if cmd.startswith('get {}\r\n'.format(self.hitcmd)):
-                client_socket.send(
-                    'VALUE hit 0 %d\r\n%s\r\nEND\r\n' % (
-                        len(str(self.port)), str(self.port)))
+                msg = 'VALUE hit 0 {}\r\n{}\r\nEND\r\n'.format(
+                    len(str(self.port)),
+                    str(self.port),
+                )
+                client_socket.send(msg.encode())
             elif cmd.startswith('get'):
-                client_socket.send('END\r\n')
+                client_socket.send(b'END\r\n')

@@ -1,12 +1,8 @@
+#!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
 
 import time
 
@@ -18,7 +14,7 @@ class TestShardSplits(McrouterTestCase):
     extra_args = []
 
     def setUp(self):
-        for i in range(3):
+        for _ in range(3):
             self.add_server(Memcached())
 
     def test_shard_splits_basic(self):

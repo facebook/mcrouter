@@ -1,12 +1,11 @@
+#!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+
+import os
 import unittest
 import time
 
@@ -15,7 +14,7 @@ from mcrouter.test.MCProcess import Mcrouter, Memcached, MockMemcached
 
 class McrouterTestCase(unittest.TestCase):
     def __init__(self, *args, **kwargs):
-        super(McrouterTestCase, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.use_mock_mc = False
 
     def ensureClassVariables(self):
@@ -23,6 +22,31 @@ class McrouterTestCase(unittest.TestCase):
             self.open_servers = []
         if 'open_ports' not in self.__dict__:
             self.open_ports = []
+
+    @classmethod
+    def wait_for_file(cls, path, *, retries=0, interval=0.25):
+        interval = interval if interval > 0 else 0.25
+        while True:
+            if os.path.exists(path):
+                return True
+            retries -= 1
+            if retries < 0:
+                return False
+            time.sleep(interval)
+
+    @classmethod
+    def wait_noempty_dir(cls, root, *, retries=0, interval=0.25):
+        interval = interval if interval > 0 else 0.25
+        while True:
+            file_count = 0
+            for _, _, files in os.walk(root):
+                file_count += len(files)
+            if file_count > 0:
+                return True
+            retries -= 1
+            if retries < 0:
+                return False
+            time.sleep(interval)
 
     def add_server(self, server, logical_port=None):
         self.ensureClassVariables()
@@ -104,5 +128,5 @@ class McrouterTestCase(unittest.TestCase):
 
             return True
         except Exception as e:
-            self.assertTrue("Connection reset by peer" in e)
+            self.assertIsInstance(e, ConnectionResetError)
             return False

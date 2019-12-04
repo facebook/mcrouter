@@ -1,18 +1,15 @@
+#!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
 
 from collections import defaultdict
-from functools import reduce
 
 from mcrouter.test.mock_servers import MockServer
 from mcrouter.test.McrouterTestCase import McrouterTestCase
+
 
 class EchoServer(MockServer):
     """A server that responds to get requests with its port number.
@@ -23,9 +20,12 @@ class EchoServer(MockServer):
             cmd = client_socket.recv(1000)
             if not cmd:
                 return
-            if cmd.startswith('get'):
-                client_socket.send('VALUE hit 0 %d\r\n%s\r\nEND\r\n' %
-                                   (len(str(self.port)), str(self.port)))
+            if cmd.decode().startswith('get'):
+                reply = "VALUE hit 0 {size}\r\n{payload}\r\nEND\r\n".format(
+                    size=len(str(self.port)),
+                    payload=self.port
+                )
+                client_socket.send(reply.encode())
 
 
 class TestWCH3(McrouterTestCase):
@@ -33,7 +33,7 @@ class TestWCH3(McrouterTestCase):
     extra_args = []
 
     def setUp(self):
-        for i in range(8):
+        for _ in range(8):
             self.add_server(EchoServer())
 
         self.mcrouter = self.add_mcrouter(
@@ -73,14 +73,16 @@ class TestWCH3(McrouterTestCase):
             7: 0.5
         }
         tolerance = 0.075
-        total_weight = reduce(lambda x, y: x + y,
-                              map(lambda x: x[1], expected_fractions.items()))
+        total_weight = sum(expected_fractions.values())
         for i, weight in expected_fractions.items():
             expected_frac = weight / total_weight
             port = int(self.get_open_ports()[i])
             measured_frac = request_counts[port] / float(n)
             if expected_frac > 0:
-                delta = measured_frac - expected_frac
-                self.assertTrue(abs(delta) <= tolerance)
+                self.assertAlmostEqual(
+                    measured_frac,
+                    expected_frac,
+                    delta=tolerance
+                )
             else:
                 self.assertEqual(measured_frac, 0.0)

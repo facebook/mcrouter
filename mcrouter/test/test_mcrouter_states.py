@@ -1,12 +1,8 @@
+#!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
 
 import time
 
@@ -24,9 +20,10 @@ class TestMcrouterStates(McrouterTestCase):
         # The order here corresponds to the order of hosts in the .json
         self.mc = self.add_server(Memcached())
 
-    def get_mcrouter(self, additional_args=[]):
-        return self.add_mcrouter(
-            self.config, extra_args=self.extra_args + additional_args)
+    def get_mcrouter(self, additional_args=()):
+        extra_args = list(additional_args)
+        extra_args.extend(self.extra_args)
+        return self.add_mcrouter(self.config, extra_args=extra_args)
 
     def test_mcrouter_states(self):
         mcr = self.get_mcrouter()

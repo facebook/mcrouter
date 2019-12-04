@@ -1,17 +1,15 @@
+#!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
 import time
 
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 from mcrouter.test.mock_servers import CustomErrorServer
 from mcrouter.test.mock_servers import MockServer
+
 
 class TestAsciiError(McrouterTestCase):
     config = './mcrouter/test/mcrouter_test_basic_1_1_1.json'
@@ -37,21 +35,27 @@ class ExtraValueServer(MockServer):
         self.expected_bytes = len('get ' + expected_key + '\r\n')
 
     def runServer(self, client_socket, client_address):
-        f = client_socket.makefile()
         # Read first char to see if it's a probe or a get request.
-        char = f.read(1)
-        if char == 'v':
+        char = client_socket.recv(1).decode()
+        if char.lower() == 'v':
             # Read the remaing part of version request.
-            f.read(len('ERSION\r\n'))
-            client_socket.send('VERSION test\r\n')
+            client_socket.recv(len('ERSION\r\n'))
+            client_socket.send(b'VERSION test\r\n')
             # Read the first char of get request.
-            f.read(1)
+            client_socket.recv(1)
         # Read remaining part of get request.
-        f.read(self.expected_bytes - 1)
-        f.close()
-        client_socket.send('VALUE ' + self.expected_key +
-                           ' 0 9\r\ntestValue\r\nEND\r\n')
-        client_socket.send('VALUE test2 0 1\r\nV\r\nEND\r\n')
+        client_socket.recv(self.expected_bytes - 1)
+        extra_value = 'testValue'
+        payload = (
+            'VALUE {key} 0 {size}\r\n{value}\r\nEND\r\n'
+            # extra reply to tko this server
+            'VALUE test2 0 1\r\nV\r\nEND\r\n'.format(
+                key=self.expected_key,
+                size=len(extra_value),
+                value=extra_value,
+            )
+        )
+        client_socket.send(payload.encode())
 
 class TestAsciiExtraData(McrouterTestCase):
     config = './mcrouter/test/mcrouter_test_basic_1_1_1.json'

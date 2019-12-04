@@ -1,16 +1,14 @@
+#!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
 
 from mcrouter.test.MCProcess import Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 from mcrouter.test.mock_servers import CustomErrorServer
+
 
 class TestCustomFailover(McrouterTestCase):
     config = './mcrouter/test/test_custom_failover.json'
@@ -39,6 +37,7 @@ class TestCustomFailoverOverride(McrouterTestCase):
     def setUp(self):
         self.mc1 = self.add_server(CustomErrorServer())
         self.mc2 = self.add_server(Memcached())
+
         self.mcr = self.add_mcrouter(self.config, extra_args=self.extra_args)
 
     def test_failover_gets(self):

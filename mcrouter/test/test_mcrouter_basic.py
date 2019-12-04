@@ -1,12 +1,9 @@
+#!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
 
 from threading import Thread
 import time
@@ -24,9 +21,10 @@ class TestMcrouterBasicBase(McrouterTestCase):
         # The order here corresponds to the order of hosts in the .json
         self.mc = self.add_server(self.make_memcached())
 
-    def get_mcrouter(self, additional_args=[]):
-        return self.add_mcrouter(
-            self.config, extra_args=self.extra_args + additional_args)
+    def get_mcrouter(self, additional_args=()):
+        extra_args = self.extra_args[:]
+        extra_args.extend(additional_args)
+        return self.add_mcrouter(self.config, extra_args=extra_args)
 
 
 class TestMcrouterBasic(TestMcrouterBasicBase):
@@ -170,7 +168,7 @@ class TestMcrouterBasic(TestMcrouterBasicBase):
 
 class TestMcrouterBasicTouch(TestMcrouterBasicBase):
     def __init__(self, *args, **kwargs):
-        super(TestMcrouterBasicTouch, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.use_mock_mc = True
 
     def test_basic_touch(self):
@@ -201,7 +199,7 @@ class TestMcrouterBasicTouch(TestMcrouterBasicBase):
 
 class TestMcrouterBasicGat(TestMcrouterBasicBase):
     def __init__(self, *args, **kwargs):
-        super(TestMcrouterBasicBase, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def test_basic_gat(self):
         mcr = self.get_mcrouter()
@@ -242,9 +240,10 @@ class TestMcrouterInvalidRouteBase(McrouterTestCase):
         # The order here corresponds to the order of hosts in the .json
         self.mc = self.add_server(self.make_memcached())
 
-    def get_mcrouter(self, additional_args=[]):
-        return self.add_mcrouter(
-            self.config, extra_args=self.extra_args + additional_args)
+    def get_mcrouter(self, additional_args=()):
+        extra_args = self.extra_args[:]
+        extra_args.extend(additional_args)
+        return self.add_mcrouter(self.config, extra_args=extra_args)
 
 
 class TestMcrouterInvalidRoute(TestMcrouterInvalidRouteBase):
@@ -275,8 +274,7 @@ class TestMcrouterInvalidRoute(TestMcrouterInvalidRouteBase):
 
 class TestMcrouterInvalidRouteAppendPrepend(TestMcrouterInvalidRouteBase):
     def __init__(self, *args, **kwargs):
-        super(TestMcrouterInvalidRouteAppendPrepend, self).__init__(
-            *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.use_mock_mc = True
 
     def test_basic_invalid_route(self):
@@ -302,9 +300,11 @@ class TestMcrouterBasic2(McrouterTestCase):
         self.mc1 = self.add_server(Memcached())
         self.mc2 = self.add_server(Memcached())
 
-    def get_mcrouter(self, additional_args=[]):
+    def get_mcrouter(self, additional_args=()):
+        extra_args = self.extra_args[:]
+        extra_args.extend(additional_args)
         return self.add_mcrouter(
-            self.config, '/a/a/', extra_args=self.extra_args + additional_args)
+            self.config, '/a/a/', extra_args=extra_args)
 
     def test_prefix_routing(self):
         mcr = self.get_mcrouter()
@@ -407,8 +407,7 @@ class TestBasicAllSync(TestBasicAllSyncBase):
 
 class TestBasicAllSyncAppendPrependTouch(TestBasicAllSyncBase):
     def __init__(self, *args, **kwargs):
-        super(TestBasicAllSyncAppendPrependTouch, self).__init__(
-            *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.use_mock_mc = True
 
     def get_mcrouter(self):
@@ -1058,7 +1057,7 @@ class TestMcrouterWithRetries(McrouterTestCase):
         "./mcrouter/test/test_basic_l1_l2_sizesplit_retry_valid.json"
     invalid_config_with_retries = \
         "./mcrouter/test/test_basic_l1_l2_sizesplit_retry_invalid.json"
-    extra_args = []
+    extra_args = ["--validate-config=run"]
 
     def test_valid_retries(self):
         mcr = self.add_mcrouter(self.valid_config_with_retries,

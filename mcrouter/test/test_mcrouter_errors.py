@@ -1,12 +1,8 @@
+#!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
 
 import errno
 import re
@@ -260,7 +256,7 @@ class TestMcrouterGeneratedErrors(McrouterTestCase):
     set_cmd = 'set test_key 0 0 3\r\nabc\r\n'
     delete_cmd = 'delete test_key\r\n'
 
-    def getMcrouter(self, server, args=[]):
+    def getMcrouter(self, server, args=()):
         self.add_server(server)
         return self.add_mcrouter(self.config, extra_args=args)
 
@@ -413,18 +409,20 @@ class TestMcrouterParseError(McrouterTestCase):
         fd = sock.makefile()
         # First send a normal request that will timeout followed by
         # mallformed request that will cause parsing error.
-        sock.sendall(self.get_cmd + 'get\r\n')
+
+        req1 = "{}{}".format(self.get_cmd, 'get\r\n')
+        sock.sendall(req1.encode())
         # Make sure the buffer is flushed.
         time.sleep(1)
         # Now send another normal request, it shouldn't be processed, since
         # server cannot parse further.
-        sock.sendall(self.get_cmd)
+        sock.sendall(self.get_cmd.encode())
 
-        self.assertEquals('SERVER_ERROR Reply timeout', fd.readline().strip())
-        self.assertEquals('CLIENT_ERROR malformed request',
+        self.assertEqual('SERVER_ERROR Reply timeout', fd.readline().strip())
+        self.assertEqual('CLIENT_ERROR malformed request',
                           fd.readline().strip())
 
         # Check that mcrouter is still alive.
         self.assertTrue(mcrouter.is_alive())
         res = mcrouter.issue_command(self.get_cmd)
-        self.assertEquals('SERVER_ERROR Reply timeout\r\n', res)
+        self.assertEqual('SERVER_ERROR Reply timeout\r\n', res)

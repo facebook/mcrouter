@@ -1,12 +1,8 @@
+#!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
 
 from mcrouter.test.MCProcess import Mcrouter
 from mcrouter.test.McrouterTestCase import McrouterTestCase
@@ -34,9 +30,9 @@ class TestLoadBalancerRoute(McrouterTestCase):
         for i in range(0, n):
             key = 'someprefix:{}:|#|id=123'.format(i)
             self.assertTrue(not self.mcrouter.get(key))
-        self.assertTrue(self.mcrouter.stats()['cmd_get_count'] > 0)
+        self.assertGreater(int(self.mcrouter.stats()['cmd_get_count']), 0)
         sum = 0
         for i in range(8):
-            self.assertTrue(self.mc[i].stats()['cmd_get_count'] > 0)
+            self.assertGreater(int(self.mc[i].stats()['cmd_get_count']), 0)
             sum += int(self.mc[i].stats()['cmd_get_count'])
         self.assertEqual(sum, n)

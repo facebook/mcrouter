@@ -1,12 +1,8 @@
+#!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
 
 from mcrouter.test.MCProcess import Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
@@ -25,7 +21,7 @@ class TestSlowWarmUp(McrouterTestCase):
 
         # Should be warm and return just hits.
         hits = misses = 0
-        for i in range(0, 10):
+        for _ in range(0, 10):
             if self.mcrouter.get(hitKey) is None:
                 misses += 1
             else:
@@ -34,13 +30,13 @@ class TestSlowWarmUp(McrouterTestCase):
         self.assertEquals(10, hits)
 
         # Let's make this box cold
-        for i in range(0, 100):
+        for _ in range(0, 100):
             self.mcrouter.get(missKey)
 
         # Now we should have some misses as mcrouter will actively
         # return a miss to speed up failover.
         hits = misses = 0
-        for i in range(0, 30):
+        for _ in range(0, 30):
             if self.mcrouter.get(hitKey) is None:
                 misses += 1
             else:

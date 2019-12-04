@@ -1,12 +1,8 @@
+#!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
 
 import re
 import signal
@@ -42,9 +38,10 @@ class OutputCheckerTestCase(unittest.TestCase):
         signal.alarm(timeout)
 
         for line in self.proc.stderr:
+            line = line.decode()
             stderr += line
             if re.search(bad, line):
-                self.fail("bad regex matched '%s'" % line.strip())
+                self.fail("bad regex matched '{}'".format(line.strip()))
 
             if re.search(good, line):
                 signal.alarm(0)

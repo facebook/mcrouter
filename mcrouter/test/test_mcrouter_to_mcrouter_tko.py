@@ -1,12 +1,8 @@
+#!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
 
 import re
 
@@ -29,8 +25,9 @@ class TestMcrouterToMcrouterTko(McrouterTestCase):
         self.assertFalse(mcr.delete("key"))
 
         stats = self.underlying_mcr.stats("suspect_servers")
+        print(stats)
         self.assertEqual(1, len(stats))
-        self.assertTrue(re.match("status:(tko|down)", stats.values()[0]))
+        self.assertTrue(re.match("status:(tko|down)", list(stats.values())[0]))
 
         stats = mcr.stats("suspect_servers")
         self.assertEqual(0, len(stats))
