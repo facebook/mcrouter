@@ -306,8 +306,9 @@ McRouteHandleProvider<RouterInfo>::makePool(
       if (ap->getProtocol() == mc_thrift_protocol) {
         checkLogic(
             ap->getSecurityMech() == SecurityMech::NONE ||
+                ap->getSecurityMech() == SecurityMech::TLS ||
                 ap->getSecurityMech() == SecurityMech::TLS_TO_PLAINTEXT,
-            "Security mechanism must be 'plain' or 'tls_to_plain' for "
+            "Security mechanism must be 'plain', 'tls' or 'tls_to_plain' for "
             "ThriftTransport, got {}",
             securityMechToString(ap->getSecurityMech()));
 

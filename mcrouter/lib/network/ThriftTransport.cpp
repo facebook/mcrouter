@@ -116,6 +116,13 @@ ThriftTransportBase::getConnectingSocket() {
               address,
               connectionOptions_.connectTimeout,
               std::move(socketOptions));
+        } else if (securityMech == SecurityMech::TLS) {
+          socket->setSendTimeout(connectionOptions_.writeTimeout.count());
+          socket->getUnderlyingTransport<folly::AsyncSSLSocket>()->connect(
+              this,
+              address,
+              connectionOptions_.connectTimeout.count(),
+              socketOptions);
         } else {
           DCHECK(securityMech == SecurityMech::NONE);
           socket->setSendTimeout(connectionOptions_.writeTimeout.count());

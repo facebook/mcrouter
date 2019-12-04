@@ -252,7 +252,8 @@ createTAsyncSocket(
   auto socket = createSocketCommon<true>(eventBase, connectionOptions);
 
   const auto mech = connectionOptions.accessPoint->getSecurityMech();
-  if (mech == SecurityMech::NONE || socket.hasError()) {
+  if (mech == SecurityMech::NONE || mech == SecurityMech::TLS ||
+      socket.hasError()) {
     return socket;
   }
   DCHECK(mech == SecurityMech::TLS_TO_PLAINTEXT);
