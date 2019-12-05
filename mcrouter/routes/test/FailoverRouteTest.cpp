@@ -299,6 +299,32 @@ TEST(failoverRouteTest, rateLimit) {
   EXPECT_EQ(carbon::Result::TIMEOUT, reply4.result());
 }
 
+TEST(failoverRouteTest, rateLimitWithTKO) {
+  std::vector<std::shared_ptr<TestHandle>> test_handles{
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::TKO, "a")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::FOUND, "c"))};
+
+  mockFiberContext();
+  auto rh = makeFailoverRouteInOrder(
+      get_route_handles(test_handles),
+      FailoverErrorsSettings(),
+      std::make_unique<FailoverRateLimiter>(0.5, 1),
+      /* failoverTagging */ false);
+
+  // tokens: 1
+  auto reply1 = rh->route(McGetRequest("0"));
+  EXPECT_EQ(carbon::Result::FOUND, reply1.result());
+  // tokens: 0
+  auto reply2 = rh->route(McGetRequest("0"));
+  EXPECT_EQ(carbon::Result::FOUND, reply2.result());
+  // tokens: 0.5
+  auto reply3 = rh->route(McGetRequest("0"));
+  EXPECT_EQ(carbon::Result::FOUND, reply3.result());
+  // tokens: 0
+  auto reply4 = rh->route(McGetRequest("0"));
+  EXPECT_EQ(carbon::Result::FOUND, reply4.result());
+}
+
 TEST(failoverRouteTest, leastFailuresNoFailover) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
       make_shared<TestHandle>(GetRouteTestData(carbon::Result::FOUND, "a")),

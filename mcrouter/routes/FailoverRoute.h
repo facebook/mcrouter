@@ -225,7 +225,8 @@ class FailoverRoute {
     proxy.stats().increment(failover_all_stat);
     proxy.stats().increment(failoverPolicy_.getFailoverStat());
 
-    if (rateLimiter_ && !rateLimiter_->failoverAllowed()) {
+    if (rateLimiter_ && !isTkoResult(normalReply.result()) &&
+        !rateLimiter_->failoverAllowed()) {
       proxy.stats().increment(failover_rate_limited_stat);
       return normalReply;
     }
