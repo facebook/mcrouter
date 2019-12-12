@@ -191,43 +191,45 @@ McRouteHandleProvider<RouterInfo>::makePool(
     }
 
     SecurityMech mech = SecurityMech::NONE;
-    if (auto jSecurityMech = json.get_ptr("security_mech")) {
-      auto mechStr = parseString(*jSecurityMech, "security_mech");
-      mech = parseSecurityMech(mechStr);
-    } else if (auto jUseSsl = json.get_ptr("use_ssl")) {
-      // deprecated - prefer security_mech
-      auto useSsl = parseBool(*jUseSsl, "use_ssl");
-      if (useSsl) {
-        mech = SecurityMech::TLS;
-      }
-    }
-
     folly::Optional<SecurityMech> withinDcMech;
-    if (auto jSecurityMech = json.get_ptr("security_mech_within_dc")) {
-      auto mechStr = parseString(*jSecurityMech, "security_mech_within_dc");
-      withinDcMech = parseSecurityMech(mechStr);
-    }
-
     folly::Optional<SecurityMech> crossDcMech;
-    if (auto jSecurityMech = json.get_ptr("security_mech_cross_dc")) {
-      auto mechStr = parseString(*jSecurityMech, "security_mech_cross_dc");
-      crossDcMech = parseSecurityMech(mechStr);
-    }
-
-    folly::Optional<uint16_t> withinDcPort;
-    if (auto jPort = json.get_ptr("port_override_within_dc")) {
-      withinDcPort = parseInt(*jPort, "port_override_within_dc", 1, 65535);
-    }
-
     folly::Optional<uint16_t> crossDcPort;
-    if (auto jPort = json.get_ptr("port_override_cross_dc")) {
-      crossDcPort = parseInt(*jPort, "port_override_cross_dc", 1, 65535);
-    }
-
+    folly::Optional<uint16_t> withinDcPort;
     // default to 0, which doesn't override
     uint16_t port = 0;
-    if (auto jPort = json.get_ptr("port_override")) {
-      port = parseInt(*jPort, "port_override", 1, 65535);
+    if (proxy_.router().configApi().enableSecurityConfig()) {
+      if (auto jSecurityMech = json.get_ptr("security_mech")) {
+        auto mechStr = parseString(*jSecurityMech, "security_mech");
+        mech = parseSecurityMech(mechStr);
+      } else if (auto jUseSsl = json.get_ptr("use_ssl")) {
+        // deprecated - prefer security_mech
+        auto useSsl = parseBool(*jUseSsl, "use_ssl");
+        if (useSsl) {
+          mech = SecurityMech::TLS;
+        }
+      }
+
+      if (auto jSecurityMech = json.get_ptr("security_mech_within_dc")) {
+        auto mechStr = parseString(*jSecurityMech, "security_mech_within_dc");
+        withinDcMech = parseSecurityMech(mechStr);
+      }
+
+      if (auto jSecurityMech = json.get_ptr("security_mech_cross_dc")) {
+        auto mechStr = parseString(*jSecurityMech, "security_mech_cross_dc");
+        crossDcMech = parseSecurityMech(mechStr);
+      }
+
+      if (auto jPort = json.get_ptr("port_override_within_dc")) {
+        withinDcPort = parseInt(*jPort, "port_override_within_dc", 1, 65535);
+      }
+
+      if (auto jPort = json.get_ptr("port_override_cross_dc")) {
+        crossDcPort = parseInt(*jPort, "port_override_cross_dc", 1, 65535);
+      }
+
+      if (auto jPort = json.get_ptr("port_override")) {
+        port = parseInt(*jPort, "port_override", 1, 65535);
+      }
     }
     // servers
     auto jservers = json.get_ptr("servers");

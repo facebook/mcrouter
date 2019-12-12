@@ -21,7 +21,7 @@
 namespace folly {
 struct dynamic;
 class Executor;
-} // folly
+} // namespace folly
 
 namespace facebook {
 namespace memcache {
@@ -96,6 +96,13 @@ class ConfigApi : public ConfigApiIf {
    * Starts observing for file changes
    */
   virtual void startObserving();
+
+  /**
+   * Allow disabling of security config parsing
+   */
+  virtual bool enableSecurityConfig() const {
+    return true;
+  }
 
   /**
    * Stops observing for file changes
@@ -204,6 +211,6 @@ class ConfigApi : public ConfigApiIf {
 
   bool readFile(const std::string& path, std::string& contents);
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
