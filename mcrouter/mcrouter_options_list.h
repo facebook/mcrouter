@@ -805,6 +805,13 @@ MCROUTER_OPTION_TOGGLE(
     "Enable deterministic selection of the proxy thread to lower the number of"
     "connections between client and server.")
 
+MCROUTER_OPTION_TOGGLE(
+    disable_shard_split_route,
+    false,
+    "disable-shard-split-route",
+    no_short,
+    "Disable shard split route. Ignore shard_splits field in routing config.")
+
 #ifdef ADDITIONAL_OPTIONS_FILE
 #include ADDITIONAL_OPTIONS_FILE
 #endif
