@@ -22,10 +22,14 @@ namespace mcrouter {
  *
  * @param children                List of children route handles.
  */
-template <class RouterInfo, template <class> class CollectionRoute>
+template <
+    class RouterInfo,
+    template <class, class...> class CollectionRoute,
+    class... Args>
 typename RouterInfo::RouteHandlePtr createCollectionRoute(
     RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
-    const folly::dynamic& json) {
+    const folly::dynamic& json,
+    const Args&... arg) {
   checkLogic(json.isObject(), "CollectionRoute config should be an object");
 
   std::vector<typename RouterInfo::RouteHandlePtr> children;
@@ -41,8 +45,8 @@ typename RouterInfo::RouteHandlePtr createCollectionRoute(
   if (children.size() == 1) {
     return std::move(children[0]);
   }
-  return makeRouteHandleWithInfo<RouterInfo, CollectionRoute>(
-      std::move(children));
+  return makeRouteHandleWithInfo<RouterInfo, CollectionRoute, Args...>(
+      std::move(children), std::move(arg)...);
 }
 
 } // end namespace mcrouter

@@ -51,17 +51,17 @@
 namespace facebook {
 namespace memcache {
 
-template <class Request, template <class> class DerivedCollector>
+template <
+    class Request,
+    template <class, class...> class DerivedCollector,
+    class... Args>
 class Collector {
  public:
   using Reply = ReplyT<Request>;
-  using ChildCollector = DerivedCollector<Request>;
-
+  using ChildCollector = DerivedCollector<Request, Args...>;
 
   Collector(const Collector&) = delete;
   Collector& operator=(Collector const&) = delete;
-  explicit Collector(const Request& initialRequest, size_t childrenCount)
-      : initialRequest_(initialRequest), childrenCount_(childrenCount) {}
 
   folly::Optional<Reply> initialReply() const {
     return static_cast<const ChildCollector*>(this)->initialReplyImpl();
@@ -75,30 +75,45 @@ class Collector {
     return static_cast<const ChildCollector*>(this)->finalReplyImpl();
   }
 
+  void initialize(const Request& initialRequest, size_t childrenCount) {
+    assert(!initialized_);
+    initialRequest_ = std::make_unique<Request>(initialRequest);
+    childrenCount_ = childrenCount;
+    initialized_ = true;
+  }
+
  protected:
+  Collector() {}
 
   size_t getChildrenCount() const {
     return childrenCount_;
   }
 
   const Request& getInitialRequest() const {
-    return initialRequest_;
+    return *initialRequest_->get();
   }
 
  private:
-  const Request& initialRequest_;
-  const size_t childrenCount_;
+  bool initialized_{false};
+  std::unique_ptr<Request> initialRequest_{nullptr};
+  size_t childrenCount_{0};
 };
 
-template <class RouterInfo, template <class> class Collector>
+template <
+    class RouterInfo,
+    template <class, class...> class Collector,
+    class... Args>
 class CollectionRoute {
  private:
   using RouteHandleIf = typename RouterInfo::RouteHandleIf;
   using RouteHandlePtr = typename RouterInfo::RouteHandlePtr;
 
  public:
-  explicit CollectionRoute(std::vector<RouteHandlePtr> children)
-      : children_(std::move(children)) {}
+  explicit CollectionRoute(
+      const std::vector<RouteHandlePtr> children,
+      const Args&... args)
+      : children_(std::move(children)),
+        args_(std::make_tuple(std::move(args)...)) {}
 
   template <class Request>
   bool traverse(
@@ -120,25 +135,32 @@ class CollectionRoute {
 
     auto taskIt = folly::fibers::addTasks(funcs.begin(), funcs.end());
 
-    Collector<Request> collector(req, children_.size());
-    auto res = collector.initialReply();
-    if (res.hasValue()) {
-      return res.value();
-    }
+    return folly::apply(
+        [&](const Args&... args) {
+          Collector<Request, Args...> collector(args...);
+          collector.initialize(req, children_.size());
 
-    while (taskIt.hasNext()) {
-      res = collector.iter(taskIt.awaitNext());
+          auto res = collector.initialReply();
+          if (res.hasValue()) {
+            return res.value();
+          }
 
-      if (res.hasValue()) {
-        return res.value();
-      }
-    }
+          while (taskIt.hasNext()) {
+            res = collector.iter(taskIt.awaitNext());
 
-    return collector.finalReply();
+            if (res.hasValue()) {
+              return res.value();
+            }
+          }
+
+          return collector.finalReply();
+        },
+        args_);
   }
 
  private:
   const std::vector<RouteHandlePtr> children_;
+  const std::tuple<Args...> args_;
 };
 
 } // end namespace memcache

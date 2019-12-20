@@ -12,14 +12,13 @@
 namespace facebook {
 namespace memcache {
 
-template <class Request>
-class AllSyncCollector : public Collector<Request, AllSyncCollector> {
+template <class Request, class... Args>
+class AllSyncCollector : public Collector<Request, AllSyncCollector, Args...> {
   using Reply = ReplyT<Request>;
   using ParentCollector = Collector<Request, AllSyncCollector>;
 
  public:
-  AllSyncCollector(const Request& initialRequest, size_t childrenCount)
-      : ParentCollector(initialRequest, childrenCount) {}
+  AllSyncCollector() {}
 
   folly::Optional<Reply> initialReplyImpl() const {
     return folly::none;
@@ -42,16 +41,19 @@ class AllSyncCollector : public Collector<Request, AllSyncCollector> {
   folly::Optional<Reply> finalReply_;
 };
 
-template <class RouterInfo>
+template <class RouterInfo, class... Args>
 class AllSyncCollectionRoute
-    : public CollectionRoute<RouterInfo, AllSyncCollector> {
+    : public CollectionRoute<RouterInfo, AllSyncCollector, Args...> {
  public:
   std::string routeName() const {
     return "AllSyncCollectionRoute";
   }
   explicit AllSyncCollectionRoute(
-      std::vector<typename RouterInfo::RouteHandlePtr> children)
-      : CollectionRoute<RouterInfo, AllSyncCollector>(children) {
+      const std::vector<typename RouterInfo::RouteHandlePtr> children,
+      const Args&... arg)
+      : CollectionRoute<RouterInfo, AllSyncCollector, Args...>(
+            children,
+            arg...) {
     assert(!children.empty());
   }
 };
