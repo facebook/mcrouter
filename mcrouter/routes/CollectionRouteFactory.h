@@ -12,7 +12,6 @@
 #include <folly/dynamic.h>
 
 #include <mcrouter/lib/config/RouteHandleFactory.h>
-#include "mcrouter/lib/test/AllSyncCollectionRoute.h"
 
 namespace facebook {
 namespace memcache {
@@ -44,14 +43,6 @@ typename RouterInfo::RouteHandlePtr createCollectionRoute(
   }
   return makeRouteHandleWithInfo<RouterInfo, CollectionRoute>(
       std::move(children));
-}
-
-template <class RouterInfo>
-typename RouterInfo::RouteHandlePtr createAllSyncCollectionRoute(
-    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
-    const folly::dynamic& json) {
-  return createCollectionRoute<RouterInfo, AllSyncCollectionRoute>(
-      factory, json);
 }
 
 } // end namespace mcrouter

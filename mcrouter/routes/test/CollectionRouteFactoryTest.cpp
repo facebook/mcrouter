@@ -14,7 +14,7 @@
 
 #include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/lib/carbon/example/gen/HelloGoodbyeRouterInfo.h"
-#include "mcrouter/routes/CollectionRouteFactory.h"
+#include "mcrouter/routes/test/AllSyncCollectionRouteFactory.h"
 #include "mcrouter/routes/test/RouteHandleTestBase.h"
 #include "mcrouter/routes/test/RouteHandleTestUtil.h"
 
