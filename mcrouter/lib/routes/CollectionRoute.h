@@ -9,39 +9,34 @@
 
 /**
  * This class represents the Collection API that abstracts out the
- * routine of visiting children and Collecting results via Collector class.
- * Any route that needs to be defined should inherit the CollectionRoute
- * class and implement their own Collector class using the following API.
- * The template for a Collector class should look something like this:
+ * routine of visiting children and "collecting" results via Collector
+ * abstraction.
  *
- * template <class Request>
- * class Collector {
- * public:
- * using Reply = ReplyT<Request>;
+ * At a high level, this is for routes that:
+ * - Have 0-n children
+ * - Can visit 0-n of their children
+ * - How many children they visit is determined based on the state of visits to
+ * other children
  *
- * Collector(const Request&, size_t) {}
+ * Examples:
+ * - AllSyncRoute
+ * - AllFastestRoute
+ * - AllInitialRoute
+ * - AllMajorityRoute
  *
- * // This function is called before visiting any children and can help
- * // exiting early by returning a reply. Returning folly::none should
- * // start visiting the children
- * folly::Optional<Reply> initialReply() const;
+ * To use this class, implement two classes:
+ * - A child of CollectionRoute, which implements
+ * create[RouteName]Route(factory, json)
+ * - A child of Collector, which implements:
+ *   - A constructor
+ *   - initialReplyImpl : Takes no argument and returns an optional reply.
+ * Evaluated first
+ *   - iterImpl : Takes a Reply and returns an optional Reply. If it is:
+ *      - none  => keep visiting children
+ *      - Reply => return reply upstream, stop visiting other children
+ *   - finalReplyImpl : If no visited children in iterImpl returned a reply,
+ * return a reply here.
  *
- * // This function is called on reply from each children. This method can be
- * // used to accumulate result as different routes require different techniques
- * // for accummulating results.
- * folly::Optional<Reply> iter(const Reply& reply);
- *
- * // This function returns the reply after visiting all children.
- * Reply finalReply();
- *
- *  private:
- *   folly::Optional<Reply> finalReply_;
- *   Request req_;
- *   size_t no_of_children_;
- * };
- *
- * @tparam RouterInfo   The router.
- * @tparam Collector     The Collector, that has to implement the above API.
  */
 
 #include <memory>
@@ -55,6 +50,45 @@
 
 namespace facebook {
 namespace memcache {
+
+template <class Request, template <class> class DerivedCollector>
+class Collector {
+ public:
+  using Reply = ReplyT<Request>;
+  using ChildCollector = DerivedCollector<Request>;
+
+
+  Collector(const Collector&) = delete;
+  Collector& operator=(Collector const&) = delete;
+  explicit Collector(const Request& initialRequest, size_t childrenCount)
+      : initialRequest_(initialRequest), childrenCount_(childrenCount) {}
+
+  folly::Optional<Reply> initialReply() const {
+    return static_cast<const ChildCollector*>(this)->initialReplyImpl();
+  }
+
+  folly::Optional<Reply> iter(const Reply& reply) {
+    return static_cast<ChildCollector*>(this)->iterImpl(reply);
+  }
+
+  Reply finalReply() const {
+    return static_cast<const ChildCollector*>(this)->finalReplyImpl();
+  }
+
+ protected:
+
+  size_t getChildrenCount() const {
+    return childrenCount_;
+  }
+
+  const Request& getInitialRequest() const {
+    return initialRequest_;
+  }
+
+ private:
+  const Request& initialRequest_;
+  const size_t childrenCount_;
+};
 
 template <class RouterInfo, template <class> class Collector>
 class CollectionRoute {
@@ -86,7 +120,7 @@ class CollectionRoute {
 
     auto taskIt = folly::fibers::addTasks(funcs.begin(), funcs.end());
 
-    Collector<Request> collector(std::move(req), children_.size());
+    Collector<Request> collector(req, children_.size());
     auto res = collector.initialReply();
     if (res.hasValue()) {
       return res.value();
