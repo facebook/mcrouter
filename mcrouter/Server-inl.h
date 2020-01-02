@@ -44,8 +44,10 @@ inline std::function<void(McServerSession&)> getAclChecker(
           failure::Category::kSystemError,
           "Error creating acl checker: {}",
           ex.what());
-      LOG(WARNING) << "Disabling acl checker on all threads.";
+      LOG(WARNING) << "Disabling acl checker on all threads due to error.";
     }
+  } else {
+    LOG(WARNING) << "acl checker will not be enabled.";
   }
   return [](McServerSession&) {};
 }

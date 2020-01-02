@@ -229,14 +229,18 @@ CmdLineOptions parseCmdLineOptions(int argc, char** argv, std::string pkgName) {
       combinedOptionData.end(), standaloneData.begin(), standaloneData.end());
   for (auto& opt : combinedOptionData) {
     if (!opt.long_option.empty()) {
-      int extraArgs = (opt.type == McrouterOptionData::Type::toggle ? 0 : 1);
+      // Toggle options can have optional argument
+      int extraArgs = (opt.type == McrouterOptionData::Type::toggle ? 2 : 1);
       longOptions.push_back(
           {opt.long_option.c_str(), extraArgs, nullptr, opt.short_option});
 
       if (opt.short_option) {
         optstring.push_back(opt.short_option);
-        if (extraArgs)
-          optstring.push_back(':');
+        if (extraArgs == 1) {
+          optstring += ":";
+        } else if (extraArgs == 2) {
+          optstring += "::";
+        }
       }
     }
   }
@@ -285,7 +289,10 @@ CmdLineOptions parseCmdLineOptions(int argc, char** argv, std::string pkgName) {
                        opt.long_option == longOptions[longIndex].name)) {
                     if (opt.type == McrouterOptionData::Type::toggle) {
                       optDict[opt.name] =
-                          (opt.default_value == "false" ? "1" : "0");
+                          (optarg != nullptr
+                               ? optarg
+                               : (opt.default_value == "false" ? "1" : "0"));
+                      ;
                     } else {
                       optDict[opt.name] = optarg;
                     }
