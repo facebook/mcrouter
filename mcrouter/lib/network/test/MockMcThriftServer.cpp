@@ -83,7 +83,6 @@ int main(int argc, char** argv) {
     } else if (existingSocketFd > 0) {
       gServer->useExistingSocket(existingSocketFd);
     }
-    gServer->enableRocketServer(true);
     gServer->setNumIOWorkerThreads(2);
     gServer->addRoutingHandler(
         std::make_unique<apache::thrift::RSRoutingHandler>());

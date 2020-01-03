@@ -90,10 +90,9 @@ class ThriftHandler : virtual public hellogoodbye::thrift::HelloGoodbyeSvIf {
 };
 
 inline void spawnServer(AsyncMcServer& server) {
-  server.spawn([](
-      size_t /* threadId */,
-      folly::EventBase& evb,
-      AsyncMcServerWorker& worker) {
+  server.spawn([](size_t /* threadId */,
+                  folly::EventBase& evb,
+                  AsyncMcServerWorker& worker) {
     worker.setOnRequest(HelloGoodbyeRequestHandler<HelloGoodbyeOnRequest>());
 
     while (worker.isAlive() || worker.writesPending()) {
@@ -131,7 +130,6 @@ FOLLY_MAYBE_UNUSED void testClientServer() {
           LOG(ERROR) << "Unexpected result: "
                      << carbon::resultToString(reply.result());
         }
-
       });
     } else {
       fm.addTask([&client, i]() {
@@ -290,7 +288,6 @@ std::thread startThriftServer(
     auto handler = std::make_shared<ThriftHandler>();
     server->setInterface(handler);
     server->setPort(port);
-    server->enableRocketServer(true);
     server->setNumIOWorkerThreads(1);
     server->addRoutingHandler(
         std::make_unique<apache::thrift::RSRoutingHandler>());
@@ -362,7 +359,7 @@ FOLLY_MAYBE_UNUSED void testCarbonThriftServer() {
   server2Thread.join();
 }
 
-} // anonymous
+} // namespace
 
 int main(int argc, char* argv[]) {
   folly::init(&argc, &argv);

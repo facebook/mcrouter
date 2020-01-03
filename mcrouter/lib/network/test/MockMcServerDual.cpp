@@ -176,7 +176,6 @@ int main(int argc, char** argv) {
     } else if (thriftExistingSocketFd > 0) {
       gThriftServer->useExistingSocket(thriftExistingSocketFd);
     }
-    gThriftServer->enableRocketServer(true);
     gThriftServer->disableActiveRequestsTracking();
 
     gThriftServer->setIOThreadPool(ioThreadPool);
