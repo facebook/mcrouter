@@ -568,3 +568,57 @@ TEST(failoverRouteTest, leastFailuresComplex) {
   auto reply7 = rh->route(McGetRequest("0"));
   EXPECT_EQ("c", carbon::valueRangeSlow(reply7).str());
 }
+
+TEST(failoverRouteTest, deterministicOrderTimeout) {
+  std::vector<std::shared_ptr<TestHandle>> test_handles{
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::TIMEOUT, "a")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::TIMEOUT, "b")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::TIMEOUT, "c")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::TIMEOUT, "d"))};
+
+  mockFiberContext();
+  folly::dynamic policyJson = folly::dynamic::object(
+      "type", "DeterministicOrderPolicy")("max_tries", 4)("max_error_tries", 2);
+  folly::dynamic json = folly::dynamic::object("failover_policy", policyJson);
+  auto rh = makeFailoverRouteDefault<McrouterRouterInfo, FailoverRoute>(
+      json, get_route_handles(test_handles));
+
+  rh->route(McGetRequest("0"));
+  // The request should reach 2 children
+  int numRetries = 0;
+  for (auto testHdl : test_handles) {
+    if (!testHdl->saw_keys.empty()) {
+      ++numRetries;
+    }
+  }
+  // Limited by max_error_tries to 2.
+  EXPECT_EQ(2, numRetries);
+}
+
+TEST(failoverRouteTest, deterministicOrderTko) {
+  std::vector<std::shared_ptr<TestHandle>> test_handles{
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::TKO, "a")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::TKO, "b")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::TKO, "c")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::TKO, "d")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::TKO, "e"))};
+
+  mockFiberContext();
+  folly::dynamic policyJson = folly::dynamic::object(
+      "type", "DeterministicOrderPolicy")("max_tries", 4)("max_error_tries", 2);
+  folly::dynamic json = folly::dynamic::object("failover_policy", policyJson);
+  auto rh = makeFailoverRouteDefault<McrouterRouterInfo, FailoverRoute>(
+      json, get_route_handles(test_handles));
+
+  rh->route(McGetRequest("0"));
+  // The request should reach 2 children
+  int numRetries = 0;
+  for (auto testHdl : test_handles) {
+    if (!testHdl->saw_keys.empty()) {
+      ++numRetries;
+    }
+  }
+  // Since TKOs are excluded from max_error_tries, we'll end up trying 4 of the
+  // 5 retry destinations.
+  EXPECT_EQ(4, numRetries);
+}

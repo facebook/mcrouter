@@ -189,8 +189,10 @@ class FailoverRoute {
 
     auto iter = failoverPolicy_.begin(req);
     auto normalReply = iter->route(req);
+    uint32_t numErrors = 0;
     if (isErrorResult(normalReply.result())) {
       if (!isTkoResult(normalReply.result())) {
+        ++numErrors;
         proxy.stats().increment(failover_policy_result_error_stat);
       } else {
         proxy.stats().increment(failover_policy_tko_error_stat);
@@ -236,6 +238,7 @@ class FailoverRoute {
                                                    &req,
                                                    &proxy,
                                                    &normalReply,
+                                                   &numErrors,
                                                    &childIndex,
                                                    &conditionalFailover]() {
       fiber_local<RouterInfo>::setFailoverTag(failoverTagging_);
@@ -268,7 +271,6 @@ class FailoverRoute {
       auto nx = cur;
 
       ReplyT<Request> failoverReply;
-      uint32_t numErrors = 0;
       for (++nx; nx != failoverPolicy_.end(req) &&
            numErrors < failoverPolicy_.maxErrorTries();
            ++cur, ++nx) {
