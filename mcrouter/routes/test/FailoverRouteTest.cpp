@@ -45,9 +45,9 @@ McrouterRouteHandlePtr makeFailoverRouteInOrder(
       std::move(name),
       nullptr);
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 TEST(failoverRouteTest, nofailover) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
