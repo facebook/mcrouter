@@ -36,8 +36,10 @@ size_t ProxyDestinationKey::hash() const {
   auto result = folly::hash::hash_combine(
       accessPoint.getHost(),
       accessPoint.getPort(),
-      accessPoint.getProtocol(),
-      accessPoint.getSecurityMech(),
+      static_cast<std::underlying_type_t<mc_protocol_e>>(
+          accessPoint.getProtocol()),
+      static_cast<std::underlying_type_t<SecurityMech>>(
+          accessPoint.getSecurityMech()),
       accessPoint.compressed());
   if (accessPoint.getProtocol() == mc_ascii_protocol) {
     result = folly::hash::hash_combine(result, timeout.count());
