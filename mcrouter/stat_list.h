@@ -52,6 +52,8 @@ STUI(num_connections_opened, 0, 1)
 STUI(num_connections_closed, 0, 1)
 // Running total of connection not authorized
 STUI(num_authorization_failures, 0, 1)
+// Running total of connection authorized
+STUI(num_authorization_successes, 0, 1)
 // Running total of ssl connection opens/closes.
 STUI(num_ssl_connections_opened, 0, 1)
 STUI(num_ssl_connections_closed, 0, 1)

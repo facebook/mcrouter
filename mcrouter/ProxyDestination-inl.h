@@ -487,6 +487,8 @@ void ProxyDestination<Transport>::initializeTransport() {
           if (!callback(socket, connectionOptions)) {
             proxy().stats().increment(num_authorization_failures_stat);
             return false;
+          } else {
+            proxy().stats().increment(num_authorization_successes_stat);
           }
         }
         return true;
