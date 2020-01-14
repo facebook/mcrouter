@@ -523,6 +523,16 @@ McRouteHandleProvider<RouterInfo>::create(
     } else {
       throwLogic("pool needs to be either a string or an object");
     }
+    auto jShadows = json.get_ptr("shadows");
+    if (jShadows) {
+      checkLogic(jShadows->isArray(), "shadows must be an array.");
+      normalRoute.insert("shadows", *jShadows);
+    }
+    auto jShadowPolicy = json.get_ptr("shadow_policy");
+    if (jShadowPolicy) {
+      checkLogic(jShadowPolicy->isString(), "shadow_policy must be a string.");
+      normalRoute.insert("shadow_policy", jShadowPolicy->asString());
+    }
     if (auto jHash = json.get_ptr("hash")) {
       normalRoute.insert("hash", *jHash);
     }
