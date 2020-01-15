@@ -106,6 +106,7 @@ class TestDeterministicFailoverAllSleepServers(McrouterTestCase):
             elif i == 9:
                 self.assertEqual(int(stats["failover_policy_result_error"]), 17)
                 self.assertEqual(int(stats["failover_policy_tko_error"]), 66)
+            self.assertEqual(int(stats["failover_all_failed"]), i + 1)
 
 
 class TestDeterministicFailoverAllSleepServersSamePool(McrouterTestCase):
@@ -178,6 +179,7 @@ class TestDeterministicFailoverAllSleepServersSamePool(McrouterTestCase):
                 self.assertEqual(int(stats["failover_policy_result_error"]), 23)
                 self.assertEqual(int(stats["failover_policy_tko_error"]), 54)
                 self.assertEqual(int(stats["failover_num_collisions"]), 20)
+            self.assertEqual(int(stats["failover_all_failed"]), i + 1)
 
 
 class TestDeterministicFailoverAllSleepServersSharedConfig(McrouterTestCase):
@@ -243,3 +245,4 @@ class TestDeterministicFailoverAllSleepServersSharedConfig(McrouterTestCase):
                 self.assertEqual(int(stats["failover_policy_result_error"]), 21)
                 self.assertEqual(int(stats["failover_policy_tko_error"]), 30)
                 self.assertEqual(int(stats["failover_num_collisions"]), 12)
+            self.assertEqual(int(stats["failover_all_failed"]), i + 1)

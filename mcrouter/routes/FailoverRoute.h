@@ -290,12 +290,16 @@ class FailoverRoute {
         }
       }
 
+      bool allFailed = true;
       if (numErrors < failoverPolicy_.maxErrorTries()) {
         failoverReply = doFailover(cur);
-        if (isErrorResult(failoverReply.result())) {
-          proxy.stats().increment(failover_all_failed_stat);
-          proxy.stats().increment(failoverPolicy_.getFailoverFailedStat());
+        if (!isErrorResult(failoverReply.result())) {
+          allFailed = false;
         }
+      }
+      if (allFailed) {
+        proxy.stats().increment(failover_all_failed_stat);
+        proxy.stats().increment(failoverPolicy_.getFailoverFailedStat());
       }
       proxy.stats().increment(
           failover_num_collisions_stat, cur.getStats().num_collisions);
