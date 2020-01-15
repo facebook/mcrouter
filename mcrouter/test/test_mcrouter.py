@@ -431,17 +431,12 @@ class TestFailoverWithLimit(McrouterTestCase):
 
     def setUp(self):
         self.gut = self.add_server(Memcached())
-        self.wildcard = self.add_server(Memcached())
 
     def get_mcrouter(self):
         return self.add_mcrouter(self.config)
 
     def test_failover_limit(self):
         mcr = self.get_mcrouter()
-
-        self.assertTrue(mcr.set('key', 'value.wildcard'))
-        self.assertEqual(mcr.get('key'), 'value.wildcard')
-        self.wildcard.terminate()
 
         # first 12 requests should succeed (9.8 - 1 + 0.2 * 11 - 11 = 0)
         self.assertTrue(mcr.set('key', 'value.gut'))

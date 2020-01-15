@@ -2,15 +2,16 @@
   "pools": {
     "A.gut": {
       "servers": [ "localhost:12345" ]
-    },
-    "A.wildcard": {
-      "servers": [ "localhost:12346" ]
     }
   },
   "route": {
     "type": "FailoverRoute",
     "children": [
-      "PoolRoute|A.wildcard",
+      {
+        "type": "ErrorRoute",
+        "enable_logging": false,
+        "result": "mc_res_busy"
+      },
       "PoolRoute|A.gut"
     ],
     "failover_limit": {
