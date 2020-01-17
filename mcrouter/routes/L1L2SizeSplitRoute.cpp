@@ -271,7 +271,7 @@ std::shared_ptr<MemcacheRouteHandleIf> makeL1L2SizeSplitRoute(
     checkLogic(
         numRetries <= L1L2SizeSplitRoute::kMaxNumRetries,
         "L1L2SizeSplitRoute: maximum number of retries is " +
-            L1L2SizeSplitRoute::kMaxNumRetries);
+            std::to_string(L1L2SizeSplitRoute::kMaxNumRetries));
   }
 
   return std::make_shared<MemcacheRouteHandle<L1L2SizeSplitRoute>>(
