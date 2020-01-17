@@ -366,12 +366,17 @@ inline std::vector<std::shared_ptr<RouteHandleIf>> get_route_handles(
 
 class TestFiberManager {
  public:
-  TestFiberManager()
-      : fm_(std::make_unique<folly::fibers::SimpleLoopController>()) {}
+  TestFiberManager(size_t recordFiberStackEvery = kRecordFiberStackEveryDefault)
+      : fm_(std::make_unique<folly::fibers::SimpleLoopController>(),
+            getFiberOptions(recordFiberStackEvery)) {}
 
   template <class LocalType>
-  explicit TestFiberManager(LocalType t)
-      : fm_(t, std::make_unique<folly::fibers::SimpleLoopController>()) {}
+  explicit TestFiberManager(
+      LocalType t,
+      size_t recordFiberStackEvery = kRecordFiberStackEveryDefault)
+      : fm_(t,
+            std::make_unique<folly::fibers::SimpleLoopController>(),
+            getFiberOptions(recordFiberStackEvery)) {}
 
   void run(std::function<void()>&& fun) {
     runAll({std::move(fun)});
@@ -387,6 +392,13 @@ class TestFiberManager {
     });
 
     loopController.loop([]() {});
+
+    // Fiber stack high watermark stat is only available for build without ASAN
+    // since Folly always returns 0 when FOLLY_SANITIZE_ADDRESS is set.
+    auto stackHighWatermark = fm.stackHighWatermark();
+    if (stackHighWatermark > 0) {
+      VLOG(2) << "fiber stack high watermark: " << stackHighWatermark;
+    }
   }
 
   folly::fibers::FiberManager& getFiberManager() {
@@ -395,6 +407,14 @@ class TestFiberManager {
 
  private:
   folly::fibers::FiberManager fm_;
+  static constexpr size_t kRecordFiberStackEveryDefault = 0;
+
+  static folly::fibers::FiberManager::Options getFiberOptions(
+      size_t recordFiberStackEvery = 0) {
+    folly::fibers::FiberManager::Options ret;
+    ret.recordStackEvery = recordFiberStackEvery;
+    return ret;
+  }
 };
 
 inline std::string toString(const folly::IOBuf& buf) {
