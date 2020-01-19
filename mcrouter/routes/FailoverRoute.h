@@ -187,12 +187,12 @@ class FailoverRoute {
       }
     };
 
+    auto policyCtx = failoverPolicy_.context(req);
     auto iter = failoverPolicy_.begin(req);
-    auto normalReply = iter->route(req);
-    uint32_t numErrors = 0;
+    auto normalReply = iter->route(req, policyCtx);
     if (isErrorResult(normalReply.result())) {
       if (!isTkoResult(normalReply.result())) {
-        ++numErrors;
+        ++policyCtx.numTries_;
         proxy.stats().increment(failover_policy_result_error_stat);
       } else {
         proxy.stats().increment(failover_policy_tko_error_stat);
@@ -238,30 +238,31 @@ class FailoverRoute {
                                                    &req,
                                                    &proxy,
                                                    &normalReply,
-                                                   &numErrors,
+                                                   &policyCtx,
                                                    &childIndex,
                                                    &conditionalFailover]() {
       fiber_local<RouterInfo>::setFailoverTag(failoverTagging_);
       fiber_local<RouterInfo>::addRequestClass(RequestClass::kFailover);
-      auto doFailover = [this, &req, &proxy, &normalReply](auto& child) {
-        auto failoverReply = child->route(req);
-        FailoverContext failoverContext(
-            child.getTrueIndex(),
-            targets_.size() - 1,
-            req,
-            normalReply,
-            failoverReply);
-        logFailover(proxy, failoverContext);
-        carbon::setIsFailoverIfPresent(failoverReply, true);
-        if (isErrorResult(failoverReply.result())) {
-          if (!isTkoResult(failoverReply.result())) {
-            proxy.stats().increment(failover_policy_result_error_stat);
-          } else {
-            proxy.stats().increment(failover_policy_tko_error_stat);
-          }
-        }
-        return failoverReply;
-      };
+      auto doFailover =
+          [this, &req, &proxy, &normalReply, &policyCtx](auto& child) {
+            auto failoverReply = child->route(req, policyCtx);
+            FailoverContext failoverContext(
+                child.getTrueIndex(),
+                targets_.size() - 1,
+                req,
+                normalReply,
+                failoverReply);
+            logFailover(proxy, failoverContext);
+            carbon::setIsFailoverIfPresent(failoverReply, true);
+            if (isErrorResult(failoverReply.result())) {
+              if (!isTkoResult(failoverReply.result())) {
+                proxy.stats().increment(failover_policy_result_error_stat);
+              } else {
+                proxy.stats().increment(failover_policy_tko_error_stat);
+              }
+            }
+            return failoverReply;
+          };
 
       auto cur = iter;
       // set the index of the child that generated the reply.
@@ -272,12 +273,12 @@ class FailoverRoute {
 
       ReplyT<Request> failoverReply;
       for (++nx; nx != failoverPolicy_.end(req) &&
-           numErrors < failoverPolicy_.maxErrorTries();
+           policyCtx.numTries_ < failoverPolicy_.maxErrorTries();
            ++cur, ++nx) {
         failoverReply = doFailover(cur);
         if (isErrorResult(failoverReply.result()) &&
             !isTkoResult(failoverReply.result())) {
-          numErrors++;
+          ++policyCtx.numTries_;
         }
         switch (shouldFailover(failoverReply, req)) {
           case FailoverErrorsSettingsBase::FailoverType::NONE:
@@ -291,7 +292,7 @@ class FailoverRoute {
       }
 
       bool allFailed = true;
-      if (numErrors < failoverPolicy_.maxErrorTries()) {
+      if (policyCtx.numTries_ < failoverPolicy_.maxErrorTries()) {
         failoverReply = doFailover(cur);
         if (!isErrorResult(failoverReply.result())) {
           allFailed = false;
