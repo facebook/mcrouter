@@ -192,7 +192,6 @@ class FailoverRoute {
     auto normalReply = iter->route(req, policyCtx);
     if (isErrorResult(normalReply.result())) {
       if (!isTkoResult(normalReply.result())) {
-        ++policyCtx.numTries_;
         proxy.stats().increment(failover_policy_result_error_stat);
       } else {
         proxy.stats().increment(failover_policy_tko_error_stat);
@@ -230,6 +229,11 @@ class FailoverRoute {
         !rateLimiter_->failoverAllowed()) {
       proxy.stats().increment(failover_rate_limited_stat);
       return normalReply;
+    }
+
+    // We didn't do any work for TKO. Don't count it as a try.
+    if (!isTkoResult(normalReply.result())) {
+      ++policyCtx.numTries_;
     }
 
     // Failover
@@ -276,10 +280,6 @@ class FailoverRoute {
            policyCtx.numTries_ < failoverPolicy_.maxErrorTries();
            ++cur, ++nx) {
         failoverReply = doFailover(cur);
-        if (isErrorResult(failoverReply.result()) &&
-            !isTkoResult(failoverReply.result())) {
-          ++policyCtx.numTries_;
-        }
         switch (shouldFailover(failoverReply, req)) {
           case FailoverErrorsSettingsBase::FailoverType::NONE:
             return failoverReply;
@@ -288,6 +288,10 @@ class FailoverRoute {
             break;
           default:
             break;
+        }
+        // We didn't do any work for TKO. Don't count it as a try.
+        if (!isTkoResult(failoverReply.result())) {
+          ++policyCtx.numTries_;
         }
       }
 
