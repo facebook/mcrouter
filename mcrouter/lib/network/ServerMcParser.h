@@ -24,7 +24,7 @@ class ServerMcParser : private McParser::ParserCallback {
   ~ServerMcParser() override;
 
   /**
-   * TAsyncTransport-style getReadBuffer().
+   * AsyncTransport-style getReadBuffer().
    *
    * @return  a buffer pointer and its size that should be safe to read into.
    *

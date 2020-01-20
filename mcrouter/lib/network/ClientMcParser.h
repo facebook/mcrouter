@@ -34,7 +34,7 @@ class ClientMcParser : private McParser::ParserCallback {
       ConnectionFifo* debugFifo = nullptr);
 
   /**
-   * TAsyncTransport-style getReadBuffer().
+   * AsyncTransport-style getReadBuffer().
    *
    * @return  a buffer pointer and its size that should be safe to read into.
    *

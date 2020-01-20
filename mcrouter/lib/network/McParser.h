@@ -87,7 +87,7 @@ class McParser {
   }
 
   /**
-   * TAsyncTransport-style getReadBuffer().
+   * AsyncTransport-style getReadBuffer().
    *
    * Returns a buffer pointer and its size that should be safe
    * to read into.

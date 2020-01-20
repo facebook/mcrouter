@@ -420,7 +420,7 @@ class McServerSession
    */
   void processMultiOpEnd();
 
-  /* TAsyncTransport's readCallback */
+  /* AsyncTransport's readCallback */
   void getReadBuffer(void** bufReturn, size_t* lenReturn) final;
   void readDataAvailable(size_t len) noexcept final;
   void readEOF() noexcept final;
@@ -461,7 +461,7 @@ class McServerSession
 
   void completeWrite();
 
-  /* TAsyncTransport's writeCallback */
+  /* AsyncTransport's writeCallback */
   void writeSuccess() noexcept final;
   void writeErr(
       size_t bytesWritten,

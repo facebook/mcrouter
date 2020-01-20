@@ -70,7 +70,7 @@ class SessionTestHarness {
   /**
    * Get the current list of writes on the socket.
    *
-   * A write is a result of TAsyncTransport::write*().
+   * A write is a result of AsyncTransport::write*().
    *
    * This is stateful: a single write will only be returned by
    * this method once.

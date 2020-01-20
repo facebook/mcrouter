@@ -77,10 +77,10 @@ double ThriftTransportBase::getRetransmitsPerKb() {
   return 0.0;
 }
 
-apache::thrift::async::TAsyncTransport::UniquePtr
+folly::AsyncTransportWrapper::UniquePtr
 ThriftTransportBase::getConnectingSocket() {
   return folly::fibers::runInMainContext(
-      [this]() -> apache::thrift::async::TAsyncTransport::UniquePtr {
+      [this]() -> folly::AsyncTransportWrapper::UniquePtr {
         auto expectedSocket =
             createTAsyncSocket(eventBase_, connectionOptions_);
         if (expectedSocket.hasError()) {

@@ -12,8 +12,6 @@
 #include <folly/io/async/AsyncSocket.h>
 #include <folly/io/async/AsyncTransport.h>
 
-#include <thrift/lib/cpp/async/TAsyncTransport.h>
-
 namespace folly {
 class AsyncSocketException;
 class EventBase;
@@ -48,7 +46,7 @@ createSocket(
  * automatically converted into TAsyncTransportExceptions.
  */
 folly::Expected<
-    apache::thrift::async::TAsyncTransport::UniquePtr,
+    folly::AsyncTransportWrapper::UniquePtr,
     folly::AsyncSocketException>
 createTAsyncSocket(
     folly::EventBase& eventBase,

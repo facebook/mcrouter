@@ -16,10 +16,10 @@
 #include <folly/ScopeGuard.h>
 #include <folly/SocketAddress.h>
 #include <folly/io/async/AsyncSocket.h>
+#include <folly/io/async/AsyncTransport.h>
 
 #include <thrift/lib/cpp/async/TAsyncSSLSocket.h>
 #include <thrift/lib/cpp/async/TAsyncSocket.h>
-#include <thrift/lib/cpp/async/TAsyncTransport.h>
 
 #include "mcrouter/lib/network/McSSLUtil.h"
 
@@ -31,14 +31,13 @@ class SocketAddress;
 namespace facebook {
 namespace memcache {
 
-class AsyncTlsToPlaintextSocket final
-    : public apache::thrift::async::TAsyncTransport {
+class AsyncTlsToPlaintextSocket final : public folly::AsyncTransportWrapper {
  public:
   using Ptr = std::unique_ptr<AsyncTlsToPlaintextSocket, Destructor>;
 
   ~AsyncTlsToPlaintextSocket() override = default;
 
-  static Ptr create(apache::thrift::async::TAsyncTransport::UniquePtr impl) {
+  static Ptr create(folly::AsyncTransportWrapper::UniquePtr impl) {
     return Ptr(new AsyncTlsToPlaintextSocket(std::move(impl)));
   }
 
@@ -193,7 +192,7 @@ class AsyncTlsToPlaintextSocket final
   }
 
  private:
-  apache::thrift::async::TAsyncTransport::UniquePtr impl_;
+  folly::AsyncTransportWrapper::UniquePtr impl_;
   folly::EventBase& evb_;
 
   struct BufferedWrite {
@@ -218,7 +217,7 @@ class AsyncTlsToPlaintextSocket final
       SessionResumptionStatus::RESUMPTION_NOT_ATTEMPTED};
 
   explicit AsyncTlsToPlaintextSocket(
-      apache::thrift::async::TAsyncTransport::UniquePtr impl)
+      folly::AsyncTransportWrapper::UniquePtr impl)
       : impl_(std::move(impl)), evb_(*impl_->getEventBase()) {
     DCHECK(
         dynamic_cast<apache::thrift::async::TAsyncSSLSocket*>(impl_.get()) !=

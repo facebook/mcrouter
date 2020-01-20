@@ -15,7 +15,6 @@
 #include <folly/Range.h>
 #include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/VirtualEventBase.h>
-#include <thrift/lib/cpp/async/TAsyncTransport.h>
 #include <thrift/lib/cpp2/async/RequestCallback.h>
 #include <thrift/lib/cpp2/async/RequestChannel.h>
 #include <thrift/lib/cpp2/async/RocketClientChannel.h>
@@ -125,7 +124,7 @@ class ThriftTransportBase : public Transport,
    * Returns either valid connection (or possibly connected) socket, or nullptr
    * in case of error.
    */
-  apache::thrift::async::TAsyncTransport::UniquePtr getConnectingSocket();
+  folly::AsyncTransportWrapper::UniquePtr getConnectingSocket();
 };
 
 template <class RouterInfo>

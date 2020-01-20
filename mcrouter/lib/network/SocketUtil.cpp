@@ -129,10 +129,7 @@ void createQoSClassOption(
 
 template <bool CreateThriftFriendlySocket>
 folly::Expected<
-    std::conditional_t<
-        CreateThriftFriendlySocket,
-        apache::thrift::async::TAsyncTransport::UniquePtr,
-        folly::AsyncTransportWrapper::UniquePtr>,
+    folly::AsyncTransportWrapper::UniquePtr,
     folly::AsyncSocketException>
 createSocketCommon(
     folly::EventBase& eventBase,
@@ -145,10 +142,7 @@ createSocketCommon(
       CreateThriftFriendlySocket,
       apache::thrift::async::TAsyncSSLSocket,
       folly::AsyncSSLSocket>;
-  using Ptr = std::conditional_t<
-      CreateThriftFriendlySocket,
-      apache::thrift::async::TAsyncTransport::UniquePtr,
-      folly::AsyncTransportWrapper::UniquePtr>;
+  using Ptr = folly::AsyncTransportWrapper::UniquePtr;
 
   Ptr socket;
 
@@ -244,7 +238,7 @@ createSocket(
 }
 
 folly::Expected<
-    apache::thrift::async::TAsyncTransport::UniquePtr,
+    folly::AsyncTransportWrapper::UniquePtr,
     folly::AsyncSocketException>
 createTAsyncSocket(
     folly::EventBase& eventBase,

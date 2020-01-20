@@ -23,7 +23,7 @@ class MockAsyncSocket : public folly::AsyncTransportWrapper {
  public:
   explicit MockAsyncSocket(SessionTestHarness& harness) : harness_(harness) {}
 
-  // Methods inherited from TAsyncTransport
+  // Methods inherited from AsyncTransportWrapper
   void setReadCB(
       folly::AsyncTransportWrapper::ReadCallback* callback) override {
     harness_.setReadCallback(callback);
