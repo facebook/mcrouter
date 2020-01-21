@@ -84,28 +84,28 @@ class TestDeterministicFailoverAllSleepServers(McrouterTestCase):
                 self.assertEqual(int(stats["failover_policy_tko_error"]), 1)
             elif i == 2:
                 self.assertEqual(int(stats["failover_policy_result_error"]), 9)
-                self.assertEqual(int(stats["failover_policy_tko_error"]), 5)
+                self.assertEqual(int(stats["failover_policy_tko_error"]), 4)
             elif i == 3:
                 self.assertEqual(int(stats["failover_policy_result_error"]), 12)
-                self.assertEqual(int(stats["failover_policy_tko_error"]), 11)
+                self.assertEqual(int(stats["failover_policy_tko_error"]), 9)
             elif i == 4:
                 self.assertEqual(int(stats["failover_policy_result_error"]), 14)
-                self.assertEqual(int(stats["failover_policy_tko_error"]), 19)
+                self.assertEqual(int(stats["failover_policy_tko_error"]), 17)
             elif i == 5:
                 self.assertEqual(int(stats["failover_policy_result_error"]), 15)
-                self.assertEqual(int(stats["failover_policy_tko_error"]), 28)
+                self.assertEqual(int(stats["failover_policy_tko_error"]), 26)
             elif i == 6:
                 self.assertEqual(int(stats["failover_policy_result_error"]), 15)
-                self.assertEqual(int(stats["failover_policy_tko_error"]), 38)
+                self.assertEqual(int(stats["failover_policy_tko_error"]), 36)
             elif i == 7:
                 self.assertEqual(int(stats["failover_policy_result_error"]), 16)
-                self.assertEqual(int(stats["failover_policy_tko_error"]), 47)
+                self.assertEqual(int(stats["failover_policy_tko_error"]), 45)
             elif i == 8:
                 self.assertEqual(int(stats["failover_policy_result_error"]), 16)
-                self.assertEqual(int(stats["failover_policy_tko_error"]), 57)
+                self.assertEqual(int(stats["failover_policy_tko_error"]), 55)
             elif i == 9:
                 self.assertEqual(int(stats["failover_policy_result_error"]), 17)
-                self.assertEqual(int(stats["failover_policy_tko_error"]), 66)
+                self.assertEqual(int(stats["failover_policy_tko_error"]), 64)
             self.assertEqual(int(stats["failover_all_failed"]), i + 1)
 
 
@@ -141,44 +141,44 @@ class TestDeterministicFailoverAllSleepServersSamePool(McrouterTestCase):
             # The progression of result errors and tko errors show how well the
             if i == 0:
                 self.assertEqual(int(stats["failover_policy_result_error"]), 3)
-                self.assertEqual(int(stats["failover_policy_tko_error"]), 1)
-                self.assertEqual(int(stats["failover_num_collisions"]), 1)
+                self.assertEqual(int(stats["failover_policy_tko_error"]), 0)
+                self.assertEqual(int(stats["failover_num_collisions"]), 2)
             elif i == 1:
                 self.assertEqual(int(stats["failover_policy_result_error"]), 6)
-                self.assertEqual(int(stats["failover_policy_tko_error"]), 1)
-                self.assertEqual(int(stats["failover_num_collisions"]), 2)
+                self.assertEqual(int(stats["failover_policy_tko_error"]), 0)
+                self.assertEqual(int(stats["failover_num_collisions"]), 4)
             elif i == 2:
                 self.assertEqual(int(stats["failover_policy_result_error"]), 9)
-                self.assertEqual(int(stats["failover_policy_tko_error"]), 2)
-                self.assertEqual(int(stats["failover_num_collisions"]), 2)
+                self.assertEqual(int(stats["failover_policy_tko_error"]), 1)
+                self.assertEqual(int(stats["failover_num_collisions"]), 4)
             elif i == 3:
                 self.assertEqual(int(stats["failover_policy_result_error"]), 12)
-                self.assertEqual(int(stats["failover_policy_tko_error"]), 5)
-                self.assertEqual(int(stats["failover_num_collisions"]), 2)
+                self.assertEqual(int(stats["failover_policy_tko_error"]), 3)
+                self.assertEqual(int(stats["failover_num_collisions"]), 5)
             elif i == 4:
                 self.assertEqual(int(stats["failover_policy_result_error"]), 15)
-                self.assertEqual(int(stats["failover_policy_tko_error"]), 10)
-                self.assertEqual(int(stats["failover_num_collisions"]), 5)
+                self.assertEqual(int(stats["failover_policy_tko_error"]), 8)
+                self.assertEqual(int(stats["failover_num_collisions"]), 8)
             elif i == 5:
                 self.assertEqual(int(stats["failover_policy_result_error"]), 18)
-                self.assertEqual(int(stats["failover_policy_tko_error"]), 12)
-                self.assertEqual(int(stats["failover_num_collisions"]), 5)
+                self.assertEqual(int(stats["failover_policy_tko_error"]), 10)
+                self.assertEqual(int(stats["failover_num_collisions"]), 8)
             elif i == 6:
                 self.assertEqual(int(stats["failover_policy_result_error"]), 21)
-                self.assertEqual(int(stats["failover_policy_tko_error"]), 20)
-                self.assertEqual(int(stats["failover_num_collisions"]), 7)
+                self.assertEqual(int(stats["failover_policy_tko_error"]), 17)
+                self.assertEqual(int(stats["failover_num_collisions"]), 11)
             elif i == 7:
                 self.assertEqual(int(stats["failover_policy_result_error"]), 21)
-                self.assertEqual(int(stats["failover_policy_tko_error"]), 32)
-                self.assertEqual(int(stats["failover_num_collisions"]), 12)
+                self.assertEqual(int(stats["failover_policy_tko_error"]), 29)
+                self.assertEqual(int(stats["failover_num_collisions"]), 17)
             elif i == 8:
                 self.assertEqual(int(stats["failover_policy_result_error"]), 23)
-                self.assertEqual(int(stats["failover_policy_tko_error"]), 42)
-                self.assertEqual(int(stats["failover_num_collisions"]), 18)
+                self.assertEqual(int(stats["failover_policy_tko_error"]), 39)
+                self.assertEqual(int(stats["failover_num_collisions"]), 26)
             elif i == 9:
                 self.assertEqual(int(stats["failover_policy_result_error"]), 23)
-                self.assertEqual(int(stats["failover_policy_tko_error"]), 54)
-                self.assertEqual(int(stats["failover_num_collisions"]), 20)
+                self.assertEqual(int(stats["failover_policy_tko_error"]), 51)
+                self.assertEqual(int(stats["failover_num_collisions"]), 29)
             self.assertEqual(int(stats["failover_all_failed"]), i + 1)
 
 
@@ -236,13 +236,13 @@ class TestDeterministicFailoverAllSleepServersSharedConfig(McrouterTestCase):
             elif i == 5:
                 self.assertEqual(int(stats["failover_policy_result_error"]), 18)
                 self.assertEqual(int(stats["failover_policy_tko_error"]), 10)
-                self.assertEqual(int(stats["failover_num_collisions"]), 5)
+                self.assertEqual(int(stats["failover_num_collisions"]), 7)
             elif i == 6:
                 self.assertEqual(int(stats["failover_policy_result_error"]), 21)
                 self.assertEqual(int(stats["failover_policy_tko_error"]), 18)
-                self.assertEqual(int(stats["failover_num_collisions"]), 7)
+                self.assertEqual(int(stats["failover_num_collisions"]), 10)
             elif i == 7:
                 self.assertEqual(int(stats["failover_policy_result_error"]), 21)
                 self.assertEqual(int(stats["failover_policy_tko_error"]), 30)
-                self.assertEqual(int(stats["failover_num_collisions"]), 12)
+                self.assertEqual(int(stats["failover_num_collisions"]), 15)
             self.assertEqual(int(stats["failover_all_failed"]), i + 1)

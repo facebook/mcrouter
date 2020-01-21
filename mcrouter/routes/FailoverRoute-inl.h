@@ -189,8 +189,9 @@ makeFailoverRouteWithFailoverErrorSettings(
           std::forward<Args>(args)...);
     } else if (
         parseString(*jPolicyType, "type") == "DeterministicOrderPolicy") {
-      using FailoverPolicyT =
-          FailoverDeterministicOrderPolicy<typename RouterInfo::RouteHandleIf>;
+      using FailoverPolicyT = FailoverDeterministicOrderPolicy<
+          typename RouterInfo::RouteHandleIf,
+          RouterInfo>;
       folly::dynamic newFailoverPolicy = *jFailoverPolicy;
       if (auto jHash = json.get_ptr("hash")) {
         newFailoverPolicy.insert("hash", *jHash);
@@ -259,6 +260,6 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRouteDefault(
       std::forward<Args>(args)...);
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

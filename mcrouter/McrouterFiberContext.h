@@ -60,6 +60,7 @@ class fiber_local {
     RequestClass requestClass;
     bool failoverTag{false};
     bool failoverDisabled{false};
+    int32_t selectedIndex{-1};
   };
 
  public:
@@ -172,6 +173,21 @@ class fiber_local {
   }
 
   /**
+   * Set selected index for normal reply from the target_ list.
+   * it will be used for the iterator to avoid getting duplicates
+   */
+  static void setSelectedIndex(int32_t value) {
+    folly::fibers::local<McrouterFiberContext>().selectedIndex = value;
+  }
+
+  /**
+   * Get selected index for normal reply
+   */
+  static int32_t getSelectedIndex() {
+    return folly::fibers::local<McrouterFiberContext>().selectedIndex;
+  }
+
+  /**
    * Set failover disabled flag for current fiber (thread, if we're not on
    * fiber)
    */
@@ -195,6 +211,6 @@ class fiber_local {
   }
 };
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

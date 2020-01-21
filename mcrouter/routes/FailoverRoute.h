@@ -77,9 +77,23 @@ class FailoverRoute {
       const Request& req,
       const RouteHandleTraverser<RouteHandleIf>& t) const {
     if (fiber_local<RouterInfo>::getFailoverDisabled()) {
-      return t(*targets_[0], req);
+      return t(*targets_[0], req); // normal route
     }
-    return t(targets_, req);
+    auto iter = failoverPolicy_.cbegin(req);
+    // normal route
+    // This must be called here so that selectedIndex is set and the failover
+    // iterator below does not select the index from normal route.
+    if (t(*targets_[0], req)) {
+      return true;
+    }
+    std::vector<std::shared_ptr<RouteHandleIf>> failovers;
+    ++iter;
+    while (iter != failoverPolicy_.cend(req)) {
+      std::shared_ptr<RouteHandleIf> rh = targets_[iter.getTrueIndex()];
+      failovers.push_back(rh);
+      ++iter;
+    }
+    return t(failovers, req);
   }
 
   FailoverRoute(

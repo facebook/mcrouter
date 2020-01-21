@@ -58,13 +58,13 @@ class FailoverInOrderPolicy {
   };
 
   template <class Request>
-  class Iterator : public boost::iterator_facade<
-                       Iterator<Request>,
-                       ChildProxy,
-                       std::forward_iterator_tag,
-                       ChildProxy> {
+  class Iter : public boost::iterator_facade<
+                   Iter<Request>,
+                   ChildProxy,
+                   std::forward_iterator_tag,
+                   ChildProxy> {
    public:
-    Iterator(const std::vector<RouteHandlePtr>& children, size_t id)
+    Iter(const std::vector<RouteHandlePtr>& children, size_t id)
         : children_(children), id_(id) {
       assert(children_.size() > 1);
     }
@@ -82,7 +82,7 @@ class FailoverInOrderPolicy {
       ++id_;
     }
 
-    bool equal(const Iterator<Request>& other) const {
+    bool equal(const Iter<Request>& other) const {
       return id_ == other.id_;
     }
 
@@ -95,6 +95,20 @@ class FailoverInOrderPolicy {
     const std::vector<RouteHandlePtr>& children_;
     size_t id_;
   };
+  template <class Request>
+  using Iterator = Iter<Request>;
+  template <class Request>
+  using ConstIterator = Iter<Request const>;
+
+  template <class Request>
+  ConstIterator<Request> cbegin(Request&) const {
+    return ConstIterator<Request>(children_, 0);
+  }
+
+  template <class Request>
+  ConstIterator<Request> cend(Request&) const {
+    return ConstIterator<Request>(children_, children_.size());
+  }
 
   uint32_t maxErrorTries() const {
     return std::numeric_limits<uint32_t>::max();
@@ -129,7 +143,7 @@ class FailoverInOrderPolicy {
   const std::vector<RouteHandlePtr>& children_;
 };
 
-template <typename RouteHandleIf>
+template <typename RouteHandleIf, typename RouterInfo>
 class FailoverDeterministicOrderPolicy {
  public:
   static constexpr bool optimizeNoFailoverRouteCase = true;
@@ -206,17 +220,17 @@ class FailoverDeterministicOrderPolicy {
     RouteHandlePtr child_;
   };
 
-  template <class Request>
-  class Iterator : public boost::iterator_facade<
-                       Iterator<Request>,
-                       ChildProxy,
-                       std::forward_iterator_tag,
-                       ChildProxy> {
+  template <class Request, class Policy, class Config, class StringLoc>
+  class Iter : public boost::iterator_facade<
+                   Iter<Request, Policy, Config, StringLoc>,
+                   ChildProxy,
+                   std::forward_iterator_tag,
+                   ChildProxy> {
    public:
-    Iterator(
-        FailoverDeterministicOrderPolicy<RouteHandleIf>& failoverPolicy,
-        folly::dynamic config,
-        std::string funcType,
+    Iter(
+        Policy& failoverPolicy,
+        Config config,
+        StringLoc funcType,
         uint32_t salt,
         uint32_t id,
         Request& req)
@@ -244,6 +258,15 @@ class FailoverDeterministicOrderPolicy {
       uint32_t numAttempts = 0;
       auto nChildren = policy_.children_.size();
       constexpr uint32_t maxAttempts = 100;
+      if (index_ == 0) {
+        int32_t normal_reply_index =
+            mcrouter::fiber_local<RouterInfo>::getSelectedIndex();
+        if (normal_reply_index >= 0) {
+          // Skip the destination selected by normal route by adding the
+          // index of the normal route destination to usedIndexes.
+          usedIndexes_.set(normal_reply_index + 1);
+        }
+      }
       do {
         salt_++;
         // For now only Ch3Hash, and WeightedCh3Hash are supported
@@ -266,7 +289,7 @@ class FailoverDeterministicOrderPolicy {
       ++id_;
     }
 
-    bool equal(const Iterator<Request>& other) const {
+    bool equal(const Iter<Request, Policy, Config, StringLoc>& other) const {
       return id_ == other.id_;
     }
 
@@ -275,11 +298,11 @@ class FailoverDeterministicOrderPolicy {
     }
 
     friend class boost::iterator_core_access;
-    FailoverDeterministicOrderPolicy<RouteHandleIf>& policy_;
-    std::string funcType_;
+    Policy& policy_;
+    StringLoc funcType_;
     uint32_t salt_{0};
-    folly::dynamic config_;
-    size_t id_{0};
+    Config config_;
+    uint32_t id_{0};
     const Request& req_;
     uint32_t collisions_{0};
     // usedIndexes_ is used to keep track of indexes that have already been
@@ -288,6 +311,18 @@ class FailoverDeterministicOrderPolicy {
     boost::dynamic_bitset<> usedIndexes_;
     size_t index_;
   };
+  template <class Request>
+  using Iterator = Iter<
+      Request,
+      FailoverDeterministicOrderPolicy<RouteHandleIf, RouterInfo>,
+      folly::dynamic,
+      std::string>;
+  template <class Request>
+  using ConstIterator = Iter<
+      Request const,
+      FailoverDeterministicOrderPolicy<RouteHandleIf, RouterInfo> const,
+      folly::dynamic const,
+      std::string const>;
 
   template <class Request>
   Iterator<Request> begin(Request& req) {
@@ -297,6 +332,17 @@ class FailoverDeterministicOrderPolicy {
   template <class Request>
   Iterator<Request> end(Request& req) {
     return Iterator<Request>(*this, config_, funcType_, salt_, maxTries_, req);
+  }
+
+  template <class Request>
+  ConstIterator<Request> cbegin(Request& req) const {
+    return ConstIterator<Request>(*this, config_, funcType_, salt_, 0, req);
+  }
+
+  template <class Request>
+  ConstIterator<Request> cend(Request& req) const {
+    return ConstIterator<Request>(
+        *this, config_, funcType_, salt_, maxTries_, req);
   }
 
   uint32_t maxErrorTries() const {
@@ -369,16 +415,14 @@ class FailoverLeastFailuresPolicy {
     size_t index_;
   };
 
-  template <class Request>
-  class Iterator : public boost::iterator_facade<
-                       Iterator<Request>,
-                       ChildProxy,
-                       std::forward_iterator_tag,
-                       ChildProxy> {
+  template <class Request, class Policy>
+  class Iter : public boost::iterator_facade<
+                   Iter<Request, Policy>,
+                   ChildProxy,
+                   std::forward_iterator_tag,
+                   ChildProxy> {
    public:
-    Iterator(
-        FailoverLeastFailuresPolicy<RouteHandleIf>& failoverPolicy,
-        size_t id)
+    Iter(Policy& failoverPolicy, size_t id)
         : policy_(failoverPolicy), id_(id) {}
 
     size_t getTrueIndex() const {
@@ -397,7 +441,7 @@ class FailoverLeastFailuresPolicy {
       ++id_;
     }
 
-    bool equal(const Iterator<Request>& other) const {
+    bool equal(const Iter<Request, Policy>& other) const {
       return id_ == other.id_;
     }
 
@@ -407,10 +451,26 @@ class FailoverLeastFailuresPolicy {
 
     friend class boost::iterator_core_access;
 
-    FailoverLeastFailuresPolicy<RouteHandleIf>& policy_;
+    Policy& policy_;
     std::vector<size_t> order_;
     size_t id_;
   };
+
+  template <class Request>
+  using Iterator = Iter<Request, FailoverLeastFailuresPolicy<RouteHandleIf>>;
+  template <class Request>
+  using ConstIterator =
+      Iter<Request const, FailoverLeastFailuresPolicy<RouteHandleIf> const>;
+
+  template <class Request>
+  ConstIterator<Request> cbegin(Request&) const {
+    return ConstIterator<Request>(*this, 0);
+  }
+
+  template <class Request>
+  ConstIterator<Request> cend(Request&) const {
+    return ConstIterator<Request>(*this, maxTries_);
+  }
 
   uint32_t maxErrorTries() const {
     return std::numeric_limits<uint32_t>::max();
