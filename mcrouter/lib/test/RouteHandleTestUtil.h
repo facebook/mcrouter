@@ -146,6 +146,8 @@ struct TestHandleImpl {
 
   std::vector<std::string> sawShadowIds;
 
+  std::vector<uint64_t> sawFlags;
+
   bool isTko;
 
   bool isPaused;
@@ -321,6 +323,7 @@ struct RecordingRoute {
     h_->saw_keys.push_back(req.key().fullKey().str());
     h_->sawOperations.push_back(Request::name);
     h_->sawExptimes.push_back(req.exptime());
+    h_->sawFlags.push_back(req.flags());
     recordShadowId(req);
     if (carbon::GetLike<Request>::value) {
       reply.result() = h_->resultGenerator_.hasValue()
