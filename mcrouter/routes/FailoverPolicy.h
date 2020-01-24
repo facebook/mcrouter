@@ -189,7 +189,8 @@ class FailoverDeterministicOrderPolicy {
               std::to_string(salt_) == jsalt->asString(),
               "Failover: DeterministicOrderPolicy:salt should be integer string");
         } catch (const std::exception&) {
-          LOG(WARNING) << "salt is not integer, using 1 for salt";
+          LOG(WARNING) << "salt (" << jsalt->asString()
+                       << ") is not integer, using 1 for salt";
           salt_ = 1; // default known value for deterministic behavior
         }
       } else {
