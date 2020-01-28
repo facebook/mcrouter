@@ -240,6 +240,7 @@ class FailoverRoute {
     proxy.stats().increment(failoverPolicy_.getFailoverStat());
 
     if (rateLimiter_ && !isTkoResult(normalReply.result()) &&
+        !isHardTkoErrorResult(normalReply.result()) &&
         !rateLimiter_->failoverAllowed()) {
       proxy.stats().increment(failover_rate_limited_stat);
       return normalReply;
@@ -302,6 +303,12 @@ class FailoverRoute {
             break;
           default:
             break;
+        }
+        if (rateLimiter_ && !isTkoResult(failoverReply.result()) &&
+            !isHardTkoErrorResult(failoverReply.result()) &&
+            !rateLimiter_->failoverAllowed()) {
+          proxy.stats().increment(failover_rate_limited_stat);
+          return failoverReply;
         }
         // We didn't do any work for TKO. Don't count it as a try.
         if (!isTkoResult(failoverReply.result())) {

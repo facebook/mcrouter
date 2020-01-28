@@ -9,6 +9,8 @@ import time
 
 from mcrouter.test.MCProcess import Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
+from mcrouter.test.mock_servers import SleepServer
+from mcrouter.test.mock_servers import ConnectionErrorServer
 
 
 class TestDevNull(McrouterTestCase):
@@ -447,3 +449,96 @@ class TestFailoverWithLimit(McrouterTestCase):
             for _ in range(4):
                 self.assertIsNone(mcr.get('key'))
             self.assertEqual(mcr.get('key'), 'value.gut')
+
+
+# this test behaves exactly like TestFailoverWithLimit test above because
+# TKO errors are ignored in the ratelim calcualtions
+class TestFailoverWithLimitWithTKO(McrouterTestCase):
+    config = './mcrouter/test/test_failover_limit_error.json'
+    extra_args = ['--timeouts-until-tko', '5']
+
+    def setUp(self):
+        self.gutA = self.add_server(ConnectionErrorServer())
+        self.gutB = self.add_server(ConnectionErrorServer())
+        self.gutC = self.add_server(Memcached())
+
+    def get_mcrouter(self):
+        return self.add_mcrouter(self.config, extra_args=self.extra_args)
+
+    def test_failover_limit(self):
+        mcr = self.get_mcrouter()
+
+        self.assertTrue(mcr.set('key', 'value.gut'))
+        for _ in range(11):
+            self.assertEqual(mcr.get('key'), 'value.gut')
+        # now every 5th request should succeed
+        for _ in range(10):
+            for _ in range(4):
+                self.assertIsNone(mcr.get('key'))
+            self.assertEqual(mcr.get('key'), 'value.gut')
+
+
+# Create two sleep servers which generates timeout errors
+class TestFailoverWithLimitWithErrors(McrouterTestCase):
+    config = './mcrouter/test/test_failover_limit_error.json'
+    extra_args = ['--timeouts-until-tko', '5']
+
+    def setUp(self):
+        self.gutA = self.add_server(SleepServer())
+        self.gutB = self.add_server(SleepServer())
+        self.gutC = self.add_server(Memcached())
+
+    def get_mcrouter(self):
+        return self.add_mcrouter(self.config, extra_args=self.extra_args)
+
+    def test_failover_limit(self):
+        mcr = self.get_mcrouter()
+
+        # Each operation takes 3 token because first two tries would
+        # fail due to timeout errors. So only 3 (one set and two get
+        # operations would succeed before rate limiting kicks in)
+        self.assertTrue(mcr.set('key', 'value.gut'))
+        for _ in range(2):
+            self.assertEqual(mcr.get('key'), 'value.gut')
+
+        # all subsequest requests would fail until timeouts become
+        # as TKOs
+        for _ in range(18):
+            self.assertIsNone(mcr.get('key'))
+
+        # From here it should behave like the testcase above because
+        # all destinations are declared TKO and ratelimiting is not
+        # applicable to those
+        for _ in range(10):
+            self.assertEqual(mcr.get('key'), 'value.gut')
+            for _ in range(4):
+                self.assertIsNone(mcr.get('key'))
+
+
+class TestFailoverWithLimitWithTKOAndErrors(McrouterTestCase):
+    config = './mcrouter/test/test_failover_limit_error.json'
+    extra_args = ['--timeouts-until-tko', '5']
+
+    def setUp(self):
+        self.gutA = self.add_server(SleepServer())
+        self.gutB = self.add_server(ConnectionErrorServer())
+        self.gutC = self.add_server(Memcached())
+
+    def get_mcrouter(self):
+        return self.add_mcrouter(self.config, extra_args=self.extra_args)
+
+    def test_failover_limit(self):
+        mcr = self.get_mcrouter()
+
+        self.assertTrue(mcr.set('key', 'value.gut'))
+        # Each operation takes 3 token because first two tries would
+        # fail due to timeout errors. So only 5 (one set and two get
+        # operations would succeed before rate limiting kicks in)
+        for _ in range(4):
+            self.assertEqual(mcr.get('key'), 'value.gut')
+        self.assertIsNone(mcr.get('key'))
+        # All dests are TKO now, so now every 5th request should succeed
+        for _ in range(10):
+            self.assertEqual(mcr.get('key'), 'value.gut')
+            for _ in range(4):
+                self.assertIsNone(mcr.get('key'))
