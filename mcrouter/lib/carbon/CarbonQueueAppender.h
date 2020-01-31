@@ -26,7 +26,7 @@ namespace carbon {
 class CarbonQueueAppenderStorage {
  public:
   CarbonQueueAppenderStorage() {
-    iovs_[0] = {embeddedStorage_.data(), 0};
+    iovs_[0] = {storage_, 0};
   }
 
   CarbonQueueAppenderStorage(const CarbonQueueAppenderStorage&) = delete;
@@ -37,7 +37,7 @@ class CarbonQueueAppenderStorage {
     // IOBuf copy is a very expensive procedure (64 bytes object + atomic
     // operation), avoid incuring that cost for small buffers.
     if (!buf.empty() && !buf.isChained() && buf.length() <= kInlineIOBufLen &&
-        storageIdx_ + buf.length() <= sizeOfStorage()) {
+        storageIdx_ + buf.length() <= sizeof(storage_)) {
       push(buf.data(), buf.length());
       return;
     }
@@ -50,7 +50,7 @@ class CarbonQueueAppenderStorage {
 
     assert(nIovsUsed_ < kMaxIovecs);
 
-    struct iovec* nextIov = iovs_.data() + nIovsUsed_;
+    struct iovec* nextIov = iovs_ + nIovsUsed_;
     const auto nFilled =
         buf.fillIov(nextIov, kMaxIovecs - nIovsUsed_).numIovecs;
 
@@ -78,37 +78,38 @@ class CarbonQueueAppenderStorage {
   }
 
   void push(const uint8_t* buf, size_t len) {
-    if (storageIdx_ + len > sizeOfStorage()) {
-      growStorage(len);
-    }
-
     if (nIovsUsed_ == kMaxIovecs) {
       // In this case, it would be possible to use the last iovec if
       // canUsePreviousIov_ is true, but we simplify logic by foregoing this
       // optimization.
       coalesce();
     }
+
     assert(nIovsUsed_ < kMaxIovecs);
 
-    if (!canUsePreviousIov_) {
-      // Note, we will be updating iov_len once we're done with this iovec,
-      // i.e. in finalizeLastIovec()
-      iovs_[nIovsUsed_++].iov_base = &storage()[storageIdx_];
+    if (storageIdx_ + len <= sizeof(storage_)) {
+      if (!canUsePreviousIov_) {
+        // Note, we will be updating iov_len once we're done with this iovec,
+        // i.e. in finalizeLastIovec()
+        iovs_[nIovsUsed_++].iov_base = &storage_[storageIdx_];
 
-      // If the next push() comes before the next append(), and if we still
-      // have room left in storage,  then we can just extend the last iovec
-      // used since we will write to storage where we left off.
-      canUsePreviousIov_ = true;
+        // If the next push() comes before the next append(), and if we still
+        // have room left in storage_,  then we can just extend the last iovec
+        // used since we will write to storage_ where we left off.
+        canUsePreviousIov_ = true;
+      }
+
+      std::memcpy(&storage_[storageIdx_], buf, len);
+      storageIdx_ += len;
+    } else {
+      appendNoInline(folly::IOBuf(folly::IOBuf::COPY_BUFFER, buf, len));
     }
-
-    std::memcpy(&storage()[storageIdx_], buf, len);
-    storageIdx_ += len;
   }
 
   void coalesce();
 
   bool setFullBuffer(const folly::IOBuf& buf) {
-    struct iovec* nextIov = iovs_.data() + nIovsUsed_;
+    struct iovec* nextIov = iovs_ + nIovsUsed_;
     const auto nFilled =
         buf.fillIov(nextIov, kMaxIovecs - nIovsUsed_).numIovecs;
 
@@ -122,10 +123,9 @@ class CarbonQueueAppenderStorage {
   void reset() {
     storageIdx_ = kMaxHeaderLength;
     head_.clear();
-    iobufStorage_.reset();
     // Reserve first element of iovs_ for header, which won't be filled in
     // until after body data is serialized.
-    iovs_[0] = {embeddedStorage_.data(), 0};
+    iovs_[0] = {storage_, 0};
     nIovsUsed_ = 1;
     canUsePreviousIov_ = false;
     headerOverlap_ = 0;
@@ -134,23 +134,8 @@ class CarbonQueueAppenderStorage {
 
   std::pair<const struct iovec*, size_t> getIovecs() {
     finalizeLastIovec();
-
-    // First iovec optimization. Merge header into first iovec if currently
-    // using the embedded storage, and have headroom available.
-    if (nIovsUsed_ > 1 &&
-        iovs_[1].iov_base == (embeddedStorage_.data() + kMaxHeaderLength)) {
-      auto headerSize = iovs_[0].iov_len;
-      iovs_[1].iov_base =
-          embeddedStorage_.data() + (kMaxHeaderLength - headerSize);
-      memmove(iovs_[1].iov_base, embeddedStorage_.data(), headerSize);
-      iovs_[1].iov_len += headerSize;
-      iovs_[0].iov_len = 0;
-      headerOverlap_ = headerSize;
-    }
-
-    return iovs_[0].iov_len == 0
-        ? std::make_pair(iovs_.data() + 1, nIovsUsed_ - 1)
-        : std::make_pair(iovs_.data(), nIovsUsed_);
+    return iovs_[0].iov_len == 0 ? std::make_pair(iovs_ + 1, nIovsUsed_ - 1)
+                                 : std::make_pair(iovs_, nIovsUsed_);
   }
 
   size_t computeBodySize() {
@@ -163,16 +148,25 @@ class CarbonQueueAppenderStorage {
     return bodySize - headerOverlap_;
   }
 
-  // Hack: we expose header buffer so users can write directly to it.
+  // Hack: we expose headerBuf_ so users can write directly to it.
   // It is the responsibility of the user to report how much data was written
   // via reportHeaderSize().
   uint8_t* getHeaderBuf() {
-    assert(iovs_[0].iov_base == embeddedStorage_.data());
-    return embeddedStorage_.data();
+    assert(iovs_[0].iov_base == storage_);
+    return storage_;
   }
 
   void reportHeaderSize(size_t headerSize) {
-    iovs_[0].iov_len = headerSize;
+    // First iovec optimization.
+    if (nIovsUsed_ > 1 && iovs_[1].iov_base == storage_ + kMaxHeaderLength) {
+      iovs_[1].iov_base = storage_ + (kMaxHeaderLength - headerSize);
+      memmove(iovs_[1].iov_base, storage_, headerSize);
+      iovs_[1].iov_len += headerSize;
+      iovs_[0].iov_len = 0;
+      headerOverlap_ = headerSize;
+    } else {
+      iovs_[0].iov_len = headerSize;
+    }
   }
 
   // If an IOBuf exceeds this size threshold, zero copy will be enabled
@@ -187,7 +181,6 @@ class CarbonQueueAppenderStorage {
  private:
   static constexpr size_t kMaxIovecs{32};
   static constexpr size_t kInlineIOBufLen{128};
-  static constexpr size_t kInitMsgStoreLen{512};
 
   static constexpr size_t kMaxAdditionalFields = 6;
   static constexpr size_t kMaxHeaderLength = 1 /* magic byte */ +
@@ -197,7 +190,6 @@ class CarbonQueueAppenderStorage {
           folly::kMaxVarintLength64; /* key and value for additional fields */
 
   size_t storageIdx_{kMaxHeaderLength};
-  size_t lastStorageSize_{kInitMsgStoreLen};
   size_t nIovsUsed_{1};
   size_t headerOverlap_{0};
   bool canUsePreviousIov_{false};
@@ -205,85 +197,25 @@ class CarbonQueueAppenderStorage {
   size_t tcpZeroCopyThreshold_{0};
 
   // Buffer used for non-IOBuf data, e.g., ints, strings, and protocol
-  // data. The buffer can be a static small buffer embeded in here (i.e.
-  // embeddedStorage) or a dynamically allocated buffer which grows as needed
-  // (i.e. iobufStorage_).
-  //
-  // The appender provide two interfaces: push & append. Push accept a pointer
-  // and length and can utilize these storage buffers while building iovecs.
-  // Append accepts an IOBuf and is placed directly into a new iovec using
-  // the fillIov method.
-  //
-  // It is possible for multiple iovecs to point into a storage buffer in
-  // case the buffer has more space, and push() calls are intermingled with
-  // append() calls.
-  std::array<uint8_t, kInitMsgStoreLen + kMaxHeaderLength> embeddedStorage_;
-
-  // Once static embded storage runs out extend the storage with dynamically
-  // growing iobuf(s). This is especially important for very large message body
-  // which is composed over many small push() calls. (e.g. large vector)
-  std::unique_ptr<folly::IOBuf> iobufStorage_;
+  // data
+  uint8_t storage_[512 + kMaxHeaderLength];
 
   // The first iovec in iovs_ points to Caret message header data, and nothing
   // else. The remaining iovecs are used for the message body. Note that we do
   // not share iovs_[0] with body data, even if it would be possible, e.g., we
   // do not append the CT_STRUCT (struct beginning delimiter) to iovs_[0].
-  std::array<struct iovec, kMaxIovecs> iovs_;
+  struct iovec iovs_[kMaxIovecs];
 
   // Chain of IOBufs used for IOBuf fields, like key and value. Note that we
   // also maintain views into this data via iovs_.
   folly::Optional<folly::IOBuf> head_;
-
-  void growStorage(size_t len) {
-    // Switching over to new storage, finalize current iovec used.
-    finalizeLastIovec();
-    canUsePreviousIov_ = false;
-
-    // We ran out of size before, so start with at least 2x the previous size.
-    do {
-      lastStorageSize_ = lastStorageSize_ * 2;
-    } while (lastStorageSize_ < len);
-
-    auto buf = folly::IOBuf::createCombined(lastStorageSize_);
-    if (!iobufStorage_) {
-      iobufStorage_ = std::move(buf);
-    } else {
-      iobufStorage_->prependChain(std::move(buf));
-    }
-
-    resetStorageIdx();
-  }
-
-  std::size_t sizeOfStorage() {
-    if (iobufStorage_) {
-      assert(iobufStorage_->prev()->capacity() >= lastStorageSize_);
-      return lastStorageSize_;
-    }
-    return sizeof(embeddedStorage_);
-  }
-
-  uint8_t* storage() {
-    if (iobufStorage_) {
-      return const_cast<uint8_t*>(iobufStorage_->prev()->data());
-    }
-    return embeddedStorage_.data();
-  }
-
-  void resetStorageIdx() {
-    storageIdx_ = kMaxHeaderLength;
-    if (iobufStorage_) {
-      // We aren't merging the header into dynamic storage, so index can point
-      // to the first byte.
-      storageIdx_ = 0;
-    }
-  }
 
   FOLLY_NOINLINE void appendNoInline(const folly::IOBuf& buf) {
     append(buf);
   }
 
   FOLLY_NOINLINE void appendSlow(const folly::IOBuf& buf) {
-    struct iovec* nextIov = iovs_.data() + nIovsUsed_;
+    struct iovec* nextIov = iovs_ + nIovsUsed_;
     auto bufCopy = buf;
     bufCopy.coalesce();
     const auto nFilledRetry =
@@ -302,7 +234,7 @@ class CarbonQueueAppenderStorage {
     if (canUsePreviousIov_) {
       auto& iov = iovs_[nIovsUsed_ - 1];
       iov.iov_len =
-          &storage()[storageIdx_] - static_cast<const uint8_t*>(iov.iov_base);
+          &storage_[storageIdx_] - static_cast<const uint8_t*>(iov.iov_base);
     }
   }
 };

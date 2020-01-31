@@ -19,11 +19,10 @@ void CarbonQueueAppenderStorage::coalesce() {
 
   canUsePreviousIov_ = false;
   nIovsUsed_ = 1; // headerBuf_ always considered used
-  resetStorageIdx();
+  storageIdx_ = kMaxHeaderLength;
 
   size_t newCapacity = 0;
   // coalesce() should always be triggered before writing header
-  assert(headerOverlap_ == 0 && iovs_[0].iov_len == 0);
   for (size_t i = 1; i < kMaxIovecs; ++i) {
     newCapacity += iovs_[i].iov_len;
   }
@@ -41,4 +40,4 @@ void CarbonQueueAppenderStorage::coalesce() {
   iovs_[1] = {const_cast<uint8_t*>(head_->data()), head_->length()};
 }
 
-} // namespace carbon
+} // carbon
