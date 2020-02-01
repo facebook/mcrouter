@@ -336,7 +336,7 @@ MCROUTER_OPTION_TOGGLE(
     no_short,
     "The configured service identity of the client is compared against the "
     "service identity of the server in the peer certificate. Log if they "
-    "match.")
+    "do not match.")
 
 MCROUTER_OPTION_TOGGLE(
     ssl_service_identity_authorization_enforce,
