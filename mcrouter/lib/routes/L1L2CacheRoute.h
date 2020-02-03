@@ -146,7 +146,7 @@ class L1L2CacheRoute {
     req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "ncache");
     req.flags() = MC_MSG_FLAG_NEGATIVE_CACHE;
     req.exptime() = ncacheExptime;
-    return std::move(req);
+    return req;
   }
 
   template <class Request>

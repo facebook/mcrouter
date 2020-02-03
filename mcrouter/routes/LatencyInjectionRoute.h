@@ -131,7 +131,7 @@ typename RouterInfo::RouteHandlePtr makeLatencyInjectionRoute(
 
   if (beforeLatency.count() == 0 && afterLatency.count() == 0) {
     // if we are not injecting any latency, optimize this rh away.
-    return std::move(child);
+    return child;
   }
 
   return makeRouteHandleWithInfo<RouterInfo, LatencyInjectionRoute>(

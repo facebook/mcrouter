@@ -118,7 +118,7 @@ class SlowWarmUpRoute {
     } else if (isMissResult(reply.result())) {
       ++stats_.misses;
     }
-    return std::move(reply);
+    return reply;
   }
 
  private:

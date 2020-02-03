@@ -497,7 +497,7 @@ typename RouterInfo::RouteHandlePtr createCarbonLookasideRoute(
   if (!router) {
     LOG(ERROR) << "Failed to create router from flavor '" << flavor
                << "' for CarbonLookasideRouter.";
-    return std::move(child);
+    return child;
   }
 
   CarbonRouterClient<MemcacheRouterInfo>::Pointer client{nullptr};
@@ -507,7 +507,7 @@ typename RouterInfo::RouteHandlePtr createCarbonLookasideRoute(
     LOG(ERROR)
         << "Failed to create client for CarbonLookasideRouter. Exception: "
         << e.what();
-    return std::move(child);
+    return child;
   }
   return makeRouteHandleWithInfo<
       RouterInfo,
