@@ -128,6 +128,13 @@ inline bool isTkoResult(const carbon::Result result) {
 }
 
 /**
+ * Checks whether a reply is either a TKO or hard TKO error.
+ */
+inline bool isTkoOrHardTkoResult(const carbon::Result result) {
+  return isTkoResult(result) || isHardTkoErrorResult(result);
+}
+
+/**
  * Did we not even attempt to send request out because it is invalid/we hit
  * per-destination rate limit
  */

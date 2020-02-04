@@ -205,7 +205,7 @@ class FailoverRoute {
     auto iter = failoverPolicy_.begin(req);
     auto normalReply = iter->route(req, policyCtx);
     if (isErrorResult(normalReply.result())) {
-      if (!isTkoResult(normalReply.result())) {
+      if (!isTkoOrHardTkoResult(normalReply.result())) {
         proxy.stats().increment(failover_policy_result_error_stat);
       } else {
         proxy.stats().increment(failover_policy_tko_error_stat);
@@ -239,15 +239,14 @@ class FailoverRoute {
     proxy.stats().increment(failover_all_stat);
     proxy.stats().increment(failoverPolicy_.getFailoverStat());
 
-    if (rateLimiter_ && !isTkoResult(normalReply.result()) &&
-        !isHardTkoErrorResult(normalReply.result()) &&
+    if (rateLimiter_ && !isTkoOrHardTkoResult(normalReply.result()) &&
         !rateLimiter_->failoverAllowed()) {
       proxy.stats().increment(failover_rate_limited_stat);
       return normalReply;
     }
 
-    // We didn't do any work for TKO. Don't count it as a try.
-    if (!isTkoResult(normalReply.result())) {
+    // We didn't do any work for TKO or hard TKO. Don't count it as a try.
+    if (!isTkoOrHardTkoResult(normalReply.result())) {
       ++policyCtx.numTries_;
     }
 
@@ -274,7 +273,7 @@ class FailoverRoute {
             logFailover(proxy, failoverContext);
             carbon::setIsFailoverIfPresent(failoverReply, true);
             if (isErrorResult(failoverReply.result())) {
-              if (!isTkoResult(failoverReply.result())) {
+              if (!isTkoOrHardTkoResult(failoverReply.result())) {
                 proxy.stats().increment(failover_policy_result_error_stat);
               } else {
                 proxy.stats().increment(failover_policy_tko_error_stat);
@@ -304,14 +303,13 @@ class FailoverRoute {
           default:
             break;
         }
-        if (rateLimiter_ && !isTkoResult(failoverReply.result()) &&
-            !isHardTkoErrorResult(failoverReply.result()) &&
+        if (rateLimiter_ && !isTkoOrHardTkoResult(failoverReply.result()) &&
             !rateLimiter_->failoverAllowed()) {
           proxy.stats().increment(failover_rate_limited_stat);
           return failoverReply;
         }
-        // We didn't do any work for TKO. Don't count it as a try.
-        if (!isTkoResult(failoverReply.result())) {
+        // We didn't do any work for TKO or hard TKO. Don't count it as a try.
+        if (!isTkoOrHardTkoResult(failoverReply.result())) {
           ++policyCtx.numTries_;
         }
       }

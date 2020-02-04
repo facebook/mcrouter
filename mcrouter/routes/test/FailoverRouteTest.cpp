@@ -622,3 +622,32 @@ TEST(failoverRouteTest, deterministicOrderTko) {
   // 5 retry destinations.
   EXPECT_EQ(4, numRetries);
 }
+
+TEST(failoverRouteTest, ignoreTkoAndHardTko) {
+  std::vector<std::shared_ptr<TestHandle>> test_handles{
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::TKO, "a")),
+      // hard TKO
+      make_shared<TestHandle>(
+          GetRouteTestData(carbon::Result::CONNECT_ERROR, "b")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::TKO, "c")),
+      // hard TKO
+      make_shared<TestHandle>(
+          GetRouteTestData(carbon::Result::CONNECT_ERROR, "d"))};
+  mockFiberContext();
+  folly::dynamic policyJson = folly::dynamic::object(
+      "type", "DeterministicOrderPolicy")("max_tries", 3)("max_error_tries", 2);
+  folly::dynamic json = folly::dynamic::object("failover_policy", policyJson);
+  auto rh = makeFailoverRouteDefault<McrouterRouterInfo, FailoverRoute>(
+      json, get_route_handles(test_handles));
+  rh->route(McGetRequest("0"));
+  // The request should reach 2 children
+  int numRetries = 0;
+  for (auto testHdl : test_handles) {
+    if (!testHdl->saw_keys.empty()) {
+      ++numRetries;
+    }
+  }
+  // Since TKOs and hard TKOs are excluded from max_error_tries, we'll end up
+  // trying 3 of the 4 retry destinations, bounded by max_tries = 3
+  EXPECT_EQ(3, numRetries);
+}
