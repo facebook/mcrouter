@@ -33,7 +33,7 @@ constexpr size_t kStackIovecs = 128;
 constexpr size_t kMaxBatchSize = 24576 /* 24KB */;
 
 namespace {
-class OnEventBaseDestructionCallback
+class OnEventBaseDestructionCallback final
     : public folly::EventBase::OnDestructionCallback {
  public:
   explicit OnEventBaseDestructionCallback(AsyncMcClientImpl& client)
