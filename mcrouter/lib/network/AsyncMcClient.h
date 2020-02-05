@@ -36,7 +36,7 @@ struct RpcStatsContext;
  * as we have at least one request, but it will be impossible to send more
  * requests).
  */
-class AsyncMcClient : public Transport {
+class AsyncMcClient final : public Transport {
  public:
   using FlushList = Transport::FlushList;
   using RequestQueueStats = Transport::RequestQueueStats;
