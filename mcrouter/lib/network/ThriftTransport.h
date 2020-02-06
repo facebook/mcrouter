@@ -132,7 +132,7 @@ class ThriftTransport : public ThriftTransportBase {
  public:
   ThriftTransport(folly::VirtualEventBase& eventBase, ConnectionOptions options)
       : ThriftTransportBase(eventBase.getEventBase(), std::move(options)) {}
-  ~ThriftTransport() override final = default;
+  ~ThriftTransport() override = default;
 
   template <class Request>
   ReplyT<Request> sendSync(
