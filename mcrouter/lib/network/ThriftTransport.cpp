@@ -123,6 +123,14 @@ ThriftTransportBase::getConnectingSocket() {
               address,
               connectionOptions_.connectTimeout.count(),
               socketOptions);
+        } else if (securityMech == SecurityMech::TLS13_FIZZ) {
+          auto fizzClient = socket->getUnderlyingTransport<McFizzClient>();
+          fizzClient->setSendTimeout(connectionOptions_.writeTimeout.count());
+          fizzClient->connect(
+              this,
+              address,
+              connectionOptions_.connectTimeout.count(),
+              socketOptions);
         } else {
           DCHECK(securityMech == SecurityMech::NONE);
           socket->setSendTimeout(connectionOptions_.writeTimeout.count());

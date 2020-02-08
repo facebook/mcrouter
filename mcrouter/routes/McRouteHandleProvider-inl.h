@@ -309,9 +309,10 @@ McRouteHandleProvider<RouterInfo>::makePool(
         checkLogic(
             ap->getSecurityMech() == SecurityMech::NONE ||
                 ap->getSecurityMech() == SecurityMech::TLS ||
+                ap->getSecurityMech() == SecurityMech::TLS13_FIZZ ||
                 ap->getSecurityMech() == SecurityMech::TLS_TO_PLAINTEXT,
-            "Security mechanism must be 'plain', 'tls' or 'tls_to_plain' for "
-            "ThriftTransport, got {}",
+            "Security mechanism must be 'plain', 'tls', 'fizz' or "
+            "'tls_to_plain' for ThriftTransport, got {}",
             securityMechToString(ap->getSecurityMech()));
 
         using Transport = ThriftTransport<RouterInfo>;
