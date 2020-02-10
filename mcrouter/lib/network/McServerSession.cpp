@@ -93,6 +93,12 @@ void McServerSession::applySocketOptions(
     socket.setZeroCopy(true);
   }
   socket.setSendTimeout(opts.sendTimeout.count());
+  if (opts.trafficClass > 0) {
+    if (socket.setSockOpt(IPPROTO_IPV6, IPV6_TCLASS, &opts.trafficClass) != 0) {
+      LOG_EVERY_N(ERROR, 1000) << "Failed to set TCLASS = " << opts.trafficClass
+                               << " on socket. errno: " << errno;
+    }
+  }
 }
 
 McServerSession::McServerSession(

@@ -132,6 +132,12 @@ struct AsyncMcServerWorkerOptions {
    * Whether to enable tos reflection
    */
   bool tosReflection{false};
+
+  /**
+   * Traffic class to set on accepted sockets. A trafficClass of 0 means
+   * that packets will be unmarked.
+   */
+  int trafficClass{0};
 };
 } // namespace memcache
 } // namespace facebook
