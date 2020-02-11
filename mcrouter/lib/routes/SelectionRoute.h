@@ -99,6 +99,7 @@ class SelectionRoute {
     if (idx >= children_.size()) {
       return *outOfRangeDestination_;
     }
+    mcrouter::fiber_local<RouterInfo>::setSelectedIndex(idx);
     return *children_[idx];
   }
 };

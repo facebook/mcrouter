@@ -17,6 +17,7 @@
 #include "mcrouter/lib/test/TestRouteHandle.h"
 #include "mcrouter/routes/FailoverRateLimiter.h"
 #include "mcrouter/routes/FailoverRoute.h"
+#include "mcrouter/routes/HashRouteFactory.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/test/RouteHandleTestUtil.h"
 
@@ -621,6 +622,37 @@ TEST(failoverRouteTest, deterministicOrderTko) {
   // Since TKOs are excluded from max_error_tries, we'll end up trying 4 of the
   // 5 retry destinations.
   EXPECT_EQ(4, numRetries);
+}
+
+TEST(failoverRouteTest, deterministicOrderNoDoubleShot) {
+  std::vector<std::shared_ptr<TestHandle>> test_handles{
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::TKO, "a")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::TKO, "b")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::TKO, "c"))};
+
+  mockFiberContext();
+  auto failover_children = get_route_handles(test_handles);
+  auto nServers = test_handles.size();
+  failover_children.insert(
+      failover_children.begin(),
+      createHashRoute<McrouterRouterInfo, Ch3HashFunc>(
+          get_route_handles(test_handles),
+          "", /* no salt */
+          Ch3HashFunc(nServers)));
+  folly::dynamic policyJson =
+      folly::dynamic::object("type", "DeterministicOrderPolicy")(
+          "max_tries", nServers)("max_error_tries", nServers);
+  folly::dynamic json = folly::dynamic::object("failover_policy", policyJson);
+  auto rh = makeFailoverRouteDefault<McrouterRouterInfo, FailoverRoute>(
+      json, failover_children);
+  rh->route(McGetRequest("noDoubleShot"));
+  for (auto testHdl : test_handles) {
+    if (!testHdl->saw_keys.empty()) {
+      --nServers;
+    }
+  }
+  // If all test_handles are reached, no test_handle is hit twice
+  EXPECT_EQ(0, nServers);
 }
 
 TEST(failoverRouteTest, ignoreTkoAndHardTko) {
