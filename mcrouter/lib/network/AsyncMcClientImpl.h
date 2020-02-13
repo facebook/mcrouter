@@ -180,7 +180,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   void logErrorWithContext(folly::StringPiece reason);
   folly::StringPiece clientStateToStr() const;
 
-  // TAsyncSocket::ConnectCallback overrides
+  // AsyncSocket::ConnectCallback overrides
   void connectSuccess() noexcept final;
   void connectErr(const folly::AsyncSocketException& ex) noexcept final;
 
