@@ -121,7 +121,7 @@ void FifoReadCallback::readDataAvailable(size_t len) noexcept {
       forwardMessage(
           pendingHeader_.value(),
           readBuffer_.split(pendingHeader_->packetSize()));
-      pendingHeader_.clear();
+      pendingHeader_.reset();
     }
 
     while (readBuffer_.chainLength() >= kHeaderMagicSize) {

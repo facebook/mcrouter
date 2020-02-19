@@ -257,8 +257,8 @@ void AsciiSerializedRequest::prepareImpl(const McFlushAllRequest& request) {
 
 void AsciiSerializedReply::clear() {
   iovsCount_ = 0;
-  iobuf_.clear();
-  auxString_.clear();
+  iobuf_.reset();
+  auxString_.reset();
 }
 
 void AsciiSerializedReply::addString(folly::ByteRange range) {

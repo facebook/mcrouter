@@ -47,8 +47,8 @@ WriteBuffer::~WriteBuffer() {
 }
 
 void WriteBuffer::clear() {
-  ctx_.clear();
-  destructor_.clear();
+  ctx_.reset();
+  destructor_.reset();
   isEndOfBatch_ = false;
   typeId_ = 0;
   zeroCopyPendingNotifications_ = 0;
