@@ -13,6 +13,7 @@
 #include <gtest/gtest.h>
 
 #include "mcrouter/lib/IOBufUtil.h"
+#include "mcrouter/lib/carbon/CarbonProtocolWriter.h"
 #include "mcrouter/lib/carbon/test/Util.h"
 #include "mcrouter/lib/carbon/test/gen/CarbonTest.h"
 #include "mcrouter/lib/carbon/test/gen/CompactTest.h"
@@ -528,6 +529,21 @@ TEST(CarbonTest, veryLongString) {
   const auto inRequest = serializeAndDeserialize(outRequest);
   expectEqTestRequest(outRequest, inRequest);
   EXPECT_EQ(kVeryLongStringSize, inRequest.testLongString().length());
+}
+
+TEST(CarbonTest, repeatStorageUsage) {
+  std::string testStr(longString());
+
+  carbon::CarbonQueueAppenderStorage storage;
+  carbon::CarbonProtocolWriter writer(storage);
+
+  TestRequest outRequest(longString());
+  outRequest.testLongString() = std::move(testStr);
+
+  for (int i = 0; i < 100; i++) {
+    outRequest.serialize(writer);
+    storage.reset();
+  }
 }
 
 TEST(CarbonTest, veryLongIobuf) {
