@@ -144,6 +144,7 @@ void Proxy<RouterInfo>::processRequest(
   ++numRequestsProcessing_;
   stats().increment(proxy_reqs_processing_stat);
 
+  req.runPreprocessFunction();
   routeHandlesProcessRequest(req, std::move(ctx));
 
   stats().increment(request_sent_stat);
