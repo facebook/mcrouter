@@ -31,9 +31,6 @@
                 ],
     "failover_policy": {
       "type": "DeterministicOrderPolicy",
-      "hash": {
-        "salt": "78966653"
-      },
       "max_tries": 10,
       "max_error_tries": 3
     }

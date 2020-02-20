@@ -37,7 +37,6 @@
       "max_error_tries": 3,
       "hash": {
         "hash_func": "WeightedCh3",
-        "salt": "789616653",
         "weights": [
           0.7,
           0.65,

@@ -76,7 +76,7 @@ class TestDeterministicFailoverAllSleepServers(McrouterTestCase):
             # timeout and be declared TKO after the first failure)
             # The progression of result errors and tko errors show how well the
             # hash function is working
-            expected_values = [(3, 0), (6, 1), (9, 4), (12, 9), (14, 17),
+            expected_values = [(3, 0), (6, 0), (9, 3), (12, 9), (13, 18),
                                (15, 26), (15, 36), (16, 45), (16, 55), (17, 64)]
 
             self.assertEqual(int(stats["failover_policy_result_error"]),
@@ -115,9 +115,9 @@ class TestDeterministicFailoverAllSleepServersSamePool(McrouterTestCase):
             # route responses when all servers are not present (ie expected to
             # timeout and be declared TKO after the first failure)
             # The progression of result errors and tko errors show how well the
-            expected_values = [(3, 0, 2), (6, 0, 4), (9, 1, 4), (12, 3, 5),
-                               (15, 8, 8), (18, 10, 8), (21, 17, 11),
-                               (21, 29, 17), (23, 39, 26), (23, 51, 29)]
+            expected_values = [(3, 0, 1), (6, 0, 3), (9, 2, 4), (12, 3, 5),
+                               (15, 5, 6), (17, 15, 10), (19, 25, 12),
+                               (21, 35, 21), (21, 47, 26), (23, 57, 30)]
 
             self.assertEqual(int(stats["failover_policy_result_error"]),
                     expected_values[i][0])
@@ -126,7 +126,6 @@ class TestDeterministicFailoverAllSleepServersSamePool(McrouterTestCase):
             self.assertEqual(int(stats["failover_num_collisions"]),
                     expected_values[i][2])
             self.assertEqual(int(stats["failover_all_failed"]), i + 1)
-
 
 class TestDeterministicFailoverAllSleepServersSharedConfig(McrouterTestCase):
     config = './mcrouter/test/test_deterministic_failover3.json'
@@ -159,9 +158,9 @@ class TestDeterministicFailoverAllSleepServersSharedConfig(McrouterTestCase):
             # route responses when all servers are not present (ie expected to
             # timeout and be declared TKO after the first failure)
             # The progression of result errors and tko errors show how well the
-            expected_values = [(3, 0, 1), (6, 0, 2), (9, 1, 2), (12, 4, 2),
-                               (15, 7, 4), (18, 10, 7), (21, 18, 10),
-                               (21, 30, 15)]
+            expected_values = [(3, 0, 1), (6, 0, 3), (9, 2, 4), (12, 3, 5),
+                               (15, 5, 6), (18, 9, 7), (20, 19, 9),
+                               (20, 31, 18)]
 
             self.assertEqual(int(stats["failover_policy_result_error"]),
                     expected_values[i][0])

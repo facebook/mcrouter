@@ -179,23 +179,6 @@ class FailoverDeterministicOrderPolicy {
 
     funcType_ = Ch3HashFunc::type();
     if (auto jHash = json.get_ptr("hash")) {
-      if (auto jsalt = jHash->get_ptr("salt")) {
-        checkLogic(
-            jsalt->isString(),
-            "Failover: DeterministicOrderPolicy: salt is not a String");
-        try {
-          salt_ = std::stoi(jsalt->asString());
-          checkLogic(
-              std::to_string(salt_) == jsalt->asString(),
-              "Failover: DeterministicOrderPolicy:salt should be integer string");
-        } catch (const std::exception&) {
-          LOG(WARNING) << "salt (" << jsalt->asString()
-                       << ") is not integer, using 1 for salt";
-          salt_ = 1; // default known value for deterministic behavior
-        }
-      } else {
-        salt_ = 1; // default known value for deterministic behavior
-      }
       if (auto jhashFunc = jHash->get_ptr("hash_func")) {
         checkLogic(
             jhashFunc->isString(),
@@ -371,7 +354,7 @@ class FailoverDeterministicOrderPolicy {
   uint32_t maxErrorTries_;
   folly::dynamic config_;
   std::string funcType_;
-  uint32_t salt_{0};
+  uint32_t salt_{1};
 };
 
 template <typename RouteHandleIf>
