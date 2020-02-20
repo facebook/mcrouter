@@ -138,8 +138,10 @@ std::shared_ptr<fizz::server::FizzServerContext> createFizzServerContext(
     }
     auto cipher = std::make_shared<fizz::server::AES128TicketCipher>();
     cipher->setTicketSecrets(std::move(ticketSecrets));
-    cipher->setTicketValidity(std::chrono::seconds(kSessionLifeTime));
-    cipher->setHandshakeValidity(std::chrono::seconds(kHandshakeValidity));
+    fizz::server::TicketPolicy policy;
+    policy.setTicketValidity(std::chrono::seconds(kSessionLifeTime));
+    policy.setHandshakeValidity(std::chrono::seconds(kHandshakeValidity));
+    cipher->setPolicy(std::move(policy));
     ctx->setTicketCipher(std::move(cipher));
   }
   // TODO: allow for custom FizzFactory
