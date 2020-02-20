@@ -14,7 +14,7 @@ class TestLatencyInjectionRoute(McrouterTestCase):
     config_latency_before = './mcrouter/test/test_latency_injection_before.json'
     config_latency_after = './mcrouter/test/test_latency_injection_before.json'
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.mc = self.add_server(Memcached())
 
         self.mcrouter_latency_before =\
@@ -22,7 +22,7 @@ class TestLatencyInjectionRoute(McrouterTestCase):
         self.mcrouter_latency_after =\
             self.add_mcrouter(self.config_latency_after)
 
-    def test_latency_before(self):
+    def test_latency_before(self) -> None:
         self.mc.set("key1", "value1")
 
         t_start = datetime.now()
@@ -32,7 +32,7 @@ class TestLatencyInjectionRoute(McrouterTestCase):
         duration = t_end - t_start
         self.assertGreaterEqual(duration.total_seconds(), 2)
 
-    def test_latency_after(self):
+    def test_latency_after(self) -> None:
         self.mc.set("key2", "value2")
 
         t_start = datetime.now()
