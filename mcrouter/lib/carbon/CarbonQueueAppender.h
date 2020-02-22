@@ -121,7 +121,7 @@ class CarbonQueueAppenderStorage {
 
   void reset() {
     storageIdx_ = kMaxHeaderLength;
-    head_.clear();
+    head_.reset();
     iobufStorage_.reset();
     lastStorageSize_ = kInitMsgStoreLen;
     // Reserve first element of iovs_ for header, which won't be filled in
