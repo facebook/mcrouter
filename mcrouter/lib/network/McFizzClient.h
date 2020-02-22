@@ -8,6 +8,7 @@
 #pragma once
 
 #include <fizz/client/AsyncFizzClient.h>
+#include <folly/io/SocketOptionMap.h>
 
 namespace facebook {
 namespace memcache {
@@ -27,7 +28,7 @@ class McFizzClient : public fizz::client::AsyncFizzClient {
       folly::AsyncSocket::ConnectCallback* callback,
       const folly::SocketAddress& address,
       int timeout,
-      const folly::AsyncSocket::OptionMap& options) {
+      const folly::SocketOptionMap& options) {
     auto timeoutChrono = std::chrono::milliseconds(timeout);
     connect(
         address,

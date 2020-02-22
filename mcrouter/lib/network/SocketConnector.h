@@ -8,6 +8,7 @@
 #pragma once
 
 #include <folly/futures/Future.h>
+#include <folly/io/SocketOptionMap.h>
 #include <folly/io/async/AsyncSSLSocket.h>
 
 namespace facebook {
@@ -22,7 +23,7 @@ folly::Future<folly::AsyncSocket::UniquePtr> connectSSLSocketWithAuxIO(
     folly::AsyncSSLSocket::UniquePtr socket,
     folly::SocketAddress address,
     int timeout,
-    folly::AsyncSocket::OptionMap options);
+    folly::SocketOptionMap options);
 
 } // namespace memcache
 } // namespace facebook

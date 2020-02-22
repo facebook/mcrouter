@@ -10,6 +10,7 @@
 #include <type_traits>
 
 #include <folly/Expected.h>
+#include <folly/io/SocketOptionMap.h>
 #include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/io/async/AsyncSocket.h>
 #include <folly/io/async/AsyncSocketException.h>
@@ -37,14 +38,14 @@ std::string getServiceIdentity(const ConnectionOptions& opts) {
 }
 
 void createTCPKeepAliveOptions(
-    folly::AsyncSocket::OptionMap& options,
+    folly::SocketOptionMap& options,
     int cnt,
     int idle,
     int interval) {
   // 0 means KeepAlive is disabled.
   if (cnt != 0) {
 #ifdef SO_KEEPALIVE
-    folly::AsyncSocket::OptionMap::key_type key;
+    folly::SocketOptionMap::key_type key;
     key.level = SOL_SOCKET;
     key.optname = SO_KEEPALIVE;
     options[key] = 1;
@@ -70,9 +71,9 @@ void createTCPKeepAliveOptions(
   }
 }
 
-const folly::AsyncSocket::OptionKey getQoSOptionKey(sa_family_t addressFamily) {
-  static const folly::AsyncSocket::OptionKey kIpv4OptKey = {IPPROTO_IP, IP_TOS};
-  static const folly::AsyncSocket::OptionKey kIpv6OptKey = {IPPROTO_IPV6,
+const folly::SocketOptionKey getQoSOptionKey(sa_family_t addressFamily) {
+  static const folly::SocketOptionKey kIpv4OptKey = {IPPROTO_IP, IP_TOS};
+  static const folly::SocketOptionKey kIpv6OptKey = {IPPROTO_IPV6,
                                                             IPV6_TCLASS};
   return (addressFamily == AF_INET) ? kIpv4OptKey : kIpv6OptKey;
 }
@@ -117,7 +118,7 @@ uint64_t getQoS(uint64_t qosClassLvl, uint64_t qosPathLvl) {
 }
 
 void createQoSClassOption(
-    folly::AsyncSocket::OptionMap& options,
+    folly::SocketOptionMap& options,
     const sa_family_t addressFamily,
     uint64_t qosClass,
     uint64_t qosPath) {
@@ -265,10 +266,10 @@ getSocketAddress(const ConnectionOptions& connectionOptions) {
   }
 }
 
-folly::AsyncSocket::OptionMap createSocketOptions(
+folly::SocketOptionMap createSocketOptions(
     const folly::SocketAddress& address,
     const ConnectionOptions& connectionOptions) {
-  folly::AsyncSocket::OptionMap options;
+  folly::SocketOptionMap options;
 
   createTCPKeepAliveOptions(
       options,

@@ -13,6 +13,7 @@
 
 #include <folly/GLog.h>
 #include <folly/ScopeGuard.h>
+#include <folly/io/SocketOptionMap.h>
 #include <folly/io/async/AsyncSocket.h>
 #include <folly/io/async/ssl/BasicTransportCertificate.h>
 #include <folly/portability/OpenSSL.h>
@@ -112,7 +113,7 @@ void AsyncTlsToPlaintextSocket::connect(
     folly::AsyncSocket::ConnectCallback* connectCallback,
     const folly::SocketAddress& address,
     std::chrono::milliseconds connectTimeout,
-    folly::AsyncSocket::OptionMap socketOptions) {
+    folly::SocketOptionMap socketOptions) {
   auto* const wrappedConnectCallback =
       new ConnectCallback(*this, connectCallback);
   impl_->getUnderlyingTransport<apache::thrift::async::TAsyncSSLSocket>()

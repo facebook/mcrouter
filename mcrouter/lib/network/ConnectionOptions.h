@@ -10,6 +10,7 @@
 #include <chrono>
 #include <memory>
 
+#include <folly/io/SocketOptionMap.h>
 #include <folly/io/async/AsyncSocket.h>
 
 #include "mcrouter/lib/CompressionCodecManager.h"
@@ -43,7 +44,7 @@ enum class PayloadFormat {
  * A struct for storing all connection related options.
  */
 struct ConnectionOptions {
-  using SocketOptions = folly::AsyncSocket::OptionMap;
+  using SocketOptions = folly::SocketOptionMap;
 
   ConnectionOptions(
       folly::StringPiece host_,

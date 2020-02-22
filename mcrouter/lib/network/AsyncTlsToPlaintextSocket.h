@@ -15,6 +15,7 @@
 #include <folly/Likely.h>
 #include <folly/ScopeGuard.h>
 #include <folly/SocketAddress.h>
+#include <folly/io/SocketOptionMap.h>
 #include <folly/io/async/AsyncSocket.h>
 #include <folly/io/async/AsyncTransport.h>
 
@@ -50,7 +51,7 @@ class AsyncTlsToPlaintextSocket final : public folly::AsyncTransportWrapper {
       folly::AsyncSocket::ConnectCallback* connectCallback,
       const folly::SocketAddress& address,
       std::chrono::milliseconds connectTimeout,
-      folly::AsyncSocket::OptionMap socketOptions);
+      folly::SocketOptionMap socketOptions);
 
   // AsyncSocketBase overrides
   folly::EventBase* getEventBase() const override {

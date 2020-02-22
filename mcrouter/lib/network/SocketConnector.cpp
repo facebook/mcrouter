@@ -7,6 +7,7 @@
 
 #include "SocketConnector.h"
 
+#include <folly/io/SocketOptionMap.h>
 #include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/io/async/DelayedDestruction.h>
 
@@ -25,7 +26,7 @@ class ConnectHelper : public folly::AsyncSocket::ConnectCallback,
   folly::Future<folly::AsyncSocket::UniquePtr> connect(
       folly::SocketAddress address,
       int timeout,
-      folly::AsyncSocket::OptionMap options) {
+      folly::SocketOptionMap options) {
     folly::DelayedDestruction::DestructorGuard dg(this);
     socket_->connect(this, address, timeout, options);
     return promise_.getFuture();
@@ -58,7 +59,7 @@ folly::Future<folly::AsyncSocket::UniquePtr> connectSSLSocketWithAuxIO(
     folly::AsyncSSLSocket::UniquePtr socket,
     folly::SocketAddress address,
     int timeout,
-    folly::AsyncSocket::OptionMap options) {
+    folly::SocketOptionMap options) {
   // helper will clean itself up after connect callbacks
   auto helper = new ConnectHelper(std::move(socket));
   auto auxPool = mcrouter::AuxiliaryIOThreadPoolSingleton::try_get_fast();

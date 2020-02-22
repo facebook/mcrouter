@@ -9,6 +9,7 @@
 
 #include <folly/Expected.h>
 #include <folly/Range.h>
+#include <folly/io/SocketOptionMap.h>
 #include <folly/io/async/AsyncSocket.h>
 #include <folly/io/async/AsyncTransport.h>
 
@@ -61,7 +62,7 @@ getSocketAddress(const ConnectionOptions& connectionOptions);
  * Create the socket options map based on the given ConnectionOptions and
  * SocketAddress.
  */
-folly::AsyncSocket::OptionMap createSocketOptions(
+folly::SocketOptionMap createSocketOptions(
     const folly::SocketAddress& address,
     const ConnectionOptions& connectionOptions);
 
