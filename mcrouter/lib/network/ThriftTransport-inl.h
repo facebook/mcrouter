@@ -10,6 +10,11 @@
 #include <memory>
 #include <type_traits>
 
+#ifndef LIBMC_FBTRACE_DISABLE
+#include "contextprop/cpp/SerDe.h"
+#include "contextprop/if/gen-cpp2/ContextpropConstants_constants.h"
+#endif
+
 namespace facebook {
 namespace memcache {
 
@@ -76,6 +81,25 @@ auto ThriftTransportBase::sendSyncImpl(F&& sendFunc) {
 
   return reply;
 }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+template <class Response>
+void ThriftTransportBase::traceResponse(
+    const carbon::MessageCommon& request,
+    folly::Try<apache::thrift::RpcResponseComplete<Response>>& reply) {
+  if (UNLIKELY(
+          !request.traceContext().empty() && reply.hasValue() &&
+          reply->response.hasValue() &&
+          reply->responseContext.headers.find(
+              facebook::contextprop::ContextpropConstants_constants::
+                  artillery_trace_ids_header_) !=
+              reply->responseContext.headers.end())) {
+    folly::fibers::runInMainContext([&]() {
+      traceResponseImpl(*reply->response, reply->responseContext.headers);
+    });
+  }
+}
+#endif
 
 } // namespace memcache
 } // namespace facebook

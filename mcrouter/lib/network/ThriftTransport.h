@@ -72,6 +72,17 @@ class ThriftTransportBase : public Transport,
 
   double getRetransmitsPerKb() override final;
 
+#ifndef LIBMC_FBTRACE_DISABLE
+  void traceRequest(
+      const carbon::MessageCommon& request,
+      apache::thrift::RpcOptions& opts);
+
+  template <class Response>
+  void traceResponse(
+      const carbon::MessageCommon& request,
+      folly::Try<apache::thrift::RpcResponseComplete<Response>>& response);
+#endif
+
  protected:
   folly::EventBase& eventBase_;
   const ConnectionOptions connectionOptions_;
@@ -125,6 +136,16 @@ class ThriftTransportBase : public Transport,
    * in case of error.
    */
   folly::AsyncTransportWrapper::UniquePtr getConnectingSocket();
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  void FOLLY_NOINLINE traceRequestImpl(
+      const carbon::MessageCommon& request,
+      apache::thrift::RpcOptions& opts);
+
+  void FOLLY_NOINLINE traceResponseImpl(
+      carbon::MessageCommon& response,
+      const std::map<std::string, std::string>& responseHeaders);
+#endif
 };
 
 template <class RouterInfo>

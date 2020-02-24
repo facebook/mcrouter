@@ -228,5 +228,44 @@ void ThriftTransportBase::channelClosed() {
   resetClient();
 }
 
+#ifndef LIBMC_FBTRACE_DISABLE
+void ThriftTransportBase::traceRequest(
+    const carbon::MessageCommon& request,
+    apache::thrift::RpcOptions& rpcOptions) {
+  if (UNLIKELY(!request.traceContext().empty())) {
+    folly::fibers::runInMainContext(
+        [&]() { traceRequestImpl(request, rpcOptions); });
+  }
+}
+
+void ThriftTransportBase::traceRequestImpl(
+    const carbon::MessageCommon& request,
+    apache::thrift::RpcOptions& rpcOptions) {
+  auto artilleryTraceIDs =
+      facebook::contextprop::SerDe::getArtilleryTraceIDsFromLegacyHeader(
+          request.traceContext());
+  rpcOptions.setWriteHeader(
+      facebook::contextprop::ContextpropConstants_constants::
+          artillery_trace_ids_header_,
+      facebook::contextprop::SerDe::serializeArtilleryTraceIDs(
+          artilleryTraceIDs));
+}
+
+void ThriftTransportBase::traceResponseImpl(
+    carbon::MessageCommon& response,
+    const std::map<std::string, std::string>& responseHeaders) {
+  auto artilleryTraceIDs =
+      decodeAndDeserialize<facebook::contextprop::ArtilleryTraceIDs>(
+          responseHeaders,
+          facebook::contextprop::ContextpropConstants_constants::
+              artillery_trace_ids_header_);
+  if (artilleryTraceIDs) {
+    response.setTraceContext(
+        facebook::contextprop::SerDe::convertToLegacyTraceContext(
+            *artilleryTraceIDs));
+  }
+}
+#endif
+
 } // namespace memcache
 } // namespace facebook

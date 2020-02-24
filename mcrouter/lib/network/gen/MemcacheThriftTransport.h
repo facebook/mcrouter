@@ -56,8 +56,14 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McAddReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceRequest(request, rpcOptions);
+#endif
         reply = thriftClient->sync_complete_mcAdd(
             rpcOptions, request);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceResponse(request, reply);
+#endif
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -76,8 +82,14 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McAppendReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceRequest(request, rpcOptions);
+#endif
         reply = thriftClient->sync_complete_mcAppend(
             rpcOptions, request);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceResponse(request, reply);
+#endif
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -96,8 +108,14 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McCasReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceRequest(request, rpcOptions);
+#endif
         reply = thriftClient->sync_complete_mcCas(
             rpcOptions, request);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceResponse(request, reply);
+#endif
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -116,8 +134,14 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McDecrReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceRequest(request, rpcOptions);
+#endif
         reply = thriftClient->sync_complete_mcDecr(
             rpcOptions, request);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceResponse(request, reply);
+#endif
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -136,8 +160,14 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McDeleteReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceRequest(request, rpcOptions);
+#endif
         reply = thriftClient->sync_complete_mcDelete(
             rpcOptions, request);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceResponse(request, reply);
+#endif
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -156,8 +186,14 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McFlushAllReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceRequest(request, rpcOptions);
+#endif
         reply = thriftClient->sync_complete_mcFlushAll(
             rpcOptions, request);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceResponse(request, reply);
+#endif
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -176,8 +212,14 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McFlushReReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceRequest(request, rpcOptions);
+#endif
         reply = thriftClient->sync_complete_mcFlushRe(
             rpcOptions, request);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceResponse(request, reply);
+#endif
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -196,8 +238,14 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McGatReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceRequest(request, rpcOptions);
+#endif
         reply = thriftClient->sync_complete_mcGat(
             rpcOptions, request);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceResponse(request, reply);
+#endif
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -216,8 +264,14 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McGatsReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceRequest(request, rpcOptions);
+#endif
         reply = thriftClient->sync_complete_mcGats(
             rpcOptions, request);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceResponse(request, reply);
+#endif
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -236,8 +290,14 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McGetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceRequest(request, rpcOptions);
+#endif
         reply = thriftClient->sync_complete_mcGet(
             rpcOptions, request);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceResponse(request, reply);
+#endif
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -256,8 +316,14 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McGetsReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceRequest(request, rpcOptions);
+#endif
         reply = thriftClient->sync_complete_mcGets(
             rpcOptions, request);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceResponse(request, reply);
+#endif
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -276,8 +342,14 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McIncrReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceRequest(request, rpcOptions);
+#endif
         reply = thriftClient->sync_complete_mcIncr(
             rpcOptions, request);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceResponse(request, reply);
+#endif
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -296,8 +368,14 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McLeaseGetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceRequest(request, rpcOptions);
+#endif
         reply = thriftClient->sync_complete_mcLeaseGet(
             rpcOptions, request);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceResponse(request, reply);
+#endif
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -316,8 +394,14 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McLeaseSetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceRequest(request, rpcOptions);
+#endif
         reply = thriftClient->sync_complete_mcLeaseSet(
             rpcOptions, request);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceResponse(request, reply);
+#endif
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -336,8 +420,14 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McMetagetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceRequest(request, rpcOptions);
+#endif
         reply = thriftClient->sync_complete_mcMetaget(
             rpcOptions, request);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceResponse(request, reply);
+#endif
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -356,8 +446,14 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McPrependReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceRequest(request, rpcOptions);
+#endif
         reply = thriftClient->sync_complete_mcPrepend(
             rpcOptions, request);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceResponse(request, reply);
+#endif
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -376,8 +472,14 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McReplaceReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceRequest(request, rpcOptions);
+#endif
         reply = thriftClient->sync_complete_mcReplace(
             rpcOptions, request);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceResponse(request, reply);
+#endif
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -396,8 +498,14 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McSetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceRequest(request, rpcOptions);
+#endif
         reply = thriftClient->sync_complete_mcSet(
             rpcOptions, request);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceResponse(request, reply);
+#endif
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -416,8 +524,14 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McTouchReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceRequest(request, rpcOptions);
+#endif
         reply = thriftClient->sync_complete_mcTouch(
             rpcOptions, request);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceResponse(request, reply);
+#endif
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -436,8 +550,14 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceRequest(request, rpcOptions);
+#endif
         reply = thriftClient->sync_complete_mcVersion(
             rpcOptions, request);
+#ifndef LIBMC_FBTRACE_DISABLE
+        traceResponse(request, reply);
+#endif
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
