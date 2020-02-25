@@ -311,6 +311,42 @@ void ManyFields::visitFields(V&& v) const {
     return;
   }
 }
+
+template <class Writer>
+void McExpTestRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeField(2 /* field id */, flags());
+  writer.writeField(3 /* field id */, deadlineMs());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void McExpTestRequest::visitFields(V&& v) {
+  if (!v.visitField(1, "key", this->key())) {
+    return;
+  }
+  if (!v.visitField(2, "flags", this->flags())) {
+    return;
+  }
+  if (!v.visitField(3, "deadlineMs", this->deadlineMs())) {
+    return;
+  }
+}
+
+template <class V>
+void McExpTestRequest::visitFields(V&& v) const {
+  if (!v.visitField(1, "key", this->key())) {
+    return;
+  }
+  if (!v.visitField(2, "flags", this->flags())) {
+    return;
+  }
+  if (!v.visitField(3, "deadlineMs", this->deadlineMs())) {
+    return;
+  }
+}
 } // namespace test
 } // namespace memcache
 } // namespace facebook

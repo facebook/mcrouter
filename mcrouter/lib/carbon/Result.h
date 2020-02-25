@@ -79,6 +79,8 @@ inline const char* resultToString(const Result result) {
       return "mc_res_remote_error";
     case Result::WAITING:
       return "mc_res_waiting";
+    case Result::DEADLINE_EXCEEDED:
+      return "mc_res_deadline_exceeded";
     case Result::NUM_RESULTS:
       return "mc_res_unknown";
   }

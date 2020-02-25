@@ -166,6 +166,7 @@ typedef enum mc_res_e {
   mc_res_remote_error,
   /* in progress -- */
   mc_res_waiting,
+  mc_res_deadline_exceeded,
   mc_nres // placeholder
 } mc_res_t;
 
@@ -238,6 +239,8 @@ static inline const char* mc_res_to_string(const mc_res_t result) {
     /* in progress -- */
     case mc_res_waiting:
       return "mc_res_waiting";
+    case mc_res_deadline_exceeded:
+      return "mc_res_deadline_exceeded";
     case mc_nres:
       return "mc_res_unknown";
   }

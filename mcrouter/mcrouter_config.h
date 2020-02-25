@@ -39,7 +39,7 @@ static_assert(false, "mcrouter: invalid build");
 
 namespace folly {
 struct dynamic;
-} // folly
+} // namespace folly
 
 namespace facebook {
 namespace memcache {
@@ -86,6 +86,15 @@ inline int64_t nowUs() {
  */
 inline double nowSec() {
   return nowUs() / 1000000.0;
+}
+
+/**
+ * getCurrentTimeInMs - returns current time in milliseconds since epoch
+ */
+inline uint64_t getCurrentTimeInMs() {
+  return std::chrono::duration_cast<std::chrono::milliseconds>(
+             std::chrono::system_clock::now().time_since_epoch())
+      .count();
 }
 
 /**
@@ -180,6 +189,6 @@ inline Transport::SvcIdentAuthCallbackFunc getAuthChecker(
   return nullptr;
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

@@ -346,6 +346,61 @@ class ManyFields {
   folly::IOBuf buf39_;
   folly::IOBuf buf40_;
 };
+
+class McExpTestRequest {
+ public:
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasFlags = true;
+  static constexpr bool hasKey = true;
+  static constexpr bool hasValue = false;
+
+  McExpTestRequest() = default;
+  McExpTestRequest(const McExpTestRequest&) = default;
+  McExpTestRequest& operator=(const McExpTestRequest&) = default;
+  McExpTestRequest(McExpTestRequest&&) = default;
+  McExpTestRequest& operator=(McExpTestRequest&&) = default;
+  explicit McExpTestRequest(folly::StringPiece sp)
+      : key_(sp) {}
+  explicit McExpTestRequest(folly::IOBuf&& carbonKey)
+      : key_(std::move(carbonKey)) {}
+
+  const carbon::Keys<folly::IOBuf>& key() const {
+    return key_;
+  }
+  carbon::Keys<folly::IOBuf>& key() {
+    return key_;
+  }
+  uint64_t flags() const {
+    return flags_;
+  }
+  uint64_t& flags() {
+    return flags_;
+  }
+  uint64_t deadlineMs() const {
+    return deadlineMs_;
+  }
+  uint64_t& deadlineMs() {
+    return deadlineMs_;
+  }
+  int32_t exptime() const {
+    return 0;
+  }
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  carbon::Keys<folly::IOBuf> key_;
+  uint64_t flags_{0};
+  uint64_t deadlineMs_{0};
+};
 } // namespace test
 } // namespace memcache
 } // namespace facebook

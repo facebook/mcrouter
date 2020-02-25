@@ -42,6 +42,7 @@ inline int resultSeverity(carbon::Result result) {
     case carbon::Result::BAD_KEY:
     case carbon::Result::BAD_VALUE:
     case carbon::Result::ABORTED:
+    case carbon::Result::DEADLINE_EXCEEDED:
       return 6;
 
     case carbon::Result::REMOTE_ERROR:
@@ -66,7 +67,8 @@ inline int resultSeverity(carbon::Result result) {
  * Is this reply an error?
  */
 inline bool isErrorResult(const carbon::Result result) {
-  return result >= carbon::Result::OOO && result < carbon::Result::WAITING;
+  return (result == carbon::Result::DEADLINE_EXCEEDED) ||
+      (result >= carbon::Result::OOO && result < carbon::Result::WAITING);
 }
 
 /**
@@ -83,6 +85,12 @@ inline bool isFailoverErrorResult(const carbon::Result result) {
     case carbon::Result::CONNECT_TIMEOUT:
     case carbon::Result::TIMEOUT:
     case carbon::Result::REMOTE_ERROR:
+    // Consider DEADLINE_EXCEEDED as failover result because
+    // exceeding deadline on one destination might not mean it is exceeded
+    // deadline everywhere because that one destination
+    // may be having time-sync issues and is not properly sync'ed to time
+    // server
+    case carbon::Result::DEADLINE_EXCEEDED:
       return true;
     default:
       return false;
@@ -217,6 +225,13 @@ inline bool isHotMissResult(const carbon::Result result) {
 inline bool isStoredResult(const carbon::Result result) {
   return result == carbon::Result::STORED ||
       result == carbon::Result::STALESTORED;
+}
+
+/**
+ * Was the request deadline exceeded?
+ */
+inline bool isDeadlineExceededResult(const carbon::Result result) {
+  return result == carbon::Result::DEADLINE_EXCEEDED;
 }
 
 inline bool worseThan(carbon::Result first, carbon::Result second) {

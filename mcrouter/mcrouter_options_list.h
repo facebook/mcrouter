@@ -516,6 +516,13 @@ MCROUTER_OPTION_TOGGLE(
     no_short,
     "Enable flush_all command")
 
+MCROUTER_OPTION_TOGGLE(
+    disable_request_deadline_check,
+    false,
+    "disable-request-deadline-check",
+    no_short,
+    "Disable request deadline functionality")
+
 MCROUTER_OPTION_INTEGER(
     int,
     reconfiguration_delay_ms,

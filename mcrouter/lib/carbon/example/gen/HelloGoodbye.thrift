@@ -21,6 +21,7 @@ namespace cpp2 hellogoodbye.thrift
 struct HelloRequest {
   1: carbon.IOBufKey key
   2: i64 (cpp.type = "uint64_t") shardId
+  3: i64 (cpp.type = "uint64_t") deadlineMs
 }
 
 struct HelloReply {

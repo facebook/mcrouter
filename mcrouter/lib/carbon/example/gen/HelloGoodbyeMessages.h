@@ -74,6 +74,13 @@ class HelloRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return underlyingThriftStruct_.shardId;
   }
+  uint64_t deadlineMs() const {
+    return underlyingThriftStruct_.deadlineMs;
+  }
+  uint64_t& deadlineMs() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_.deadlineMs;
+  }
   uint64_t flags() const {
     return 0;
   }

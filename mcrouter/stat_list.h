@@ -214,6 +214,8 @@ STUI(result_local_error_count, 0, 1)
 STUI(result_local_error_all_count, 0, 1)
 STUI(result_remote_error_count, 0, 1)
 STUI(result_remote_error_all_count, 0, 1)
+STUI(result_deadline_exceeded_error_count, 0, 1)
+STUI(result_deadline_exceeded_error_all_count, 0, 1)
 STUI(failover_num_collisions, 0, 1)
 STUI(failover_conditional_count, 0, 1)
 STUIR(failover_policy_result_error, 0, 1)
@@ -246,6 +248,8 @@ STUIR(result_local_error, 0, 1)
 STUIR(result_local_error_all, 0, 1)
 STUIR(result_remote_error, 0, 1)
 STUIR(result_remote_error_all, 0, 1)
+STUIR(result_deadline_exceeded_error, 0, 1)
+STUIR(result_deadline_exceeded_error_all, 0, 1)
 #undef GROUP
 
 

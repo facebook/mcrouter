@@ -17,6 +17,7 @@
 #include "mcrouter/AsyncLog.h"
 #include "mcrouter/AsyncWriter.h"
 #include "mcrouter/CarbonRouterInstanceBase.h"
+#include "mcrouter/McReqUtil.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/ProxyDestination.h"
@@ -26,6 +27,7 @@
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/carbon/FailoverUtil.h"
+#include "mcrouter/lib/carbon/RequestReplyUtil.h"
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/network/gen/MemcacheMessages.h"
@@ -68,12 +70,14 @@ class DestinationRoute {
       size_t indexInPool,
       int32_t poolStatIdx,
       std::chrono::milliseconds timeout,
+      bool disableRequestDeadlineCheck,
       bool keepRoutingPrefix)
       : destination_(std::move(destination)),
         poolName_(poolName),
         indexInPool_(indexInPool),
         poolStatIndex_(poolStatIdx),
         timeout_(timeout),
+        disableRequestDeadlineCheck_(disableRequestDeadlineCheck),
         keepRoutingPrefix_(keepRoutingPrefix) {
     destination_->setPoolStatsIndex(poolStatIdx);
   }
@@ -115,6 +119,7 @@ class DestinationRoute {
   const int32_t poolStatIndex_{-1};
   const std::chrono::milliseconds timeout_;
   size_t pendingShadowReqs_{0};
+  const bool disableRequestDeadlineCheck_;
   const bool keepRoutingPrefix_;
 
   template <class Request>
@@ -127,6 +132,18 @@ class DestinationRoute {
   template <class Request>
   ReplyT<Request> checkAndRoute(const Request& req) const {
     auto& ctx = fiber_local<RouterInfo>::getSharedCtx();
+    auto requestClass = fiber_local<RouterInfo>::getRequestClass();
+    auto proxy = &ctx->proxy();
+    // If not a shadow destination, check if the request deadline has exceeded
+    // If yes, return DeadlineExceeded reply
+    if (!requestClass.is(RequestClass::kShadow) &&
+        !disableRequestDeadlineCheck_ && isRequestDeadlineExceeded(req)) {
+      // Return remote error until all clients are updated to latest version
+      // And un-comment the following line for returning the correct response
+      // return constructAndLog(req, *ctx, DeadlineExceededReply);
+      return constructAndLog(req, *ctx, RemoteErrorReply);
+    }
+
     carbon::Result tkoReason;
     if (!destination_->maySend(tkoReason)) {
       return constructAndLog(
@@ -141,7 +158,6 @@ class DestinationRoute {
     if (poolStatIndex_ >= 0) {
       ctx->setPoolStatsIndex(poolStatIndex_);
     }
-    auto requestClass = fiber_local<RouterInfo>::getRequestClass();
     if (ctx->recording()) {
       bool isShadow = requestClass.is(RequestClass::kShadow);
       ctx->recordDestination(
@@ -150,7 +166,6 @@ class DestinationRoute {
       return constructAndLog(req, *ctx, DefaultReply, req);
     }
 
-    auto proxy = &ctx->proxy();
     if (requestClass.is(RequestClass::kShadow)) {
       if (proxy->router().opts().target_max_shadow_requests > 0 &&
           pendingShadowReqs_ >=
@@ -295,6 +310,7 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeDestinationRoute(
     size_t indexInPool,
     int32_t poolStatsIndex,
     std::chrono::milliseconds timeout,
+    bool disableRequestDeadlineCheck,
     bool keepRoutingPrefix) {
   return makeRouteHandleWithInfo<RouterInfo, DestinationRoute, Transport>(
       std::move(destination),
@@ -302,6 +318,7 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeDestinationRoute(
       indexInPool,
       poolStatsIndex,
       timeout,
+      disableRequestDeadlineCheck,
       keepRoutingPrefix);
 }
 

@@ -26,8 +26,10 @@ using ReplyT = typename Request::reply_type;
  */
 enum DefaultReplyT { DefaultReply };
 enum ErrorReplyT { ErrorReply };
+enum RemoteErrorReplyT { RemoteErrorReply };
 enum TkoReplyT { TkoReply };
 enum BusyReplyT { BusyReply };
+enum DeadlineExceededReplyT { DeadlineExceededReply };
 
 template <class Request>
 ReplyT<Request>
@@ -46,6 +48,16 @@ ReplyT<Request> createReply(
 template <class Request>
 ReplyT<Request> createReply(ErrorReplyT) {
   return ReplyT<Request>(carbon::Result::LOCAL_ERROR);
+}
+
+template <class Request>
+ReplyT<Request> createReply(RemoteErrorReplyT) {
+  return ReplyT<Request>(carbon::Result::REMOTE_ERROR);
+}
+
+template <class Request>
+ReplyT<Request> createReply(DeadlineExceededReplyT) {
+  return ReplyT<Request>(carbon::Result::DEADLINE_EXCEEDED);
 }
 
 template <class Request>

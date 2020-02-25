@@ -42,3 +42,9 @@ struct ManyFields {
   39: folly::IOBuf buf39;
   40: folly::IOBuf buf40;
 };
+
+struct McExpTestRequest {
+  1: carbon::Keys<folly::IOBuf> key;
+  2: uint64_t flags;
+  3: uint64_t deadlineMs;
+};

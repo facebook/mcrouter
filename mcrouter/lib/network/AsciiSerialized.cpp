@@ -32,6 +32,8 @@ const char* errorResultStr(const carbon::Result result) {
       return "SERVER_ERROR 301 shutdown\r\n";
     case carbon::Result::TKO:
       return "SERVER_ERROR unavailable\r\n";
+    case carbon::Result::DEADLINE_EXCEEDED:
+      return "SERVER_ERROR request deadline exceeded\r\n";
     case carbon::Result::BAD_COMMAND:
       return "CLIENT_ERROR bad command\r\n";
     case carbon::Result::BAD_KEY:

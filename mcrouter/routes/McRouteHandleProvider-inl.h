@@ -231,6 +231,13 @@ McRouteHandleProvider<RouterInfo>::makePool(
         port = parseInt(*jPort, "port_override", 1, 65535);
       }
     }
+    bool disableRequestDeadlineCheck =
+        proxy_.router().opts().disable_request_deadline_check;
+    if (auto jRequestDeadline =
+            json.get_ptr("disable_request_deadline_check")) {
+      disableRequestDeadlineCheck =
+          parseBool(*jRequestDeadline, "disable_request_deadline_check");
+    }
     // servers
     auto jservers = json.get_ptr("servers");
     auto jhostnames = json.get_ptr("hostnames");
@@ -325,6 +332,7 @@ McRouteHandleProvider<RouterInfo>::makePool(
             nameSp,
             i,
             poolStatIndex,
+            disableRequestDeadlineCheck,
             keepRoutingPrefix));
       } else {
         using Transport = AsyncMcClient;
@@ -337,6 +345,7 @@ McRouteHandleProvider<RouterInfo>::makePool(
             nameSp,
             i,
             poolStatIndex,
+            disableRequestDeadlineCheck,
             keepRoutingPrefix));
       }
     } // servers
@@ -360,6 +369,7 @@ McRouteHandleProvider<RouterInfo>::createDestinationRoute(
     folly::StringPiece poolName,
     size_t indexInPool,
     int32_t poolStatIndex,
+    bool disableRequestDeadlineCheck,
     bool keepRoutingPrefix) {
   auto pdstn = proxy_.destinationMap()->template emplace<Transport>(
       std::move(ap), timeout, qosClass, qosPath);
@@ -371,6 +381,7 @@ McRouteHandleProvider<RouterInfo>::createDestinationRoute(
       indexInPool,
       poolStatIndex,
       timeout,
+      disableRequestDeadlineCheck,
       keepRoutingPrefix);
 }
 

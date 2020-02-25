@@ -99,8 +99,11 @@ void ProxyRequestLogger<RouterInfo>::logError(
   if (isClientErrorResult(result)) {
     REQUEST_CLASS_ERROR_STATS(proxy_, client_error, reqClass);
   }
+  if (isDeadlineExceededResult(result)) {
+    REQUEST_CLASS_ERROR_STATS(proxy_, deadline_exceeded_error, reqClass);
+  }
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

@@ -17,9 +17,17 @@
 
 #include "mcrouter/CarbonRouterClient.h"
 #include "mcrouter/CarbonRouterInstance.h"
+#include "mcrouter/McReqUtil.h"
 #include "mcrouter/Proxy.h"
 #include "mcrouter/config.h"
+#include "mcrouter/lib/carbon/RequestReplyUtil.h"
+#include "mcrouter/lib/carbon/example/gen/HelloGoodbyeRouterInfo.h"
+#include "mcrouter/lib/carbon/example/gen/HelloGoodbyeServer.h"
+#include "mcrouter/lib/network/AsyncMcServer.h"
+#include "mcrouter/lib/network/AsyncMcServerWorker.h"
+#include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
+
 #include "mcrouter/stats.h"
 
 using facebook::memcache::McGetReply;
@@ -89,7 +97,7 @@ TEST(CarbonRouterClient, basicUsageSameThreadClient) {
   client->setProxyIndex(0);
 
   bool replyReceived = false;
-  eventBase.runInEventBaseThread([ client = client.get(), &replyReceived ]() {
+  eventBase.runInEventBaseThread([client = client.get(), &replyReceived]() {
     // We must ensure that req will remain alive all the way through the reply
     // callback given to client->send(). This demonstrates one way of ensuring
     // this.
@@ -310,5 +318,294 @@ TEST(CarbonRouterClient, remoteThreadStatsRequestUsage) {
   // extra synchronization required when using a remote-thread client.
   baton.wait();
   router->shutdown();
+  EXPECT_TRUE(replyReceived);
+}
+
+TEST(CarbonRouterClient, requestExpiryTest) {
+  // This test sends a request with deadline time set, and then waits for longer
+  // than deadline time before sending the request, essentially expecting the
+  // request to exceed the deadline time. Validates by checking that the
+  // request indeed has exceeded the deadline.
+  auto opts = defaultTestOptions();
+  opts.config_str = R"(
+  {
+    "route": {
+      "type": "PoolRoute",
+      "pool": {
+        "name": "A",
+        "servers": [
+          "127.0.0.1:11111",
+          "127.0.0.1:11112",
+          "127.0.0.1:11113",
+        ]
+      }
+    }
+  })";
+
+  auto router =
+      CarbonRouterInstance<hellogoodbye::HelloGoodbyeRouterInfo>::init(
+          "remoteThreadStatsRequestUsage", opts);
+
+  opts.thread_affinity = true;
+  opts.num_proxies = 3;
+  opts.server_timeout_ms = 1;
+  opts.miss_on_get_errors = true;
+  // Create client that can safely send requests through a Proxy on another
+  // thread
+  auto client = router->createClient(0 /* max_outstanding_requests */, false);
+
+  // Note, as in the previous test, that req is kept alive through the end of
+  // the callback provided to client->send() below.
+  // Also note that we are careful not to modify req while the proxy (in this
+  // case, on another thread) may be processing it.
+  hellogoodbye::HelloRequest req;
+  req.key() = "test1";
+  setRequestDeadline(req, 10);
+  /* sleep override */
+  std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  bool replyReceived = false;
+  folly::fibers::Baton baton;
+
+  client->send(
+      req,
+      [&baton, &replyReceived](
+          const hellogoodbye::HelloRequest&, hellogoodbye::HelloReply&& reply) {
+        // for now, REMOTE_ERROR is returned in place of DEADLINE_EXCEEDED
+        EXPECT_EQ(carbon::Result::REMOTE_ERROR, reply.result());
+        replyReceived = true;
+        baton.post();
+      });
+
+  // Ensure proxies have a chance to send all outstanding requests. Note the
+  // extra synchronization required when using a remote-thread client.
+  baton.wait();
+  router->shutdown();
+  EXPECT_TRUE(replyReceived);
+}
+
+TEST(CarbonRouterClient, requestExpiryTestNoExpiry) {
+  // This test sends a request without deadline time set and validate that
+  // the DEADLINE_EXCEEDED error is not received.
+  auto opts = defaultTestOptions();
+  opts.config_str = R"(
+  {
+    "route": {
+      "type": "PoolRoute",
+      "pool": {
+        "name": "A",
+        "servers": [
+          "127.0.0.1:11111",
+          "127.0.0.1:11112",
+          "127.0.0.1:11113",
+        ]
+      }
+    }
+  })";
+
+  auto router =
+      CarbonRouterInstance<hellogoodbye::HelloGoodbyeRouterInfo>::init(
+          "remoteThreadStatsRequestUsage", opts);
+
+  opts.thread_affinity = true;
+  opts.num_proxies = 3;
+  opts.server_timeout_ms = 1;
+  opts.miss_on_get_errors = true;
+  // Create client that can safely send requests through a Proxy on another
+  // thread
+  auto client = router->createClient(0 /* max_outstanding_requests */, false);
+
+  // Note, as in the previous test, that req is kept alive through the end of
+  // the callback provided to client->send() below.
+  // Also note that we are careful not to modify req while the proxy (in this
+  // case, on another thread) may be processing it.
+  hellogoodbye::HelloRequest req;
+  req.key() = "test1";
+  setRequestDeadline(req, 10);
+  bool replyReceived = false;
+  folly::fibers::Baton baton;
+
+  client->send(
+      req,
+      [&baton, &replyReceived](
+          const hellogoodbye::HelloRequest&, hellogoodbye::HelloReply&& reply) {
+        // for now, REMOTE_ERROR is returned in place of DEADLINE_EXCEEDED
+        EXPECT_NE(carbon::Result::REMOTE_ERROR, reply.result());
+        replyReceived = true;
+        baton.post();
+      });
+
+  // Ensure proxies have a chance to send all outstanding requests. Note the
+  // extra synchronization required when using a remote-thread client.
+  baton.wait();
+  router->shutdown();
+  EXPECT_TRUE(replyReceived);
+}
+
+class TestOnRequest {
+ public:
+  explicit TestOnRequest(folly::EventBase& evb) {
+    fiberManager_ = &folly::fibers::getFiberManager(evb);
+  }
+
+  void onRequest(
+      facebook::memcache::McServerRequestContext&& context,
+      hellogoodbye::HelloRequest&& request) {
+    fiberManager_->addTaskRemote(
+        [ctx = std::move(context), req = std::move(request)]() mutable {
+          facebook::memcache::McServerRequestContext::reply(
+              std::move(ctx), hellogoodbye::HelloReply());
+        });
+  }
+
+ private:
+  folly::fibers::FiberManager* fiberManager_;
+};
+
+class TestServer {
+ public:
+  explicit TestServer(const size_t threadCount, uint16_t p) : port_(p) {
+    facebook::memcache::AsyncMcServer::Options opts;
+    opts.numThreads = threadCount;
+    opts.worker.sendTimeout = std::chrono::milliseconds(10);
+    // opts.existingSocketFd = socketFd_;
+    opts.ports.push_back(port_);
+    server_ = std::make_unique<facebook::memcache::AsyncMcServer>(opts);
+  }
+
+  ~TestServer() {
+    // close(socketFd_);
+  }
+
+  uint16_t getPort() const {
+    return port_;
+  }
+
+  void start() {
+    server_->spawn([](size_t /* threadId */,
+                      folly::EventBase& evb,
+                      facebook::memcache::AsyncMcServerWorker& worker) {
+      worker.setOnRequest(
+          hellogoodbye::HelloGoodbyeRequestHandler<TestOnRequest>(evb));
+
+      while (worker.isAlive() || worker.writesPending()) {
+        evb.loopOnce();
+      }
+    });
+  }
+
+  void shutdown() {
+    server_->shutdown();
+    server_->join();
+  }
+
+ private:
+  std::unique_ptr<facebook::memcache::AsyncMcServer> server_;
+  // const int socketFd_;
+  const uint16_t port_;
+};
+TEST(CarbonRouterClient, requestExpiryTestWithLatencyInjectionRoute) {
+  // This test sends a request with deadline time set, and then waits for longer
+  // than deadline time before sending the request, essentially expecting the
+  // request to exceed deadline time. Validates by checking that the request
+  // indeed has exceeded deadline time.
+  auto opts = defaultTestOptions();
+  opts.config_str = R"(
+  {
+    "pools": {
+      "A": {
+        "servers": [ "127.0.0.1:11610" ],
+        "protocol": "caret"
+      },
+      "B": {
+        "servers": [ "127.0.0.1:11611" ],
+        "protocol": "caret"
+      },
+      "C": {
+        "servers": [ "127.0.0.1:11612" ],
+        "protocol": "caret"
+      },
+      "D": {
+        "servers": [ "127.0.0.1:11613" ],
+        "protocol": "caret"
+      }
+    },
+    "route": {
+      "type": "FailoverRoute",
+      "children": [
+                  {
+                  "type": "LatencyInjectionRoute",
+                  "child": "PoolRoute|A",
+                  "before_latency_ms": 20
+                  },
+                  "PoolRoute|B",
+                  "PoolRoute|C",
+                  "PoolRoute|D"
+      ],
+      "failover_policy": {
+        "type": "DeterministicOrderPolicy",
+        "hash": {
+          "salt": "78966653"
+        },
+        "max_tries": 4,
+        "max_error_tries": 3
+      }
+    }
+  })";
+
+  TestServer server(4, 11610);
+  server.start();
+
+  auto router =
+      CarbonRouterInstance<hellogoodbye::HelloGoodbyeRouterInfo>::init(
+          "remoteThreadStatsRequestUsage", opts);
+
+  opts.thread_affinity = true;
+  opts.num_proxies = 3;
+  opts.server_timeout_ms = 1;
+  opts.miss_on_get_errors = true;
+  // Create client that can safely send requests through a Proxy on another
+  // thread
+  auto client = router->createClient(0 /* max_outstanding_requests */, false);
+
+  // Note, as in the previous test, that req is kept alive through the end of
+  // the callback provided to client->send() below.
+  // Also note that we are careful not to modify req while the proxy (in this
+  // case, on another thread) may be processing it.
+  hellogoodbye::HelloRequest req;
+  req.key() = "test1";
+  setRequestDeadline(req, 10);
+  bool replyReceived = false;
+  folly::fibers::Baton baton;
+
+  client->send(
+      req,
+      [&baton, &replyReceived](
+          const hellogoodbye::HelloRequest&, hellogoodbye::HelloReply&& reply) {
+        // for now, REMOTE_ERROR is returned in place of DEADLINE_EXCEEDED
+        EXPECT_EQ(carbon::Result::REMOTE_ERROR, reply.result());
+        replyReceived = true;
+        baton.post();
+      });
+
+  // Ensure proxies have a chance to send all outstanding requests. Note the
+  // extra synchronization required when using a remote-thread client.
+  baton.wait();
+  const auto& proxies = router->getProxies();
+  uint32_t num_errors = 0;
+  uint32_t num_deadline_exceeded_errors = 0;
+  for (size_t i = 0; i < proxies.size(); ++i) {
+    num_errors += proxies[i]->stats().getValue(
+        facebook::memcache::mcrouter::failover_policy_result_error_stat);
+    num_deadline_exceeded_errors += proxies[i]->stats().getValue(
+        facebook::memcache::mcrouter::result_deadline_exceeded_error_all_stat);
+  }
+  // DEADLINE_EXCEEDED error is also failover eligible because of
+  // time-sync issues so, make sure we actually failed over 3 times.
+  EXPECT_EQ(num_errors, 3);
+  // Enable this check after switching back to DEADLINE_EXCEEDED error
+  // EXPECT_EQ(num_deadline_exceeded_errors, 3);
+
+  router->shutdown();
+  server.shutdown();
   EXPECT_TRUE(replyReceived);
 }

@@ -116,6 +116,7 @@ class McRouteHandleProvider
       folly::StringPiece poolName,
       size_t indexInPool,
       int32_t poolStatIndex,
+      bool disableRequestDeadlineCheck,
       bool keepRoutingPrefix);
 
   RouteHandleFactoryMap buildRouteMap();

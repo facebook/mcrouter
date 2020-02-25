@@ -20,6 +20,7 @@ void HelloRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
   writer.writeField(1 /* field id */, key());
   writer.writeField(2 /* field id */, shardId());
+  writer.writeField(3 /* field id */, deadlineMs());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
@@ -32,6 +33,9 @@ void HelloRequest::visitFields(V&& v) {
   if (!v.visitField(2, "shardId", this->shardId())) {
     return;
   }
+  if (!v.visitField(3, "deadlineMs", this->deadlineMs())) {
+    return;
+  }
 }
 
 template <class V>
@@ -40,6 +44,9 @@ void HelloRequest::visitFields(V&& v) const {
     return;
   }
   if (!v.visitField(2, "shardId", this->shardId())) {
+    return;
+  }
+  if (!v.visitField(3, "deadlineMs", this->deadlineMs())) {
     return;
   }
 }
