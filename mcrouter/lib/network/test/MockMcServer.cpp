@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
         port = folly::to<uint16_t>(optarg);
         break;
       case 't':
-        opts.existingSocketFd = folly::to<int>(optarg);
+        opts.existingSocketFds = {folly::to<int>(optarg)};
         break;
       case 'z':
         opts.worker.tcpZeroCopyThresholdBytes = folly::to<int>(optarg);

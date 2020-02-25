@@ -72,13 +72,13 @@ struct TypedMockMcOnRequest {
         std::move(ctx), ReplyT<Request>(carbon::Result::CLIENT_ERROR));
   }
 };
-} // anonymous
+} // namespace
 
 TEST(CarbonMockMc, basic) {
   ListenSocket listenSock;
 
   AsyncMcServer::Options opts;
-  opts.existingSocketFd = listenSock.releaseSocketFd();
+  opts.existingSocketFds = {listenSock.releaseSocketFd()};
   opts.numThreads = 1;
 
   MockMc mc;

@@ -48,17 +48,17 @@ class AsyncMcServer {
    */
   struct Options {
     /**
-     * Take over an exernally created socket.
+     * Take over an exernally created sockets.
      * The server will call listen(), but not bind().
-     * If this is used (not -1), ports must be empty.
+     * If this is used (not empty), ports must be empty.
      * It will be used as SSL socket if and only if all of pem* paths are set.
      */
-    int existingSocketFd{-1};
+    std::vector<int> existingSocketFds;
 
     /**
      * Create Unix Domain Socket to listen on.
      * If this is used (not empty), port must be empty,
-     * existingSocketFd must be unset (-1).
+     * existingSocketFds must be empty
      */
     std::string unixDomainSockPath;
 
@@ -69,19 +69,19 @@ class AsyncMcServer {
 
     /**
      * The list of addresses to listen on.
-     * If this is used, existingSocketFd must be unset (-1).
+     * If this is used, existingSocketFds must be empty
      */
     std::vector<std::string> listenAddresses;
 
     /**
      * The list of ports to listen on.
-     * If this is used, existingSocketFd must be unset (-1).
+     * If this is used, existingSocketFds must be empty
      */
     std::vector<uint16_t> ports;
 
     /**
      * The list of ports to listen on for SSL connections.
-     * If this is used, existingSocketFd must be unset (-1).
+     * If this is used, existingSocketFds must be empty
      */
     std::vector<uint16_t> sslPorts;
 

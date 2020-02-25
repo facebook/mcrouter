@@ -129,7 +129,7 @@ bool runServer(
   AsyncMcServer::Options opts;
 
   if (standaloneOpts.listen_sock_fd >= 0) {
-    opts.existingSocketFd = standaloneOpts.listen_sock_fd;
+    opts.existingSocketFds = {standaloneOpts.listen_sock_fd};
   } else if (!standaloneOpts.unix_domain_sock.empty()) {
     opts.unixDomainSockPath = standaloneOpts.unix_domain_sock;
   } else {

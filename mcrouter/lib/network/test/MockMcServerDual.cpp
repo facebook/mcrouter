@@ -137,7 +137,7 @@ int main(int argc, char** argv) {
         asyncOpts.ports.push_back(folly::to<uint16_t>(optarg));
         break;
       case 'T':
-        asyncOpts.existingSocketFd = folly::to<int>(optarg);
+        asyncOpts.existingSocketFds = {folly::to<int>(optarg)};
         break;
       case 'p':
         thriftPort = folly::to<uint16_t>(optarg);

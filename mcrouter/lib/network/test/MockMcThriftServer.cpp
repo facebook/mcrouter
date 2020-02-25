@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
     if (port > 0) {
       gServer->setPort(port);
     } else if (existingSocketFd > 0) {
-      gServer->useExistingSocket(existingSocketFd);
+      gServer->useExistingSockets({existingSocketFd});
     }
     gServer->setNumIOWorkerThreads(2);
     gServer->addRoutingHandler(

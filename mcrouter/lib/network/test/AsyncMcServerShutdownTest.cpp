@@ -67,7 +67,7 @@ class TestServer {
     AsyncMcServer::Options opts;
     opts.numThreads = threadCount;
     opts.worker.sendTimeout = std::chrono::milliseconds(10);
-    opts.existingSocketFd = socketFd_;
+    opts.existingSocketFds = {socketFd_};
     server_ = std::make_unique<AsyncMcServer>(opts);
   }
 

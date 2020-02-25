@@ -488,7 +488,7 @@ class McServerThread {
     CHECK(accepting_);
     auto& opts = server_.opts_;
 
-    if (opts.existingSocketFd != -1) {
+    if (!opts.existingSocketFds.empty()) {
       checkLogic(
           opts.ports.empty() && opts.sslPorts.empty(),
           "Can't use ports if using existing socket");
@@ -500,12 +500,13 @@ class McServerThread {
       // enabled when the socket is in a TCP_CLOSE state, afterwards its too
       // late.
       if (opts.worker.tcpZeroCopyThresholdBytes > 0) {
-        int val = 0;
-        socklen_t optlen = sizeof(val);
-        int ret = getsockopt(
-            opts.existingSocketFd, SOL_SOCKET, SO_ZEROCOPY, &val, &optlen);
-        checkLogic(!ret, "Failed to getsockopt existing FD");
-        checkLogic(val, "SO_ZEROCOPY must be enabled on existing socket.");
+        for (auto fd : opts.existingSocketFds) {
+          int val = 0;
+          socklen_t optlen = sizeof(val);
+          int ret = getsockopt(fd, SOL_SOCKET, SO_ZEROCOPY, &val, &optlen);
+          checkLogic(!ret, "Failed to getsockopt existing FD");
+          checkLogic(val, "SO_ZEROCOPY must be enabled on existing socket.");
+        }
       }
       if (!opts.pemCertPath.empty() || !opts.pemKeyPath.empty() ||
           !opts.pemCaPath.empty()) {
@@ -516,17 +517,24 @@ class McServerThread {
             "if at least one of them set");
 
         sslSocket_.reset(new folly::AsyncServerSocket());
-        sslSocket_->useExistingSocket(
-            folly::NetworkSocket::fromFd(opts.existingSocketFd));
+        std::vector<folly::NetworkSocket> sockets;
+        for (auto fd : opts.existingSocketFds) {
+          sockets.push_back(folly::NetworkSocket::fromFd(fd));
+        }
+
+        sslSocket_->useExistingSockets(sockets);
       } else {
         socket_.reset(new folly::AsyncServerSocket());
-        socket_->useExistingSocket(
-            folly::NetworkSocket::fromFd(opts.existingSocketFd));
+        std::vector<folly::NetworkSocket> sockets;
+        for (auto fd : opts.existingSocketFds) {
+          sockets.push_back(folly::NetworkSocket::fromFd(fd));
+        }
+        socket_->useExistingSockets(sockets);
       }
     } else if (!opts.unixDomainSockPath.empty()) {
       checkLogic(
           opts.ports.empty() && opts.sslPorts.empty() &&
-              (opts.existingSocketFd == -1),
+              opts.existingSocketFds.empty(),
           "Can't listen on port and unix domain socket at the same time");
       checkLogic(
           !reusePort_,

@@ -72,7 +72,7 @@ std::unique_ptr<AsyncMcServer> startServer(
     int existingSocketFd,
     bool useSsl = false) {
   AsyncMcServer::Options opts;
-  opts.existingSocketFd = existingSocketFd;
+  opts.existingSocketFds = {existingSocketFd};
   opts.numThreads = 1;
 
   if (useSsl) {
@@ -83,16 +83,15 @@ std::unique_ptr<AsyncMcServer> startServer(
 
   auto server = std::make_unique<AsyncMcServer>(std::move(opts));
 
-  server->spawn(
-      [](size_t /* threadId */,
-         folly::EventBase& evb,
-         AsyncMcServerWorker& worker) {
-        worker.setOnRequest(CarbonTestRequestHandler<CarbonTestOnRequest>());
+  server->spawn([](size_t /* threadId */,
+                   folly::EventBase& evb,
+                   AsyncMcServerWorker& worker) {
+    worker.setOnRequest(CarbonTestRequestHandler<CarbonTestOnRequest>());
 
-        while (worker.isAlive() || worker.writesPending()) {
-          evb.loopOnce();
-        }
-      });
+    while (worker.isAlive() || worker.writesPending()) {
+      evb.loopOnce();
+    }
+  });
 
   return server;
 }
@@ -337,5 +336,5 @@ TEST(CmdLineClient, sendRequests_InvalidRequestName) {
   server->join();
 }
 
-} // test
-} // carbon
+} // namespace test
+} // namespace carbon

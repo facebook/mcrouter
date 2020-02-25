@@ -149,7 +149,7 @@ TestServer::TestServer(Config config)
       useTicketKeySeeds_(config.useSsl && config.useTicketKeySeeds),
       onConnectionAcceptedAdditionalCb_(
           std::move(config.onConnectionAcceptedAdditionalCb)) {
-  opts_.existingSocketFd = sock_.getSocketFd();
+  opts_.existingSocketFds = {sock_.getSocketFd()};
   opts_.numThreads = config.numThreads;
   opts_.worker.defaultVersionHandler = config.useDefaultVersion;
   opts_.worker.maxInFlight = config.maxInflight;
