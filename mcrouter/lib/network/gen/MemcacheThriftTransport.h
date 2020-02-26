@@ -35,7 +35,7 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       : ThriftTransportBase(eventBase, std::move(options)) {}
   ThriftTransport(folly::VirtualEventBase& eventBase, ConnectionOptions options)
       : ThriftTransportBase(eventBase.getEventBase(), std::move(options)) {}
-  ~ThriftTransport() override final {
+  ~ThriftTransport() override {
     resetClient();
   }
 
