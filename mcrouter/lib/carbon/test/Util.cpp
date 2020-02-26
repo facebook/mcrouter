@@ -27,8 +27,8 @@ namespace {
 void compareOptionalIobuf(
     const folly::Optional<folly::IOBuf>& a,
     const folly::Optional<folly::IOBuf>& b) {
-  EXPECT_EQ(a.hasValue(), b.hasValue());
-  if (a.hasValue()) {
+  EXPECT_EQ(a.has_value(), b.has_value());
+  if (a.has_value()) {
     folly::IOBuf aCopy = *a;
     folly::IOBuf bCopy = *b;
     EXPECT_EQ(coalesceAndGetRange(aCopy), coalesceAndGetRange(bCopy));

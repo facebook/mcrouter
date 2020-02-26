@@ -22,7 +22,7 @@ bool MultiOpParent::reply(
   // take ownership of the error reply and tell caller not to reply
   if (!(result == carbon::Result::FOUND ||
         result == carbon::Result::NOTFOUND) &&
-      !reply_.hasValue()) {
+      !reply_.has_value()) {
     stolen = true;
     error_ = true;
     reply_.emplace(result);
@@ -33,7 +33,7 @@ bool MultiOpParent::reply(
   assert(waiting_ > 0);
   --waiting_;
 
-  if (!waiting_ && end_.hasValue()) {
+  if (!waiting_ && end_.has_value()) {
     release();
   }
 
@@ -53,7 +53,7 @@ void MultiOpParent::recordEnd(uint64_t reqid) {
 }
 
 void MultiOpParent::release() {
-  if (!reply_.hasValue()) {
+  if (!reply_.has_value()) {
     reply_.emplace(carbon::Result::FOUND);
   }
   McServerRequestContext::reply(std::move(*end_), std::move(*reply_));

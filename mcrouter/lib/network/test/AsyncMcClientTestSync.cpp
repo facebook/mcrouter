@@ -68,7 +68,7 @@ class AsyncMcClientSimpleTest
   void applySSLTestPaths(
       const folly::Optional<SSLTestPaths>& ssl,
       TestServer::Config& config) {
-    config.useSsl = ssl.hasValue();
+    config.useSsl = ssl.has_value();
     if (config.useSsl) {
       config.tlsPreferOcbCipher = ssl->useOcbCipher;
     }
@@ -89,7 +89,7 @@ TEST_P(AsyncMcClientSimpleTest, serverShutdownTest) {
 
   // ensure transport matches the mech
   auto transport = client.getClient().getTransport();
-  if (!ssl.hasValue()) {
+  if (!ssl.has_value()) {
     EXPECT_EQ(transport->getSecurityProtocol(), "");
   } else if (
       ssl->mech == SecurityMech::TLS || ssl->mech == SecurityMech::KTLS12) {
@@ -116,7 +116,7 @@ TEST_P(AsyncMcClientSimpleTest, serverShutdownTest) {
     EXPECT_NE(fizzTransport, nullptr);
     if (ssl->useOcbCipher) {
       const auto cipher = fizzTransport->getCipher();
-      EXPECT_TRUE(cipher.hasValue());
+      EXPECT_TRUE(cipher.has_value());
       EXPECT_EQ(
           fizz::CipherSuite::TLS_AES_128_OCB_SHA256_EXPERIMENTAL, *cipher);
     }
@@ -381,7 +381,7 @@ class AsyncMcClientBasicTestBase {
       uint64_t qosClass,
       uint64_t qosPath) {
     config.outOfOrder = (protocol != mc_ascii_protocol);
-    config.useSsl = clientSsl.hasValue();
+    config.useSsl = clientSsl.has_value();
     auto server = TestServer::create(config);
     TestClient client(
         "localhost",
@@ -1146,7 +1146,7 @@ TEST_P(AsyncMcClientSSLOffloadTest, closeNow) {
   client->closeNow();
   evb.loop();
   EXPECT_FALSE(upCalled);
-  EXPECT_TRUE(downReason.hasValue());
+  EXPECT_TRUE(downReason.has_value());
   EXPECT_EQ(*downReason, ConnectionDownReason::ABORTED);
 }
 

@@ -359,7 +359,7 @@ TEST(CarbonTest, serializeDeserialize) {
   // List of strings
   outRequest.testList() = {"abcdefg", "xyz", kShortString.str(), longString()};
   // Force one optional field to not be serialized on the wire
-  EXPECT_FALSE(outRequest.testOptionalString().hasValue());
+  EXPECT_FALSE(outRequest.testOptionalString().has_value());
   // Other optional field gets a value of zero length
   outRequest.testOptionalIobuf() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "");
   // Union
@@ -452,38 +452,38 @@ TEST(CarbonTest, OptionalUnionSerialization) {
   testOpt.emplace<1>(1);
   auto inOpt = serializeAndDeserialize(testOpt);
   ASSERT_EQ(TestOptionalUnion::ValueType::UMEMBER1, inOpt.which());
-  EXPECT_EQ(testOpt.umember1().hasValue(), inOpt.umember1().hasValue());
+  EXPECT_EQ(testOpt.umember1().has_value(), inOpt.umember1().has_value());
   EXPECT_EQ(1, inOpt.umember1().value());
 
   testOpt.emplace<TestOptionalUnion::ValueType::UMEMBER1>(
       folly::Optional<int64_t>());
   inOpt = serializeAndDeserialize(testOpt);
   ASSERT_EQ(TestOptionalUnion::ValueType::UMEMBER1, inOpt.which());
-  EXPECT_EQ(testOpt.umember1().hasValue(), inOpt.umember1().hasValue());
+  EXPECT_EQ(testOpt.umember1().has_value(), inOpt.umember1().has_value());
 
   testOpt.emplace<TestOptionalUnion::ValueType::UMEMBER2>(false);
   inOpt = serializeAndDeserialize(testOpt);
   ASSERT_EQ(TestOptionalUnion::ValueType::UMEMBER2, inOpt.which());
-  EXPECT_EQ(testOpt.umember2().hasValue(), inOpt.umember2().hasValue());
+  EXPECT_EQ(testOpt.umember2().has_value(), inOpt.umember2().has_value());
   EXPECT_EQ(false, inOpt.umember2().value());
 
   testOpt.emplace<TestOptionalUnion::ValueType::UMEMBER2>(
       folly::Optional<bool>());
   inOpt = serializeAndDeserialize(testOpt);
   ASSERT_EQ(TestOptionalUnion::ValueType::UMEMBER2, inOpt.which());
-  EXPECT_EQ(testOpt.umember2().hasValue(), inOpt.umember2().hasValue());
+  EXPECT_EQ(testOpt.umember2().has_value(), inOpt.umember2().has_value());
 
   testOpt.emplace<TestOptionalUnion::ValueType::UMEMBER3>("test");
   inOpt = serializeAndDeserialize(testOpt);
   ASSERT_EQ(TestOptionalUnion::ValueType::UMEMBER3, inOpt.which());
-  EXPECT_EQ(testOpt.umember3().hasValue(), inOpt.umember3().hasValue());
+  EXPECT_EQ(testOpt.umember3().has_value(), inOpt.umember3().has_value());
   EXPECT_EQ("test", inOpt.umember3().value());
 
   testOpt.emplace<TestOptionalUnion::ValueType::UMEMBER3>(
       folly::Optional<std::string>());
   inOpt = serializeAndDeserialize(testOpt);
   ASSERT_EQ(TestOptionalUnion::ValueType::UMEMBER3, inOpt.which());
-  EXPECT_EQ(testOpt.umember3().hasValue(), inOpt.umember3().hasValue());
+  EXPECT_EQ(testOpt.umember3().has_value(), inOpt.umember3().has_value());
 }
 
 TEST(CarbonTest, OptionalBoolSerializationBytesWritten) {

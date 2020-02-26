@@ -21,7 +21,7 @@ void mcrouterSetThisThreadName(
     folly::StringPiece prefix,
     folly::Optional<size_t> threadIdx) {
   auto name = folly::to<std::string>(prefix, "-", opts.router_name);
-  if (threadIdx.hasValue()) {
+  if (threadIdx.has_value()) {
     name.append(folly::to<std::string>("-", threadIdx.value()));
   }
   if (!folly::setThreadName(name)) {

@@ -378,7 +378,7 @@ TEST(CarbonMessageConversionUtils, fromFollyDynamic_Complex) {
   EXPECT_EQ("string 1", r.testList()[0]);
   EXPECT_EQ("s2", r.testList()[1]);
 
-  ASSERT_TRUE(r.testOptionalString().hasValue());
+  ASSERT_TRUE(r.testOptionalString().has_value());
   EXPECT_EQ("I exist!", r.testOptionalString().value());
 
   ASSERT_EQ(SimpleUnion::ValueType::UMEMBER3, r.testUnion().which());

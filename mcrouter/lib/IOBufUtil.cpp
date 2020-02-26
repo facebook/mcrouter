@@ -39,7 +39,7 @@ folly::StringPiece coalesceAndGetRange(folly::IOBuf& buf) {
 }
 
 folly::StringPiece coalesceAndGetRange(folly::Optional<folly::IOBuf>& buf) {
-  return buf.hasValue() ? coalesceAndGetRange(*buf) : folly::StringPiece();
+  return buf.has_value() ? coalesceAndGetRange(*buf) : folly::StringPiece();
 }
 
 folly::StringPiece coalesceAndGetRange(

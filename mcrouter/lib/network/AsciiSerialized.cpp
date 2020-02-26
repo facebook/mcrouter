@@ -350,7 +350,7 @@ void AsciiSerializedReply::prepareImpl(
           "VALUE ",
           key,
           folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
-      assert(!iobuf_.hasValue());
+      assert(!iobuf_.has_value());
       // value was coalesced in coalesceAndGetRange()
       if (reply.value().has_value()) {
         iobuf_ = std::move(reply.value().value());
@@ -386,7 +386,7 @@ void AsciiSerializedReply::prepareImpl(
         "VALUE ",
         key,
         folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
-    assert(!iobuf_.hasValue());
+    assert(!iobuf_.has_value());
     // value was coalesced in coalescedAndGetRange()
     if (reply.value().has_value()) {
       iobuf_ = std::move(reply.value().value());
@@ -476,7 +476,7 @@ void AsciiSerializedReply::prepareImpl(
         "VALUE ",
         key,
         folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
-    assert(!iobuf_.hasValue());
+    assert(!iobuf_.has_value());
     // value was coalesced in coalescedAndGetRange()
     if (reply.value().has_value()) {
       iobuf_ = std::move(reply.value().value());
@@ -542,7 +542,7 @@ void AsciiSerializedReply::prepareImpl(
           "VALUE ",
           key,
           folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
-      assert(!iobuf_.hasValue());
+      assert(!iobuf_.has_value());
       // value was coalesced in coalesceAndGetRange()
       if (reply.value().has_value()) {
         iobuf_ = std::move(reply.value().value());
@@ -578,7 +578,7 @@ void AsciiSerializedReply::prepareImpl(
         "VALUE ",
         key,
         folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
-    assert(!iobuf_.hasValue());
+    assert(!iobuf_.has_value());
     // value was coalesced in coalescedAndGetRange()
     if (reply.value().has_value()) {
       iobuf_ = std::move(reply.value().value());
@@ -769,7 +769,7 @@ void AsciiSerializedReply::prepareImpl(McVersionReply&& reply) {
     addString("VERSION ");
     if (!reply.value().empty()) {
       const auto valueStr = coalesceAndGetRange(reply.value());
-      assert(!iobuf_.hasValue());
+      assert(!iobuf_.has_value());
       // value was coalesced in coalesceAndGetRange()
       iobuf_ = std::move(reply.value());
       addString(valueStr);

@@ -271,21 +271,21 @@ McRouteHandleProvider<RouterInfo>::makePool(
           server.stringPiece(), protocol, mech, port, enableCompression);
       checkLogic(ap != nullptr, "invalid server {}", server.stringPiece());
 
-      if (withinDcMech.hasValue() || crossDcMech.hasValue() ||
-          withinDcPort.hasValue() || crossDcPort.hasValue()) {
+      if (withinDcMech.has_value() || crossDcMech.has_value() ||
+          withinDcPort.has_value() || crossDcPort.has_value()) {
         bool isInLocalDc = isInLocalDatacenter(ap->getHost());
         if (isInLocalDc) {
-          if (withinDcMech.hasValue()) {
+          if (withinDcMech.has_value()) {
             ap->setSecurityMech(withinDcMech.value());
           }
-          if (withinDcPort.hasValue()) {
+          if (withinDcPort.has_value()) {
             ap->setPort(withinDcPort.value());
           }
         } else {
-          if (crossDcMech.hasValue()) {
+          if (crossDcMech.has_value()) {
             ap->setSecurityMech(crossDcMech.value());
           }
-          if (crossDcPort.hasValue()) {
+          if (crossDcPort.has_value()) {
             ap->setPort(crossDcPort.value());
           }
         }

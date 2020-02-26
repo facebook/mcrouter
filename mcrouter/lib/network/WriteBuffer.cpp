@@ -68,15 +68,15 @@ void WriteBuffer::clear() {
 }
 
 bool WriteBuffer::noReply() const {
-  return ctx_.hasValue() && ctx_->hasParent() && ctx_->parent().error();
+  return ctx_.has_value() && ctx_->hasParent() && ctx_->parent().error();
 }
 
 bool WriteBuffer::isSubRequest() const {
-  return ctx_.hasValue() && (ctx_->hasParent() || ctx_->isEndContext());
+  return ctx_.has_value() && (ctx_->hasParent() || ctx_->isEndContext());
 }
 
 bool WriteBuffer::isEndContext() const {
-  return ctx_.hasValue() ? ctx_->isEndContext() : false;
+  return ctx_.has_value() ? ctx_->isEndContext() : false;
 }
 
 WriteBuffer::List& WriteBufferQueue::initFreeStack(
