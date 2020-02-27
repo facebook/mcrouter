@@ -75,8 +75,21 @@ class FailoverInOrderPolicy {
 
   FailoverInOrderPolicy(
       const std::vector<RouteHandlePtr>& children,
-      const folly::dynamic&)
-      : children_(children) {}
+      const folly::dynamic& json)
+      : children_(children) {
+    if (!json.isObject()) {
+      return;
+    }
+    auto jMaxTries = json.get_ptr("max_tries");
+    if (jMaxTries) {
+      maxTries_ = static_cast<size_t>(
+          parseInt(*jMaxTries, "max_tries", 1, children_.size()));
+    }
+    auto jExcludeErrors = json.get_ptr("exclude_errors");
+    if (jExcludeErrors) {
+      excludeErrors_ = std::make_unique<CarbonErrorResults>(*jExcludeErrors);
+    }
+  }
 
   class ChildProxy {
    public:
@@ -145,11 +158,11 @@ class FailoverInOrderPolicy {
   }
 
   uint32_t maxErrorTries() const {
-    return std::numeric_limits<uint32_t>::max();
+    return maxTries_;
   }
 
-  bool excludeError(const carbon::Result) const {
-    return false; // No exclusions from retry counts
+  bool excludeError(const carbon::Result result) const {
+    return excludeErrors_ && excludeErrors_->contains(result);
   }
 
   template <class Request>
@@ -179,6 +192,8 @@ class FailoverInOrderPolicy {
 
  private:
   const std::vector<RouteHandlePtr>& children_;
+  uint32_t maxTries_{std::numeric_limits<uint32_t>::max()};
+  std::unique_ptr<CarbonErrorResults> excludeErrors_;
 };
 
 template <typename RouteHandleIf, typename RouterInfo>

@@ -36,7 +36,8 @@ McrouterRouteHandlePtr makeFailoverRouteInOrder(
     std::unique_ptr<FailoverRateLimiter> rateLimiter,
     bool failoverTagging,
     bool enableLeasePairing = false,
-    std::string name = "") {
+    std::string name = "",
+    folly::dynamic json = folly::dynamic::object) {
   return makeFailoverRouteInOrder<McrouterRouterInfo, FailoverRoute>(
       std::move(rh),
       std::move(failoverErrors),
@@ -44,7 +45,7 @@ McrouterRouteHandlePtr makeFailoverRouteInOrder(
       failoverTagging,
       enableLeasePairing,
       std::move(name),
-      nullptr);
+      json);
 }
 } // namespace mcrouter
 } // namespace memcache
@@ -716,4 +717,32 @@ TEST(failoverRouteTest, ignoreTkoHardTkoAndTryAgain) {
   // Since TKOs, CONNECT_ERROR and RES_TRY_AGAINs are excluded from
   // max_error_tries, we'll end up trying all 5 destinations.
   EXPECT_EQ(5, numRetries);
+}
+
+TEST(failoverRouteTest, limitRetries) {
+  std::vector<std::shared_ptr<TestHandle>> test_handles{
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::TIMEOUT, "a")),
+      make_shared<TestHandle>(
+          GetRouteTestData(carbon::Result::RES_TRY_AGAIN, "b")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::FOUND, "c"))};
+
+  mockFiberContext();
+  folly::dynamic excludeErrors = folly::dynamic::array;
+  excludeErrors.push_back("try_again");
+  folly::dynamic json = folly::dynamic::object("type", "FailoverInOrderPolicy")(
+      "max_tries", 2)("exclude_errors", excludeErrors);
+  auto rh = makeFailoverRouteInOrder(
+      get_route_handles(test_handles),
+      FailoverErrorsSettings(),
+      nullptr,
+      /* failoverTagging */ false,
+      /* enableLeasePairing */ false,
+      "route01",
+      std::move(json));
+
+  // Ordinarily, this test would fail since "b" will be the second and last
+  // retry. However since we exclude try_again from being a retry, "c" is
+  // retried.
+  auto reply = rh->route(McGetRequest("0"));
+  EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
 }
