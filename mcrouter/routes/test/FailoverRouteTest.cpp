@@ -683,3 +683,37 @@ TEST(failoverRouteTest, ignoreTkoAndHardTko) {
   // trying 3 of the 4 retry destinations, bounded by max_tries = 3
   EXPECT_EQ(3, numRetries);
 }
+
+TEST(failoverRouteTest, ignoreTkoHardTkoAndTryAgain) {
+  std::vector<std::shared_ptr<TestHandle>> test_handles{
+      make_shared<TestHandle>(
+          GetRouteTestData(carbon::Result::RES_TRY_AGAIN, "a")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::TIMEOUT, "b")),
+      make_shared<TestHandle>(GetRouteTestData(carbon::Result::TKO, "c")),
+      make_shared<TestHandle>(
+          GetRouteTestData(carbon::Result::CONNECT_ERROR, "d")),
+      make_shared<TestHandle>(
+          GetRouteTestData(carbon::Result::RES_TRY_AGAIN, "e"))};
+
+  mockFiberContext();
+  folly::dynamic excludeErrors = folly::dynamic::array;
+  excludeErrors.push_back("try_again");
+  folly::dynamic policyJson = folly::dynamic::object(
+      "type", "DeterministicOrderPolicy")("max_tries", 5)("max_error_tries", 2)(
+      "exclude_errors", excludeErrors);
+  folly::dynamic json = folly::dynamic::object("failover_policy", policyJson);
+  auto rh = makeFailoverRouteDefault<McrouterRouterInfo, FailoverRoute>(
+      json, get_route_handles(test_handles));
+
+  rh->route(McGetRequest("0"));
+  // The request should reach 2 children
+  int numRetries = 0;
+  for (auto testHdl : test_handles) {
+    if (!testHdl->saw_keys.empty()) {
+      ++numRetries;
+    }
+  }
+  // Since TKOs, CONNECT_ERROR and RES_TRY_AGAINs are excluded from
+  // max_error_tries, we'll end up trying all 5 destinations.
+  EXPECT_EQ(5, numRetries);
+}

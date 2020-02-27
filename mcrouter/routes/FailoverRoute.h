@@ -246,7 +246,8 @@ class FailoverRoute {
     }
 
     // We didn't do any work for TKO or hard TKO. Don't count it as a try.
-    if (!isTkoOrHardTkoResult(normalReply.result())) {
+    if (!isTkoOrHardTkoResult(normalReply.result()) &&
+        !failoverPolicy_.excludeError(normalReply.result())) {
       ++policyCtx.numTries_;
     }
 
@@ -309,7 +310,8 @@ class FailoverRoute {
           return failoverReply;
         }
         // We didn't do any work for TKO or hard TKO. Don't count it as a try.
-        if (!isTkoOrHardTkoResult(failoverReply.result())) {
+        if (!isTkoOrHardTkoResult(failoverReply.result()) &&
+            !failoverPolicy_.excludeError(failoverReply.result())) {
           ++policyCtx.numTries_;
         }
       }

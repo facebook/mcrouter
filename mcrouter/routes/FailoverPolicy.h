@@ -33,6 +33,40 @@ struct FailoverPolicyContext {
   size_t numTries_{0};
 };
 
+class CarbonErrorResults {
+ public:
+  CarbonErrorResults(const folly::dynamic& json) {
+    checkLogic(json.isArray(), "List of carbon errors is not an array");
+    for (const auto& elem : json) {
+      checkLogic(elem.isString(), "Failover error {} is not a string", elem);
+      bool foundMatch = false;
+      for (size_t i = 0; i < static_cast<size_t>(carbon::Result::NUM_RESULTS);
+           ++i) {
+        carbon::Result errorType = static_cast<carbon::Result>(i);
+        folly::StringPiece errorName(carbon::resultToString(errorType));
+        errorName.removePrefix("mc_res_");
+        if (isErrorResult(errorType) && elem.getString() == errorName) {
+          errorResults_[i] = true;
+          foundMatch = true;
+          break;
+        }
+      }
+      checkLogic(
+          foundMatch,
+          "Failover error {} is not a valid error result",
+          elem.getString());
+    }
+  }
+
+  bool contains(const carbon::Result result) const {
+    return errorResults_[static_cast<size_t>(result)];
+  }
+
+ private:
+  std::array<bool, static_cast<size_t>(carbon::Result::NUM_RESULTS)>
+      errorResults_{};
+};
+
 template <typename RouteHandleIf>
 class FailoverInOrderPolicy {
  public:
@@ -114,6 +148,10 @@ class FailoverInOrderPolicy {
     return std::numeric_limits<uint32_t>::max();
   }
 
+  bool excludeError(const carbon::Result) const {
+    return false; // No exclusions from retry counts
+  }
+
   template <class Request>
   FailoverPolicyContext context(const Request&) const {
     return FailoverPolicyContext();
@@ -176,6 +214,11 @@ class FailoverDeterministicOrderPolicy {
         maxErrorTries_ <= maxTries_,
         "Failover: DeterministicOrderPolicy 'max_error_tries' must be <= "
         "'max_tries'");
+
+    auto jExcludeErrors = json.get_ptr("exclude_errors");
+    if (jExcludeErrors) {
+      excludeErrors_ = std::make_unique<CarbonErrorResults>(*jExcludeErrors);
+    }
 
     funcType_ = Ch3HashFunc::type();
     if (auto jHash = json.get_ptr("hash")) {
@@ -333,6 +376,10 @@ class FailoverDeterministicOrderPolicy {
     return maxErrorTries_;
   }
 
+  bool excludeError(const carbon::Result result) const {
+    return excludeErrors_ && excludeErrors_->contains(result);
+  }
+
   template <class Request>
   FailoverPolicyContext context(const Request&) const {
     return FailoverPolicyContext();
@@ -352,6 +399,7 @@ class FailoverDeterministicOrderPolicy {
   const std::vector<RouteHandlePtr>& children_;
   uint32_t maxTries_;
   uint32_t maxErrorTries_;
+  std::unique_ptr<CarbonErrorResults> excludeErrors_;
   folly::dynamic config_;
   std::string funcType_;
   uint32_t salt_{1};
@@ -458,6 +506,10 @@ class FailoverLeastFailuresPolicy {
 
   uint32_t maxErrorTries() const {
     return std::numeric_limits<uint32_t>::max();
+  }
+
+  bool excludeError(const carbon::Result) const {
+    return false; // No exclusions from retry counts
   }
 
   template <class Request>
