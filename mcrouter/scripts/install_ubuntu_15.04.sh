@@ -10,7 +10,7 @@ set -ex
 
 sudo apt-get update
 
-sudo apt-get install -y \
+sudo apt-get --no-install-recommends install -y \
     autoconf \
     binutils-dev \
     bison \
@@ -41,3 +41,8 @@ sudo apt-get install -y \
 cd "$(dirname "$0")" || ( echo "cd fail"; exit 1 )
 
 ./get_and_build_everything.sh ubuntu-15.04 "$@"
+
+# Some Cleanup Up On the go
+sudo apt-get clean
+
+sudo apt-get -y --purge autoremove
