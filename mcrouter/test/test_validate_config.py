@@ -17,7 +17,7 @@ class TestValidateConfig(unittest.TestCase):
     invalid_config = 'mcrouter/test/invalid_config.json'
     extra_args = []
 
-    def try_mcrouter(self, config):
+    def try_mcrouter(self, config: str) -> int:
         listen_sock = socket.socket()
         listen_sock.listen(100)
         cmd = McrouterGlobals.preprocessArgs([
@@ -43,11 +43,11 @@ class TestValidateConfig(unittest.TestCase):
 
         return ret
 
-    def test_valid_config(self):
+    def test_valid_config(self) -> None:
         ret = self.try_mcrouter(self.valid_config)
         self.assertEqual(ret, 0)
 
-    def test_invalid_config(self):
+    def test_invalid_config(self) -> None:
         ret = self.try_mcrouter(self.invalid_config)
         self.assertNotEqual(ret, 0)
         self.assertNotEqual(ret, None)
