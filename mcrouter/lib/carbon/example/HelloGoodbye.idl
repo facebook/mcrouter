@@ -6,11 +6,13 @@ import "mcrouter/lib/network/Common.idl"
 request HelloRequest {
   id: 1;
   name: "hello";
+  thrift_headers: {shardId,message};
   reply: HelloReply;
 
   1: carbon::Keys<folly::IOBuf> key;
   2: uint64_t shardId;
   3: uint64_t deadlineMs;
+  4: std::string message;
 };
 
 reply HelloReply {

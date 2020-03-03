@@ -42,6 +42,10 @@ void HelloRequest::deserialize(carbon::CarbonProtocolReader& reader) {
         reader.readField(deadlineMs(), fieldType);
         break;
       }
+      case 4: {
+        reader.readField(message(), fieldType);
+        break;
+      }
       default: {
         reader.skip(fieldType);
         break;

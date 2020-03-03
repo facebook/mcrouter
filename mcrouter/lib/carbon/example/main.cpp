@@ -64,6 +64,20 @@ class ThriftHandler : virtual public hellogoodbye::thrift::HelloGoodbyeSvIf {
       const hellogoodbye::HelloRequest& request) override {
     LOG(INFO) << "Hello! Thrift server " << reinterpret_cast<uintptr_t>(this)
               << " got key " << request.key().fullKey().str();
+    auto ctx = callback->getConnectionContext();
+    if (ctx) {
+      auto headers = ctx->getHeaders();
+      auto it = headers.find("shardId");
+      if (it != headers.end()) {
+        LOG(INFO) << "Got shardId " << it->second << " from thrift header.";
+      }
+      it = headers.find("message");
+      if (it != headers.end()) {
+        LOG(INFO) << "Got message " << it->second << " from thrift header.";
+      }
+    } else {
+      LOG(ERROR) << "Cannot get context.";
+    }
     hellogoodbye::HelloReply reply(carbon::Result::OK);
     decltype(callback)::element_type::resultInThread(
         std::move(callback), std::move(reply));
@@ -156,6 +170,8 @@ void sendHelloRequestSync(
     CarbonRouterClient<HelloGoodbyeRouterInfo>* client,
     std::string key) {
   HelloRequest req(std::move(key));
+  req.shardId() = 1;
+  req.message() = "test";
   folly::fibers::Baton baton;
 
   client->send(req, [&baton](const HelloRequest&, HelloReply&& reply) {

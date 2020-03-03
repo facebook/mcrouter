@@ -81,6 +81,13 @@ class HelloRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return underlyingThriftStruct_.deadlineMs;
   }
+  const std::string& message() const {
+    return underlyingThriftStruct_.message;
+  }
+  std::string& message() {
+    markBufferAsDirty();
+    return underlyingThriftStruct_.message;
+  }
   uint64_t flags() const {
     return 0;
   }
