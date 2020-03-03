@@ -241,6 +241,34 @@ MCROUTER_OPTION_TOGGLE(
     " number of connections if running with >1 proxies/threads, and used"
     " together with thread-affinity option.")
 
+MCROUTER_OPTION_TOGGLE(
+    enable_qos,
+    false,
+    "enable-qos",
+    no_short,
+    "If enabled, sets the DSCP field in IP header of accepted connections according "
+    "to the specified qos class / qos path.")
+
+MCROUTER_OPTION_INTEGER(
+    unsigned int,
+    default_qos_class,
+    0,
+    "default-qos-class",
+    no_short,
+    "Default qos class to use on accepted connections. The classes go from "
+    "0 (lowest priority) to 4 (highest priority) and act on the hightest-order "
+    "bits of DSCP.")
+
+MCROUTER_OPTION_INTEGER(
+    unsigned int,
+    default_qos_path,
+    0,
+    "default-qos-path",
+    no_short,
+    "Default qos path to use on accepted connections. The classes go from "
+    "0 (lowest priority) to 3 (highest priority) and act on the lowest-order "
+    "bits of DSCP.")
+
 
 #ifdef ADDITIONAL_STANDALONE_OPTIONS_FILE
 #include ADDITIONAL_STANDALONE_OPTIONS_FILE

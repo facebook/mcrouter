@@ -24,6 +24,7 @@
 #include "mcrouter/lib/network/AsyncTlsToPlaintextSocket.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
 #include "mcrouter/lib/network/McFizzClient.h"
+#include "mcrouter/lib/network/Qos.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 
 namespace facebook {
@@ -73,48 +74,19 @@ void createTCPKeepAliveOptions(
 
 const folly::SocketOptionKey getQoSOptionKey(sa_family_t addressFamily) {
   static const folly::SocketOptionKey kIpv4OptKey = {IPPROTO_IP, IP_TOS};
-  static const folly::SocketOptionKey kIpv6OptKey = {IPPROTO_IPV6,
-                                                            IPV6_TCLASS};
+  static const folly::SocketOptionKey kIpv6OptKey = {IPPROTO_IPV6, IPV6_TCLASS};
   return (addressFamily == AF_INET) ? kIpv4OptKey : kIpv6OptKey;
 }
 
-uint64_t getQoS(uint64_t qosClassLvl, uint64_t qosPathLvl) {
-  // class
-  static const uint64_t kDefaultClass = 0x00;
-  static const uint64_t kLowestClass = 0x20;
-  static const uint64_t kMediumClass = 0x40;
-  static const uint64_t kHighClass = 0x60;
-  static const uint64_t kHighestClass = 0x80;
-  static const uint64_t kQoSClasses[] = {
-      kDefaultClass, kLowestClass, kMediumClass, kHighClass, kHighestClass};
-
-  // path
-  static const uint64_t kAnyPathNoProtection = 0x00;
-  static const uint64_t kAnyPathProtection = 0x04;
-  static const uint64_t kShortestPathNoProtection = 0x08;
-  static const uint64_t kShortestPathProtection = 0x0c;
-  static const uint64_t kQoSPaths[] = {kAnyPathNoProtection,
-                                       kAnyPathProtection,
-                                       kShortestPathNoProtection,
-                                       kShortestPathProtection};
-
-  if (qosClassLvl > 4) {
-    qosClassLvl = 0;
+uint64_t getClientQoS(uint64_t qosClassLvl, uint64_t qosPathLvl) {
+  uint64_t qos = 0;
+  if (!getQoS(qosClassLvl, qosPathLvl, qos)) {
     LOG_FAILURE(
         "AsyncMcClient",
         failure::Category::kSystemError,
-        "Invalid QoS class value in AsyncMcClient");
+        "Invalid QoS class/path value in AsyncMcClient");
   }
-
-  if (qosPathLvl > 3) {
-    qosPathLvl = 0;
-    LOG_FAILURE(
-        "AsyncMcClient",
-        failure::Category::kSystemError,
-        "Invalid QoS path value in AsyncMcClient");
-  }
-
-  return kQoSClasses[qosClassLvl] | kQoSPaths[qosPathLvl];
+  return qos;
 }
 
 void createQoSClassOption(
@@ -123,7 +95,7 @@ void createQoSClassOption(
     uint64_t qosClass,
     uint64_t qosPath) {
   const auto& optkey = getQoSOptionKey(addressFamily);
-  options[optkey] = getQoS(qosClass, qosPath);
+  options[optkey] = getClientQoS(qosClass, qosPath);
 }
 
 } // namespace
@@ -295,7 +267,7 @@ void checkWhetherQoSIsApplied(
   const auto& optkey = getQoSOptionKey(address.getFamily());
 
   const uint64_t expectedValue =
-      getQoS(connectionOptions.qosClass, connectionOptions.qosPath);
+      getClientQoS(connectionOptions.qosClass, connectionOptions.qosPath);
 
   uint64_t val = 0;
   socklen_t len = sizeof(expectedValue);

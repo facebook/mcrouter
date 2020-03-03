@@ -22,6 +22,7 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
+#include "mcrouter/lib/network/Qos.h"
 #include "mcrouter/standalone_options.h"
 
 namespace facebook {
@@ -157,6 +158,19 @@ bool runServer(
     VLOG(1) << "The system will allow " << maxConns
             << " simultaneos connections before start closing connections"
             << " using an LRU algorithm";
+  }
+
+  if (standaloneOpts.enable_qos) {
+    uint64_t qos = 0;
+    if (getQoS(
+            standaloneOpts.default_qos_class,
+            standaloneOpts.default_qos_path,
+            qos)) {
+      opts.worker.trafficClass = qos;
+    } else {
+      VLOG(1) << "Incorrect qos class / qos path. Accepted connections will not"
+              << "be marked.";
+    }
   }
 
   opts.tcpListenBacklog = standaloneOpts.tcp_listen_backlog;
