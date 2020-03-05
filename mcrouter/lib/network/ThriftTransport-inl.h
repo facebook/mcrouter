@@ -11,7 +11,7 @@
 #include <type_traits>
 
 #ifndef LIBMC_FBTRACE_DISABLE
-#include "contextprop/cpp/SerDe.h"
+#include "contextprop/cpp/serde/SerDeHelper.h"
 #include "contextprop/if/gen-cpp2/ContextpropConstants_constants.h"
 #endif
 

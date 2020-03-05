@@ -242,26 +242,26 @@ void ThriftTransportBase::traceRequestImpl(
     const carbon::MessageCommon& request,
     apache::thrift::RpcOptions& rpcOptions) {
   auto artilleryTraceIDs =
-      facebook::contextprop::SerDe::getArtilleryTraceIDsFromLegacyHeader(
+      facebook::contextprop::SerDeHelper::getArtilleryTraceIDsFromLegacyHeader(
           request.traceContext());
   rpcOptions.setWriteHeader(
       facebook::contextprop::ContextpropConstants_constants::
           artillery_trace_ids_header_,
-      facebook::contextprop::SerDe::serializeArtilleryTraceIDs(
-          artilleryTraceIDs));
+      facebook::contextprop::SerDeHelper::encodeAndSerialize<
+          facebook::contextprop::ArtilleryTraceIDs>(artilleryTraceIDs));
 }
 
 void ThriftTransportBase::traceResponseImpl(
     carbon::MessageCommon& response,
     const std::map<std::string, std::string>& responseHeaders) {
-  auto artilleryTraceIDs =
-      decodeAndDeserialize<facebook::contextprop::ArtilleryTraceIDs>(
-          responseHeaders,
-          facebook::contextprop::ContextpropConstants_constants::
-              artillery_trace_ids_header_);
+  auto artilleryTraceIDs = contextprop::SerDeHelper::decodeAndDeserialize<
+      facebook::contextprop::ArtilleryTraceIDs>(
+      responseHeaders,
+      facebook::contextprop::ContextpropConstants_constants::
+          artillery_trace_ids_header_);
   if (artilleryTraceIDs) {
     response.setTraceContext(
-        facebook::contextprop::SerDe::convertToLegacyTraceContext(
+        facebook::contextprop::SerDeHelper::convertToLegacyTraceContext(
             *artilleryTraceIDs));
   }
 }
