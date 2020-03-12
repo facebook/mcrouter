@@ -85,7 +85,7 @@ class AsyncTlsToPlaintextSocket::ConnectCallback
 
     DCHECK_EQ(0, tlsSocket->getZeroCopyBufId());
     impl.reset(new apache::thrift::async::TAsyncSocket(
-        &me_.evb_, tlsSocket->detachNetworkSocket().toFd()));
+        &me_.evb_, tlsSocket->detachNetworkSocket()));
     activateSocket();
     impl->getUnderlyingTransport<apache::thrift::async::TAsyncSocket>()
         ->setPeerCertificate(std::move(peerCert));
