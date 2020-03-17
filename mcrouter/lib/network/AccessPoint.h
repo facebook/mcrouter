@@ -25,7 +25,8 @@ struct AccessPoint {
       mc_protocol_t protocol = mc_unknown_protocol,
       SecurityMech mech = SecurityMech::NONE,
       bool compressed = false,
-      bool unixDomainSocket = false);
+      bool unixDomainSocket = false,
+      uint32_t failureDomain = 0);
 
   /**
    * @param apString accepts host:port, host:port:protocol and
@@ -45,7 +46,8 @@ struct AccessPoint {
       mc_protocol_t defaultProtocol,
       SecurityMech defaultMech = SecurityMech::NONE,
       uint16_t portOverride = 0,
-      bool defaultCompressed = false);
+      bool defaultCompressed = false,
+      uint32_t failureDomain = 0);
 
   const std::string& getHost() const {
     return host_;
@@ -65,6 +67,10 @@ struct AccessPoint {
 
   SecurityMech getSecurityMech() const {
     return securityMech_;
+  }
+
+  uint32_t getFailureDomain() const {
+    return failureDomain_;
   }
 
   bool useSsl() const {
@@ -108,6 +114,7 @@ struct AccessPoint {
   bool compressed_{false};
   bool isV6_{false};
   bool unixDomainSocket_{false};
+  uint32_t failureDomain_;
 };
 
 } // namespace memcache

@@ -209,6 +209,11 @@ class FailoverRoute {
         proxy.stats().increment(failover_policy_result_error_stat);
       } else {
         proxy.stats().increment(failover_policy_tko_error_stat);
+        // If it is Tko or Hard Tko set the failure domain so that
+        // we do not pick next failover target from the same failure domain
+        if (normalReply.destination()) {
+          iter.setFailedDomain(normalReply.destination()->getFailureDomain());
+        }
       }
     }
     ++iter;
@@ -289,6 +294,8 @@ class FailoverRoute {
         childIndex = cur.getTrueIndex();
       };
       auto nx = cur;
+      // Passive iterator does not do routing
+      nx.setPassive();
 
       ReplyT<Request> failoverReply;
       for (++nx; nx != failoverPolicy_.end(req) &&
@@ -313,6 +320,13 @@ class FailoverRoute {
         if (!isTkoOrHardTkoResult(failoverReply.result()) &&
             !failoverPolicy_.excludeError(failoverReply.result())) {
           ++policyCtx.numTries_;
+        } else {
+          // If it is Tko or Hard Tko set the failure domain so that
+          // we do not pick next failover target from the same failure domain
+          if (failoverReply.destination()) {
+            cur.setFailedDomain(
+                failoverReply.destination()->getFailureDomain());
+          }
         }
       }
 
@@ -329,6 +343,9 @@ class FailoverRoute {
       }
       proxy.stats().increment(
           failover_num_collisions_stat, cur.getStats().num_collisions);
+      proxy.stats().increment(
+          failover_num_failed_domain_collisions_stat,
+          cur.getStats().num_failed_domain_collisions);
 
       return failoverReply;
     });

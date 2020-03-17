@@ -70,12 +70,14 @@ AccessPoint::AccessPoint(
     mc_protocol_t protocol,
     SecurityMech mech,
     bool compressed,
-    bool unixDomainSocket)
+    bool unixDomainSocket,
+    uint32_t failureDomain)
     : port_(port),
       protocol_(protocol),
       securityMech_(mech),
       compressed_(compressed),
-      unixDomainSocket_(unixDomainSocket) {
+      unixDomainSocket_(unixDomainSocket),
+      failureDomain_(failureDomain) {
   if (folly::IPAddress::validate(host)) {
     folly::IPAddress ip(host);
     host_ = ip.toFullyQualified();
@@ -93,7 +95,8 @@ std::shared_ptr<AccessPoint> AccessPoint::create(
     mc_protocol_t defaultProtocol,
     SecurityMech defaultMech,
     uint16_t portOverride,
-    bool defaultCompressed) {
+    bool defaultCompressed,
+    uint32_t failureDomain) {
   if (apString.empty()) {
     return nullptr;
   }
@@ -147,7 +150,8 @@ std::shared_ptr<AccessPoint> AccessPoint::create(
         protocol.empty() ? defaultProtocol : parseProtocol(protocol),
         encr.empty() ? defaultMech : parseSecurityMech(encr),
         comp.empty() ? defaultCompressed : parseCompressed(comp),
-        unixDomainSocket);
+        unixDomainSocket,
+        failureDomain);
   } catch (const std::exception&) {
     return nullptr;
   }

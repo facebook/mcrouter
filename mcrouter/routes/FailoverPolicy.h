@@ -18,6 +18,7 @@
 #include "mcrouter/lib/Ch3HashFunc.h"
 #include "mcrouter/lib/HashSelector.h"
 #include "mcrouter/lib/Reply.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/lib/fbi/cpp/ParsingUtil.h"
 
@@ -27,6 +28,8 @@ namespace mcrouter {
 
 struct Stats {
   uint32_t num_collisions;
+  uint32_t num_cached_failure_domain_hits;
+  uint32_t num_failed_domain_collisions;
 };
 
 struct FailoverPolicyContext {
@@ -116,12 +119,16 @@ class FailoverInOrderPolicy {
       assert(children_.size() > 1);
     }
 
+    void setFailedDomain(uint32_t) {}
+
     size_t getTrueIndex() const {
       return id_;
     }
 
+    void setPassive() {}
+
     Stats getStats() const {
-      return {0};
+      return {0, 0, 0};
     }
 
    private:
@@ -235,6 +242,10 @@ class FailoverDeterministicOrderPolicy {
       excludeErrors_ = std::make_unique<CarbonErrorResults>(*jExcludeErrors);
     }
 
+    if (auto jEnableFailureDomains = json.get_ptr("enable_failure_domains")) {
+      enableFailureDomains_ = jEnableFailureDomains->getBool();
+    }
+
     funcType_ = Ch3HashFunc::type();
     if (auto jHash = json.get_ptr("hash")) {
       if (auto jhashFunc = jHash->get_ptr("hash_func")) {
@@ -287,19 +298,79 @@ class FailoverDeterministicOrderPolicy {
       usedIndexes_.set(index_);
     }
 
+    // By setting this, most of the increment() logic can be skipped for
+    // passive iterators and save some valuable CPU cycles
+    void setPassive() {
+      active_ = false;
+    }
+
     size_t getTrueIndex() const {
       return index_;
     }
 
     Stats getStats() const {
-      return {collisions_};
+      return {collisions_,
+              num_cached_failured_domain_hits_,
+              num_failed_domain_collisions_};
+    }
+
+    uint32_t getFailureDomain(size_t index) {
+      uint32_t failureDomain = policy_.getMemoizedFailureDomain(index);
+      if (failureDomain != 0) {
+        num_cached_failured_domain_hits_++;
+        return failureDomain;
+      }
+      // This may traverse the failover destinations if a failover route is
+      // under a failover route.
+      RouteHandleTraverser<typename RouterInfo::RouteHandleIf> t(
+          /* start */ nullptr,
+          /* end */ nullptr,
+          [&failureDomain](const AccessPoint& ap, const PoolContext&) mutable {
+            failureDomain = ap.getFailureDomain();
+            return true;
+          });
+      policy_.children_[index]->traverse(req_, t);
+
+      // Do memoization only in case of non-const iterators
+      if constexpr (!std::is_const<Policy>{}) {
+        if (failureDomain > 0) {
+          policy_.memoizeFailureDomain(index, failureDomain);
+        }
+      }
+      return failureDomain;
+    }
+
+    void setFailedDomain(uint32_t failedDomain) {
+      // failedDomain 0 means there is no failure Domain associated with the
+      // destination
+      if (policy_.enableFailureDomains_ && failedDomain > 0) {
+        failedDomains_.insert(failedDomain);
+        if (index_ > 0) {
+          policy_.memoizeFailureDomain(index_, failedDomain);
+        }
+      }
     }
 
    private:
     void increment() {
+      // No need to determine "next" index for passive iterators
+      if (!active_) {
+        ++id_;
+        return;
+      }
       uint32_t numAttempts = 0;
       auto nChildren = policy_.children_.size();
+      // arbitrarily set high number of max attempts so that finding the next
+      // index does not get into infinite loop
       constexpr uint32_t maxAttempts = 100;
+      // arbitrarily set percent of max attempts as failure domain threshold
+      // so that we do not consider all the MSB as failed (Remember that we
+      // do not have direct signal that a TKO is due to MSB failure, so if
+      // the number failure domains are small and all the failure domains are
+      // in the set, then we would be skipping all of them. This threshold is
+      // to get out of skipping all the destinations due to this pathological
+      // case
+      constexpr uint32_t failureDomainThreshold = (3 * maxAttempts) / 4;
       if (index_ == 0) {
         int32_t normal_reply_index =
             mcrouter::fiber_local<RouterInfo>::getSelectedIndex();
@@ -309,6 +380,7 @@ class FailoverDeterministicOrderPolicy {
           usedIndexes_.set(normal_reply_index + 1);
         }
       }
+      bool failedDomain = false;
       do {
         salt_++;
         // For now only Ch3Hash, and WeightedCh3Hash are supported
@@ -324,8 +396,27 @@ class FailoverDeterministicOrderPolicy {
         } else {
           throwLogic("Unknown hash function: {}", funcType_);
         }
-        collisions_++;
-      } while (usedIndexes_.test(index_) && (numAttempts++ < maxAttempts));
+        // Use failure domains only in case of non-const iterators
+        if constexpr (!std::is_const<Policy>{}) {
+          uint32_t nextFd = getFailureDomain(index_);
+          failedDomain =
+              (policy_.enableFailureDomains_ &&
+               (failedDomains_.find(nextFd) != failedDomains_.end()));
+        }
+        // force ignore failure-domain if we have tried more than
+        // failureDomainThreshold -- FAIL safe mechanism
+        if (numAttempts > failureDomainThreshold) {
+          failedDomain = false;
+        }
+
+        if (failedDomain) {
+          num_failed_domain_collisions_++;
+        } else {
+          collisions_++;
+        }
+
+      } while ((usedIndexes_.test(index_) || failedDomain) &&
+               (numAttempts++ < maxAttempts));
       collisions_--;
       usedIndexes_.set(index_);
       ++id_;
@@ -347,11 +438,15 @@ class FailoverDeterministicOrderPolicy {
     uint32_t id_{0};
     const Request& req_;
     uint32_t collisions_{0};
+    uint32_t num_cached_failured_domain_hits_{0};
+    uint32_t num_failed_domain_collisions_{0};
     // usedIndexes_ is used to keep track of indexes that have already been
     // used and is useful in avoiding picking the same destinations again and
     // again
     boost::dynamic_bitset<> usedIndexes_;
     size_t index_;
+    std::unordered_set<uint32_t> failedDomains_;
+    bool active_{true};
   };
   template <class Request>
   using Iterator = Iter<
@@ -410,6 +505,23 @@ class FailoverDeterministicOrderPolicy {
     return failover_deterministic_order_policy_failed_stat;
   }
 
+  uint32_t getMemoizedFailureDomain(uint32_t index) const {
+    auto it = failureDomainMap_.find(index);
+    if (it != failureDomainMap_.end()) {
+      return it->second;
+    }
+    return 0;
+  }
+
+  void memoizeFailureDomain(uint32_t index, uint32_t failureDomain) {
+    auto existingFD = getMemoizedFailureDomain(index);
+    if (existingFD != 0) {
+      assert(existingFD == failureDomain);
+    } else {
+      failureDomainMap_[index] = failureDomain;
+    }
+  }
+
  private:
   const std::vector<RouteHandlePtr>& children_;
   uint32_t maxTries_;
@@ -418,6 +530,9 @@ class FailoverDeterministicOrderPolicy {
   folly::dynamic config_;
   std::string funcType_;
   uint32_t salt_{1};
+  bool enableFailureDomains_{false};
+  // map of index in children_ to it's failure Domain
+  std::unordered_map<uint32_t, uint32_t> failureDomainMap_;
 };
 
 template <typename RouteHandleIf>
@@ -476,8 +591,12 @@ class FailoverLeastFailuresPolicy {
       return order_[id_];
     }
 
+    void setPassive() {}
+
+    void setFailedDomain(uint32_t) {}
+
     Stats getStats() const {
-      return {0};
+      return {0, 0, 0};
     }
 
    private:

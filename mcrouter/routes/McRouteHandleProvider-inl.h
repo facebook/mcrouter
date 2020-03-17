@@ -241,8 +241,12 @@ McRouteHandleProvider<RouterInfo>::makePool(
     // servers
     auto jservers = json.get_ptr("servers");
     auto jhostnames = json.get_ptr("hostnames");
+    auto jfailureDomains = json.get_ptr("failure_domains");
     checkLogic(jservers, "servers not found");
     checkLogic(jservers->isArray(), "servers is not an array");
+    checkLogic(
+        !jfailureDomains || jfailureDomains->isArray(),
+        "failure_domains is not an array");
     checkLogic(
         !jhostnames || jhostnames->isArray(), "hostnames is not an array");
     checkLogic(
@@ -251,6 +255,13 @@ McRouteHandleProvider<RouterInfo>::makePool(
         "expected {}, got {}",
         jservers->size(),
         jhostnames ? jhostnames->size() : 0);
+
+    checkLogic(
+        !jfailureDomains || jfailureDomains->size() == jservers->size(),
+        "failure_domains expected to be of the same size as servers, "
+        "expected {}, got {}",
+        jservers->size(),
+        jfailureDomains ? jfailureDomains->size() : 0);
 
     int32_t poolStatIndex = proxy_.router().getStatsEnabledPoolIndex(name);
 
@@ -267,8 +278,18 @@ McRouteHandleProvider<RouterInfo>::makePool(
         continue;
       }
 
+      uint32_t failureDomain =
+          jfailureDomains ? jfailureDomains->at(i).asInt() : 0;
+      if (failureDomain == 0) {
+        proxy_.stats().increment(dest_with_no_failure_domain_count_stat);
+      }
       auto ap = AccessPoint::create(
-          server.stringPiece(), protocol, mech, port, enableCompression);
+          server.stringPiece(),
+          protocol,
+          mech,
+          port,
+          enableCompression,
+          failureDomain);
       checkLogic(ap != nullptr, "invalid server {}", server.stringPiece());
 
       if (withinDcMech.has_value() || crossDcMech.has_value() ||
