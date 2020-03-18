@@ -61,6 +61,7 @@ class fiber_local {
     bool failoverTag{false};
     bool failoverDisabled{false};
     int32_t selectedIndex{-1};
+    int64_t networkTransportTimeUs{0};
   };
 
  public:
@@ -208,6 +209,15 @@ class fiber_local {
 
   static ServerLoad getServerLoad() {
     return folly::fibers::local<McrouterFiberContext>().load;
+  }
+
+  static void incNetworkTransportTimeBy(int64_t duration_us) {
+    folly::fibers::local<McrouterFiberContext>().networkTransportTimeUs +=
+        duration_us;
+  }
+
+  static int64_t getNetworkTransportTimeUs() {
+    return folly::fibers::local<McrouterFiberContext>().networkTransportTimeUs;
   }
 };
 

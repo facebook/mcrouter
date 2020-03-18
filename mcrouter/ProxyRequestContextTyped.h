@@ -40,7 +40,7 @@ struct RouterAdditionalLogger<
   using type = typename RouterInfo::AdditionalLogger;
 };
 
-} // detail
+} // namespace detail
 
 template <class RouterInfo>
 class ProxyRequestContextWithInfo : public ProxyRequestContext {
@@ -126,7 +126,8 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
         startTimeUs,
         /* endTimeUs */ 0,
         carbon::Result::UNKNOWN,
-        rpcStatsContext);
+        rpcStatsContext,
+        /* networkTransportTimeUs */ 0);
     assert(additionalLogger_.hasValue());
     additionalLogger_->logBeforeRequestSent(request, loggerContext);
   }
@@ -145,7 +146,8 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
       const int64_t startTimeUs,
       const int64_t endTimeUs,
       const int32_t poolStatIndex,
-      const RpcStatsContext rpcStatsContext) {
+      const RpcStatsContext rpcStatsContext,
+      const int64_t networkTransportTimeUs) {
     if (recording()) {
       return;
     }
@@ -162,7 +164,8 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
         startTimeUs,
         endTimeUs,
         reply.result(),
-        rpcStatsContext);
+        rpcStatsContext,
+        networkTransportTimeUs);
     assert(logger_.hasValue());
     logger_->template log<Request>(loggerContext);
     assert(additionalLogger_.hasValue());

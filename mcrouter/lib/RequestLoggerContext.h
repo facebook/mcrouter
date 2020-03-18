@@ -19,7 +19,7 @@
 
 namespace folly {
 class IOBuf;
-} // folly
+} // namespace folly
 
 namespace facebook {
 namespace memcache {
@@ -37,7 +37,8 @@ struct RequestLoggerContext {
       const int64_t startTimeUs_,
       const int64_t endTimeUs_,
       const carbon::Result replyResult_,
-      const RpcStatsContext rpcStatsContext_)
+      const RpcStatsContext rpcStatsContext_,
+      const int64_t networkTransportTimeUs_)
       : strippedRoutingPrefix(strippedRoutingPrefix_),
         requestClass(requestClass_),
         poolName(poolName_),
@@ -45,7 +46,8 @@ struct RequestLoggerContext {
         startTimeUs(startTimeUs_),
         endTimeUs(endTimeUs_),
         replyResult(replyResult_),
-        rpcStatsContext(rpcStatsContext_) {}
+        rpcStatsContext(rpcStatsContext_),
+        networkTransportTimeUs(networkTransportTimeUs_) {}
 
   RequestLoggerContext(const RequestLoggerContext&) = delete;
   RequestLoggerContext& operator=(const RequestLoggerContext&) = delete;
@@ -58,8 +60,9 @@ struct RequestLoggerContext {
   const int64_t endTimeUs;
   const carbon::Result replyResult;
   const RpcStatsContext rpcStatsContext;
+  const int64_t networkTransportTimeUs;
 };
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

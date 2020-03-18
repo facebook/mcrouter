@@ -211,7 +211,8 @@ class DestinationRoute {
         now,
         now,
         poolStatIndex_,
-        rpcContext);
+        rpcContext,
+        fiber_local<RouterInfo>::getNetworkTransportTimeUs());
     return reply;
   }
 
@@ -255,8 +256,11 @@ class DestinationRoute {
         dctx.startTime,
         dctx.endTime,
         poolStatIndex_,
-        rpcContext);
+        rpcContext,
+        fiber_local<RouterInfo>::getNetworkTransportTimeUs());
 
+    fiber_local<RouterInfo>::incNetworkTransportTimeBy(
+        dctx.endTime - dctx.startTime);
     fiber_local<RouterInfo>::setServerLoad(rpcContext.serverLoad);
     return reply;
   }
