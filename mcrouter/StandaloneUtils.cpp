@@ -97,6 +97,9 @@ void printUsage(const char* option, const char* description) {
       "Enable strict config checking. If 'exit' or no argument "
       "is provided, exit immediately with good or error status. "
       "Otherwise keep running if config is valid.");
+  printUsage(
+      "    --service-name",
+      "Set the service name for standalone mcrouter. Default is \"mcrouter\".");
 
   fprintf(stderr, "\nRETURN VALUE\n");
   printUsage("2", "On a problem that might be resolved by restarting later.");
@@ -212,6 +215,7 @@ CmdLineOptions parseCmdLineOptions(int argc, char** argv, std::string pkgName) {
       {"version", 0, nullptr, 'V'},
       {"validate-config", 2, nullptr, 0},
       {"proxy-threads", 1, nullptr, 0},
+      {"service-name", 1, nullptr, 0},
 
       // Deprecated or not supported
       {"gets", 0, nullptr, 0},
@@ -342,6 +346,9 @@ CmdLineOptions parseCmdLineOptions(int argc, char** argv, std::string pkgName) {
           LOG(WARNING) << "--retry-timeout is deprecated, use"
                           " --probe-timeout-initial";
           res.libmcrouterOptionsOverrides["probe_delay_initial_ms"] = optarg;
+        } else if (strcmp("service-name", longOptions[longIndex].name) == 0) {
+          // setup service name for standalone mcrouter
+          res.serviceName = optarg;
         } else {
           res.unrecognizedOptions.insert(argv[optind - 1]);
         }
@@ -456,7 +463,11 @@ void setupStandaloneMcrouter(
   LOG(INFO) << cmdLineOpts.packageName << " startup (" << getpid() << ")";
 
   // update service_name and router_name
-  libmcrouterOptions.service_name = serviceName;
+  if (cmdLineOpts.serviceName.empty()) {
+    libmcrouterOptions.service_name = serviceName;
+  } else {
+    libmcrouterOptions.service_name = cmdLineOpts.serviceName;
+  }
   if (cmdLineOpts.flavor.empty()) {
     std::string port = "0";
     if (!standaloneOptions.ports.empty()) {

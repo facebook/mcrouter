@@ -76,6 +76,9 @@ struct CmdLineOptions {
 
   // the raw command line arguments (it doesn't include the name of the binary).
   std::string commandArgs;
+
+  // the service name we want to override
+  std::string serviceName;
 };
 
 /**

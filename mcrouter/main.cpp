@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
       cmdLineOpts, optionsDict, standaloneOptionsDict);
 
   setupStandaloneMcrouter(
-      "mcrouter" /* serviceName */,
+      "mcrouter" /* default serviceName */,
       cmdLineOpts,
       optionsDict,
       standaloneOptionsDict,
