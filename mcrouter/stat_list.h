@@ -194,6 +194,9 @@ STUIR(failover_custom_master_region, 0, 1)
 STUIR(failover_custom_master_region_skipped, 0, 1)
 STUIR(failover_custom_master_region_invalid, 0, 1)
 STUIR(custom_policy_large_assoc_reqs, 0, 1)
+STUIR(failover_custom_skip_dbless_region, 0, 1)
+STUIR(failover_custom_db_regions_missing, 0, 1)
+STUIR(failover_custom_db_regions_empty, 0, 1)
 #undef GROUP
 #define GROUP ods_stats | count_stats
 STUI(result_error_count, 0, 1)
@@ -229,6 +232,7 @@ STUI(failover_custom_master_region_count, 0, 1)
 STUI(failover_custom_master_region_skipped_count, 0, 1)
 STUI(custom_policy_large_assoc_reqs_count, 0, 1)
 STUI(dest_with_no_failure_domain_count, 0, 1)
+STUI(failover_custom_skip_dbless_region_count, 0, 1)
 #undef GROUP
 #define GROUP ods_stats | detailed_stats | rate_stats
 STUIR(final_result_error, 0, 1)
