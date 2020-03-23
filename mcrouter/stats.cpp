@@ -251,7 +251,7 @@ static std::string stat_to_str(const stat_t* stat, void* /* ptr */) {
   }
 }
 
-void init_stats(stat_t* stats){
+void init_stats(stat_t* stats) {
 #define STAT(_name, _type, _aggregate, _data_assignment) \
   {                                                      \
     stat_t& s = stats[_name##_stat];                     \
@@ -272,11 +272,6 @@ void init_stats(stat_t* stats){
 #undef STUIR
 #undef STSI
 #undef STSS
-}
-
-uint64_t stat_get_config_age(const stat_t* stats, uint64_t now) {
-  uint64_t lct = stats[config_last_success_stat].data.uint64;
-  return now - lct;
 }
 
 // Returns 0 on success, -1 on failure.  In either case, all fields of
@@ -351,7 +346,12 @@ void append_pool_stats(
     for (auto& poolStatMapEntry : poolStatMap) {
       auto it = mergedPoolStatsMap.find(poolStatMapEntry.first);
       if (it != mergedPoolStatsMap.end()) {
-        it->second.data.uint64 += poolStatMapEntry.second.data.uint64;
+        auto iref = folly::make_atomic_ref(it->second.data.uint64);
+        auto pref = folly::make_atomic_ref(poolStatMapEntry.second.data.uint64);
+        iref.store(
+            iref.load(std::memory_order_relaxed) +
+                pref.load(std::memory_order_relaxed),
+            std::memory_order_relaxed);
       } else {
         mergedPoolStatsMap.insert(std::move(poolStatMapEntry));
       }
@@ -418,7 +418,7 @@ void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
         destination_reqs_total_sum_stat);
   }
 
-  stat_set_uint64(
+  stat_set(
       stats,
       num_suspect_servers_stat,
       router.tkoTrackerMap().getSuspectServersCount());
@@ -427,108 +427,141 @@ void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
   if (destinationBatchesSum != 0) {
     avgBatchSize = destinationRequestsSum / (double)destinationBatchesSum;
   }
-  stats[destination_batch_size_stat].data.dbl = avgBatchSize;
+  stat_set(stats, destination_batch_size_stat, avgBatchSize);
 
   double avgRetransPerKByte = 0.0;
   if (retransNumTotal != 0) {
     avgRetransPerKByte = retransPerKByteSum / (double)retransNumTotal;
   }
-  stats[retrans_per_kbyte_avg_stat].data.dbl = avgRetransPerKByte;
+  stat_set(stats, retrans_per_kbyte_avg_stat, avgRetransPerKByte);
 
   double reqsDirtyBufferRatio = 0.0;
   if (destinationRequestsTotalSum != 0) {
     reqsDirtyBufferRatio =
         destinationRequestsDirtyBufferSum / (double)destinationRequestsTotalSum;
   }
-  stats[destination_reqs_dirty_buffer_ratio_stat].data.dbl =
-      reqsDirtyBufferRatio;
 
-  stats[outstanding_route_get_avg_queue_size_stat].data.dbl = 0.0;
-  stats[outstanding_route_get_avg_wait_time_sec_stat].data.dbl = 0.0;
+  stat_set(
+      stats, destination_reqs_dirty_buffer_ratio_stat, reqsDirtyBufferRatio);
+  stat_set(stats, outstanding_route_get_avg_queue_size_stat, 0.0);
+  stat_set(stats, outstanding_route_get_avg_wait_time_sec_stat, 0.0);
+
   if (outstandingGetReqsTotal > 0) {
-    stats[outstanding_route_get_avg_queue_size_stat].data.dbl =
-        outstandingGetReqsHelper / (double)outstandingGetReqsTotal;
-    stats[outstanding_route_get_avg_wait_time_sec_stat].data.dbl =
-        outstandingGetWaitTimeSumUs / (1000000.0 * outstandingGetReqsTotal);
+    stat_set(
+        stats,
+        outstanding_route_get_avg_queue_size_stat,
+        outstandingGetReqsHelper / (double)outstandingGetReqsTotal);
+    stat_set(
+        stats,
+        outstanding_route_get_avg_wait_time_sec_stat,
+        outstandingGetWaitTimeSumUs / (1000000.0 * outstandingGetReqsTotal));
   }
 
-  stats[outstanding_route_update_avg_queue_size_stat].data.dbl = 0.0;
-  stats[outstanding_route_update_avg_wait_time_sec_stat].data.dbl = 0.0;
+  stat_set(stats, outstanding_route_update_avg_queue_size_stat, 0.0);
+  stat_set(stats, outstanding_route_update_avg_wait_time_sec_stat, 0.0);
   if (outstandingUpdateReqsTotal > 0) {
-    stats[outstanding_route_update_avg_queue_size_stat].data.dbl =
-        outstandingUpdateReqsHelper / (double)outstandingUpdateReqsTotal;
-    stats[outstanding_route_update_avg_wait_time_sec_stat].data.dbl =
+    stat_set(
+        stats,
+        outstanding_route_update_avg_queue_size_stat,
+        outstandingUpdateReqsHelper / (double)outstandingUpdateReqsTotal);
+    stat_set(
+        stats,
+        outstanding_route_update_avg_wait_time_sec_stat,
         outstandingUpdateWaitTimeSumUs /
-        (1000000.0 * outstandingUpdateReqsTotal);
+            (1000000.0 * outstandingUpdateReqsTotal));
   }
 
-  stats[commandargs_stat].data.string = gStandaloneArgs;
+  folly::make_atomic_ref(stats[commandargs_stat].data.string)
+      .store(gStandaloneArgs, std::memory_order_relaxed);
 
   uint64_t now = time(nullptr);
-  stats[time_stat].data.uint64 = now;
+  stat_set(stats, time_stat, now);
+  stat_set(stats, uptime_stat, now - router.startTime());
+  stat_set(stats, config_age_stat, now - config_last_success);
+  stat_set(stats, config_last_success_stat, config_last_success);
+  stat_set(
+      stats,
+      config_last_attempt_stat,
+      static_cast<uint64_t>(router.lastConfigAttempt()));
+  stat_set(stats, config_failures_stat, router.configFailures());
+  stat_set(
+      stats,
+      configs_from_disk_stat,
+      static_cast<uint64_t>(router.configuredFromDisk()));
 
-  uint64_t start_time = router.startTime();
-  stats[uptime_stat].data.uint64 = now - start_time;
-
-  stats[config_age_stat].data.uint64 = now - config_last_success;
-  stats[config_last_success_stat].data.uint64 = config_last_success;
-  stats[config_last_attempt_stat].data.uint64 = router.lastConfigAttempt();
-  stats[config_failures_stat].data.uint64 = router.configFailures();
-  stats[configs_from_disk_stat].data.uint64 =
-      static_cast<uint64_t>(router.configuredFromDisk());
-
-  stats[pid_stat].data.int64 = getpid();
-  stats[parent_pid_stat].data.int64 = getppid();
+  folly::make_atomic_ref(stats[pid_stat].data.int64)
+      .store(getpid(), std::memory_order_relaxed);
+  folly::make_atomic_ref(stats[parent_pid_stat].data.int64)
+      .store(getppid(), std::memory_order_relaxed);
 
   struct rusage ru;
   getrusage(RUSAGE_SELF, &ru);
-  stats[rusage_user_stat].data.dbl =
-      ru.ru_utime.tv_sec + ru.ru_utime.tv_usec / 1000000.0;
 
-  stats[rusage_system_stat].data.dbl =
-      ru.ru_stime.tv_sec + ru.ru_stime.tv_usec / 1000000.0;
+  stat_set(
+      stats,
+      rusage_user_stat,
+      ru.ru_utime.tv_sec + ru.ru_utime.tv_usec / 1000000.0);
+  stat_set(
+      stats,
+      rusage_system_stat,
+      ru.ru_stime.tv_sec + ru.ru_stime.tv_usec / 1000000.0);
 
   proc_stat_data_t ps_data;
   get_proc_stat(getpid(), &ps_data);
-  stats[ps_num_minor_faults_stat].data.uint64 = ps_data.num_minor_faults;
-  stats[ps_num_major_faults_stat].data.uint64 = ps_data.num_major_faults;
-  stats[ps_user_time_sec_stat].data.dbl = ps_data.user_time_sec;
-  stats[ps_system_time_sec_stat].data.dbl = ps_data.system_time_sec;
-  stats[ps_rss_stat].data.uint64 = ps_data.rss;
-  stats[ps_vsize_stat].data.uint64 = ps_data.vsize;
+  stat_set(stats, ps_num_minor_faults_stat, ps_data.num_minor_faults);
+  stat_set(stats, ps_num_major_faults_stat, ps_data.num_major_faults);
+  stat_set(stats, ps_user_time_sec_stat, ps_data.user_time_sec);
+  stat_set(stats, ps_system_time_sec_stat, ps_data.system_time_sec);
+  stat_set(stats, ps_rss_stat, ps_data.rss);
+  stat_set(stats, ps_vsize_stat, ps_data.vsize);
 
-  stats[fibers_allocated_stat].data.uint64 = 0;
-  stats[fibers_pool_size_stat].data.uint64 = 0;
-  stats[fibers_stack_high_watermark_stat].data.uint64 = 0;
+  stat_set(stats, fibers_allocated_stat, 0UL);
+  stat_set(stats, fibers_pool_size_stat, 0UL);
+  stat_set(stats, fibers_stack_high_watermark_stat, 0UL);
   for (size_t i = 0; i < router.opts().num_proxies; ++i) {
     auto pr = router.getProxyBase(i);
-    stats[fibers_allocated_stat].data.uint64 +=
-        pr->fiberManager().fibersAllocated();
-    stats[fibers_pool_size_stat].data.uint64 +=
-        pr->fiberManager().fibersPoolSize();
-    stats[fibers_stack_high_watermark_stat].data.uint64 = std::max(
-        stats[fibers_stack_high_watermark_stat].data.uint64,
-        pr->fiberManager().stackHighWatermark());
-    stats[duration_us_stat].data.dbl += pr->stats().durationUs().value();
-    stats[duration_get_us_stat].data.dbl += pr->stats().durationGetUs().value();
-    stats[duration_update_us_stat].data.dbl +=
-        pr->stats().durationUpdateUs().value();
-    stats[inactive_connection_closed_interval_sec_stat].data.dbl +=
-        pr->stats().inactiveConnectionClosedIntervalSec().value();
-    stats[client_queue_notify_period_stat].data.dbl += pr->queueNotifyPeriod();
-    stats[asynclog_duration_us_stat].data.dbl +=
-        pr->stats().asyncLogDurationUs().value();
+    stat_incr(
+        stats,
+        fibers_allocated_stat,
+        static_cast<int64_t>(pr->fiberManager().fibersAllocated()));
+    stat_incr(
+        stats,
+        fibers_pool_size_stat,
+        static_cast<int64_t>(pr->fiberManager().fibersPoolSize()));
+    stat_incr(
+        stats,
+        fibers_stack_high_watermark_stat,
+        static_cast<int64_t>(std::max(
+            stat_get_uint64(stats, fibers_stack_high_watermark_stat),
+            pr->fiberManager().stackHighWatermark())));
+    stat_incr(stats, duration_us_stat, pr->stats().durationUs().value());
+    stat_incr(stats, duration_get_us_stat, pr->stats().durationGetUs().value());
+    stat_incr(
+        stats, duration_update_us_stat, pr->stats().durationUpdateUs().value());
+    stat_incr(
+        stats,
+        inactive_connection_closed_interval_sec_stat,
+        pr->stats().inactiveConnectionClosedIntervalSec().value());
+    stat_incr(
+        stats,
+        client_queue_notify_period_stat,
+        static_cast<int64_t>(pr->queueNotifyPeriod()));
+    stat_incr(
+        stats,
+        asynclog_duration_us_stat,
+        pr->stats().asyncLogDurationUs().value());
   }
 
   if (router.opts().num_proxies > 0) {
-    stats[duration_us_stat].data.dbl /= router.opts().num_proxies;
-    stats[duration_get_us_stat].data.dbl /= router.opts().num_proxies;
-    stats[duration_update_us_stat].data.dbl /= router.opts().num_proxies;
-    stats[inactive_connection_closed_interval_sec_stat].data.dbl /=
-        router.opts().num_proxies;
-    stats[client_queue_notify_period_stat].data.dbl /=
-        router.opts().num_proxies;
-    stats[asynclog_duration_us_stat].data.dbl /= router.opts().num_proxies;
+    stat_div(stats, duration_us_stat, router.opts().num_proxies);
+    stat_div(stats, duration_get_us_stat, router.opts().num_proxies);
+    stat_div(stats, duration_update_us_stat, router.opts().num_proxies);
+    stat_div(
+        stats,
+        inactive_connection_closed_interval_sec_stat,
+        router.opts().num_proxies);
+    stat_div(stats, client_queue_notify_period_stat, router.opts().num_proxies);
+    stat_div(stats, asynclog_duration_us_stat, router.opts().num_proxies);
   }
 
   for (int i = 0; i < num_stats; i++) {
@@ -536,36 +569,30 @@ void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
       for (size_t j = 0; j < router.opts().num_proxies; ++j) {
         auto pr = router.getProxyBase(j);
         if (stats[i].type == stat_uint64) {
-          stats[i].data.uint64 += pr->stats().getStat(i).data.uint64;
+          stat_incr(
+              stats,
+              static_cast<stat_name_t>(i),
+              static_cast<int64_t>(
+                  folly::make_atomic_ref(pr->stats().getStat(i).data.uint64)
+                      .load(std::memory_order_relaxed)));
         } else if (stats[i].type == stat_int64) {
-          stats[i].data.int64 += pr->stats().getStat(i).data.int64;
+          stat_incr(
+              stats,
+              static_cast<stat_name_t>(i),
+              folly::make_atomic_ref(pr->stats().getStat(i).data.int64)
+                  .load(std::memory_order_relaxed));
         } else if (stats[i].type == stat_double) {
-          stats[i].data.dbl += pr->stats().getStat(i).data.dbl;
+          stat_incr(
+              stats,
+              static_cast<stat_name_t>(i),
+              folly::make_atomic_ref(pr->stats().getStat(i).data.dbl)
+                  .load(std::memory_order_relaxed));
         } else {
           LOG(FATAL) << "you can't aggregate non-numerical stats!";
         }
       }
     }
   }
-}
-
-// Thread-safe increment of the given counter
-void stat_incr_safe(stat_t* stats, stat_name_t stat_name, int64_t amount) {
-  __sync_fetch_and_add(&stats[stat_name].data.uint64, amount);
-}
-
-void stat_decr_safe(stat_t* stats, stat_name_t stat_name) {
-  __sync_fetch_and_add(&stats[stat_name].data.uint64, -1);
-}
-
-void stat_set_uint64(stat_t* stats, stat_name_t stat_num, uint64_t value) {
-  stat_t* stat = &stats[stat_num];
-  assert(stat->type == stat_uint64);
-  stat->data.uint64 = value;
-}
-
-uint64_t stat_get_uint64(const stat_t* stats, stat_name_t stat_num) {
-  return stats[stat_num].data.uint64;
 }
 
 static stat_group_t stat_parse_group_str(folly::StringPiece str) {

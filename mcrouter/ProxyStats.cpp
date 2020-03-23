@@ -30,12 +30,14 @@ void ProxyStats::aggregate(size_t statId) {
   for (int j = 0; j < num_stats; ++j) {
     if (stats_[j].group & rate_stats) {
       statsNumWithinWindow_[j] -= statsBin_[j][statId];
-      statsBin_[j][statId] = stats_[j].data.uint64;
+      auto ref = folly::make_atomic_ref(stats_[j].data.uint64);
+      statsBin_[j][statId] = ref.load(std::memory_order_relaxed);
       statsNumWithinWindow_[j] += statsBin_[j][statId];
-      stats_[j].data.uint64 = 0;
+      ref.store(0, std::memory_order_relaxed);
     } else if (stats_[j].group & (max_stats | max_max_stats)) {
-      statsBin_[j][statId] = stats_[j].data.uint64;
-      stats_[j].data.uint64 = 0;
+      auto ref = folly::make_atomic_ref(stats_[j].data.uint64);
+      statsBin_[j][statId] = ref.load(std::memory_order_relaxed);
+      ref.store(0, std::memory_order_relaxed);
     }
   }
 }

@@ -38,8 +38,10 @@ class PoolStats {
     stat_t totalDurationStat;
     initStat(durationStat, durationUsStatName_);
     initStat(totalDurationStat, totalDurationUsStatName_);
-    durationStat.data.uint64 = durationUsStat_.value();
-    totalDurationStat.data.uint64 = totalDurationUsStat_.value();
+    folly::make_atomic_ref(durationStat.data.uint64)
+        .store(durationUsStat_.value(), std::memory_order_relaxed);
+    folly::make_atomic_ref(totalDurationStat.data.uint64)
+        .store(totalDurationUsStat_.value(), std::memory_order_relaxed);
 
     return {requestCountStat_,
             finalResultErrorStat_,
@@ -49,11 +51,17 @@ class PoolStats {
   }
 
   void incrementRequestCount(uint64_t amount = 1) {
-    requestCountStat_.data.uint64 += amount;
+    auto ref = folly::make_atomic_ref(requestCountStat_.data.uint64);
+    ref.store(
+        ref.load(std::memory_order_relaxed) + amount,
+        std::memory_order_relaxed);
   }
 
   void incrementFinalResultErrorCount(uint64_t amount = 1) {
-    finalResultErrorStat_.data.uint64 += amount;
+    auto ref = folly::make_atomic_ref(finalResultErrorStat_.data.uint64);
+    ref.store(
+        ref.load(std::memory_order_relaxed) + amount,
+        std::memory_order_relaxed);
   }
 
   void addDurationSample(int64_t duration) {
@@ -61,7 +69,10 @@ class PoolStats {
   }
 
   void updateConnections(int64_t amount = 1) {
-    nConnectionsStat_.data.uint64 += amount;
+    auto ref = folly::make_atomic_ref(nConnectionsStat_.data.uint64);
+    ref.store(
+        ref.load(std::memory_order_relaxed) + amount,
+        std::memory_order_relaxed);
   }
 
   void addTotalDurationSample(int64_t duration) {
@@ -74,7 +85,8 @@ class PoolStats {
     stat.group = ods_stats | count_stats;
     stat.type = stat_uint64;
     stat.aggregate = 0;
-    stat.data.uint64 = 0;
+    folly::make_atomic_ref(stat.data.uint64)
+        .store(0, std::memory_order_relaxed);
   }
 
   const std::string requestsCountStatName_;

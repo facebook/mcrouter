@@ -119,7 +119,7 @@ class ProxyStats {
    * @param amount  Amount to increment the stat
    */
   void incrementSafe(stat_name_t stat, int64_t amount = 1) {
-    stat_incr_safe(stats_, stat, amount);
+    stat_fetch_add(stats_, stat, amount);
   }
 
   /**
@@ -138,17 +138,17 @@ class ProxyStats {
    * @param stat      Stat to set
    * @param newValue  New value of the stat
    */
-  void setValue(stat_name_t stat, int64_t newValue) {
-    stat_set_uint64(stats_, stat, newValue);
+  void setValue(stat_name_t stat, uint64_t newValue) {
+    stat_set(stats_, stat, newValue);
   }
 
-  uint64_t getValue(stat_name_t stat) const {
+  uint64_t getValue(stat_name_t stat) {
     return stat_get_uint64(stats_, stat);
   }
-  uint64_t getConfigAge(uint64_t now) const {
-    return stat_get_config_age(stats_, now);
+  uint64_t getConfigAge(uint64_t now) {
+    return now - stat_get_uint64(stats_, config_last_success_stat);
   }
-  const stat_t& getStat(size_t statId) const {
+  stat_t& getStat(size_t statId) {
     return stats_[statId];
   }
 

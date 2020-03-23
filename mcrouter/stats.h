@@ -11,6 +11,7 @@
 #include <unordered_map>
 
 #include <folly/Range.h>
+#include <folly/synchronization/AtomicRef.h>
 
 #include "mcrouter/lib/network/gen/MemcacheMessages.h"
 
@@ -92,16 +93,64 @@ struct stat_t {
 
 void init_stats(stat_t* stats);
 
-inline void stat_incr(stat_t* stats, stat_name_t stat_num, int64_t amount) {
-  stats[stat_num].data.uint64 += amount;
+FOLLY_ALWAYS_INLINE uint64_t
+stat_fetch_add(stat_t* stats, stat_name_t stat_num, int64_t amount) {
+  auto ref = folly::make_atomic_ref(stats[stat_num].data.uint64);
+  return ref.fetch_add(amount, std::memory_order_relaxed);
 }
 
-inline void stat_decr(stat_t* stats, stat_name_t stat_num, int64_t amount) {
+FOLLY_ALWAYS_INLINE void
+stat_incr(stat_t* stats, stat_name_t stat_num, int64_t amount) {
+  auto ref = folly::make_atomic_ref(stats[stat_num].data.uint64);
+  ref.store(
+      ref.load(std::memory_order_relaxed) + amount, std::memory_order_relaxed);
+}
+
+FOLLY_ALWAYS_INLINE void
+stat_decr(stat_t* stats, stat_name_t stat_num, int64_t amount) {
   stat_incr(stats, stat_num, -amount);
 }
 
-void stat_incr_safe(stat_t*, stat_name_t, int64_t amount = 1);
-void stat_decr_safe(stat_t*, stat_name_t);
+FOLLY_ALWAYS_INLINE void
+stat_incr(stat_t* stats, stat_name_t stat_num, double amount) {
+  auto ref = folly::make_atomic_ref(stats[stat_num].data.dbl);
+  ref.store(
+      ref.load(std::memory_order_relaxed) + amount, std::memory_order_relaxed);
+}
+
+FOLLY_ALWAYS_INLINE void
+stat_div(stat_t* stats, stat_name_t stat_num, double amount) {
+  auto ref = folly::make_atomic_ref(stats[stat_num].data.dbl);
+  ref.store(
+      ref.load(std::memory_order_relaxed) / amount, std::memory_order_relaxed);
+}
+
+FOLLY_ALWAYS_INLINE
+void stat_set(stat_t* stats, stat_name_t stat_num, uint64_t value) {
+  stat_t* stat = &stats[stat_num];
+  assert(stat->type == stat_uint64);
+  folly::make_atomic_ref(stat->data.uint64)
+      .store(value, std::memory_order_relaxed);
+}
+
+FOLLY_ALWAYS_INLINE
+void stat_set(stat_t* stats, stat_name_t stat_num, double value) {
+  stat_t* stat = &stats[stat_num];
+  assert(stat->type == stat_double);
+  folly::make_atomic_ref(stat->data.dbl)
+      .store(value, std::memory_order_relaxed);
+}
+
+FOLLY_ALWAYS_INLINE uint64_t
+stat_get_uint64(stat_t* stats, stat_name_t stat_num) {
+  return folly::make_atomic_ref(stats[stat_num].data.uint64)
+      .load(std::memory_order_relaxed);
+}
+
+FOLLY_ALWAYS_INLINE double stat_get_dbl(stat_t* stats, stat_name_t stat_num) {
+  return folly::make_atomic_ref(stats[stat_num].data.dbl)
+      .load(std::memory_order_relaxed);
+}
 
 /**
  * Current aggregation of rate of stats[idx] (which must be an aggregated
@@ -126,9 +175,6 @@ uint64_t stats_aggregate_max_max_value(
     const CarbonRouterInstanceBase& router,
     int idx);
 
-void stat_set_uint64(stat_t*, stat_name_t, uint64_t);
-uint64_t stat_get_uint64(const stat_t*, stat_name_t);
-uint64_t stat_get_config_age(const stat_t* stats, uint64_t now);
 McStatsReply stats_reply(ProxyBase*, folly::StringPiece);
 void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats);
 void append_pool_stats(
@@ -137,6 +183,6 @@ void append_pool_stats(
 
 void set_standalone_args(folly::StringPiece args);
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
