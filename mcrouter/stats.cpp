@@ -515,9 +515,9 @@ void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
   stat_set(stats, ps_rss_stat, ps_data.rss);
   stat_set(stats, ps_vsize_stat, ps_data.vsize);
 
-  stat_set(stats, fibers_allocated_stat, 0UL);
-  stat_set(stats, fibers_pool_size_stat, 0UL);
-  stat_set(stats, fibers_stack_high_watermark_stat, 0UL);
+  stat_set(stats, fibers_allocated_stat, UINT64_C(0));
+  stat_set(stats, fibers_pool_size_stat, UINT64_C(0));
+  stat_set(stats, fibers_stack_high_watermark_stat, UINT64_C(0));
   for (size_t i = 0; i < router.opts().num_proxies; ++i) {
     auto pr = router.getProxyBase(i);
     stat_incr(
@@ -528,12 +528,12 @@ void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
         stats,
         fibers_pool_size_stat,
         static_cast<int64_t>(pr->fiberManager().fibersPoolSize()));
-    stat_incr(
+    stat_set(
         stats,
         fibers_stack_high_watermark_stat,
-        static_cast<int64_t>(std::max(
+        std::max(
             stat_get_uint64(stats, fibers_stack_high_watermark_stat),
-            pr->fiberManager().stackHighWatermark())));
+            pr->fiberManager().stackHighWatermark()));
     stat_incr(stats, duration_us_stat, pr->stats().durationUs().value());
     stat_incr(stats, duration_get_us_stat, pr->stats().durationGetUs().value());
     stat_incr(
