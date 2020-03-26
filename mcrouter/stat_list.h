@@ -197,6 +197,7 @@ STUIR(custom_policy_large_assoc_reqs, 0, 1)
 STUIR(failover_custom_db_disabled_region, 0, 1)
 STUIR(failover_custom_db_enabled_regions_missing, 0, 1)
 STUIR(failover_custom_db_disabled_all_regions, 0, 1)
+STUIR(failover_custom_region_invalid, 0, 1)
 #undef GROUP
 #define GROUP ods_stats | count_stats
 STUI(result_error_count, 0, 1)
