@@ -191,6 +191,7 @@ McRouteHandleProvider<RouterInfo>::makePool(
     }
 
     SecurityMech mech = SecurityMech::NONE;
+    folly::Optional<SecurityMech> mechOverride;
     folly::Optional<SecurityMech> withinDcMech;
     folly::Optional<SecurityMech> crossDcMech;
     folly::Optional<uint16_t> crossDcPort;
@@ -198,17 +199,6 @@ McRouteHandleProvider<RouterInfo>::makePool(
     // default to 0, which doesn't override
     uint16_t port = 0;
     if (proxy_.router().configApi().enableSecurityConfig()) {
-      if (auto jSecurityMech = json.get_ptr("security_mech")) {
-        auto mechStr = parseString(*jSecurityMech, "security_mech");
-        mech = parseSecurityMech(mechStr);
-      } else if (auto jUseSsl = json.get_ptr("use_ssl")) {
-        // deprecated - prefer security_mech
-        auto useSsl = parseBool(*jUseSsl, "use_ssl");
-        if (useSsl) {
-          mech = SecurityMech::TLS;
-        }
-      }
-
       if (auto jSecurityMech = json.get_ptr("security_mech_within_dc")) {
         auto mechStr = parseString(*jSecurityMech, "security_mech_within_dc");
         withinDcMech = parseSecurityMech(mechStr);
@@ -219,6 +209,27 @@ McRouteHandleProvider<RouterInfo>::makePool(
         crossDcMech = parseSecurityMech(mechStr);
       }
 
+      if (withinDcMech.has_value() && crossDcMech.has_value() &&
+          withinDcMech.value() == crossDcMech.value()) {
+        // mech is used if nothing is specified in server ap
+        mech = withinDcMech.value();
+        // mechOverride overrides per-server values
+        mechOverride = withinDcMech.value();
+        withinDcMech.reset();
+        crossDcMech.reset();
+      } else {
+        if (auto jSecurityMech = json.get_ptr("security_mech")) {
+          auto mechStr = parseString(*jSecurityMech, "security_mech");
+          mech = parseSecurityMech(mechStr);
+        } else if (auto jUseSsl = json.get_ptr("use_ssl")) {
+          // deprecated - prefer security_mech
+          auto useSsl = parseBool(*jUseSsl, "use_ssl");
+          if (useSsl) {
+            mech = SecurityMech::TLS;
+          }
+        }
+      }
+
       if (auto jPort = json.get_ptr("port_override_within_dc")) {
         withinDcPort = parseInt(*jPort, "port_override_within_dc", 1, 65535);
       }
@@ -227,8 +238,16 @@ McRouteHandleProvider<RouterInfo>::makePool(
         crossDcPort = parseInt(*jPort, "port_override_cross_dc", 1, 65535);
       }
 
-      if (auto jPort = json.get_ptr("port_override")) {
-        port = parseInt(*jPort, "port_override", 1, 65535);
+      if (withinDcPort.has_value() && crossDcPort.has_value() &&
+          withinDcPort.value() == crossDcPort.value()) {
+        port = withinDcPort.value();
+        withinDcPort.reset();
+        crossDcPort.reset();
+      } else {
+        // parse port override only if withinDc & crossDc are not present
+        if (auto jPort = json.get_ptr("port_override")) {
+          port = parseInt(*jPort, "port_override", 1, 65535);
+        }
       }
     }
     bool disableRequestDeadlineCheck =
@@ -291,6 +310,10 @@ McRouteHandleProvider<RouterInfo>::makePool(
           enableCompression,
           failureDomain);
       checkLogic(ap != nullptr, "invalid server {}", server.stringPiece());
+
+      if (mechOverride.has_value()) {
+        ap->setSecurityMech(mechOverride.value());
+      }
 
       if (withinDcMech.has_value() || crossDcMech.has_value() ||
           withinDcPort.has_value() || crossDcPort.has_value()) {
@@ -515,8 +538,7 @@ McRouteHandleProvider<RouterInfo>::buildCheckedRouteMap() {
             RouteHandleFactory<RouteHandleIf>& factory,
             const folly::dynamic& json) {
           auto rh = factoryFunc(factory, json);
-          checkLogic(
-              rh != nullptr, folly::sformat("make{} returned nullptr", rhName));
+          checkLogic(rh != nullptr, "make{} returned nullptr", rhName);
           return rh;
         });
   }
