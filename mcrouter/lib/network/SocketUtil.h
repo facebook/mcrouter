@@ -42,14 +42,14 @@ createSocket(
     const ConnectionOptions& connectionOptions);
 
 /**
- * Like createSocket(), but instead creates a TAsyncSocket-based socket that
+ * Like createSocket(), but instead creates a AsyncSocket-based socket that
  * plays well with Thrift clients and channels; all AsyncSocketExceptions are
  * automatically converted into TAsyncTransportExceptions.
  */
 folly::Expected<
     folly::AsyncTransportWrapper::UniquePtr,
     folly::AsyncSocketException>
-createTAsyncSocket(
+createAsyncSocket(
     folly::EventBase& eventBase,
     const ConnectionOptions& connectionOptions);
 /**

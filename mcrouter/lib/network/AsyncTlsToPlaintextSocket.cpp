@@ -18,8 +18,8 @@
 #include <folly/io/async/ssl/BasicTransportCertificate.h>
 #include <folly/portability/OpenSSL.h>
 
+#include <folly/io/async/AsyncSocket.h>
 #include <thrift/lib/cpp/async/TAsyncSSLSocket.h>
-#include <thrift/lib/cpp/async/TAsyncSocket.h>
 
 namespace facebook {
 namespace memcache {
@@ -84,11 +84,11 @@ class AsyncTlsToPlaintextSocket::ConnectCallback
     SSL_shutdown(ssl);
 
     DCHECK_EQ(0, tlsSocket->getZeroCopyBufId());
-    impl.reset(new apache::thrift::async::TAsyncSocket(
-        &me_.evb_, tlsSocket->detachNetworkSocket()));
+    impl.reset(
+        new folly::AsyncSocket(&me_.evb_, tlsSocket->detachNetworkSocket()));
     activateSocket();
-    impl->getUnderlyingTransport<apache::thrift::async::TAsyncSocket>()
-        ->setPeerCertificate(std::move(peerCert));
+    impl->getUnderlyingTransport<folly::AsyncSocket>()->setPeerCertificate(
+        std::move(peerCert));
   }
 
   void connectErr(const folly::AsyncSocketException& ex) noexcept override {

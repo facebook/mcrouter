@@ -19,8 +19,8 @@
 #include <folly/io/async/AsyncSocket.h>
 #include <folly/io/async/AsyncTransport.h>
 
+#include <folly/io/async/AsyncSocket.h>
 #include <thrift/lib/cpp/async/TAsyncSSLSocket.h>
-#include <thrift/lib/cpp/async/TAsyncSocket.h>
 
 #include "mcrouter/lib/network/McSSLUtil.h"
 

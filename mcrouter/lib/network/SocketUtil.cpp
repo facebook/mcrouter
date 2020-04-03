@@ -17,8 +17,8 @@
 #include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/EventBase.h>
 
+#include <folly/io/async/AsyncSocket.h>
 #include <thrift/lib/cpp/async/TAsyncSSLSocket.h>
-#include <thrift/lib/cpp/async/TAsyncSocket.h>
 
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/lib/network/AsyncTlsToPlaintextSocket.h"
@@ -109,7 +109,7 @@ createSocketCommon(
     const ConnectionOptions& connectionOptions) {
   using AsyncSocketT = std::conditional_t<
       CreateThriftFriendlySocket,
-      apache::thrift::async::TAsyncSocket,
+      folly::AsyncSocket,
       folly::AsyncSocket>;
   using AsyncSSLSocketT = std::conditional_t<
       CreateThriftFriendlySocket,
@@ -200,7 +200,7 @@ createSocket(
 folly::Expected<
     folly::AsyncTransportWrapper::UniquePtr,
     folly::AsyncSocketException>
-createTAsyncSocket(
+createAsyncSocket(
     folly::EventBase& eventBase,
     const ConnectionOptions& connectionOptions) {
   auto socket = createSocketCommon<true>(eventBase, connectionOptions);

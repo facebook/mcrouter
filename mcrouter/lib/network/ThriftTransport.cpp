@@ -11,7 +11,6 @@
 #include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/io/async/AsyncSocket.h>
 #include <folly/io/async/EventBase.h>
-#include <thrift/lib/cpp/async/TAsyncSocket.h>
 #include <thrift/lib/cpp2/async/RequestChannel.h>
 
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
@@ -22,7 +21,7 @@
 #include "mcrouter/lib/network/SocketUtil.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 
-using apache::thrift::async::TAsyncSocket;
+using folly::AsyncSocket;
 
 namespace facebook {
 namespace memcache {
@@ -81,8 +80,7 @@ folly::AsyncTransportWrapper::UniquePtr
 ThriftTransportBase::getConnectingSocket() {
   return folly::fibers::runInMainContext(
       [this]() -> folly::AsyncTransportWrapper::UniquePtr {
-        auto expectedSocket =
-            createTAsyncSocket(eventBase_, connectionOptions_);
+        auto expectedSocket = createAsyncSocket(eventBase_, connectionOptions_);
         if (expectedSocket.hasError()) {
           LOG_FAILURE(
               "ThriftTransport",
@@ -183,7 +181,7 @@ void ThriftTransportBase::connectSuccess() noexcept {
   if (isAsyncSSLSocketMech(connectionOptions_.accessPoint->getSecurityMech())) {
     if (authorizationCallbacks_.onAuthorize &&
         !authorizationCallbacks_.onAuthorize(
-            *transport->getUnderlyingTransport<TAsyncSocket>(),
+            *transport->getUnderlyingTransport<AsyncSocket>(),
             connectionOptions_)) {
       if (connectionOptions_.securityOpts.sslAuthorizationEnforce) {
         // Enforcement is enabled, close the connection.
