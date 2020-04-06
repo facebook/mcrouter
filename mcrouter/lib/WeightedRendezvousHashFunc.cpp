@@ -22,32 +22,29 @@ namespace memcache {
 WeightedRendezvousHashFunc::WeightedRendezvousHashFunc(
     const std::vector<folly::StringPiece>& endpoints,
     const folly::dynamic& json) {
-  checkLogic(
-      json.isObject() && json.count("weights"),
-      "WeightedRendezvousHashFunc: not an object or no weights");
-  checkLogic(
-      json["weights"].isObject(),
-      "WeightedRendezvousHashFunc: weights is not object");
+  checkLogic(json.isObject(), "WeightedRendezvousHashFunc: not an object");
+  checkLogic(json.count("weights"), "WeightedRendezvousHashFunc: no weights");
   const auto& jWeights = json["weights"];
+  checkLogic(
+      jWeights.isArray(),
+      "WeightedRendezvousHashFunc: weights is not an array");
+
+  checkLogic(
+      jWeights.size() == endpoints.size(),
+      "WeightedRendezvousHash: number of weights doesn't match number of end points.");
 
   // Compute hash and decode weight for each endpoint.
   endpointHashes_.reserve(endpoints.size());
   endpointWeights_.reserve(endpoints.size());
-  for (const auto ap : endpoints) {
-    const uint64_t hash =
-        murmur_hash_64A(ap.data(), ap.size(), kRendezvousHashSeed);
-    endpointHashes_.push_back(hash);
+  assert(endpointHashes_.empty());
+  assert(endpointWeights_.empty());
 
-    if (jWeights.count(ap)) {
-      endpointWeights_.push_back(jWeights[ap].asDouble());
-    } else {
-      LOG(ERROR) << "WeightedRendezvousHashFunc: no weight provided "
-                 << "for endpoint " << ap.toString()
-                 << ", use default value 0.5";
-      endpointWeights_.push_back(0.5);
-    }
+  for (size_t i = 0; i < endpoints.size(); ++i) {
+    const uint64_t hash = murmur_hash_64A(
+        endpoints[i].data(), endpoints[i].size(), kRendezvousHashSeed);
+    endpointHashes_.push_back(hash);
+    endpointWeights_.push_back(jWeights[i].asDouble());
   }
-  assert(endpointHashes_.size() == endpointWeights_.size());
 }
 
 size_t WeightedRendezvousHashFunc::operator()(folly::StringPiece key) const {

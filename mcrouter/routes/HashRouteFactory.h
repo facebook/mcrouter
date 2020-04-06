@@ -16,6 +16,7 @@
 #include "mcrouter/lib/SelectionRouteFactory.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/lib/WeightedCh4HashFunc.h"
+#include "mcrouter/lib/WeightedRendezvousHashFunc.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/lib/routes/SelectionRoute.h"
@@ -86,7 +87,9 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> createHashRoute(
   } else if (funcType == ConstShardHashFunc::type()) {
     return createHashRoute<RouterInfo, ConstShardHashFunc>(
         std::move(rh), std::move(salt), ConstShardHashFunc(n));
-  } else if (funcType == RendezvousHashFunc::type()) {
+  } else if (
+      funcType == RendezvousHashFunc::type() ||
+      funcType == WeightedRendezvousHashFunc::type()) {
     std::vector<folly::StringPiece> endpoints;
 
     auto jtags = json.get_ptr("tags");
@@ -102,10 +105,17 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> createHashRoute(
       endpoints.push_back(jtag.stringPiece());
     }
 
-    return createHashRoute<RouterInfo, RendezvousHashFunc>(
-        std::move(rh),
-        std::move(salt),
-        RendezvousHashFunc(std::move(endpoints)));
+    if (funcType == RendezvousHashFunc::type()) {
+      return createHashRoute<RouterInfo, RendezvousHashFunc>(
+          std::move(rh),
+          std::move(salt),
+          RendezvousHashFunc(std::move(endpoints)));
+    } else {
+      return createHashRoute<RouterInfo, WeightedRendezvousHashFunc>(
+          std::move(rh),
+          std::move(salt),
+          WeightedRendezvousHashFunc(std::move(endpoints), json));
+    }
   } else if (funcType == "Latest") {
     return createLatestRoute<RouterInfo>(json, std::move(rh), threadId);
   } else if (funcType == "LoadBalancer") {

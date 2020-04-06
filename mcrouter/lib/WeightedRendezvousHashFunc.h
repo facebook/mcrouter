@@ -22,16 +22,11 @@ namespace memcache {
 class WeightedRendezvousHashFunc {
  public:
   /**
-   * @param endpoints   A list of backend servers.
-   * @param json        The weights for backend servers. Format:
-   *                    {
-   *                      "weights" : {
-   *                         "server1": <weight1>,
-   *                         "server2": <weight2>,
-   *                         ...
-   *                      },
-   *                      ...
-   *                    }
+   * @param endpoints   The strings to be hashed, one per backend server.
+   *
+   * @param json A list with one weight (double) per backend server, in the same
+   * order as endpoints.
+   *
    */
   WeightedRendezvousHashFunc(
       const std::vector<folly::StringPiece>& endpoints,
