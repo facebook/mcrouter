@@ -25,13 +25,13 @@ genEndpoints(int n) {
   return std::make_pair(std::move(raw), std::move(ref));
 }
 
-folly::dynamic genWeights(
-    const std::vector<folly::StringPiece>& endpoints,
-    const std::vector<double>& weights) {
-  folly::dynamic jWeights = folly::dynamic::object;
+folly::dynamic genWeights(const std::vector<double>& weights) {
+  folly::dynamic jWeights = folly::dynamic::array;
 
-  for (size_t i = 0; i < endpoints.size(); i++) {
-    jWeights[endpoints[i]] = weights[i];
+  jWeights.resize(weights.size());
+
+  for (size_t i = 0; i < weights.size(); i++) {
+    jWeights[i] = weights[i];
   }
 
   folly::dynamic json = folly::dynamic::object;

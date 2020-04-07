@@ -21,9 +21,7 @@ std::pair<std::vector<std::string>, std::vector<folly::StringPiece>>
 genEndpoints(int n);
 
 // Generate weight json for endpoints with the value weights.
-folly::dynamic genWeights(
-    const std::vector<folly::StringPiece>& endpoints,
-    const std::vector<double>& weights);
+folly::dynamic genWeights(const std::vector<double>& weights);
 
 } // namespace test
 } // namespace memcache

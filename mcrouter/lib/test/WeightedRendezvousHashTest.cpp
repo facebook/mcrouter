@@ -23,7 +23,7 @@ namespace test {
 TEST(WeightedRendezvousHashFunc, basic) {
   auto endpoints3 = genEndpoints(3);
   std::vector<double> weights3(3, 1);
-  auto jWeight3 = genWeights(endpoints3.second, weights3);
+  auto jWeight3 = genWeights(weights3);
   auto func3 = WeightedRendezvousHashFunc(endpoints3.second, jWeight3);
 
   EXPECT_EQ(func3("sample"), 0);
@@ -39,7 +39,7 @@ TEST(WeightedRendezvousHashFunc, basic) {
 
   auto endpoints343 = genEndpoints(343);
   std::vector<double> weights343(343, 1);
-  auto jWeight343 = genWeights(endpoints343.second, weights343);
+  auto jWeight343 = genWeights(weights343);
   auto func343 = WeightedRendezvousHashFunc(endpoints343.second, jWeight343);
 
   EXPECT_EQ(func343(testMaxKey), 142);
@@ -52,7 +52,7 @@ TEST(WeightedRendezvousHashFunc, rendezvous_3) {
   // 3 endpoints with same weights.
   auto endpoints3 = genEndpoints(3);
   std::vector<double> weights3(3, 1);
-  auto jWeight3 = genWeights(endpoints3.second, weights3);
+  auto jWeight3 = genWeights(weights3);
   auto rendezvous3 = WeightedRendezvousHashFunc(endpoints3.second, jWeight3);
 
   std::vector<size_t> rendezvousCounts(3, 0);
@@ -64,7 +64,7 @@ TEST(WeightedRendezvousHashFunc, rendezvous_3) {
 
   // New set of weights.
   weights3 = std::vector<double>{1, 0.5, 0.1};
-  jWeight3 = genWeights(endpoints3.second, weights3);
+  jWeight3 = genWeights(weights3);
   rendezvous3 = WeightedRendezvousHashFunc(endpoints3.second, jWeight3);
 
   rendezvousCounts = std::vector<size_t>(3, 0);
@@ -76,7 +76,7 @@ TEST(WeightedRendezvousHashFunc, rendezvous_3) {
 
   // New set of weights.
   weights3 = std::vector<double>{1, 0, 0.5};
-  jWeight3 = genWeights(endpoints3.second, weights3);
+  jWeight3 = genWeights(weights3);
   rendezvous3 = WeightedRendezvousHashFunc(endpoints3.second, jWeight3);
 
   rendezvousCounts = std::vector<size_t>(3, 0);
@@ -91,7 +91,7 @@ TEST(WeightedRendezvousHashFunc, rendezvous_10) {
   // 10 endpoints with different weights.
   auto endpoints10 = genEndpoints(10);
   std::vector<double> weights10{1, 1, 1, 1, 1, 0.5, 0.5, 0.5, 0.5, 0.5};
-  auto jWeight10 = genWeights(endpoints10.second, weights10);
+  auto jWeight10 = genWeights(weights10);
   auto rendezvous10 = WeightedRendezvousHashFunc(endpoints10.second, jWeight10);
 
   std::vector<size_t> rendezvousCounts(10, 0);
@@ -111,7 +111,7 @@ TEST(WeightedRendezvousHashFunc, rendezvous_rehash) {
   auto combined = genEndpoints(n);
   const auto& endpoints = combined.second;
   std::vector<double> weights(n, 1);
-  auto jWeights = genWeights(endpoints, weights);
+  auto jWeights = genWeights(weights);
   auto rendezvous = WeightedRendezvousHashFunc(endpoints, jWeights);
 
   // Number of rehashes if we remove one element
@@ -119,7 +119,7 @@ TEST(WeightedRendezvousHashFunc, rendezvous_rehash) {
                            std::vector<folly::StringPiece>::iterator it) {
     newEndpoints.erase(it);
     std::vector<double> newWeights(newEndpoints.size(), 1);
-    auto newJWeights = genWeights(newEndpoints, newWeights);
+    auto newJWeights = genWeights(newWeights);
     auto newRendezvous = WeightedRendezvousHashFunc(newEndpoints, newJWeights);
 
     int numDiff = 0;
