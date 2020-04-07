@@ -136,13 +136,9 @@ void serverLoop(
   }
 }
 
-} // namespace detail
-
-template <class RouterInfo, template <class> class RequestHandler>
-bool runServer(
+inline AsyncMcServer::Options createAsyncMcServerOptions(
     const McrouterOptions& mcrouterOpts,
-    const McrouterStandaloneOptions& standaloneOpts,
-    StandalonePreRunCb preRunCb) {
+    const McrouterStandaloneOptions& standaloneOpts) {
   AsyncMcServer::Options opts;
 
   if (standaloneOpts.listen_sock_fd >= 0) {
@@ -206,6 +202,18 @@ bool runServer(
   /* Default to one read per event to help latency-sensitive workloads.
      We can make this an option if this needs to be adjusted. */
   opts.worker.maxReadsPerEvent = 1;
+  return opts;
+}
+
+} // namespace detail
+
+template <class RouterInfo, template <class> class RequestHandler>
+bool runServer(
+    const McrouterOptions& mcrouterOpts,
+    const McrouterStandaloneOptions& standaloneOpts,
+    StandalonePreRunCb preRunCb) {
+  AsyncMcServer::Options opts =
+      detail::createAsyncMcServerOptions(mcrouterOpts, standaloneOpts);
 
   try {
     LOG(INFO) << "Spawning AsyncMcServer";
