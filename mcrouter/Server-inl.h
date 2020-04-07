@@ -54,18 +54,15 @@ inline std::function<void(McServerSession&)> getAclChecker(
 }
 
 template <class RouterInfo, template <class> class RequestHandler>
-void serverLoop(
+void serverInit(
     CarbonRouterInstance<RouterInfo>& router,
     size_t threadId,
     folly::EventBase& evb,
     AsyncMcServerWorker& worker,
     const McrouterStandaloneOptions& standaloneOpts,
-    std::function<void(McServerSession&)>& aclChecker) {
+    std::function<void(McServerSession&)>& aclChecker,
+    CarbonRouterClient<RouterInfo>* routerClient) {
   using RequestHandlerType = RequestHandler<ServerOnRequest<RouterInfo>>;
-
-  auto routerClient = standaloneOpts.remote_thread
-      ? router.createClient(0 /* maximum_outstanding_requests */)
-      : router.createSameThreadClient(0 /* maximum_outstanding_requests */);
 
   auto proxy = router.getProxy(threadId);
   // Manually override proxy assignment
@@ -110,7 +107,27 @@ void serverLoop(
                    << "Compression will be disabled.";
     }
   }
+}
 
+template <class RouterInfo, template <class> class RequestHandler>
+void serverLoop(
+    CarbonRouterInstance<RouterInfo>& router,
+    size_t threadId,
+    folly::EventBase& evb,
+    AsyncMcServerWorker& worker,
+    const McrouterStandaloneOptions& standaloneOpts,
+    std::function<void(McServerSession&)>& aclChecker) {
+  auto routerClient = standaloneOpts.remote_thread
+      ? router.createClient(0 /* maximum_outstanding_requests */)
+      : router.createSameThreadClient(0 /* maximum_outstanding_requests */);
+  detail::serverInit<RouterInfo, RequestHandler>(
+      router,
+      threadId,
+      evb,
+      worker,
+      standaloneOpts,
+      aclChecker,
+      routerClient.get());
   /* TODO(libevent): the only reason this is not simply evb.loop() is
      because we need to call asox stuff on every loop iteration.
      We can clean this up once we convert everything to EventBase */
