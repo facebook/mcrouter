@@ -62,6 +62,7 @@ class McServerRequestContext {
   ServerLoad getServerLoad() const noexcept;
 
   folly::Optional<struct sockaddr_storage> getPeerSocketAddress();
+  folly::Optional<std::string> getPeerSocketAddressStr();
 
   folly::EventBase& getSessionEventBase() const noexcept;
 

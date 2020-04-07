@@ -91,6 +91,14 @@ ServerLoad McServerRequestContext::getServerLoad() const noexcept {
   return ServerLoad::zero();
 }
 
+folly::Optional<std::string> McServerRequestContext::getPeerSocketAddressStr() {
+  folly::Optional<std::string> peerAddressStr;
+  if (session_) {
+    peerAddressStr = session_->getSocketAddress().getAddressStr();
+  }
+  return peerAddressStr;
+}
+
 folly::Optional<struct sockaddr_storage>
 McServerRequestContext::getPeerSocketAddress() {
   folly::Optional<struct sockaddr_storage> peerAddress;

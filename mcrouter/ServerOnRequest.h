@@ -124,7 +124,7 @@ class ServerOnRequest {
     auto rctx = std::make_unique<ServerRequestContext<Callback, Request>>(
         std::move(ctx), std::move(req), reusableRequestBuffer);
     auto& reqRef = rctx->req;
-    auto& sessionRef = rctx->ctx.session();
+    auto& ctxRef = rctx->ctx;
 
     // if we are reusing the request buffer, adjust the start offset and set
     // it to the request.
@@ -147,9 +147,9 @@ class ServerOnRequest {
       }
     };
 
-    if (retainSourceIp_) {
-      auto peerIp = sessionRef.getSocketAddress().getAddressStr();
-      client_.send(reqRef, std::move(cb), peerIp);
+    folly::Optional<std::string> peerIp;
+    if (retainSourceIp_ && (peerIp = ctxRef.getPeerSocketAddressStr())) {
+      client_.send(reqRef, std::move(cb), *peerIp);
     } else {
       client_.send(reqRef, std::move(cb));
     }
