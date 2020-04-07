@@ -212,6 +212,13 @@ class McServerSession
   }
 
   /**
+   * Set the user context associated with this session.
+   */
+  void setUserContext(void* userCtx) {
+    userCtxt_ = userCtx;
+  }
+
+  /**
    * Get the peer's socket address
    */
   const folly::SocketAddress& getSocketAddress() const noexcept {
