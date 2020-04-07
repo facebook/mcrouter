@@ -59,7 +59,8 @@ void serverLoop(
     size_t threadId,
     folly::EventBase& evb,
     AsyncMcServerWorker& worker,
-    const McrouterStandaloneOptions& standaloneOpts) {
+    const McrouterStandaloneOptions& standaloneOpts,
+    std::function<void(McServerSession&)>& aclChecker) {
   using RequestHandlerType = RequestHandler<ServerOnRequest<RouterInfo>>;
 
   auto routerClient = standaloneOpts.remote_thread
@@ -78,9 +79,7 @@ void serverLoop(
       standaloneOpts.remote_thread));
 
   worker.setOnConnectionAccepted(
-      [proxy,
-       aclChecker = getAclChecker(proxy->router().opts(), standaloneOpts)](
-          McServerSession& session) mutable {
+      [proxy, &aclChecker](McServerSession& session) mutable {
         proxy->stats().increment(num_client_connections_stat);
         try {
           aclChecker(session);
@@ -237,14 +236,15 @@ bool runServer(
       preRunCb(*router);
     }
 
+    auto aclChecker = detail::getAclChecker(mcrouterOpts, standaloneOpts);
     folly::Baton<> shutdownBaton;
     server.spawn(
-        [router, &standaloneOpts](
+        [router, &standaloneOpts, &aclChecker](
             size_t threadId,
             folly::EventBase& evb,
             AsyncMcServerWorker& worker) {
           detail::serverLoop<RouterInfo, RequestHandler>(
-              *router, threadId, evb, worker, standaloneOpts);
+              *router, threadId, evb, worker, standaloneOpts, aclChecker);
         },
         [&shutdownBaton]() { shutdownBaton.post(); });
 
