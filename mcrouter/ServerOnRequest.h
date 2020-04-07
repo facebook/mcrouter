@@ -21,14 +21,14 @@ namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
-template <class Request>
+template <class Callback, class Request>
 struct ServerRequestContext {
-  McServerRequestContext ctx;
+  Callback ctx;
   Request req;
   folly::IOBuf reqBuffer;
 
   ServerRequestContext(
-      McServerRequestContext&& ctx_,
+      Callback&& ctx_,
       Request&& req_,
       const folly::IOBuf* reqBuffer_)
       : ctx(std::move(ctx_)),
@@ -39,11 +39,9 @@ struct ServerRequestContext {
 template <class RouterInfo>
 class ServerOnRequest {
  public:
-  template <class Request>
-  using ReplyFunction = void (*)(
-      McServerRequestContext&& ctx,
-      ReplyT<Request>&& reply,
-      bool flush);
+  template <class Callback, class Request>
+  using ReplyFunction =
+      void (*)(Callback&& ctx, ReplyT<Request>&& reply, bool flush);
 
   ServerOnRequest(
       CarbonRouterClient<RouterInfo>& client,
@@ -57,21 +55,21 @@ class ServerOnRequest {
         enablePassThroughMode_(enablePassThroughMode),
         remoteThread_(remoteThread) {}
 
-  template <class Reply>
-  void sendReply(McServerRequestContext&& ctx, Reply&& reply) {
+  template <class Reply, class Callback>
+  void sendReply(Callback&& ctx, Reply&& reply) {
     if (remoteThread_) {
       return eventBase_.runInEventBaseThread(
           [ctx = std::move(ctx), reply = std::move(reply)]() mutable {
-            McServerRequestContext::reply(std::move(ctx), std::move(reply));
+            Callback::reply(std::move(ctx), std::move(reply));
           });
     } else {
-      return McServerRequestContext::reply(std::move(ctx), std::move(reply));
+      return Callback::reply(std::move(ctx), std::move(reply));
     }
   }
 
-  template <class Request>
+  template <class Request, class Callback>
   void onRequest(
-      McServerRequestContext&& ctx,
+      Callback&& ctx,
       Request&& req,
       const CaretMessageInfo* headerInfo,
       const folly::IOBuf* reqBuffer) {
@@ -79,18 +77,19 @@ class ServerOnRequest {
     send(
         std::move(ctx),
         std::move(req),
-        &McServerRequestContext::reply<Reply>,
+        &Callback::template reply<Reply>,
         headerInfo,
         reqBuffer);
   }
 
-  template <class Request>
-  void onRequest(McServerRequestContext&& ctx, Request&& req) {
+  template <class Request, class Callback>
+  void onRequest(Callback&& ctx, Request&& req) {
     using Reply = ReplyT<Request>;
-    send(std::move(ctx), std::move(req), &McServerRequestContext::reply<Reply>);
+    send(std::move(ctx), std::move(req), &Callback::template reply<Reply>);
   }
 
-  void onRequest(McServerRequestContext&& ctx, McVersionRequest&&) {
+  template <class Callback>
+  void onRequest(Callback&& ctx, McVersionRequest&&) {
     McVersionReply reply(carbon::Result::OK);
     reply.value() =
         folly::IOBuf(folly::IOBuf::COPY_BUFFER, MCROUTER_PACKAGE_STRING);
@@ -98,19 +97,21 @@ class ServerOnRequest {
     sendReply(std::move(ctx), std::move(reply));
   }
 
-  void onRequest(McServerRequestContext&& ctx, McQuitRequest&&) {
+  template <class Callback>
+  void onRequest(Callback&& ctx, McQuitRequest&&) {
     sendReply(std::move(ctx), McQuitReply(carbon::Result::OK));
   }
 
-  void onRequest(McServerRequestContext&& ctx, McShutdownRequest&&) {
+  template <class Callback>
+  void onRequest(Callback&& ctx, McShutdownRequest&&) {
     sendReply(std::move(ctx), McShutdownReply(carbon::Result::OK));
   }
 
-  template <class Request>
+  template <class Callback, class Request>
   void send(
-      McServerRequestContext&& ctx,
+      Callback&& ctx,
       Request&& req,
-      ReplyFunction<Request> replyFn,
+      ReplyFunction<Callback, Request> replyFn,
       const CaretMessageInfo* headerInfo = nullptr,
       const folly::IOBuf* reqBuffer = nullptr) {
     // We just reuse buffers iff:
@@ -120,7 +121,7 @@ class ServerOnRequest {
     const folly::IOBuf* reusableRequestBuffer =
         (enablePassThroughMode_ && headerInfo) ? reqBuffer : nullptr;
 
-    auto rctx = std::make_unique<ServerRequestContext<Request>>(
+    auto rctx = std::make_unique<ServerRequestContext<Callback, Request>>(
         std::move(ctx), std::move(req), reusableRequestBuffer);
     auto& reqRef = rctx->req;
     auto& sessionRef = rctx->ctx.session();
