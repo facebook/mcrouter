@@ -124,7 +124,11 @@ class ProcessBase:
 class MCProcess(ProcessBase):
     proc = None
 
-    def __init__(self, cmd, addr, base_dir=None, junk_fill=False, pass_fds=()):
+    def __init__(self, cmd, addr,
+            base_dir=None,
+            max_retries=None,
+            junk_fill=False,
+            pass_fds=()):
         self.fd = None
         if cmd is not None and '-s' in cmd:
             if os.path.exists(addr):
@@ -148,6 +152,7 @@ class MCProcess(ProcessBase):
         # memcached could take little longer to initialize
         if memcached:
             time.sleep(3)
+        self.max_retries = max_retries
         self.deletes = 0
         self.others = 0
         self.socket = None
@@ -189,14 +194,14 @@ class MCProcess(ProcessBase):
                 return
             except Exception as e:
                 self.disconnect()
-                if e.errno == errno.ECONNREFUSED:
-                    pass
-                # if socket is not present or not ready to listen
-                elif e.errno == errno.ENOENT and retry_count < 5:
+                retry_count += 1
+                # If we defined a retry count, retry until that's exceeded.
+                # Otherwise, retry forever
+                if (not self.max_retries or retry_count < self.max_retries) \
+                        and e.errno in [errno.ECONNREFUSED, errno.ENOENT]:
                     time.sleep(1)
-                    retry_count += 1
-                else:
-                    raise
+                    continue
+                raise
 
     def disconnect(self):
         try:
