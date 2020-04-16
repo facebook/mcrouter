@@ -19,7 +19,6 @@
 #include <folly/io/async/EventBase.h>
 #include <folly/logging/Init.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
-#include <thrift/lib/cpp2/transport/rsocket/server/RSRoutingHandler.h>
 
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
@@ -182,8 +181,6 @@ int main(int argc, char** argv) {
     gThriftServer->setNumCPUWorkerThreads(1);
     gThriftServer->setQueueTimeout(std::chrono::milliseconds(0));
     gThriftServer->setTaskExpireTime(std::chrono::milliseconds(0));
-    gThriftServer->addRoutingHandler(
-        std::make_unique<apache::thrift::RSRoutingHandler>());
     gThriftServer->setSocketMaxReadsPerEvent(4);
 
     // Register signal handler.

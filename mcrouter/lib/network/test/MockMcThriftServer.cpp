@@ -16,7 +16,6 @@
 #include <folly/Singleton.h>
 #include <folly/logging/Init.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
-#include <thrift/lib/cpp2/transport/rsocket/server/RSRoutingHandler.h>
 
 #include "mcrouter/lib/network/test/MockMcThriftServerHandler.h"
 
@@ -84,8 +83,6 @@ int main(int argc, char** argv) {
       gServer->useExistingSockets({existingSocketFd});
     }
     gServer->setNumIOWorkerThreads(2);
-    gServer->addRoutingHandler(
-        std::make_unique<apache::thrift::RSRoutingHandler>());
     signal(SIGINT, sigHandler);
     gServer->serve();
     LOG(INFO) << "Shutting down thrift server.";

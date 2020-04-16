@@ -14,7 +14,6 @@
 #include <folly/synchronization/Baton.h>
 #include <glog/logging.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
-#include <thrift/lib/cpp2/transport/rsocket/server/RSRoutingHandler.h>
 
 #include "mcrouter/CarbonRouterClient.h"
 #include "mcrouter/CarbonRouterInstance.h"
@@ -305,8 +304,6 @@ std::thread startThriftServer(
     server->setInterface(handler);
     server->setPort(port);
     server->setNumIOWorkerThreads(1);
-    server->addRoutingHandler(
-        std::make_unique<apache::thrift::RSRoutingHandler>());
     baton.post();
     server->serve();
   });
