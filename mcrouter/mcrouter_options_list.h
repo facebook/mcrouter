@@ -533,6 +533,15 @@ MCROUTER_OPTION_INTEGER(
 
 MCROUTER_OPTION_INTEGER(
     int,
+    reconfiguration_jitter_ms,
+    0,
+    "reconfiguration-jitter-ms",
+    no_short,
+    "Random jitter from [0,reconfiguration_jitter_ms) applied after "
+    "config files change and before mcrouter reconfiguration.")
+
+MCROUTER_OPTION_INTEGER(
+    int,
     post_reconfiguration_delay_ms,
     0,
     "post-reconfiguration-delay-ms",

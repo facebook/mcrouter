@@ -12,6 +12,7 @@
 #include <boost/filesystem.hpp>
 
 #include <folly/FileUtil.h>
+#include <folly/Random.h>
 #include <folly/String.h>
 #include <folly/dynamic.h>
 #include <folly/io/async/ScopedEventBaseThread.h>
@@ -218,6 +219,16 @@ void ConfigApi::configThreadRun() {
     }
 
     if (hasUpdate) {
+      if (opts_.reconfiguration_jitter_ms) {
+        int jitter_ms =
+            folly::Random::randDouble01() * opts_.reconfiguration_jitter_ms;
+        std::unique_lock<std::mutex> lk(finishMutex_);
+        finishCV_.wait_for(
+            lk,
+            std::chrono::milliseconds(
+                opts_.reconfiguration_delay_ms + jitter_ms),
+            [this] { return finish_.load(); });
+      }
       callbacks_.notify();
 
       // waits before checking for config updates again.
@@ -528,6 +539,6 @@ bool ConfigApi::shouldReadFromBackupFiles() const {
   return readFromBackupFiles_;
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
