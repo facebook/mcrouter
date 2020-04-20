@@ -16,6 +16,7 @@
 
 #include <folly/Range.h>
 #include <folly/container/F14Set.h>
+#include <folly/dynamic.h>
 #include <folly/io/async/AsyncTimeout.h>
 
 namespace facebook {
@@ -30,6 +31,7 @@ template <class Transport>
 class ProxyDestination;
 class ProxyDestinationBase;
 struct ProxyDestinationKey;
+class PoolTkoTracker;
 
 /**
  * Manages lifetime of ProxyDestinations. Main goal is to reuse same
@@ -63,7 +65,13 @@ class ProxyDestinationMap {
       std::shared_ptr<AccessPoint> ap,
       std::chrono::milliseconds timeout,
       uint32_t qosClass,
-      uint32_t qosPath);
+      uint32_t qosPath,
+      std::shared_ptr<PoolTkoTracker> poolTkoTracker);
+
+  std::shared_ptr<PoolTkoTracker> createPoolTkoTracker(
+      std::string poolName,
+      uint32_t numEnterSoftTkos,
+      uint32_t numExitSoftTkos);
 
   /**
    * Remove destination from both active and inactive lists

@@ -77,6 +77,9 @@ STAT(inactive_connection_closed_interval_sec, stat_double, 0, .dbl = 0.0)
 // Information about connect retries
 STUI(num_connect_success_after_retrying, 0, 1)
 STUI(num_connect_retries, 0, 1)
+STUI(num_soft_tko_count, 0, 1)
+STUI(num_fail_open_state_entered, 0, 1)
+STUI(num_fail_open_state_exited, 0, 1)
 // Connections closed due to retransmits
 STUI(retrans_closed_connections, 0, 1)
 #undef GROUP
@@ -275,6 +278,7 @@ STUI(destination_reqs_total_sum, 0, 1)
 #undef GROUP
 #define GROUP ods_stats | basic_stats | max_max_stats
 STUI(retrans_per_kbyte_max, 0, 1)
+STUI(max_num_soft_tko, 0, 1)
 #undef GROUP
 #define GROUP ods_stats | basic_stats
 // Total reqs in AsyncMcClient yet to be sent to memcache.

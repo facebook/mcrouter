@@ -46,6 +46,14 @@ bool ProxyDestinationMap::DestEq::operator()(
   return x == ProxyDestinationKey(*y);
 }
 
+std::shared_ptr<PoolTkoTracker> ProxyDestinationMap::createPoolTkoTracker(
+    std::string poolName,
+    uint32_t numEnterSoftTkos,
+    uint32_t numExitSoftTkos) {
+  return proxy_->router().tkoTrackerMap().createPoolTkoTracker(
+      poolName, numEnterSoftTkos, numExitSoftTkos);
+}
+
 struct ProxyDestinationMap::StateList {
   using List = folly::IntrusiveList<
       ProxyDestinationBase,

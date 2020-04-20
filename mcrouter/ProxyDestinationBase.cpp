@@ -34,6 +34,28 @@ static_assert(
 
 } // anonymous namespace
 
+void ProxyDestinationBase::updateSoftTkoStats(GlobalSoftTkoUpdateType type) {
+  switch (type) {
+    case GlobalSoftTkoUpdateType::INC_SOFT_TKOS:
+      proxy_.stats().increment(num_soft_tko_count_stat);
+      proxy_.stats().setValue(
+          max_num_soft_tko_stat,
+          std::max(
+              proxy_.stats().getValue(max_num_soft_tko_stat),
+              proxy_.stats().getValue(num_soft_tko_count_stat)));
+      break;
+    case GlobalSoftTkoUpdateType::DEC_SOFT_TKOS:
+      proxy_.stats().decrement(num_soft_tko_count_stat);
+      break;
+    case GlobalSoftTkoUpdateType::ENTER_FAIL_OPEN:
+      proxy_.stats().increment(num_fail_open_state_entered_stat);
+      break;
+    case GlobalSoftTkoUpdateType::EXIT_FAIL_OPEN:
+      proxy_.stats().increment(num_fail_open_state_exited_stat);
+      break;
+  }
+}
+
 ProxyDestinationBase::ProxyDestinationBase(
     ProxyBase& proxy,
     std::shared_ptr<const AccessPoint> ap,

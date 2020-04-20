@@ -257,12 +257,46 @@ McRouteHandleProvider<RouterInfo>::makePool(
       disableRequestDeadlineCheck =
           parseBool(*jRequestDeadline, "disable_request_deadline_check");
     }
-    // servers
     auto jservers = json.get_ptr("servers");
-    auto jhostnames = json.get_ptr("hostnames");
-    auto jfailureDomains = json.get_ptr("failure_domains");
     checkLogic(jservers, "servers not found");
     checkLogic(jservers->isArray(), "servers is not an array");
+    uint32_t numSoftTkoThresholdUpper = 0;
+    uint32_t numSoftTkoThresholdLower = 0;
+    std::shared_ptr<PoolTkoTracker> poolTkoTracker;
+    if (auto poolTkoTrackerConfig = json.get_ptr("tko_tracker")) {
+      if (auto jNumSoftTkoThresholdUpper =
+              poolTkoTrackerConfig->get_ptr("num_soft_tko_threshold_upper")) {
+        numSoftTkoThresholdUpper = jNumSoftTkoThresholdUpper->asInt();
+      } else if (
+          auto jPercentSoftTkoThresholdUpper = poolTkoTrackerConfig->get_ptr(
+              "percent_soft_tko_threshold_upper")) {
+        numSoftTkoThresholdUpper =
+            (jPercentSoftTkoThresholdUpper->asInt() * jservers->size()) / 100;
+      }
+
+      if (auto jNumSoftTkoThresholdLower =
+              poolTkoTrackerConfig->get_ptr("num_soft_tko_threshold_lower")) {
+        numSoftTkoThresholdLower = jNumSoftTkoThresholdLower->asInt();
+      } else if (
+          auto jPercentSoftTkoThresholdLower = poolTkoTrackerConfig->get_ptr(
+              "percent_soft_tko_threshold_lower")) {
+        numSoftTkoThresholdLower =
+            (jPercentSoftTkoThresholdLower->asInt() * jservers->size()) / 100;
+      }
+      checkLogic(
+          numSoftTkoThresholdUpper > 0 && numSoftTkoThresholdLower > 0,
+          "Both soft tko threshold upper and lower must be configured");
+      checkLogic(
+          numSoftTkoThresholdLower <= numSoftTkoThresholdUpper,
+          "soft tko upper threshold must be greater than or equal to lower"
+          " threshold");
+      poolTkoTracker = proxy_.destinationMap()->createPoolTkoTracker(
+          name, numSoftTkoThresholdUpper, numSoftTkoThresholdLower);
+    }
+
+    // servers
+    auto jhostnames = json.get_ptr("hostnames");
+    auto jfailureDomains = json.get_ptr("failure_domains");
     checkLogic(
         !jfailureDomains || jfailureDomains->isArray(),
         "failure_domains is not an array");
@@ -377,6 +411,7 @@ McRouteHandleProvider<RouterInfo>::makePool(
             i,
             poolStatIndex,
             disableRequestDeadlineCheck,
+            poolTkoTracker,
             keepRoutingPrefix));
       } else {
         using Transport = AsyncMcClient;
@@ -390,6 +425,7 @@ McRouteHandleProvider<RouterInfo>::makePool(
             i,
             poolStatIndex,
             disableRequestDeadlineCheck,
+            poolTkoTracker,
             keepRoutingPrefix));
       }
     } // servers
@@ -414,9 +450,10 @@ McRouteHandleProvider<RouterInfo>::createDestinationRoute(
     size_t indexInPool,
     int32_t poolStatIndex,
     bool disableRequestDeadlineCheck,
+    std::shared_ptr<PoolTkoTracker> poolTkoTracker,
     bool keepRoutingPrefix) {
   auto pdstn = proxy_.destinationMap()->template emplace<Transport>(
-      std::move(ap), timeout, qosClass, qosPath);
+      std::move(ap), timeout, qosClass, qosPath, poolTkoTracker);
   pdstn->updateShortestTimeout(connectTimeout, timeout);
 
   return makeDestinationRoute<RouterInfo, Transport>(

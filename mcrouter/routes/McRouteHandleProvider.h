@@ -17,6 +17,7 @@
 #include <folly/json.h>
 
 #include "mcrouter/PoolFactory.h"
+#include "mcrouter/TkoTracker.h"
 #include "mcrouter/lib/config/RouteHandleProviderIf.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
@@ -117,6 +118,7 @@ class McRouteHandleProvider
       size_t indexInPool,
       int32_t poolStatIndex,
       bool disableRequestDeadlineCheck,
+      std::shared_ptr<PoolTkoTracker> poolTkoTracker,
       bool keepRoutingPrefix);
 
   RouteHandleFactoryMap buildRouteMap();

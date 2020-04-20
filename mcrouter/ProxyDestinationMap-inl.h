@@ -25,7 +25,8 @@ std::shared_ptr<ProxyDestination<Transport>> ProxyDestinationMap::emplace(
     std::shared_ptr<AccessPoint> ap,
     std::chrono::milliseconds timeout,
     uint32_t qosClass,
-    uint32_t qosPath) {
+    uint32_t qosPath,
+    std::shared_ptr<PoolTkoTracker> poolTkoTracker) {
   std::shared_ptr<ProxyDestination<Transport>> destination;
   {
     std::lock_guard<std::mutex> lck(destinationsLock_);
@@ -45,7 +46,7 @@ std::shared_ptr<ProxyDestination<Transport>> ProxyDestinationMap::emplace(
   // Update shared area of ProxyDestinations with same key from different
   // threads. This shared area is represented with TkoTracker class.
   proxy_->router().tkoTrackerMap().updateTracker(
-      *destination, proxy_->router().opts().failures_until_tko);
+      *destination, proxy_->router().opts().failures_until_tko, poolTkoTracker);
 
   return destination;
 }

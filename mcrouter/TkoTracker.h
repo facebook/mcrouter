@@ -28,6 +28,28 @@ namespace mcrouter {
 class ProxyDestinationBase;
 class TkoTrackerMap;
 
+class PoolTkoTracker {
+ public:
+  PoolTkoTracker(
+      uint32_t failOpenEnterNumSoftTkos,
+      uint32_t failOpenExitNumSoftTkos)
+      : failOpenEnterNumSoftTkos_(failOpenEnterNumSoftTkos),
+        failOpenExitNumSoftTkos_(failOpenExitNumSoftTkos) {}
+
+  // returns pair with first one is true if number of numDestinationsSoftTko_
+  //        is incremented, false, otherwise. And the second one is true
+  //        if the fail open state has entered, false otherwise
+  std::pair<bool, bool> incNumDestinationsSoftTko();
+
+  bool decNumDestinationsSoftTko();
+
+ private:
+  const uint32_t failOpenEnterNumSoftTkos_;
+  const uint32_t failOpenExitNumSoftTkos_;
+  bool failOpen_{false};
+  std::atomic<size_t> numDestinationsSoftTko_{0};
+};
+
 /**
  * We record the number of consecutive failures for each destination.
  * Once it goes over a certain threshold, we mark the destination as TKO
@@ -147,11 +169,18 @@ class TkoTracker {
 
   ~TkoTracker();
 
+  void setPoolTracker(std::shared_ptr<PoolTkoTracker> poolTracker) {
+    poolTracker_ = poolTracker;
+  }
+
  private:
   // The string is stored in TkoTrackerMap::trackers_
   folly::StringPiece key_;
   const size_t tkoThreshold_;
+  std::shared_ptr<PoolTkoTracker> poolTracker_;
   TkoTrackerMap& trackerMap_;
+
+  TkoCounters tkoCounters_;
 
   /**
    * sumFailures_ is used for a few things depending on the state of the
@@ -174,12 +203,12 @@ class TkoTracker {
   /**
    * Decrement the global counter of current soft TKOs
    */
-  void decrementSoftTkoCount();
+  void decrementSoftTkoCount(ProxyDestinationBase* pdstn);
 
   /**
    * Increment the global counter of current soft TKOs.
    */
-  void incrementSoftTkoCount();
+  bool incrementSoftTkoCount(ProxyDestinationBase* pdstn);
 
   /* Modifies the value of sumFailures atomically. Fails only
      in the case that another proxy takes responsibility, in which case all
@@ -192,7 +221,7 @@ class TkoTracker {
   /**
    * @param tkoThreshold    Require this many soft failures to mark
    *                        the destination TKO.
-   * @param globalTkoStats  Number of TKO destination for current router.
+   * @param trackerMap  Number of TKO destination for current router.
    */
   TkoTracker(size_t tkoThreshold, TkoTrackerMap& trackerMap);
 
@@ -208,10 +237,17 @@ class TkoTrackerMap {
   TkoTrackerMap(const TkoTrackerMap&) = delete;
   TkoTrackerMap(TkoTrackerMap&&) = delete;
 
+  std::shared_ptr<PoolTkoTracker> createPoolTkoTracker(
+      std::string poolName,
+      uint32_t numEnterSoftTkos,
+      uint32_t numExitSoftTkos);
   /**
    * Creates/updates TkoTracker for `pdstn` and updates `pdstn->tko` pointer.
    */
-  void updateTracker(ProxyDestinationBase& pdstn, const size_t tkoThreshold);
+  void updateTracker(
+      ProxyDestinationBase& pdstn,
+      const size_t tkoThreshold,
+      std::shared_ptr<PoolTkoTracker> poolTkoTracker);
 
   /**
    * @return  number of servers that recently returned error replies.
@@ -235,6 +271,7 @@ class TkoTrackerMap {
  private:
   mutable std::mutex mx_;
   folly::StringKeyedUnorderedMap<std::weak_ptr<TkoTracker>> trackers_;
+  folly::StringKeyedUnorderedMap<std::weak_ptr<PoolTkoTracker>> poolTrackers_;
 
   // Total number of boxes marked as TKO.
   TkoCounters globalTkos_;
@@ -249,6 +286,6 @@ class TkoTrackerMap {
   friend class TkoTracker;
 };
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

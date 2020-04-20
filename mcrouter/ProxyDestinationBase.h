@@ -33,6 +33,13 @@ namespace mcrouter {
 class ProxyBase;
 class TkoTracker;
 
+enum class GlobalSoftTkoUpdateType : uint32_t {
+  INC_SOFT_TKOS = 1,
+  DEC_SOFT_TKOS = 2,
+  ENTER_FAIL_OPEN = 4,
+  EXIT_FAIL_OPEN = 8,
+};
+
 class ProxyDestinationBase {
  public:
   using RequestQueueStats = Transport::RequestQueueStats;
@@ -117,6 +124,11 @@ class ProxyDestinationBase {
   void setTracker(std::shared_ptr<TkoTracker> tracker) {
     tracker_ = std::move(tracker);
   }
+
+  /**
+   * Update some global soft tko related stats based on type
+   */
+  void updateSoftTkoStats(GlobalSoftTkoUpdateType type);
 
   void setPoolStatsIndex(int32_t index);
   void updatePoolStatConnections(bool connected);
