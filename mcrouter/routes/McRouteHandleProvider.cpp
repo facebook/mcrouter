@@ -7,7 +7,7 @@
 
 #include "McRouteHandleProvider.h"
 
-#include "mcrouter/lib/network/MemcacheMessageHelpers.h"
+#include "mcrouter/lib/network/MessageHelpers.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/routes/AllAsyncRouteFactory.h"

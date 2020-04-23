@@ -20,7 +20,7 @@
 #include <folly/io/IOBuf.h>
 
 #include "mcrouter/Observable.h"
-#include "mcrouter/lib/network/MemcacheMessageHelpers.h"
+#include "mcrouter/lib/network/MessageHelpers.h"
 
 // forward declarations
 namespace folly {

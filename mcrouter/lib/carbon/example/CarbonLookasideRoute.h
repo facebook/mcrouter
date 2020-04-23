@@ -13,7 +13,7 @@
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
-#include "mcrouter/lib/network/MemcacheMessageHelpers.h"
+#include "mcrouter/lib/network/MessageHelpers.h"
 #include "mcrouter/routes/CarbonLookasideRoute.h"
 
 namespace folly {

@@ -23,7 +23,7 @@
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/network/MemcacheMessageHelpers.h"
+#include "mcrouter/lib/network/MessageHelpers.h"
 
 namespace facebook {
 namespace memcache {

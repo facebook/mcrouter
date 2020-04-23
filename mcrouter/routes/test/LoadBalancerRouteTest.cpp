@@ -17,7 +17,7 @@
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/lib/carbon/RequestReplyUtil.h"
 #include "mcrouter/lib/mc/msg.h"
-#include "mcrouter/lib/network/MemcacheMessageHelpers.h"
+#include "mcrouter/lib/network/MessageHelpers.h"
 #include "mcrouter/lib/network/ServerLoad.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/lib/test/TestRouteHandle.h"

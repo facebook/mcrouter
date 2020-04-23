@@ -17,7 +17,7 @@
 #include "mcrouter/lib/carbon/test/Util.h"
 #include "mcrouter/lib/carbon/test/gen/CarbonTest.h"
 #include "mcrouter/lib/carbon/test/gen/CompactTest.h"
-#include "mcrouter/lib/network/MemcacheMessageHelpers.h"
+#include "mcrouter/lib/network/MessageHelpers.h"
 
 using namespace carbon::test::util;
 

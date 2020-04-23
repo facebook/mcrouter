@@ -213,7 +213,7 @@ libmcrouter_a_SOURCES = \
   network/McServerSession.h \
   network/McSSLUtil.cpp \
   network/McSSLUtil.h \
-  network/MemcacheMessageHelpers.h \
+  network/MessageHelpers.h \
   network/MultiOpParent.cpp \
   network/MultiOpParent.h \
   network/Qos.cpp \

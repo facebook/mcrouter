@@ -11,7 +11,7 @@
 
 #include "mcrouter/lib/network/AsciiSerialized.h"
 #include "mcrouter/lib/network/McSerializedRequest.h"
-#include "mcrouter/lib/network/MemcacheMessageHelpers.h"
+#include "mcrouter/lib/network/MessageHelpers.h"
 #include "mcrouter/lib/network/ServerLoad.h"
 #include "mcrouter/lib/network/gen/MemcacheMessages.h"
 #include "mcrouter/tools/mcpiper/Color.h"

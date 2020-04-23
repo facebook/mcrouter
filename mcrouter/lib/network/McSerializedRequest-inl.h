@@ -8,7 +8,7 @@
 #pragma once
 
 #include <folly/fibers/FiberManager.h>
-#include "mcrouter/lib/network/MemcacheMessageHelpers.h"
+#include "mcrouter/lib/network/MessageHelpers.h"
 
 namespace facebook {
 namespace memcache {
