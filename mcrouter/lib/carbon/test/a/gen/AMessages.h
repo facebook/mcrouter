@@ -42,10 +42,7 @@ class AnotherReply;
 class AnotherRequest : public carbon::RequestCommon {
  public:
   using reply_type = AnotherReply;
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 65;
   static constexpr const char* name = "AnotherRequest";
 
@@ -82,10 +79,7 @@ class AnotherRequest : public carbon::RequestCommon {
 
 class AnotherReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 66;
 
   AnotherReply() = default;

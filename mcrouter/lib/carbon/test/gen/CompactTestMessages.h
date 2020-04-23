@@ -47,10 +47,7 @@ class TestCompactReply;
 class TestCompactRequest : public carbon::RequestCommon {
  public:
   using reply_type = TestCompactReply;
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 73;
   static constexpr const char* name = "testCompact";
 
@@ -209,10 +206,7 @@ class TestCompactRequest : public carbon::RequestCommon {
 
 class TestCompactReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 74;
 
   TestCompactReply() = default;

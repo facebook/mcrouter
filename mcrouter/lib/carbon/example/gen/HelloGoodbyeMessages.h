@@ -41,10 +41,7 @@ class HelloReply;
 class HelloRequest : public carbon::RequestCommon {
  public:
   using reply_type = HelloReply;
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 65;
   static constexpr const char* name = "hello";
 
@@ -137,10 +134,7 @@ class HelloRequest : public carbon::RequestCommon {
 
 class HelloReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 66;
 
   HelloReply() = default;
@@ -215,10 +209,7 @@ class GoodbyeReply;
 class GoodbyeRequest : public carbon::RequestCommon {
  public:
   using reply_type = GoodbyeReply;
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 67;
   static constexpr const char* name = "goodbye";
 
@@ -297,10 +288,7 @@ class GoodbyeRequest : public carbon::RequestCommon {
 
 class GoodbyeReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 68;
 
   GoodbyeReply() = default;

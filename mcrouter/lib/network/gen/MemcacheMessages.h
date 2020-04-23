@@ -42,10 +42,7 @@ class McGetReply;
 class McGetRequest : public carbon::RequestCommon {
  public:
   using reply_type = McGetReply;
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = true;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 1;
   static constexpr const char* name = "get";
 
@@ -124,10 +121,7 @@ class McGetRequest : public carbon::RequestCommon {
 
 class McGetReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = true;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = true;
+
   static constexpr size_t typeId = 2;
 
   McGetReply() = default;
@@ -220,10 +214,7 @@ class McSetReply;
 class McSetRequest : public carbon::RequestCommon {
  public:
   using reply_type = McSetReply;
-  static constexpr bool hasExptime = true;
-  static constexpr bool hasFlags = true;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = true;
+
   static constexpr size_t typeId = 3;
   static constexpr const char* name = "set";
 
@@ -316,10 +307,7 @@ class McSetRequest : public carbon::RequestCommon {
 
 class McSetReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = true;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = true;
+
   static constexpr size_t typeId = 4;
 
   McSetReply() = default;
@@ -412,10 +400,7 @@ class McDeleteReply;
 class McDeleteRequest : public carbon::RequestCommon {
  public:
   using reply_type = McDeleteReply;
-  static constexpr bool hasExptime = true;
-  static constexpr bool hasFlags = true;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = true;
+
   static constexpr size_t typeId = 5;
   static constexpr const char* name = "delete";
 
@@ -515,10 +500,7 @@ class McDeleteRequest : public carbon::RequestCommon {
 
 class McDeleteReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = true;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = true;
+
   static constexpr size_t typeId = 6;
 
   McDeleteReply() = default;
@@ -611,10 +593,7 @@ class McLeaseGetReply;
 class McLeaseGetRequest : public carbon::RequestCommon {
  public:
   using reply_type = McLeaseGetReply;
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = true;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 7;
   static constexpr const char* name = "lease-get";
 
@@ -693,10 +672,7 @@ class McLeaseGetRequest : public carbon::RequestCommon {
 
 class McLeaseGetReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = true;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = true;
+
   static constexpr size_t typeId = 8;
 
   McLeaseGetReply() = default;
@@ -795,10 +771,7 @@ class McLeaseSetReply;
 class McLeaseSetRequest : public carbon::RequestCommon {
  public:
   using reply_type = McLeaseSetReply;
-  static constexpr bool hasExptime = true;
-  static constexpr bool hasFlags = true;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = true;
+
   static constexpr size_t typeId = 9;
   static constexpr const char* name = "lease-set";
 
@@ -898,10 +871,7 @@ class McLeaseSetRequest : public carbon::RequestCommon {
 
 class McLeaseSetReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 10;
 
   McLeaseSetReply() = default;
@@ -982,10 +952,7 @@ class McAddReply;
 class McAddRequest : public carbon::RequestCommon {
  public:
   using reply_type = McAddReply;
-  static constexpr bool hasExptime = true;
-  static constexpr bool hasFlags = true;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = true;
+
   static constexpr size_t typeId = 11;
   static constexpr const char* name = "add";
 
@@ -1078,10 +1045,7 @@ class McAddRequest : public carbon::RequestCommon {
 
 class McAddReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 12;
 
   McAddReply() = default;
@@ -1162,10 +1126,7 @@ class McReplaceReply;
 class McReplaceRequest : public carbon::RequestCommon {
  public:
   using reply_type = McReplaceReply;
-  static constexpr bool hasExptime = true;
-  static constexpr bool hasFlags = true;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = true;
+
   static constexpr size_t typeId = 13;
   static constexpr const char* name = "replace";
 
@@ -1258,10 +1219,7 @@ class McReplaceRequest : public carbon::RequestCommon {
 
 class McReplaceReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 14;
 
   McReplaceReply() = default;
@@ -1342,10 +1300,7 @@ class McGetsReply;
 class McGetsRequest : public carbon::RequestCommon {
  public:
   using reply_type = McGetsReply;
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = true;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 15;
   static constexpr const char* name = "gets";
 
@@ -1424,10 +1379,7 @@ class McGetsRequest : public carbon::RequestCommon {
 
 class McGetsReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = true;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = true;
+
   static constexpr size_t typeId = 16;
 
   McGetsReply() = default;
@@ -1526,10 +1478,7 @@ class McCasReply;
 class McCasRequest : public carbon::RequestCommon {
  public:
   using reply_type = McCasReply;
-  static constexpr bool hasExptime = true;
-  static constexpr bool hasFlags = true;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = true;
+
   static constexpr size_t typeId = 17;
   static constexpr const char* name = "cas";
 
@@ -1629,10 +1578,7 @@ class McCasRequest : public carbon::RequestCommon {
 
 class McCasReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 18;
 
   McCasReply() = default;
@@ -1713,10 +1659,7 @@ class McIncrReply;
 class McIncrRequest : public carbon::RequestCommon {
  public:
   using reply_type = McIncrReply;
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 19;
   static constexpr const char* name = "incr";
 
@@ -1795,10 +1738,7 @@ class McIncrRequest : public carbon::RequestCommon {
 
 class McIncrReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 20;
 
   McIncrReply() = default;
@@ -1885,10 +1825,7 @@ class McDecrReply;
 class McDecrRequest : public carbon::RequestCommon {
  public:
   using reply_type = McDecrReply;
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 21;
   static constexpr const char* name = "decr";
 
@@ -1967,10 +1904,7 @@ class McDecrRequest : public carbon::RequestCommon {
 
 class McDecrReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 22;
 
   McDecrReply() = default;
@@ -2057,10 +1991,7 @@ class McMetagetReply;
 class McMetagetRequest : public carbon::RequestCommon {
  public:
   using reply_type = McMetagetReply;
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 23;
   static constexpr const char* name = "metaget";
 
@@ -2132,10 +2063,7 @@ class McMetagetRequest : public carbon::RequestCommon {
 
 class McMetagetReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = true;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 24;
 
   McMetagetReply() = default;
@@ -2240,10 +2168,7 @@ class McAppendReply;
 class McAppendRequest : public carbon::RequestCommon {
  public:
   using reply_type = McAppendReply;
-  static constexpr bool hasExptime = true;
-  static constexpr bool hasFlags = true;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = true;
+
   static constexpr size_t typeId = 27;
   static constexpr const char* name = "append";
 
@@ -2336,10 +2261,7 @@ class McAppendRequest : public carbon::RequestCommon {
 
 class McAppendReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 28;
 
   McAppendReply() = default;
@@ -2420,10 +2342,7 @@ class McPrependReply;
 class McPrependRequest : public carbon::RequestCommon {
  public:
   using reply_type = McPrependReply;
-  static constexpr bool hasExptime = true;
-  static constexpr bool hasFlags = true;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = true;
+
   static constexpr size_t typeId = 29;
   static constexpr const char* name = "prepend";
 
@@ -2516,10 +2435,7 @@ class McPrependRequest : public carbon::RequestCommon {
 
 class McPrependReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 30;
 
   McPrependReply() = default;
@@ -2600,10 +2516,7 @@ class McTouchReply;
 class McTouchRequest : public carbon::RequestCommon {
  public:
   using reply_type = McTouchReply;
-  static constexpr bool hasExptime = true;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 31;
   static constexpr const char* name = "touch";
 
@@ -2682,10 +2595,7 @@ class McTouchRequest : public carbon::RequestCommon {
 
 class McTouchReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 32;
 
   McTouchReply() = default;
@@ -2766,10 +2676,7 @@ class McFlushReReply;
 class McFlushReRequest : public carbon::RequestCommon {
  public:
   using reply_type = McFlushReReply;
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 41;
   static constexpr const char* name = "flushre";
 
@@ -2841,10 +2748,7 @@ class McFlushReRequest : public carbon::RequestCommon {
 
 class McFlushReReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 42;
 
   McFlushReReply() = default;
@@ -2925,10 +2829,7 @@ class McFlushAllReply;
 class McFlushAllRequest : public carbon::RequestCommon {
  public:
   using reply_type = McFlushAllReply;
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 43;
   static constexpr const char* name = "flushall";
 
@@ -3007,10 +2908,7 @@ class McFlushAllRequest : public carbon::RequestCommon {
 
 class McFlushAllReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 44;
 
   McFlushAllReply() = default;
@@ -3091,10 +2989,7 @@ class McGatReply;
 class McGatRequest : public carbon::RequestCommon {
  public:
   using reply_type = McGatReply;
-  static constexpr bool hasExptime = true;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 45;
   static constexpr const char* name = "gat";
 
@@ -3173,10 +3068,7 @@ class McGatRequest : public carbon::RequestCommon {
 
 class McGatReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = true;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = true;
+
   static constexpr size_t typeId = 46;
 
   McGatReply() = default;
@@ -3269,10 +3161,7 @@ class McGatsReply;
 class McGatsRequest : public carbon::RequestCommon {
  public:
   using reply_type = McGatsReply;
-  static constexpr bool hasExptime = true;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 47;
   static constexpr const char* name = "gats";
 
@@ -3351,10 +3240,7 @@ class McGatsRequest : public carbon::RequestCommon {
 
 class McGatsReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = true;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = true;
+
   static constexpr size_t typeId = 48;
 
   McGatsReply() = default;

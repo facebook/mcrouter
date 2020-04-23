@@ -40,10 +40,7 @@ class McVersionReply;
 class McVersionRequest : public carbon::RequestCommon {
  public:
   using reply_type = McVersionReply;
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 25;
   static constexpr const char* name = "version";
 
@@ -115,10 +112,7 @@ class McVersionRequest : public carbon::RequestCommon {
 
 class McVersionReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = true;
+
   static constexpr size_t typeId = 26;
 
   McVersionReply() = default;
@@ -205,10 +199,7 @@ class McStatsReply;
 class McStatsRequest : public carbon::RequestCommon {
  public:
   using reply_type = McStatsReply;
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 33;
   static constexpr const char* name = "stats";
 
@@ -280,10 +271,7 @@ class McStatsRequest : public carbon::RequestCommon {
 
 class McStatsReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 34;
 
   McStatsReply() = default;
@@ -370,10 +358,7 @@ class McShutdownReply;
 class McShutdownRequest : public carbon::RequestCommon {
  public:
   using reply_type = McShutdownReply;
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 35;
   static constexpr const char* name = "shutdown";
 
@@ -445,10 +430,7 @@ class McShutdownRequest : public carbon::RequestCommon {
 
 class McShutdownReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 36;
 
   McShutdownReply() = default;
@@ -529,10 +511,7 @@ class McQuitReply;
 class McQuitRequest : public carbon::RequestCommon {
  public:
   using reply_type = McQuitReply;
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 37;
   static constexpr const char* name = "quit";
 
@@ -604,10 +583,7 @@ class McQuitRequest : public carbon::RequestCommon {
 
 class McQuitReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 38;
 
   McQuitReply() = default;
@@ -688,10 +664,7 @@ class McExecReply;
 class McExecRequest : public carbon::RequestCommon {
  public:
   using reply_type = McExecReply;
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 39;
   static constexpr const char* name = "exec";
 
@@ -763,10 +736,7 @@ class McExecRequest : public carbon::RequestCommon {
 
 class McExecReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 40;
 
   McExecReply() = default;
@@ -853,10 +823,7 @@ class GoAwayRequest;
 class GoAwayAcknowledgement : public carbon::RequestCommon {
  public:
   using reply_type = GoAwayRequest;
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 41;
   static constexpr const char* name = "goaway";
 
@@ -915,10 +882,7 @@ class GoAwayAcknowledgement : public carbon::RequestCommon {
 
 class GoAwayRequest : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 42;
 
   GoAwayRequest() = default;

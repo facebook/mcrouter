@@ -45,10 +45,7 @@ class TestReply;
 class TestRequest : public carbon::RequestCommon {
  public:
   using reply_type = TestReply;
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 69;
   static constexpr const char* name = "test";
 
@@ -455,10 +452,7 @@ class TestRequest : public carbon::RequestCommon {
 
 class TestReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 70;
 
   TestReply() = default;
@@ -509,10 +503,7 @@ class TestReplyStringKey;
 class TestRequestStringKey : public carbon::RequestCommon {
  public:
   using reply_type = TestReplyStringKey;
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 71;
   static constexpr const char* name = "testStringKey";
 
@@ -551,10 +542,7 @@ class TestRequestStringKey : public carbon::RequestCommon {
 
 class TestReplyStringKey : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 72;
 
   TestReplyStringKey() = default;
@@ -588,10 +576,6 @@ class TestReplyStringKey : public carbon::ReplyCommon {
 
 class TestOptionalBool {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
 
   TestOptionalBool() = default;
   TestOptionalBool(const TestOptionalBool&) = default;
@@ -756,10 +740,6 @@ class TestOptionalUnion {
 
 class TestF14Containers {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
 
   TestF14Containers() = default;
   TestF14Containers(const TestF14Containers&) = default;
@@ -839,10 +819,6 @@ class TestF14Containers {
 
 class TestStdContainers {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
 
   TestStdContainers() = default;
   TestStdContainers(const TestStdContainers&) = default;

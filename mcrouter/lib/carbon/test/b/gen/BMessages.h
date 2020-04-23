@@ -37,10 +37,6 @@ namespace test {
 
 class BaseStruct {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
 
   BaseStruct() = default;
   BaseStruct(const BaseStruct&) = default;
@@ -71,10 +67,6 @@ class BaseStruct {
 
 class SimpleStruct {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
 
   SimpleStruct() = default;
   SimpleStruct(const SimpleStruct&) = default;

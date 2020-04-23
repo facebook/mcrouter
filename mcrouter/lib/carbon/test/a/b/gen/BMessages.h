@@ -45,10 +45,6 @@ std::string enumSimpleEnumToString(SimpleEnum val);
 
 class SimpleStruct {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
 
   SimpleStruct() = default;
   SimpleStruct(const SimpleStruct&) = default;
@@ -216,10 +212,7 @@ class YetAnotherReply;
 class YetAnotherRequest : public carbon::RequestCommon {
  public:
   using reply_type = YetAnotherReply;
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 67;
   static constexpr const char* name = "yet_another";
 
@@ -256,10 +249,7 @@ class YetAnotherRequest : public carbon::RequestCommon {
 
 class YetAnotherReply : public carbon::ReplyCommon {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
+
   static constexpr size_t typeId = 68;
 
   YetAnotherReply() = default;

@@ -41,10 +41,6 @@ std::string enumFooToString(Foo val);
 
 class StructWithEnumField {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
 
   StructWithEnumField() = default;
   StructWithEnumField(const StructWithEnumField&) = default;

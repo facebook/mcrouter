@@ -36,10 +36,6 @@ namespace test {
 
 class ManyFields {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
 
   ManyFields() = default;
   ManyFields(const ManyFields&) = default;
@@ -343,10 +339,6 @@ class ManyFields {
 
 class McExpTestRequest {
  public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = true;
-  static constexpr bool hasKey = true;
-  static constexpr bool hasValue = false;
 
   McExpTestRequest() = default;
   McExpTestRequest(const McExpTestRequest&) = default;
