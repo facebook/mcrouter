@@ -13,6 +13,7 @@
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
+#include "mcrouter/lib/network/MemcacheMessageHelpers.h"
 #include "mcrouter/routes/CarbonLookasideRoute.h"
 
 namespace folly {
@@ -31,7 +32,7 @@ class HelloGoodbyeCarbonLookasideHelper {
 
   template <typename Request>
   bool cacheCandidate(const Request& /* unused */) {
-    if (Request::hasKey) {
+    if (facebook::memcache::HasKeyTrait<Request>::value) {
       return true;
     }
     return false;
@@ -39,7 +40,7 @@ class HelloGoodbyeCarbonLookasideHelper {
 
   template <typename Request>
   std::string buildKey(const Request& req) {
-    if (Request::hasKey) {
+    if (facebook::memcache::HasKeyTrait<Request>::value) {
       return req.key().fullKey().str();
     }
     return std::string();

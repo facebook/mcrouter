@@ -17,6 +17,7 @@
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/lib/carbon/RequestReplyUtil.h"
 #include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/lib/network/MemcacheMessageHelpers.h"
 #include "mcrouter/lib/network/ServerLoad.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/lib/test/TestRouteHandle.h"
@@ -29,7 +30,7 @@ using namespace facebook::memcache::mcrouter;
 namespace {
 
 template <class Reply>
-typename std::enable_if<Reply::hasValue, void>::type setReplyValue(
+typename std::enable_if<HasValueTrait<Reply>::value, void>::type setReplyValue(
     Reply& reply,
     std::unordered_map<std::string, double>& mymap,
     const std::string& val) {
@@ -43,7 +44,7 @@ typename std::enable_if<Reply::hasValue, void>::type setReplyValue(
   reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, val);
 }
 template <class Reply>
-typename std::enable_if<!Reply::hasValue, void>::type setReplyValue(
+typename std::enable_if<!HasValueTrait<Reply>::value, void>::type setReplyValue(
     Reply&,
     std::unordered_map<std::string, double>&,
     const std::string&) {}

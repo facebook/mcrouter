@@ -7,6 +7,7 @@
 
 #include "McRouteHandleProvider.h"
 
+#include "mcrouter/lib/network/MemcacheMessageHelpers.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/routes/AllAsyncRouteFactory.h"
@@ -65,7 +66,7 @@ class MemcacheCarbonLookasideHelper {
 
   template <typename Request>
   bool cacheCandidate(const Request& /* unused */) const {
-    if (Request::hasKey) {
+    if (HasKeyTrait<Request>::value) {
       return true;
     }
     return false;
@@ -73,7 +74,7 @@ class MemcacheCarbonLookasideHelper {
 
   template <typename Request>
   std::string buildKey(const Request& req) const {
-    if (Request::hasKey) {
+    if (HasKeyTrait<Request>::value) {
       return req.key().fullKey().str();
     }
     return std::string();

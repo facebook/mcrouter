@@ -17,8 +17,10 @@
 
 #include <folly/Random.h>
 #include <folly/Range.h>
+#include <folly/io/IOBuf.h>
 
 #include "mcrouter/Observable.h"
+#include "mcrouter/lib/network/MemcacheMessageHelpers.h"
 
 // forward declarations
 namespace folly {
@@ -104,7 +106,7 @@ class ShadowSettings {
   }
 
   template <class Request>
-  std::enable_if_t<Request::hasKey, bool> shouldShadowKey(
+  std::enable_if_t<HasKeyTrait<Request>::value, bool> shouldShadowKey(
       const Request& req) const {
     // If configured to use an explicit list of keys to be shadowed, check for
     // req.key() in that list. Otherwise, decide to shadow based on keyRange().
@@ -123,7 +125,7 @@ class ShadowSettings {
         req.key().routingKeyHash() <= range.second;
   }
   template <class Request>
-  std::enable_if_t<!Request::hasKey, bool> shouldShadowKey(
+  std::enable_if_t<!HasKeyTrait<Request>::value, bool> shouldShadowKey(
       const Request& /* req */) const {
     return true;
   }

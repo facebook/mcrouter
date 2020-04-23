@@ -23,6 +23,7 @@
 #include "mcrouter/lib/carbon/RoutingGroups.h"
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/config/RouteHandleProviderIf.h"
+#include "mcrouter/lib/network/MemcacheMessageHelpers.h"
 #include "mcrouter/lib/network/gen/MemcacheMessages.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 
@@ -32,22 +33,24 @@ namespace memcache {
 namespace detail {
 
 template <class M>
-typename std::enable_if<M::hasFlags>::type testSetFlags(
+typename std::enable_if<HasFlagsTrait<M>::value>::type testSetFlags(
     M& message,
     uint64_t flags) {
   message.flags() = flags;
 }
 template <class M>
-typename std::enable_if<!M::hasFlags>::type testSetFlags(M&, uint64_t) {}
+typename std::enable_if<!HasFlagsTrait<M>::value>::type testSetFlags(
+    M&,
+    uint64_t) {}
 
 template <class Reply>
-typename std::enable_if<Reply::hasValue, void>::type setReplyValue(
+typename std::enable_if<HasValueTrait<Reply>::value, void>::type setReplyValue(
     Reply& reply,
     const std::string& val) {
   reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, val);
 }
 template <class Reply>
-typename std::enable_if<!Reply::hasValue, void>::type setReplyValue(
+typename std::enable_if<!HasValueTrait<Reply>::value, void>::type setReplyValue(
     Reply&,
     const std::string& /* val */) {}
 } // namespace detail

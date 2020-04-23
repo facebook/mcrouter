@@ -17,6 +17,7 @@
 #include "mcrouter/lib/carbon/test/Util.h"
 #include "mcrouter/lib/carbon/test/gen/CarbonTest.h"
 #include "mcrouter/lib/carbon/test/gen/CompactTest.h"
+#include "mcrouter/lib/network/MemcacheMessageHelpers.h"
 
 using namespace carbon::test::util;
 
@@ -63,16 +64,16 @@ void checkKeyFilledProperly(const Key& key) {
 } // namespace
 
 TEST(CarbonBasic, staticAsserts) {
-  static_assert(!TestRequest::hasExptime, "");
-  static_assert(!TestRequest::hasFlags, "");
-  static_assert(TestRequest::hasKey, "");
-  static_assert(!TestRequest::hasValue, "");
+  static_assert(!facebook::memcache::HasExptimeTrait<TestRequest>::value, "");
+  static_assert(!facebook::memcache::HasFlagsTrait<TestRequest>::value, "");
+  static_assert(facebook::memcache::HasKeyTrait<TestRequest>::value, "");
+  static_assert(!facebook::memcache::HasValueTrait<TestRequest>::value, "");
   static_assert(TestRequest::typeId == 69, "");
 
-  static_assert(!TestReply::hasExptime, "");
-  static_assert(!TestReply::hasFlags, "");
-  static_assert(!TestReply::hasKey, "");
-  static_assert(!TestReply::hasValue, "");
+  static_assert(!facebook::memcache::HasExptimeTrait<TestReply>::value, "");
+  static_assert(!facebook::memcache::HasFlagsTrait<TestReply>::value, "");
+  static_assert(!facebook::memcache::HasKeyTrait<TestReply>::value, "");
+  static_assert(!facebook::memcache::HasValueTrait<TestReply>::value, "");
   static_assert(TestReply::typeId == 70, "");
 
   static_assert(carbon::IsCarbonStruct<TestRequest>::value, "");

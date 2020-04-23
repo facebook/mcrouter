@@ -17,6 +17,7 @@
 #include "mcrouter/lib/fbi/cpp/TypeList.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/mc/protocol.h"
+#include "mcrouter/lib/network/MemcacheMessageHelpers.h"
 
 namespace facebook {
 namespace memcache {
@@ -99,13 +100,17 @@ typename std::enable_if_t<!detail::HasIsFailover<Reply>::value>
 setIsFailoverIfPresent(Reply&, bool) {}
 
 template <class Request>
-typename std::enable_if_t<Request::hasKey, folly::StringPiece> getFullKey(
-    const Request& req) {
+typename std::enable_if_t<
+    facebook::memcache::HasKeyTrait<Request>::value,
+    folly::StringPiece>
+getFullKey(const Request& req) {
   return req.key().fullKey();
 }
 template <class Request>
-typename std::enable_if_t<!Request::hasKey, folly::StringPiece> getFullKey(
-    const Request&) {
+typename std::enable_if_t<
+    !facebook::memcache::HasKeyTrait<Request>::value,
+    folly::StringPiece>
+getFullKey(const Request&) {
   return "";
 }
 
@@ -152,31 +157,39 @@ inline const folly::IOBuf* bufPtr(
 } // namespace detail
 
 template <class R>
-typename std::enable_if<R::hasValue, const folly::IOBuf*>::type valuePtrUnsafe(
-    const R& requestOrReply) {
+typename std::enable_if<
+    facebook::memcache::HasValueTrait<R>::value,
+    const folly::IOBuf*>::type
+valuePtrUnsafe(const R& requestOrReply) {
   return detail::bufPtr(requestOrReply.value());
 }
 template <class R>
-typename std::enable_if<R::hasValue, folly::IOBuf*>::type valuePtrUnsafe(
-    R& requestOrReply) {
+typename std::
+    enable_if<facebook::memcache::HasValueTrait<R>::value, folly::IOBuf*>::type
+    valuePtrUnsafe(R& requestOrReply) {
   return detail::bufPtr(requestOrReply.value());
 }
 template <class R>
-typename std::enable_if<!R::hasValue, folly::IOBuf*>::type valuePtrUnsafe(
-    const R& /* requestOrReply */) {
+typename std::
+    enable_if<!facebook::memcache::HasValueTrait<R>::value, folly::IOBuf*>::type
+    valuePtrUnsafe(const R& /* requestOrReply */) {
   return nullptr;
 }
 
 template <class R>
-typename std::enable_if<R::hasValue, folly::StringPiece>::type valueRangeSlow(
-    R& requestOrReply) {
+typename std::enable_if<
+    facebook::memcache::HasValueTrait<R>::value,
+    folly::StringPiece>::type
+valueRangeSlow(R& requestOrReply) {
   auto* buf = detail::bufPtr(requestOrReply.value());
   return buf ? folly::StringPiece(buf->coalesce()) : folly::StringPiece();
 }
 
 template <class R>
-typename std::enable_if<!R::hasValue, folly::StringPiece>::type valueRangeSlow(
-    R& /* requestOrReply */) {
+typename std::enable_if<
+    !facebook::memcache::HasValueTrait<R>::value,
+    folly::StringPiece>::type
+valueRangeSlow(R& /* requestOrReply */) {
   return folly::StringPiece();
 }
 
@@ -193,13 +206,16 @@ class IsRequestTrait {
 };
 
 template <class R>
-typename std::enable_if<R::hasFlags, uint64_t>::type getFlags(
-    const R& requestOrReply) {
+typename std::enable_if<facebook::memcache::HasFlagsTrait<R>::value, uint64_t>::
+    type
+    getFlags(const R& requestOrReply) {
   return requestOrReply.flags();
 }
 
 template <class R>
-typename std::enable_if<!R::hasFlags, uint64_t>::type getFlags(const R&) {
+typename std::
+    enable_if<!facebook::memcache::HasFlagsTrait<R>::value, uint64_t>::type
+    getFlags(const R&) {
   return 0;
 }
 

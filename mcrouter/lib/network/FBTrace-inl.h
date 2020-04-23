@@ -15,6 +15,7 @@
 #endif
 
 #include "mcrouter/lib/carbon/RequestCommon.h"
+#include "mcrouter/lib/network/MemcacheMessageHelpers.h"
 
 namespace facebook {
 namespace mcrouter {
@@ -72,18 +73,21 @@ inline void fbtraceAddItem(
 }
 
 template <class Request>
-typename std::enable_if<Request::hasKey, void>::type
-addTraceKey(const Request& request, fbtrace_item_t* info, size_t idx) {
+typename std::enable_if<facebook::memcache::HasKeyTrait<Request>::value, void>::
+    type
+    addTraceKey(const Request& request, fbtrace_item_t* info, size_t idx) {
   fbtraceAddItem(info, idx, "key", request.key().routingKey());
 }
 
 template <class Request>
-typename std::enable_if<!Request::hasKey, void>::type
-addTraceKey(const Request&, fbtrace_item_t*, size_t) {}
+typename std::
+    enable_if<!facebook::memcache::HasKeyTrait<Request>::value, void>::type
+    addTraceKey(const Request&, fbtrace_item_t*, size_t) {}
 
 template <class Request>
-typename std::enable_if<Request::hasValue, void>::type
-addTraceValue(const Request& request, fbtrace_item_t* info, size_t idx) {
+typename std::
+    enable_if<facebook::memcache::HasValueTrait<Request>::value, void>::type
+    addTraceValue(const Request& request, fbtrace_item_t* info, size_t idx) {
   const auto* value = carbon::valuePtrUnsafe(request);
   fbtraceAddItem(
       info,
@@ -93,19 +97,24 @@ addTraceValue(const Request& request, fbtrace_item_t* info, size_t idx) {
 }
 
 template <class Request>
-typename std::enable_if<!Request::hasValue, void>::type
-addTraceValue(const Request&, fbtrace_item_t*, size_t) {}
+typename std::
+    enable_if<!facebook::memcache::HasValueTrait<Request>::value, void>::type
+    addTraceValue(const Request&, fbtrace_item_t*, size_t) {}
 
 template <class Request>
-typename std::enable_if<Request::hasKey, const char*>::type getRemoteService(
-    const Request& request) {
+typename std::enable_if<
+    facebook::memcache::HasKeyTrait<Request>::value,
+    const char*>::type
+getRemoteService(const Request& request) {
   return request.key().routingKey().startsWith("tao") ? FBTRACE_TAO
                                                       : FBTRACE_MC;
 }
 
 template <class Request>
-typename std::enable_if<!Request::hasKey, const char*>::type getRemoteService(
-    const Request&) {
+typename std::enable_if<
+    !facebook::memcache::HasKeyTrait<Request>::value,
+    const char*>::type
+getRemoteService(const Request&) {
   return FBTRACE_OTHER;
 }
 

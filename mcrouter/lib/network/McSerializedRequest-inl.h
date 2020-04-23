@@ -8,6 +8,7 @@
 #pragma once
 
 #include <folly/fibers/FiberManager.h>
+#include "mcrouter/lib/network/MemcacheMessageHelpers.h"
 
 namespace facebook {
 namespace memcache {
@@ -15,14 +16,14 @@ namespace memcache {
 namespace detail {
 
 template <class Request>
-typename std::enable_if<Request::hasKey, uint64_t>::type getKeySize(
+typename std::enable_if<HasKeyTrait<Request>::value, uint64_t>::type getKeySize(
     const Request& req) {
   return req.key().size();
 }
 
 template <class Request>
-typename std::enable_if<!Request::hasKey, uint64_t>::type getKeySize(
-    const Request&) {
+typename std::enable_if<!HasKeyTrait<Request>::value, uint64_t>::type
+getKeySize(const Request&) {
   return 0;
 }
 

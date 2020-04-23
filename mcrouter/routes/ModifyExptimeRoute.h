@@ -23,6 +23,7 @@
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/lib/network/MemcacheMessageHelpers.h"
 
 namespace facebook {
 namespace memcache {
@@ -88,7 +89,7 @@ class ModifyExptimeRoute {
 
   template <class Request>
   typename std::enable_if<
-      Request::hasExptime &&
+      HasExptimeTrait<Request>::value &&
           carbon::OtherThan<Request, carbon::DeleteLike<>>::value &&
           Action == ModifyExptimeAction::Set,
       ReplyT<Request>>::type
@@ -100,7 +101,7 @@ class ModifyExptimeRoute {
 
   template <class Request>
   typename std::enable_if<
-      Request::hasExptime &&
+      HasExptimeTrait<Request>::value &&
           carbon::OtherThan<Request, carbon::DeleteLike<>>::value &&
           Action == ModifyExptimeAction::Min,
       ReplyT<Request>>::type
@@ -116,7 +117,7 @@ class ModifyExptimeRoute {
 
   template <class Request>
   typename std::enable_if<
-      !Request::hasExptime || carbon::DeleteLike<Request>::value,
+      !HasExptimeTrait<Request>::value || carbon::DeleteLike<Request>::value,
       ReplyT<Request>>::type
   route(const Request& req) const {
     return target_->route(req);

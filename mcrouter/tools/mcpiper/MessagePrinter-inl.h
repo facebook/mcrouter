@@ -11,6 +11,7 @@
 
 #include "mcrouter/lib/network/AsciiSerialized.h"
 #include "mcrouter/lib/network/McSerializedRequest.h"
+#include "mcrouter/lib/network/MemcacheMessageHelpers.h"
 #include "mcrouter/lib/network/ServerLoad.h"
 #include "mcrouter/lib/network/gen/MemcacheMessages.h"
 #include "mcrouter/tools/mcpiper/Color.h"
@@ -25,11 +26,12 @@ namespace detail {
 
 // Exptime
 template <class M>
-typename std::enable_if<M::hasExptime, int32_t>::type getExptime(const M& req) {
+typename std::enable_if<HasExptimeTrait<M>::value, int32_t>::type getExptime(
+    const M& req) {
   return req.exptime();
 }
 template <class M>
-typename std::enable_if<!M::hasExptime, int32_t>::type getExptime(
+typename std::enable_if<!HasExptimeTrait<M>::value, int32_t>::type getExptime(
     const M& /* reply */) {
   return 0;
 }
@@ -75,7 +77,7 @@ constexpr typename std::
   return MatchingRequest<M>::name();
 }
 
-} // detail
+} // namespace detail
 
 template <class Request>
 void MessagePrinter::requestReady(
