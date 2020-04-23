@@ -62,12 +62,6 @@ class SimpleStruct {
   int64_t& member1() {
     return member1_;
   }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
-  }
 
   template <class Writer>
   void serialize(Writer&& writer) const;
@@ -246,12 +240,6 @@ class YetAnotherRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return key_;
   }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
-  }
   template <class Writer>
   void serialize(Writer&& writer) const;
 
@@ -287,12 +275,6 @@ class YetAnotherReply : public carbon::ReplyCommon {
   }
   carbon::Result& result() {
     return result_;
-  }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
   }
 
   template <class Writer>

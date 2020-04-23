@@ -398,12 +398,6 @@ class TestRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return testType_;
   }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
-  }
   template <class Writer>
   void serialize(Writer&& writer) const;
 
@@ -493,12 +487,6 @@ class TestReply : public carbon::ReplyCommon {
   int64_t& valInt64() {
     return valInt64_;
   }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
-  }
 
   template <class Writer>
   void serialize(Writer&& writer) const;
@@ -547,12 +535,6 @@ class TestRequestStringKey : public carbon::RequestCommon {
     markBufferAsDirty();
     return key_;
   }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
-  }
   template <class Writer>
   void serialize(Writer&& writer) const;
 
@@ -589,12 +571,6 @@ class TestReplyStringKey : public carbon::ReplyCommon {
   carbon::Result& result() {
     return result_;
   }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
-  }
 
   template <class Writer>
   void serialize(Writer&& writer) const;
@@ -628,12 +604,6 @@ class TestOptionalBool {
   }
   folly::Optional<bool>& optionalBool() {
     return optionalBool_;
-  }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
   }
 
   template <class Writer>
@@ -845,12 +815,6 @@ class TestF14Containers {
   folly::F14FastSet<int64_t>& vectorSet() {
     return vectorSet_;
   }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
-  }
 
   template <class Writer>
   void serialize(Writer&& writer) const;
@@ -933,12 +897,6 @@ class TestStdContainers {
   }
   std::unordered_set<int64_t>& vectorSet() {
     return vectorSet_;
-  }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
   }
 
   template <class Writer>

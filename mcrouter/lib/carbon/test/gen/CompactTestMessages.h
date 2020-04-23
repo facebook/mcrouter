@@ -178,12 +178,6 @@ class TestCompactRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return testList_;
   }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
-  }
   template <class Writer>
   void serialize(Writer&& writer) const;
 
@@ -246,12 +240,6 @@ class TestCompactReply : public carbon::ReplyCommon {
   }
   int64_t& valInt64() {
     return valInt64_;
-  }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
   }
 
   template <class Writer>

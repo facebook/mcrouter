@@ -75,9 +75,6 @@ class McGetRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return underlyingThriftStruct_.flags;
   }
-  int32_t exptime() const {
-    return 0;
-  }
   const facebook::memcache::thrift::McGetRequest& getThriftStruct() const {
     return underlyingThriftStruct_;
   }
@@ -171,9 +168,6 @@ class McGetReply : public carbon::ReplyCommon {
   }
   int16_t& appSpecificErrorCode() {
     return underlyingThriftStruct_.appSpecificErrorCode;
-  }
-  int32_t exptime() const {
-    return 0;
   }
   const facebook::memcache::thrift::McGetReply& getThriftStruct() const {
     return underlyingThriftStruct_;
@@ -366,9 +360,6 @@ class McSetReply : public carbon::ReplyCommon {
   }
   int16_t& appSpecificErrorCode() {
     return underlyingThriftStruct_.appSpecificErrorCode;
-  }
-  int32_t exptime() const {
-    return 0;
   }
   const facebook::memcache::thrift::McSetReply& getThriftStruct() const {
     return underlyingThriftStruct_;
@@ -569,9 +560,6 @@ class McDeleteReply : public carbon::ReplyCommon {
   int16_t& appSpecificErrorCode() {
     return underlyingThriftStruct_.appSpecificErrorCode;
   }
-  int32_t exptime() const {
-    return 0;
-  }
   const facebook::memcache::thrift::McDeleteReply& getThriftStruct() const {
     return underlyingThriftStruct_;
   }
@@ -655,9 +643,6 @@ class McLeaseGetRequest : public carbon::RequestCommon {
   uint64_t& flags() {
     markBufferAsDirty();
     return underlyingThriftStruct_.flags;
-  }
-  int32_t exptime() const {
-    return 0;
   }
   const facebook::memcache::thrift::McLeaseGetRequest& getThriftStruct() const {
     return underlyingThriftStruct_;
@@ -758,9 +743,6 @@ class McLeaseGetReply : public carbon::ReplyCommon {
   }
   int16_t& appSpecificErrorCode() {
     return underlyingThriftStruct_.appSpecificErrorCode;
-  }
-  int32_t exptime() const {
-    return 0;
   }
   const facebook::memcache::thrift::McLeaseGetReply& getThriftStruct() const {
     return underlyingThriftStruct_;
@@ -949,12 +931,6 @@ class McLeaseSetReply : public carbon::ReplyCommon {
   int16_t& appSpecificErrorCode() {
     return underlyingThriftStruct_.appSpecificErrorCode;
   }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
-  }
   const facebook::memcache::thrift::McLeaseSetReply& getThriftStruct() const {
     return underlyingThriftStruct_;
   }
@@ -1134,12 +1110,6 @@ class McAddReply : public carbon::ReplyCommon {
   }
   int16_t& appSpecificErrorCode() {
     return underlyingThriftStruct_.appSpecificErrorCode;
-  }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
   }
   const facebook::memcache::thrift::McAddReply& getThriftStruct() const {
     return underlyingThriftStruct_;
@@ -1321,12 +1291,6 @@ class McReplaceReply : public carbon::ReplyCommon {
   int16_t& appSpecificErrorCode() {
     return underlyingThriftStruct_.appSpecificErrorCode;
   }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
-  }
   const facebook::memcache::thrift::McReplaceReply& getThriftStruct() const {
     return underlyingThriftStruct_;
   }
@@ -1410,9 +1374,6 @@ class McGetsRequest : public carbon::RequestCommon {
   uint64_t& flags() {
     markBufferAsDirty();
     return underlyingThriftStruct_.flags;
-  }
-  int32_t exptime() const {
-    return 0;
   }
   const facebook::memcache::thrift::McGetsRequest& getThriftStruct() const {
     return underlyingThriftStruct_;
@@ -1513,9 +1474,6 @@ class McGetsReply : public carbon::ReplyCommon {
   }
   int16_t& appSpecificErrorCode() {
     return underlyingThriftStruct_.appSpecificErrorCode;
-  }
-  int32_t exptime() const {
-    return 0;
   }
   const facebook::memcache::thrift::McGetsReply& getThriftStruct() const {
     return underlyingThriftStruct_;
@@ -1704,12 +1662,6 @@ class McCasReply : public carbon::ReplyCommon {
   int16_t& appSpecificErrorCode() {
     return underlyingThriftStruct_.appSpecificErrorCode;
   }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
-  }
   const facebook::memcache::thrift::McCasReply& getThriftStruct() const {
     return underlyingThriftStruct_;
   }
@@ -1793,12 +1745,6 @@ class McIncrRequest : public carbon::RequestCommon {
   int64_t& delta() {
     markBufferAsDirty();
     return underlyingThriftStruct_.delta;
-  }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
   }
   const facebook::memcache::thrift::McIncrRequest& getThriftStruct() const {
     return underlyingThriftStruct_;
@@ -1888,12 +1834,6 @@ class McIncrReply : public carbon::ReplyCommon {
   int16_t& appSpecificErrorCode() {
     return underlyingThriftStruct_.appSpecificErrorCode;
   }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
-  }
   const facebook::memcache::thrift::McIncrReply& getThriftStruct() const {
     return underlyingThriftStruct_;
   }
@@ -1977,12 +1917,6 @@ class McDecrRequest : public carbon::RequestCommon {
   int64_t& delta() {
     markBufferAsDirty();
     return underlyingThriftStruct_.delta;
-  }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
   }
   const facebook::memcache::thrift::McDecrRequest& getThriftStruct() const {
     return underlyingThriftStruct_;
@@ -2072,12 +2006,6 @@ class McDecrReply : public carbon::ReplyCommon {
   int16_t& appSpecificErrorCode() {
     return underlyingThriftStruct_.appSpecificErrorCode;
   }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
-  }
   const facebook::memcache::thrift::McDecrReply& getThriftStruct() const {
     return underlyingThriftStruct_;
   }
@@ -2154,12 +2082,6 @@ class McMetagetRequest : public carbon::RequestCommon {
   carbon::Keys<folly::IOBuf>& key() {
     markBufferAsDirty();
     return underlyingThriftStruct_.key;
-  }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
   }
   const facebook::memcache::thrift::McMetagetRequest& getThriftStruct() const {
     return underlyingThriftStruct_;
@@ -2266,9 +2188,6 @@ class McMetagetReply : public carbon::ReplyCommon {
   }
   int16_t& appSpecificErrorCode() {
     return underlyingThriftStruct_.appSpecificErrorCode;
-  }
-  uint64_t flags() const {
-    return 0;
   }
   const facebook::memcache::thrift::McMetagetReply& getThriftStruct() const {
     return underlyingThriftStruct_;
@@ -2450,12 +2369,6 @@ class McAppendReply : public carbon::ReplyCommon {
   int16_t& appSpecificErrorCode() {
     return underlyingThriftStruct_.appSpecificErrorCode;
   }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
-  }
   const facebook::memcache::thrift::McAppendReply& getThriftStruct() const {
     return underlyingThriftStruct_;
   }
@@ -2636,12 +2549,6 @@ class McPrependReply : public carbon::ReplyCommon {
   int16_t& appSpecificErrorCode() {
     return underlyingThriftStruct_.appSpecificErrorCode;
   }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
-  }
   const facebook::memcache::thrift::McPrependReply& getThriftStruct() const {
     return underlyingThriftStruct_;
   }
@@ -2726,9 +2633,6 @@ class McTouchRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return underlyingThriftStruct_.exptime;
   }
-  uint64_t flags() const {
-    return 0;
-  }
   const facebook::memcache::thrift::McTouchRequest& getThriftStruct() const {
     return underlyingThriftStruct_;
   }
@@ -2811,12 +2715,6 @@ class McTouchReply : public carbon::ReplyCommon {
   int16_t& appSpecificErrorCode() {
     return underlyingThriftStruct_.appSpecificErrorCode;
   }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
-  }
   const facebook::memcache::thrift::McTouchReply& getThriftStruct() const {
     return underlyingThriftStruct_;
   }
@@ -2893,12 +2791,6 @@ class McFlushReRequest : public carbon::RequestCommon {
   carbon::Keys<folly::IOBuf>& key() {
     markBufferAsDirty();
     return underlyingThriftStruct_.key;
-  }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
   }
   const facebook::memcache::thrift::McFlushReRequest& getThriftStruct() const {
     return underlyingThriftStruct_;
@@ -2981,12 +2873,6 @@ class McFlushReReply : public carbon::ReplyCommon {
   }
   int16_t& appSpecificErrorCode() {
     return underlyingThriftStruct_.appSpecificErrorCode;
-  }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
   }
   const facebook::memcache::thrift::McFlushReReply& getThriftStruct() const {
     return underlyingThriftStruct_;
@@ -3072,12 +2958,6 @@ class McFlushAllRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return underlyingThriftStruct_.delay;
   }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
-  }
   const facebook::memcache::thrift::McFlushAllRequest& getThriftStruct() const {
     return underlyingThriftStruct_;
   }
@@ -3159,12 +3039,6 @@ class McFlushAllReply : public carbon::ReplyCommon {
   }
   int16_t& appSpecificErrorCode() {
     return underlyingThriftStruct_.appSpecificErrorCode;
-  }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
   }
   const facebook::memcache::thrift::McFlushAllReply& getThriftStruct() const {
     return underlyingThriftStruct_;
@@ -3249,9 +3123,6 @@ class McGatRequest : public carbon::RequestCommon {
   carbon::Keys<folly::IOBuf>& key() {
     markBufferAsDirty();
     return underlyingThriftStruct_.key;
-  }
-  uint64_t flags() const {
-    return 0;
   }
   const facebook::memcache::thrift::McGatRequest& getThriftStruct() const {
     return underlyingThriftStruct_;
@@ -3347,9 +3218,6 @@ class McGatReply : public carbon::ReplyCommon {
   int16_t& appSpecificErrorCode() {
     return underlyingThriftStruct_.appSpecificErrorCode;
   }
-  int32_t exptime() const {
-    return 0;
-  }
   const facebook::memcache::thrift::McGatReply& getThriftStruct() const {
     return underlyingThriftStruct_;
   }
@@ -3433,9 +3301,6 @@ class McGatsRequest : public carbon::RequestCommon {
   carbon::Keys<folly::IOBuf>& key() {
     markBufferAsDirty();
     return underlyingThriftStruct_.key;
-  }
-  uint64_t flags() const {
-    return 0;
   }
   const facebook::memcache::thrift::McGatsRequest& getThriftStruct() const {
     return underlyingThriftStruct_;
@@ -3536,9 +3401,6 @@ class McGatsReply : public carbon::ReplyCommon {
   }
   int16_t& appSpecificErrorCode() {
     return underlyingThriftStruct_.appSpecificErrorCode;
-  }
-  int32_t exptime() const {
-    return 0;
   }
   const facebook::memcache::thrift::McGatsReply& getThriftStruct() const {
     return underlyingThriftStruct_;

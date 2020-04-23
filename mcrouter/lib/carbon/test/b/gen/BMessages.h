@@ -54,12 +54,6 @@ class BaseStruct {
   int64_t& baseInt64Member() {
     return baseInt64Member_;
   }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
-  }
 
   template <class Writer>
   void serialize(Writer&& writer) const;
@@ -123,12 +117,6 @@ class SimpleStruct {
   }
   std::vector<test2::util::SimpleStruct>& vectorMember() {
     return vectorMember_;
-  }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
   }
 
   template <class Writer>

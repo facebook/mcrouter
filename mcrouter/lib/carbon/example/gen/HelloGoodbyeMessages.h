@@ -88,12 +88,6 @@ class HelloRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return underlyingThriftStruct_.message;
   }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
-  }
   const hellogoodbye::thrift::HelloRequest& getThriftStruct() const {
     return underlyingThriftStruct_;
   }
@@ -169,12 +163,6 @@ class HelloReply : public carbon::ReplyCommon {
   }
   std::string& message() {
     return underlyingThriftStruct_.message;
-  }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
   }
   const hellogoodbye::thrift::HelloReply& getThriftStruct() const {
     return underlyingThriftStruct_;
@@ -260,12 +248,6 @@ class GoodbyeRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return underlyingThriftStruct_.shardId;
   }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
-  }
   const hellogoodbye::thrift::GoodbyeRequest& getThriftStruct() const {
     return underlyingThriftStruct_;
   }
@@ -341,12 +323,6 @@ class GoodbyeReply : public carbon::ReplyCommon {
   }
   std::string& message() {
     return underlyingThriftStruct_.message;
-  }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
   }
   const hellogoodbye::thrift::GoodbyeReply& getThriftStruct() const {
     return underlyingThriftStruct_;

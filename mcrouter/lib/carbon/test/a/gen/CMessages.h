@@ -58,12 +58,6 @@ class StructWithEnumField {
   Foo& test() {
     return underlyingThriftStruct_.test;
   }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
-  }
   const carbon::test_enum::thrift::StructWithEnumField& getThriftStruct() const {
     return underlyingThriftStruct_;
   }

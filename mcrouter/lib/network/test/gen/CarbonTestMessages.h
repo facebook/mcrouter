@@ -287,12 +287,6 @@ class ManyFields {
   folly::IOBuf& buf40() {
     return buf40_;
   }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
-  }
 
   template <class Writer>
   void serialize(Writer&& writer) const;
@@ -381,9 +375,6 @@ class McExpTestRequest {
   }
   uint64_t& deadlineMs() {
     return deadlineMs_;
-  }
-  int32_t exptime() const {
-    return 0;
   }
 
   template <class Writer>
