@@ -233,14 +233,15 @@ folly::Optional<StyledString> MessagePrinter::filterAndBuildOutput(
 
   if (options_.script) {
     out.append(",\n  \"flags\": ");
-    out.append(folly::to<std::string>(message.flags()));
+    out.append(folly::to<std::string>(getFlagsIfExist(message)));
   } else {
     out.append("\n  flags: ", format_.msgAttrColor);
     out.append(
-        folly::sformat("0x{:x}", message.flags()), format_.dataValueColor);
+        folly::sformat("0x{:x}", getFlagsIfExist(message)),
+        format_.dataValueColor);
   }
-  if (!options_.script && message.flags()) {
-    auto flagDesc = describeFlags(message.flags());
+  if (!options_.script && getFlagsIfExist(message)) {
+    auto flagDesc = describeFlags(getFlagsIfExist(message));
     if (!flagDesc.empty()) {
       out.pushAppendColor(format_.attrColor);
       out.append(" [");
@@ -265,7 +266,11 @@ folly::Optional<StyledString> MessagePrinter::filterAndBuildOutput(
   if (!value.empty()) {
     size_t uncompressedSize;
     auto formattedValue = valueFormatter_->uncompressAndFormat(
-        value, message.flags(), format_, options_.script, uncompressedSize);
+        value,
+        getFlagsIfExist(message),
+        format_,
+        options_.script,
+        uncompressedSize);
 
     if (options_.script) {
       out.append(folly::sformat(",\n  \"value_wire_bytes\": {}", value.size()));

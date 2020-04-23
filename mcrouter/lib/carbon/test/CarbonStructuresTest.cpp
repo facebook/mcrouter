@@ -167,8 +167,8 @@ TEST(CarbonBasic, defaultConstructed) {
       req.testType()));
 
   // fields generated for every request (will likely be removed in the future)
-  EXPECT_EQ(0, req.exptime());
-  EXPECT_EQ(0, req.flags());
+  EXPECT_EQ(0, facebook::memcache::getExptimeIfExist(req));
+  EXPECT_EQ(0, facebook::memcache::getFlagsIfExist(req));
 }
 
 TEST(CarbonBasic, setAndGet) {

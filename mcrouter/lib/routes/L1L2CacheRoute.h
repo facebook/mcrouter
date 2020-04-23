@@ -19,6 +19,7 @@
 #include "mcrouter/lib/carbon/RoutingGroups.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/lib/network/MessageHelpers.h"
 #include "mcrouter/lib/network/gen/MemcacheMessages.h"
 
 namespace facebook {
@@ -77,7 +78,7 @@ class L1L2CacheRoute {
   ReplyT<Request> route(const Request& req, carbon::GetLikeT<Request> = 0) {
     auto l1Reply = l1_->route(req);
     if (isHitResult(l1Reply.result())) {
-      if (l1Reply.flags() & MC_MSG_FLAG_NEGATIVE_CACHE) {
+      if (getFlagsIfExist(l1Reply) & MC_MSG_FLAG_NEGATIVE_CACHE) {
         if (ncacheUpdatePeriod_) {
           if (ncacheUpdateCounter_ == 1) {
             updateL1Ncache(req);
@@ -96,13 +97,13 @@ class L1L2CacheRoute {
     /* else */
     auto l2Reply = l2_->route(req);
     if (isHitResult(l2Reply.result())) {
-      folly::fibers::addTask([
-        l1 = l1_,
-        addReq = l1UpdateFromL2<McAddRequest>(req, l2Reply, upgradingL1Exptime_)
-      ]() { l1->route(addReq); });
+      folly::fibers::addTask(
+          [l1 = l1_,
+           addReq = l1UpdateFromL2<McAddRequest>(
+               req, l2Reply, upgradingL1Exptime_)]() { l1->route(addReq); });
     } else if (isMissResult(l2Reply.result()) && ncacheUpdatePeriod_) {
       folly::fibers::addTask(
-          [ l1 = l1_, addReq = l1Ncache<McAddRequest>(req, ncacheExptime_) ]() {
+          [l1 = l1_, addReq = l1Ncache<McAddRequest>(req, ncacheExptime_)]() {
             l1->route(addReq);
           });
     }
@@ -134,7 +135,7 @@ class L1L2CacheRoute {
     if (auto replyValue = carbon::valuePtrUnsafe(reply)) {
       req.value() = replyValue->cloneAsValue();
     }
-    req.flags() = reply.flags();
+    req.flags() = getFlagsIfExist(reply);
     req.exptime() = upgradingL1Exptime;
     return req;
   }
@@ -151,13 +152,11 @@ class L1L2CacheRoute {
 
   template <class Request>
   void updateL1Ncache(const Request& req) {
-    folly::fibers::addTask([
-      l1 = l1_,
-      l2 = l2_,
-      creq = req,
-      upgradingL1Exptime = upgradingL1Exptime_,
-      ncacheExptime = ncacheExptime_
-    ]() {
+    folly::fibers::addTask([l1 = l1_,
+                            l2 = l2_,
+                            creq = req,
+                            upgradingL1Exptime = upgradingL1Exptime_,
+                            ncacheExptime = ncacheExptime_]() {
       auto l2Reply = l2->route(creq);
       if (isHitResult(l2Reply.result())) {
         l1->route(
@@ -169,5 +168,5 @@ class L1L2CacheRoute {
     });
   }
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

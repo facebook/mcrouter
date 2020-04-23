@@ -325,8 +325,8 @@ struct RecordingRoute {
 
     h_->saw_keys.push_back(req.key().fullKey().str());
     h_->sawOperations.push_back(Request::name);
-    h_->sawExptimes.push_back(req.exptime());
-    h_->sawFlags.push_back(req.flags());
+    h_->sawExptimes.push_back(getExptimeIfExist(req));
+    h_->sawFlags.push_back(getFlagsIfExist(req));
     recordShadowId(req);
     if (carbon::GetLike<Request>::value) {
       reply.result() = h_->resultGenerator_.hasValue()
