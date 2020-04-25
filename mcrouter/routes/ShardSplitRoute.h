@@ -65,7 +65,7 @@ std::string createSplitKey(
     folly::StringPiece fullKey,
     size_t offset,
     folly::StringPiece shard);
-} // detail
+} // namespace detail
 
 /**
  * Splits given request according to shard splits provided by ShardSplitter
@@ -91,7 +91,9 @@ class ShardSplitRoute {
       const RouteHandleTraverser<RouteHandleIf>& t) const {
     auto* ctx = fiber_local<RouterInfo>::getTraverseCtx();
     if (ctx) {
-      ctx->recordShardSplitter(shardSplitter_);
+      bool isShadow =
+        fiber_local<RouterInfo>::getRequestClass().is(RequestClass::kShadow);
+      ctx->recordShardSplitter(shardSplitter_, isShadow);
     }
 
     folly::StringPiece shard;
@@ -188,6 +190,6 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeShardSplitRoute(
       std::move(rh), std::move(shardSplitter));
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

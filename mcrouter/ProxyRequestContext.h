@@ -49,7 +49,7 @@ class ProxyRequestContext {
  public:
   using ClientCallback =
       std::function<void(const PoolContext&, const AccessPoint&)>;
-  using ShardSplitCallback = std::function<void(const ShardSplitter&)>;
+  using ShardSplitCallback = std::function<void(const ShardSplitter&, bool)>;
 
   virtual ~ProxyRequestContext();
 
@@ -68,9 +68,9 @@ class ProxyRequestContext {
     }
   }
 
-  void recordShardSplitter(const ShardSplitter& splitter) const {
+  void recordShardSplitter(const ShardSplitter& splitter, bool isShadow) const {
     if (recording_ && recordingState_->shardSplitCallback) {
-      recordingState_->shardSplitCallback(splitter);
+      recordingState_->shardSplitCallback(splitter, isShadow);
     }
   }
 

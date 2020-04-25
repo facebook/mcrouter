@@ -37,8 +37,8 @@ typename std::enable_if<
 foreachPossibleClient(
     Proxy<RouterInfo>& proxy,
     folly::StringPiece key,
-    std::function<void(const PoolContext&, const AccessPoint&)> clientCallback,
-    std::function<void(const ShardSplitter&)> spCallback = nullptr,
+    ProxyRequestContext::ClientCallback clientCallback,
+    ProxyRequestContext::ShardSplitCallback spCallback = nullptr,
     bool includeFailoverDestinations = false,
     size_t splitSize = 0) {
   Request req(key);
@@ -58,8 +58,8 @@ typename std::enable_if<
 foreachPossibleClient(
     Proxy<RouterInfo>& proxy,
     const Request& req,
-    std::function<void(const PoolContext&, const AccessPoint&)> clientCallback,
-    std::function<void(const ShardSplitter&)> spCallback = nullptr,
+    ProxyRequestContext::ClientCallback clientCallback,
+    ProxyRequestContext::ShardSplitCallback spCallback = nullptr,
     bool includeFailoverDestinations = false,
     size_t splitSize = 0) {
   auto ctx = ProxyRequestContextWithInfo<RouterInfo>::createRecording(
