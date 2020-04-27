@@ -461,6 +461,8 @@ class MCProcess(ProcessBase):
         answer = self._fdreadline()
         if re.match("NOT_FOUND", answer):
             return None
+        elif "ERROR" in answer:
+            return answer
         else:
             return int(answer)
 

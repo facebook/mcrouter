@@ -123,7 +123,7 @@ class RootRoute {
       carbon::ArithmeticLikeT<Request> = 0) const {
     auto reply = opts_.allow_only_gets ? createReply(DefaultReply, req)
                                        : doRoute(rh, req);
-    if (isErrorResult(reply.result())) {
+    if (isErrorResult(reply.result()) && !opts_.disable_miss_on_arith_errors) {
       reply = createReply(DefaultReply, req);
     }
     return reply;
@@ -159,6 +159,6 @@ class RootRoute {
     return createReply<Request>(ErrorReply);
   }
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
