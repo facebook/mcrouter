@@ -29,6 +29,15 @@ class McThriftCallback {
         std::move(ctx.underlying_), std::move(reply));
   }
 
+  folly::Optional<std::string> getPeerSocketAddressStr() {
+    folly::Optional<std::string> peerAddressStr;
+    auto connectionCxt = underlying_->getConnectionContext();
+    if (connectionCxt) {
+      peerAddressStr = connectionCxt->getPeerAddress()->getAddressStr();
+    }
+    return peerAddressStr;
+  }
+
   folly::Optional<struct sockaddr_storage> getPeerSocketAddress() {
     folly::Optional<struct sockaddr_storage> peerAddress;
     auto connectionCxt = underlying_->getConnectionContext();

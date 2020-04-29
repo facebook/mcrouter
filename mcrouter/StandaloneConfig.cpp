@@ -24,12 +24,22 @@ void standaloneInit(
 
 void initStandaloneSSL() {}
 
+void initStandaloneSSLDualServer(
+    const McrouterStandaloneOptions& /* standaloneOpts */,
+    std::shared_ptr<apache::thrift::ThriftServer> /* thriftServer */) {}
+
 void finalizeStandaloneOptions(McrouterStandaloneOptions& opts) {}
 
 std::function<void(McServerSession&)> getConnectionAclChecker(
     const std::string& /* serviceIdentity */,
     bool /* enforce */) {
   return [](McServerSession&) {};
+}
+std::function<bool(const folly::AsyncTransportWrapper*)>
+getThriftConnectionAclChecker(
+    const std::string& /* serviceIdentity */,
+    bool /* enforce */) {
+  return [](const folly::AsyncTransportWrapper*) { return true; };
 }
 
 } // namespace mcrouter

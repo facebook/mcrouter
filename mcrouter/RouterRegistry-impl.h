@@ -40,3 +40,9 @@
           folly::to<std::string>("Invalid router name: ", (routerName))); \
     }                                                                     \
   } while (false);
+
+#define CALL_BY_ROUTER_NAME_THRIFT(routerName, func, ...)               \
+  do {                                                                  \
+    throw std::invalid_argument(                                        \
+        folly::to<std::string>("Invalid router name: ", (routerName))); \
+  } while (false);

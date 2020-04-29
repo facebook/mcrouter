@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <folly/io/async/AsyncTransport.h>
+#include <thrift/lib/cpp2/server/ThriftServer.h>
 #include <functional>
 #include <unordered_map>
 
@@ -30,11 +32,18 @@ void standaloneInit(
 
 void initStandaloneSSL();
 
+void initStandaloneSSLDualServer(
+    const McrouterStandaloneOptions& standaloneOpts,
+    std::shared_ptr<apache::thrift::ThriftServer> thriftServer);
+
 void finalizeStandaloneOptions(McrouterStandaloneOptions& opts);
 
 std::function<void(McServerSession&)> getConnectionAclChecker(
     const std::string& serviceIdentity,
     bool enforce);
+
+std::function<bool(const folly::AsyncTransportWrapper*)>
+getThriftConnectionAclChecker(const std::string& serviceIdentity, bool enforce);
 
 } // namespace mcrouter
 } // namespace memcache

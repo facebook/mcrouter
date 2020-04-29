@@ -60,6 +60,7 @@ libmcroutercore_a_SOURCES = \
   McrouterLogger.h \
   McrouterManager.cpp\
   McrouterManager.h\
+  lib/network/McCallbackUtils.h \
   Observable-inl.h \
   Observable.h \
   options-template.h \
@@ -82,7 +83,7 @@ libmcroutercore_a_SOURCES = \
   ProxyDestination.h \
   ProxyDestinationBase.cpp \
   ProxyDestinationBase.h \
-	ProxyDestinationKey.cpp \
+  ProxyDestinationKey.cpp \
   ProxyDestinationKey.h \
   ProxyDestinationMap-inl.h \
   ProxyDestinationMap.cpp \
@@ -195,6 +196,8 @@ libmcroutercore_a_SOURCES = \
   stats.h \
   ThreadUtil.cpp \
   ThreadUtil.h \
+  ThriftAcceptor.h \
+  ThriftAcceptor.cpp \
   TkoCounters.h \
   TkoLog.cpp \
   TkoLog.h \

@@ -269,6 +269,22 @@ MCROUTER_OPTION_INTEGER(
     "0 (lowest priority) to 3 (highest priority) and act on the lowest-order "
     "bits of DSCP.")
 
+MCROUTER_OPTION_TOGGLE(
+    use_thrift,
+    false,
+    "use-thrift",
+    no_short,
+    "If true, mcrouter will start both AsyncMcServer and ThriftServer. "
+    "They will share the same threads and evbs but bind to different ports, "
+    "as specified by ports, ssl-port and thrift-port")
+
+MCROUTER_OPTION_INTEGER(
+    uint16_t,
+    thrift_port,
+    0,
+    "thrift-port",
+    no_short,
+    "Thrift Port to listen on")
 
 #ifdef ADDITIONAL_STANDALONE_OPTIONS_FILE
 #include ADDITIONAL_STANDALONE_OPTIONS_FILE

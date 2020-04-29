@@ -188,7 +188,21 @@ void run(
     const McrouterStandaloneOptions& standaloneOptions,
     StandalonePreRunCb preRunCb) {
   LOG(INFO) << "Starting " << RouterInfo::name << " router";
+
   if (!runServer<RouterInfo, RequestHandler>(
+          libmcrouterOptions, standaloneOptions, std::move(preRunCb))) {
+    exit(kExitStatusTransientError);
+  }
+}
+
+template <class RouterInfo, template <class> class RequestHandler>
+void runDual(
+    const McrouterOptions& libmcrouterOptions,
+    const McrouterStandaloneOptions& standaloneOptions,
+    StandalonePreRunCb preRunCb) {
+  LOG(INFO) << "Starting dual mode" << RouterInfo::name << " router";
+
+  if (!runServerDual<RouterInfo, RequestHandler>(
           libmcrouterOptions, standaloneOptions, std::move(preRunCb))) {
     exit(kExitStatusTransientError);
   }
@@ -495,18 +509,34 @@ void runStandaloneMcrouter(
     StandalonePreRunCb preRunCb) {
   try {
     if (cmdLineOpts.validateConfigMode == ValidateConfigMode::Exit) {
-      CALL_BY_ROUTER_NAME(
-          standaloneOptions.carbon_router_name,
-          validateConfigAndExit,
-          libmcrouterOptions);
+      if (standaloneOptions.use_thrift) {
+        CALL_BY_ROUTER_NAME_THRIFT(
+            standaloneOptions.carbon_router_name,
+            validateConfigAndExit,
+            libmcrouterOptions);
+      } else {
+        CALL_BY_ROUTER_NAME(
+            standaloneOptions.carbon_router_name,
+            validateConfigAndExit,
+            libmcrouterOptions);
+      }
     }
 
-    CALL_BY_ROUTER_NAME(
-        standaloneOptions.carbon_router_name,
-        run,
-        libmcrouterOptions,
-        standaloneOptions,
-        std::move(preRunCb));
+    if (standaloneOptions.use_thrift) {
+      CALL_BY_ROUTER_NAME_THRIFT(
+          standaloneOptions.carbon_router_name,
+          runDual,
+          libmcrouterOptions,
+          standaloneOptions,
+          std::move(preRunCb));
+    } else {
+      CALL_BY_ROUTER_NAME(
+          standaloneOptions.carbon_router_name,
+          run,
+          libmcrouterOptions,
+          standaloneOptions,
+          std::move(preRunCb));
+    }
   } catch (const std::invalid_argument& ia) {
     LOG(ERROR) << "Error starting mcrouter: " << ia.what();
     exit(EXIT_FAILURE);
