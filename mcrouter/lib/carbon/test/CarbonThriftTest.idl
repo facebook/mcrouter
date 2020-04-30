@@ -1,0 +1,37 @@
+namespace carbon::test;
+thrift_namespace carbon.test.thrift;
+
+import "mcrouter/lib/network/Common.idl"
+
+request DummyThriftRequest {
+  id: 1;
+  name: "thrift_test";
+  reply: DummyThriftReply;
+
+  1: carbon::Keys<folly::IOBuf> key;
+  2: bool testBool;
+  3: int8_t testInt8;
+  4: int16_t testInt16;
+  5: int32_t testInt32;
+  6: int64_t testInt64;
+  7: uint8_t testUInt8;
+  8: uint16_t testUInt16;
+  9: uint32_t testUInt32;
+  10: uint64_t testUInt64;
+  11: float testFloat;
+  12: double testDouble;
+  13: std::string testShortString;
+  14: std::string testLongString;
+  15: folly::IOBuf testIobuf;
+  16: std::vector<std::string> testList;
+};
+
+reply DummyThriftReply {
+  1: Result result;
+  2: std::string message;
+};
+
+service {
+  gen_client_tool: true;
+  enable_shutdown: true;
+};

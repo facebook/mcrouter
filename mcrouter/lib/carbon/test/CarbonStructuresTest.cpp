@@ -16,11 +16,14 @@
 #include "mcrouter/lib/carbon/CarbonProtocolWriter.h"
 #include "mcrouter/lib/carbon/test/Util.h"
 #include "mcrouter/lib/carbon/test/gen/CarbonTest.h"
+#include "mcrouter/lib/carbon/test/gen/CarbonThriftTest.h"
 #include "mcrouter/lib/carbon/test/gen/CompactTest.h"
 #include "mcrouter/lib/network/MessageHelpers.h"
 
 using namespace carbon::test::util;
 
+using carbon::test::DummyThriftReply;
+using carbon::test::DummyThriftRequest;
 using carbon::test::SimpleStruct;
 using carbon::test::TestOptionalUnion;
 using carbon::test::TestReply;
@@ -918,4 +921,71 @@ TEST(CarbonBasic, setAndGetFieldRefAPI) {
   req.testType_ref() = testType;
   EXPECT_EQ(testType.name, req.testType_ref()->name);
   EXPECT_EQ(testType.points, req.testType_ref()->points);
+}
+
+TEST(CarbonBasic, setAndGetFieldRefAPIThrift) {
+  DummyThriftRequest req(kKeyLiteral);
+
+  // key
+  const auto reqKeyPiece = req.key_ref()->fullKey();
+  EXPECT_EQ(kKeyLiteral, reqKeyPiece);
+  EXPECT_EQ(kKeyLiteral, req.key_ref()->fullKey());
+  EXPECT_EQ("abcdefghijklmnopqrstuvwxyz", req.key_ref()->routingKey().str());
+  EXPECT_EQ("/region/cluster/", req.key_ref()->routingPrefix().str());
+  EXPECT_EQ(
+      "abcdefghijklmnopqrstuvwxyz|#|afterhashstop",
+      req.key_ref()->keyWithoutRoute().str());
+
+  // bool
+  req.testBool_ref() = true;
+  EXPECT_TRUE(*(req.testBool_ref()));
+
+  // int8_t
+  req.testInt8_ref() = kMinInt8;
+  EXPECT_EQ(kMinInt8, *(req.testInt8_ref()));
+  // int16_t
+  req.testInt16_ref() = kMinInt16;
+  EXPECT_EQ(kMinInt16, *(req.testInt16_ref()));
+  // int32_t
+  req.testInt32_ref() = kMinInt32;
+  EXPECT_EQ(kMinInt32, *(req.testInt32_ref()));
+  // int64_t
+  req.testInt64_ref() = kMinInt64;
+  EXPECT_EQ(kMinInt64, *(req.testInt64_ref()));
+  // uint8_t
+  req.testUInt8_ref() = kMaxUInt8;
+  EXPECT_EQ(kMaxUInt8, *(req.testUInt8_ref()));
+  // uint16_t
+  req.testUInt16_ref() = kMaxUInt16;
+  EXPECT_EQ(kMaxUInt16, *(req.testUInt16_ref()));
+  // uint32_t
+  req.testUInt32_ref() = kMaxUInt32;
+  EXPECT_EQ(kMaxUInt32, *(req.testUInt32_ref()));
+  // uint64_t
+  req.testUInt64_ref() = kMaxUInt64;
+  EXPECT_EQ(kMaxUInt64, *(req.testUInt64_ref()));
+
+  // float
+  req.testFloat_ref() = 12345.789f;
+  EXPECT_FLOAT_EQ(12345.789f, *(req.testFloat_ref()));
+  // double
+  req.testDouble_ref() = 12345.789;
+  EXPECT_DOUBLE_EQ(12345.789, *(req.testDouble_ref()));
+
+  // string
+  req.testShortString_ref() = kShortString.str();
+  EXPECT_EQ(kShortString, *(req.testShortString_ref()));
+  req.testLongString_ref() = longString();
+  EXPECT_EQ(longString(), *(req.testLongString_ref()));
+  // IOBuf
+  folly::IOBuf iobuf(folly::IOBuf::COPY_BUFFER, longString());
+  req.testIobuf_ref() = iobuf;
+  EXPECT_EQ(
+      coalesceAndGetRange(iobuf).str(),
+      coalesceAndGetRange(*(req.testIobuf_ref())).str());
+
+  std::vector<std::string> strings = {
+      "abcdefg", "xyz", kShortString.str(), longString()};
+  req.testList_ref() = strings;
+  EXPECT_EQ(strings, *(req.testList_ref()));
 }
