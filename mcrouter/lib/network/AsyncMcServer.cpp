@@ -881,11 +881,19 @@ void AsyncMcServer::shutdown() {
   // We must shutdown all acceptor sockets before shutting down any workers to
   // guarantee that no new connections can be established after worker resources
   // have been released.
-  for (auto& thread : threads_) {
-    thread->shutdownAcceptor();
-  }
+  ensureAcceptorsShutdown();
   for (auto& thread : threads_) {
     thread->shutdownWorker();
+  }
+}
+
+void AsyncMcServer::ensureAcceptorsShutdown() {
+  std::lock_guard<std::mutex> guard(shutdownAcceptorsMutex_);
+  if (acceptorsAlive_) {
+    for (auto& thread : threads_) {
+      thread->shutdownAcceptor();
+    }
+    acceptorsAlive_ = false;
   }
 }
 

@@ -242,6 +242,13 @@ class AsyncMcServer {
   void shutdown();
 
   /**
+   * MT-safety: safe to call from any thread or concurrently.
+   * Calling this function ensures acceptors are stopped when exits. Calling
+   * thread may be blocked if other thread is also calling.
+   */
+  void ensureAcceptorsShutdown();
+
+  /**
    * Installs a new handler for the given signals that would shutdown
    * this server when delivered.
    * Note: only one server can be managed by these handlers per process.
@@ -286,6 +293,9 @@ class AsyncMcServer {
   std::function<void()> onShutdown_;
   std::atomic<bool> alive_{true};
   bool spawned_{false};
+
+  std::mutex shutdownAcceptorsMutex_;
+  bool acceptorsAlive_{true};
 
   bool virtualEventBaseMode_{false};
   std::vector<std::unique_ptr<folly::VirtualEventBase>> virtualEventBases_;
