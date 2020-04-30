@@ -708,3 +708,214 @@ TEST(CarbonTest, f14NodeMapToStdUnorderedMap) {
   EXPECT_FALSE(std.valueSet().find(4) == std.valueSet().end());
   EXPECT_FALSE(std.vectorSet().find(5) == std.vectorSet().end());
 }
+
+TEST(CarbonBasic, defaultConstructedFieldRefAPI) {
+  TestRequest req;
+  TestRequestStringKey req2;
+
+  // key
+  checkKeyEmpty(*req.key_ref());
+  checkKeyEmpty(*req2.key_ref());
+
+  // bool
+  EXPECT_FALSE(*req.testBool_ref());
+  // char
+  EXPECT_EQ('\0', *req.testChar_ref());
+  // enum member
+  EXPECT_EQ(SimpleEnum::Twenty, *req.testEnum_ref());
+
+  // int8_t
+  EXPECT_EQ(0, *req.testInt8_ref());
+  // int16_t
+  EXPECT_EQ(0, *req.testInt16_ref());
+  // int32_t
+  EXPECT_EQ(0, *req.testInt32_ref());
+  // int64_t
+  EXPECT_EQ(0, *req.testInt64_ref());
+  // uint8_t
+  EXPECT_EQ(0, *req.testUInt8_ref());
+  // uint16_t
+  EXPECT_EQ(0, *req.testUInt16_ref());
+  // uint32_t
+  EXPECT_EQ(0, *req.testUInt32_ref());
+  // uint64_t
+  EXPECT_EQ(0, *req.testUInt64_ref());
+
+  // float
+  EXPECT_EQ(0.0, *req.testFloat_ref());
+  // double
+  EXPECT_EQ(0.0, *req.testDouble_ref());
+
+  // string
+  EXPECT_TRUE(req.testShortString_ref()->empty());
+  EXPECT_TRUE(req.testLongString_ref()->empty());
+  // IOBuf
+  EXPECT_TRUE(req.testIobuf_ref()->empty());
+
+  // List of strings
+  EXPECT_TRUE(req.testList_ref()->empty());
+
+  // Vector of enums
+  EXPECT_TRUE(req.testEnumVec_ref()->empty());
+
+  // Vector of vectors
+  EXPECT_TRUE(req.testNestedVec_ref()->empty());
+
+  // Unordered map
+  EXPECT_TRUE(req.testUMap_ref()->empty());
+
+  // Ordered map
+  EXPECT_TRUE(req.testMap_ref()->empty());
+
+  // Complex map
+  EXPECT_TRUE(req.testComplexMap_ref()->empty());
+
+  // Unordered set
+  EXPECT_TRUE(req.testUSet_ref()->empty());
+
+  // Ordered set
+  EXPECT_TRUE(req.testSet_ref()->empty());
+
+  // User Type
+  EXPECT_TRUE(carbon::SerializationTraits<carbon::test::UserType>::isEmpty(
+      *req.testType_ref()));
+
+  // fields generated for every request (will likely be removed in the future)
+  EXPECT_EQ(0, facebook::memcache::getExptimeIfExist(req));
+  EXPECT_EQ(0, facebook::memcache::getFlagsIfExist(req));
+}
+
+TEST(CarbonBasic, setAndGetFieldRefAPI) {
+  TestRequest req(kKeyLiteral);
+  TestRequestStringKey req2(kKeyLiteral);
+
+  // key
+  const auto reqKeyPiece = req.key_ref()->fullKey();
+  EXPECT_EQ(kKeyLiteral, reqKeyPiece);
+  EXPECT_EQ(kKeyLiteral, req.key_ref()->fullKey());
+  EXPECT_EQ("abcdefghijklmnopqrstuvwxyz", req.key_ref()->routingKey().str());
+  EXPECT_EQ("/region/cluster/", req.key_ref()->routingPrefix().str());
+  EXPECT_EQ(
+      "abcdefghijklmnopqrstuvwxyz|#|afterhashstop",
+      req.key_ref()->keyWithoutRoute().str());
+
+  const auto reqKeyPiece2 = req2.key_ref()->fullKey();
+  EXPECT_EQ(kKeyLiteral, reqKeyPiece2);
+  EXPECT_EQ(kKeyLiteral, req2.key_ref()->fullKey());
+  EXPECT_EQ("abcdefghijklmnopqrstuvwxyz", req2.key_ref()->routingKey().str());
+  EXPECT_EQ("/region/cluster/", req2.key_ref()->routingPrefix().str());
+  EXPECT_EQ(
+      "abcdefghijklmnopqrstuvwxyz|#|afterhashstop",
+      req2.key_ref()->keyWithoutRoute().str());
+
+  // bool
+  req.testBool_ref() = true;
+  EXPECT_TRUE(*req.testBool_ref());
+  // char
+  req.testChar_ref() = 'A';
+  EXPECT_EQ('A', *req.testChar_ref());
+  // enum member
+  req.testEnum_ref() = SimpleEnum::Negative;
+  EXPECT_EQ(SimpleEnum::Negative, *req.testEnum_ref());
+  EXPECT_EQ(-92233, static_cast<int64_t>(*req.testEnum_ref()));
+
+  // int8_t
+  req.testInt8_ref() = kMinInt8;
+  EXPECT_EQ(kMinInt8, *req.testInt8_ref());
+  // int16_t
+  req.testInt16_ref() = kMinInt16;
+  EXPECT_EQ(kMinInt16, *req.testInt16_ref());
+  // int32_t
+  req.testInt32_ref() = kMinInt32;
+  EXPECT_EQ(kMinInt32, *req.testInt32_ref());
+  // int64_t
+  req.testInt64_ref() = kMinInt64;
+  EXPECT_EQ(kMinInt64, *req.testInt64_ref());
+  // uint8_t
+  req.testUInt8_ref() = kMaxUInt8;
+  EXPECT_EQ(kMaxUInt8, *req.testUInt8_ref());
+  // uint16_t
+  req.testUInt16_ref() = kMaxUInt16;
+  EXPECT_EQ(kMaxUInt16, *req.testUInt16_ref());
+  // uint32_t
+  req.testUInt32_ref() = kMaxUInt32;
+  EXPECT_EQ(kMaxUInt32, *req.testUInt32_ref());
+  // uint64_t
+  req.testUInt64_ref() = kMaxUInt64;
+  EXPECT_EQ(kMaxUInt64, *req.testUInt64_ref());
+
+  // float
+  req.testFloat_ref() = 12345.789f;
+  EXPECT_FLOAT_EQ(12345.789f, *req.testFloat_ref());
+  // double
+  req.testDouble_ref() = 12345.789;
+  EXPECT_DOUBLE_EQ(12345.789, *req.testDouble_ref());
+
+  // string
+  req.testShortString_ref() = kShortString.str();
+  EXPECT_EQ(kShortString, *req.testShortString_ref());
+  req.testLongString_ref() = longString();
+  EXPECT_EQ(longString(), *req.testLongString_ref());
+  // IOBuf
+  folly::IOBuf iobuf(folly::IOBuf::COPY_BUFFER, longString());
+  req.testIobuf_ref() = iobuf;
+  EXPECT_EQ(
+      coalesceAndGetRange(iobuf).str(),
+      coalesceAndGetRange(*req.testIobuf_ref()).str());
+
+  std::vector<std::string> strings = {
+      "abcdefg", "xyz", kShortString.str(), longString()};
+  req.testList_ref() = strings;
+  EXPECT_EQ(strings, *req.testList_ref());
+
+  // Vector of enums
+  std::vector<SimpleEnum> enums = {SimpleEnum::One,
+                                   SimpleEnum::Zero,
+                                   SimpleEnum::Twenty,
+                                   SimpleEnum::Negative};
+  req.testEnumVec_ref() = enums;
+  EXPECT_EQ(enums, *req.testEnumVec_ref());
+
+  // Vector of vectors
+  std::vector<std::vector<uint64_t>> vectors = {{1, 1, 1}, {2, 2}};
+  req.testNestedVec_ref() = vectors;
+  EXPECT_EQ(vectors, *req.testNestedVec_ref());
+
+  // Unordered map
+  std::unordered_map<std::string, std::string> stringmap;
+  stringmap.insert({"key", "value"});
+  req.testUMap_ref() = stringmap;
+  EXPECT_EQ(stringmap, *req.testUMap_ref());
+
+  // Ordered map
+  std::map<double, double> doublemap;
+  doublemap.insert({1.08, 8.3});
+  req.testMap_ref() = doublemap;
+  EXPECT_EQ(doublemap, *req.testMap_ref());
+
+  // Complex map
+  std::map<std::string, std::vector<uint16_t>> complexmap;
+  complexmap.insert({"key", {1, 2}});
+  req.testComplexMap_ref() = complexmap;
+  EXPECT_EQ(complexmap, *req.testComplexMap_ref());
+
+  // Unordered set
+  std::unordered_set<std::string> stringset;
+  stringset.insert("hello");
+  stringset.insert("world");
+  req.testUSet_ref() = stringset;
+  EXPECT_EQ(stringset, *req.testUSet_ref());
+
+  // Ordered set
+  std::set<uint64_t> intset;
+  intset.insert(1);
+  intset.insert(2);
+  req.testSet_ref() = intset;
+  EXPECT_EQ(intset, *req.testSet_ref());
+
+  // User type
+  carbon::test::UserType testType = {"blah", {1, 2, 3}};
+  req.testType_ref() = testType;
+  EXPECT_EQ(testType.name, req.testType_ref()->name);
+  EXPECT_EQ(testType.points, req.testType_ref()->points);
+}

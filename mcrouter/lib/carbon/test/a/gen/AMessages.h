@@ -63,6 +63,14 @@ class AnotherRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return key_;
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<const carbon::Keys<folly::IOBuf>&>
+   key_ref() const& {
+    return {this->key_, __isset.key};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Keys<folly::IOBuf>&>
+   key_ref() & {
+    return {this->key_, __isset.key};
+  }
   template <class Writer>
   void serialize(Writer&& writer) const;
 
@@ -74,6 +82,10 @@ class AnotherRequest : public carbon::RequestCommon {
   void visitFields(V&& v) const;
 
  private:
+  struct __isset {
+    bool key;
+  } __isset = {};
+
   carbon::Keys<folly::IOBuf> key_;
 };
 
@@ -96,6 +108,14 @@ class AnotherReply : public carbon::ReplyCommon {
   carbon::Result& result() {
     return result_;
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<const carbon::Result&>
+   result_ref() const& {
+    return {this->result_, __isset.result};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Result&>
+   result_ref() & {
+    return {this->result_, __isset.result};
+  }
 
   template <class Writer>
   void serialize(Writer&& writer) const;
@@ -108,6 +128,10 @@ class AnotherReply : public carbon::ReplyCommon {
   void visitFields(V&& v) const;
 
  private:
+  struct __isset {
+    bool result;
+  } __isset = {};
+
   carbon::Result result_{carbon::Result::UNKNOWN};
 };
 } // namespace test

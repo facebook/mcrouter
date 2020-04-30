@@ -129,6 +129,13 @@ class HelloRequest : public carbon::RequestCommon {
   friend class apache::thrift::Cpp2Ops<HelloRequest>;
 
  private:
+  struct __isset {
+    bool key;
+    bool shardId;
+    bool deadlineMs;
+    bool message;
+  } __isset = {};
+
   hellogoodbye::thrift::HelloRequest underlyingThriftStruct_;
 };
 
@@ -201,6 +208,11 @@ class HelloReply : public carbon::ReplyCommon {
   friend class apache::thrift::Cpp2Ops<HelloReply>;
 
  private:
+  struct __isset {
+    bool result;
+    bool message;
+  } __isset = {};
+
   hellogoodbye::thrift::HelloReply underlyingThriftStruct_;
 };
 
@@ -283,6 +295,11 @@ class GoodbyeRequest : public carbon::RequestCommon {
   friend class apache::thrift::Cpp2Ops<GoodbyeRequest>;
 
  private:
+  struct __isset {
+    bool key;
+    bool shardId;
+  } __isset = {};
+
   hellogoodbye::thrift::GoodbyeRequest underlyingThriftStruct_;
 };
 
@@ -355,6 +372,11 @@ class GoodbyeReply : public carbon::ReplyCommon {
   friend class apache::thrift::Cpp2Ops<GoodbyeReply>;
 
  private:
+  struct __isset {
+    bool result;
+    bool message;
+  } __isset = {};
+
   hellogoodbye::thrift::GoodbyeReply underlyingThriftStruct_;
 };
 } // namespace hellogoodbye

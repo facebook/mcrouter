@@ -97,6 +97,10 @@ class StructWithEnumField {
   friend class apache::thrift::Cpp2Ops<StructWithEnumField>;
 
  private:
+  struct __isset {
+    bool test;
+  } __isset = {};
+
   carbon::test_enum::thrift::StructWithEnumField underlyingThriftStruct_;
 };
 } // namespace test_enum

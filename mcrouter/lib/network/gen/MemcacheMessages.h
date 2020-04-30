@@ -116,6 +116,11 @@ class McGetRequest : public carbon::RequestCommon {
   friend class apache::thrift::Cpp2Ops<McGetRequest>;
 
  private:
+  struct __isset {
+    bool key;
+    bool flags;
+  } __isset = {};
+
   facebook::memcache::thrift::McGetRequest underlyingThriftStruct_;
 };
 
@@ -206,6 +211,14 @@ class McGetReply : public carbon::ReplyCommon {
   friend class apache::thrift::Cpp2Ops<McGetReply>;
 
  private:
+  struct __isset {
+    bool result;
+    bool value;
+    bool flags;
+    bool message;
+    bool appSpecificErrorCode;
+  } __isset = {};
+
   facebook::memcache::thrift::McGetReply underlyingThriftStruct_;
 };
 
@@ -302,6 +315,13 @@ class McSetRequest : public carbon::RequestCommon {
   friend class apache::thrift::Cpp2Ops<McSetRequest>;
 
  private:
+  struct __isset {
+    bool key;
+    bool exptime;
+    bool flags;
+    bool value;
+  } __isset = {};
+
   facebook::memcache::thrift::McSetRequest underlyingThriftStruct_;
 };
 
@@ -392,6 +412,14 @@ class McSetReply : public carbon::ReplyCommon {
   friend class apache::thrift::Cpp2Ops<McSetReply>;
 
  private:
+  struct __isset {
+    bool result;
+    bool flags;
+    bool value;
+    bool message;
+    bool appSpecificErrorCode;
+  } __isset = {};
+
   facebook::memcache::thrift::McSetReply underlyingThriftStruct_;
 };
 
@@ -495,6 +523,14 @@ class McDeleteRequest : public carbon::RequestCommon {
   friend class apache::thrift::Cpp2Ops<McDeleteRequest>;
 
  private:
+  struct __isset {
+    bool key;
+    bool flags;
+    bool exptime;
+    bool value;
+    bool attributes;
+  } __isset = {};
+
   facebook::memcache::thrift::McDeleteRequest underlyingThriftStruct_;
 };
 
@@ -585,6 +621,14 @@ class McDeleteReply : public carbon::ReplyCommon {
   friend class apache::thrift::Cpp2Ops<McDeleteReply>;
 
  private:
+  struct __isset {
+    bool result;
+    bool flags;
+    bool value;
+    bool message;
+    bool appSpecificErrorCode;
+  } __isset = {};
+
   facebook::memcache::thrift::McDeleteReply underlyingThriftStruct_;
 };
 
@@ -667,6 +711,11 @@ class McLeaseGetRequest : public carbon::RequestCommon {
   friend class apache::thrift::Cpp2Ops<McLeaseGetRequest>;
 
  private:
+  struct __isset {
+    bool key;
+    bool flags;
+  } __isset = {};
+
   facebook::memcache::thrift::McLeaseGetRequest underlyingThriftStruct_;
 };
 
@@ -763,6 +812,15 @@ class McLeaseGetReply : public carbon::ReplyCommon {
   friend class apache::thrift::Cpp2Ops<McLeaseGetReply>;
 
  private:
+  struct __isset {
+    bool result;
+    bool leaseToken;
+    bool value;
+    bool flags;
+    bool message;
+    bool appSpecificErrorCode;
+  } __isset = {};
+
   facebook::memcache::thrift::McLeaseGetReply underlyingThriftStruct_;
 };
 
@@ -866,6 +924,14 @@ class McLeaseSetRequest : public carbon::RequestCommon {
   friend class apache::thrift::Cpp2Ops<McLeaseSetRequest>;
 
  private:
+  struct __isset {
+    bool key;
+    bool exptime;
+    bool flags;
+    bool value;
+    bool leaseToken;
+  } __isset = {};
+
   facebook::memcache::thrift::McLeaseSetRequest underlyingThriftStruct_;
 };
 
@@ -944,6 +1010,12 @@ class McLeaseSetReply : public carbon::ReplyCommon {
   friend class apache::thrift::Cpp2Ops<McLeaseSetReply>;
 
  private:
+  struct __isset {
+    bool result;
+    bool message;
+    bool appSpecificErrorCode;
+  } __isset = {};
+
   facebook::memcache::thrift::McLeaseSetReply underlyingThriftStruct_;
 };
 
@@ -1040,6 +1112,13 @@ class McAddRequest : public carbon::RequestCommon {
   friend class apache::thrift::Cpp2Ops<McAddRequest>;
 
  private:
+  struct __isset {
+    bool key;
+    bool exptime;
+    bool flags;
+    bool value;
+  } __isset = {};
+
   facebook::memcache::thrift::McAddRequest underlyingThriftStruct_;
 };
 
@@ -1118,6 +1197,12 @@ class McAddReply : public carbon::ReplyCommon {
   friend class apache::thrift::Cpp2Ops<McAddReply>;
 
  private:
+  struct __isset {
+    bool result;
+    bool message;
+    bool appSpecificErrorCode;
+  } __isset = {};
+
   facebook::memcache::thrift::McAddReply underlyingThriftStruct_;
 };
 
@@ -1214,6 +1299,13 @@ class McReplaceRequest : public carbon::RequestCommon {
   friend class apache::thrift::Cpp2Ops<McReplaceRequest>;
 
  private:
+  struct __isset {
+    bool key;
+    bool exptime;
+    bool flags;
+    bool value;
+  } __isset = {};
+
   facebook::memcache::thrift::McReplaceRequest underlyingThriftStruct_;
 };
 
@@ -1292,6 +1384,12 @@ class McReplaceReply : public carbon::ReplyCommon {
   friend class apache::thrift::Cpp2Ops<McReplaceReply>;
 
  private:
+  struct __isset {
+    bool result;
+    bool message;
+    bool appSpecificErrorCode;
+  } __isset = {};
+
   facebook::memcache::thrift::McReplaceReply underlyingThriftStruct_;
 };
 
@@ -1374,6 +1472,11 @@ class McGetsRequest : public carbon::RequestCommon {
   friend class apache::thrift::Cpp2Ops<McGetsRequest>;
 
  private:
+  struct __isset {
+    bool key;
+    bool flags;
+  } __isset = {};
+
   facebook::memcache::thrift::McGetsRequest underlyingThriftStruct_;
 };
 
@@ -1470,6 +1573,15 @@ class McGetsReply : public carbon::ReplyCommon {
   friend class apache::thrift::Cpp2Ops<McGetsReply>;
 
  private:
+  struct __isset {
+    bool result;
+    bool casToken;
+    bool value;
+    bool flags;
+    bool message;
+    bool appSpecificErrorCode;
+  } __isset = {};
+
   facebook::memcache::thrift::McGetsReply underlyingThriftStruct_;
 };
 
@@ -1573,6 +1685,14 @@ class McCasRequest : public carbon::RequestCommon {
   friend class apache::thrift::Cpp2Ops<McCasRequest>;
 
  private:
+  struct __isset {
+    bool key;
+    bool exptime;
+    bool flags;
+    bool value;
+    bool casToken;
+  } __isset = {};
+
   facebook::memcache::thrift::McCasRequest underlyingThriftStruct_;
 };
 
@@ -1651,6 +1771,12 @@ class McCasReply : public carbon::ReplyCommon {
   friend class apache::thrift::Cpp2Ops<McCasReply>;
 
  private:
+  struct __isset {
+    bool result;
+    bool message;
+    bool appSpecificErrorCode;
+  } __isset = {};
+
   facebook::memcache::thrift::McCasReply underlyingThriftStruct_;
 };
 
@@ -1733,6 +1859,11 @@ class McIncrRequest : public carbon::RequestCommon {
   friend class apache::thrift::Cpp2Ops<McIncrRequest>;
 
  private:
+  struct __isset {
+    bool key;
+    bool delta;
+  } __isset = {};
+
   facebook::memcache::thrift::McIncrRequest underlyingThriftStruct_;
 };
 
@@ -1817,6 +1948,13 @@ class McIncrReply : public carbon::ReplyCommon {
   friend class apache::thrift::Cpp2Ops<McIncrReply>;
 
  private:
+  struct __isset {
+    bool result;
+    bool delta;
+    bool message;
+    bool appSpecificErrorCode;
+  } __isset = {};
+
   facebook::memcache::thrift::McIncrReply underlyingThriftStruct_;
 };
 
@@ -1899,6 +2037,11 @@ class McDecrRequest : public carbon::RequestCommon {
   friend class apache::thrift::Cpp2Ops<McDecrRequest>;
 
  private:
+  struct __isset {
+    bool key;
+    bool delta;
+  } __isset = {};
+
   facebook::memcache::thrift::McDecrRequest underlyingThriftStruct_;
 };
 
@@ -1983,6 +2126,13 @@ class McDecrReply : public carbon::ReplyCommon {
   friend class apache::thrift::Cpp2Ops<McDecrReply>;
 
  private:
+  struct __isset {
+    bool result;
+    bool delta;
+    bool message;
+    bool appSpecificErrorCode;
+  } __isset = {};
+
   facebook::memcache::thrift::McDecrReply underlyingThriftStruct_;
 };
 
@@ -2058,6 +2208,10 @@ class McMetagetRequest : public carbon::RequestCommon {
   friend class apache::thrift::Cpp2Ops<McMetagetRequest>;
 
  private:
+  struct __isset {
+    bool key;
+  } __isset = {};
+
   facebook::memcache::thrift::McMetagetRequest underlyingThriftStruct_;
 };
 
@@ -2160,6 +2314,16 @@ class McMetagetReply : public carbon::ReplyCommon {
   friend class apache::thrift::Cpp2Ops<McMetagetReply>;
 
  private:
+  struct __isset {
+    bool result;
+    bool age;
+    bool exptime;
+    bool ipv;
+    bool ipAddress;
+    bool message;
+    bool appSpecificErrorCode;
+  } __isset = {};
+
   facebook::memcache::thrift::McMetagetReply underlyingThriftStruct_;
 };
 
@@ -2256,6 +2420,13 @@ class McAppendRequest : public carbon::RequestCommon {
   friend class apache::thrift::Cpp2Ops<McAppendRequest>;
 
  private:
+  struct __isset {
+    bool key;
+    bool exptime;
+    bool flags;
+    bool value;
+  } __isset = {};
+
   facebook::memcache::thrift::McAppendRequest underlyingThriftStruct_;
 };
 
@@ -2334,6 +2505,12 @@ class McAppendReply : public carbon::ReplyCommon {
   friend class apache::thrift::Cpp2Ops<McAppendReply>;
 
  private:
+  struct __isset {
+    bool result;
+    bool message;
+    bool appSpecificErrorCode;
+  } __isset = {};
+
   facebook::memcache::thrift::McAppendReply underlyingThriftStruct_;
 };
 
@@ -2430,6 +2607,13 @@ class McPrependRequest : public carbon::RequestCommon {
   friend class apache::thrift::Cpp2Ops<McPrependRequest>;
 
  private:
+  struct __isset {
+    bool key;
+    bool exptime;
+    bool flags;
+    bool value;
+  } __isset = {};
+
   facebook::memcache::thrift::McPrependRequest underlyingThriftStruct_;
 };
 
@@ -2508,6 +2692,12 @@ class McPrependReply : public carbon::ReplyCommon {
   friend class apache::thrift::Cpp2Ops<McPrependReply>;
 
  private:
+  struct __isset {
+    bool result;
+    bool message;
+    bool appSpecificErrorCode;
+  } __isset = {};
+
   facebook::memcache::thrift::McPrependReply underlyingThriftStruct_;
 };
 
@@ -2590,6 +2780,11 @@ class McTouchRequest : public carbon::RequestCommon {
   friend class apache::thrift::Cpp2Ops<McTouchRequest>;
 
  private:
+  struct __isset {
+    bool key;
+    bool exptime;
+  } __isset = {};
+
   facebook::memcache::thrift::McTouchRequest underlyingThriftStruct_;
 };
 
@@ -2668,6 +2863,12 @@ class McTouchReply : public carbon::ReplyCommon {
   friend class apache::thrift::Cpp2Ops<McTouchReply>;
 
  private:
+  struct __isset {
+    bool result;
+    bool message;
+    bool appSpecificErrorCode;
+  } __isset = {};
+
   facebook::memcache::thrift::McTouchReply underlyingThriftStruct_;
 };
 
@@ -2743,6 +2944,10 @@ class McFlushReRequest : public carbon::RequestCommon {
   friend class apache::thrift::Cpp2Ops<McFlushReRequest>;
 
  private:
+  struct __isset {
+    bool key;
+  } __isset = {};
+
   facebook::memcache::thrift::McFlushReRequest underlyingThriftStruct_;
 };
 
@@ -2821,6 +3026,12 @@ class McFlushReReply : public carbon::ReplyCommon {
   friend class apache::thrift::Cpp2Ops<McFlushReReply>;
 
  private:
+  struct __isset {
+    bool result;
+    bool message;
+    bool appSpecificErrorCode;
+  } __isset = {};
+
   facebook::memcache::thrift::McFlushReReply underlyingThriftStruct_;
 };
 
@@ -2903,6 +3114,11 @@ class McFlushAllRequest : public carbon::RequestCommon {
   friend class apache::thrift::Cpp2Ops<McFlushAllRequest>;
 
  private:
+  struct __isset {
+    bool key;
+    bool delay;
+  } __isset = {};
+
   facebook::memcache::thrift::McFlushAllRequest underlyingThriftStruct_;
 };
 
@@ -2981,6 +3197,12 @@ class McFlushAllReply : public carbon::ReplyCommon {
   friend class apache::thrift::Cpp2Ops<McFlushAllReply>;
 
  private:
+  struct __isset {
+    bool result;
+    bool message;
+    bool appSpecificErrorCode;
+  } __isset = {};
+
   facebook::memcache::thrift::McFlushAllReply underlyingThriftStruct_;
 };
 
@@ -3063,6 +3285,11 @@ class McGatRequest : public carbon::RequestCommon {
   friend class apache::thrift::Cpp2Ops<McGatRequest>;
 
  private:
+  struct __isset {
+    bool exptime;
+    bool key;
+  } __isset = {};
+
   facebook::memcache::thrift::McGatRequest underlyingThriftStruct_;
 };
 
@@ -3153,6 +3380,14 @@ class McGatReply : public carbon::ReplyCommon {
   friend class apache::thrift::Cpp2Ops<McGatReply>;
 
  private:
+  struct __isset {
+    bool result;
+    bool value;
+    bool flags;
+    bool message;
+    bool appSpecificErrorCode;
+  } __isset = {};
+
   facebook::memcache::thrift::McGatReply underlyingThriftStruct_;
 };
 
@@ -3235,6 +3470,11 @@ class McGatsRequest : public carbon::RequestCommon {
   friend class apache::thrift::Cpp2Ops<McGatsRequest>;
 
  private:
+  struct __isset {
+    bool exptime;
+    bool key;
+  } __isset = {};
+
   facebook::memcache::thrift::McGatsRequest underlyingThriftStruct_;
 };
 
@@ -3331,6 +3571,15 @@ class McGatsReply : public carbon::ReplyCommon {
   friend class apache::thrift::Cpp2Ops<McGatsReply>;
 
  private:
+  struct __isset {
+    bool result;
+    bool casToken;
+    bool value;
+    bool flags;
+    bool message;
+    bool appSpecificErrorCode;
+  } __isset = {};
+
   facebook::memcache::thrift::McGatsReply underlyingThriftStruct_;
 };
 } // namespace memcache

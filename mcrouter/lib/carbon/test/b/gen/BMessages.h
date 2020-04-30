@@ -50,6 +50,14 @@ class BaseStruct {
   int64_t& baseInt64Member() {
     return baseInt64Member_;
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<const int64_t&>
+   baseInt64Member_ref() const& {
+    return {this->baseInt64Member_, __isset.baseInt64Member};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<int64_t&>
+   baseInt64Member_ref() & {
+    return {this->baseInt64Member_, __isset.baseInt64Member};
+  }
 
   template <class Writer>
   void serialize(Writer&& writer) const;
@@ -62,6 +70,10 @@ class BaseStruct {
   void visitFields(V&& v) const;
 
  private:
+  struct __isset {
+    bool baseInt64Member;
+  } __isset = {};
+
   int64_t baseInt64Member_{0};
 };
 
@@ -110,6 +122,38 @@ class SimpleStruct {
   std::vector<test2::util::SimpleStruct>& vectorMember() {
     return vectorMember_;
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<const int32_t&>
+   int32Member_ref() const& {
+    return {this->int32Member_, __isset.int32Member};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<int32_t&>
+   int32Member_ref() & {
+    return {this->int32Member_, __isset.int32Member};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<const std::string&>
+   stringMember_ref() const& {
+    return {this->stringMember_, __isset.stringMember};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<std::string&>
+   stringMember_ref() & {
+    return {this->stringMember_, __isset.stringMember};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<const test2::util::SimpleEnum&>
+   enumMember_ref() const& {
+    return {this->enumMember_, __isset.enumMember};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<test2::util::SimpleEnum&>
+   enumMember_ref() & {
+    return {this->enumMember_, __isset.enumMember};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<const std::vector<test2::util::SimpleStruct>&>
+   vectorMember_ref() const& {
+    return {this->vectorMember_, __isset.vectorMember};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<std::vector<test2::util::SimpleStruct>&>
+   vectorMember_ref() & {
+    return {this->vectorMember_, __isset.vectorMember};
+  }
 
   template <class Writer>
   void serialize(Writer&& writer) const;
@@ -122,6 +166,13 @@ class SimpleStruct {
   void visitFields(V&& v) const;
 
  private:
+  struct __isset {
+    bool int32Member;
+    bool stringMember;
+    bool enumMember;
+    bool vectorMember;
+  } __isset = {};
+
   BaseStruct _carbon_basestruct_;
   std::string stringMember_;
   test2::util::SimpleEnum enumMember_{test2::util::SimpleEnum::Twenty};
