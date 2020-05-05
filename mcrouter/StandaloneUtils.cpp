@@ -34,6 +34,8 @@ namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
+thread_local size_t tlsWorkerThreadId;
+
 namespace {
 
 void printUsage(const char* option, const char* description) {

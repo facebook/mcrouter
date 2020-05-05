@@ -22,6 +22,8 @@ class McrouterStandaloneOptions;
 using StandalonePreRunCb =
     std::function<void(CarbonRouterInstanceBase& router)>;
 
+extern thread_local size_t tlsWorkerThreadId;
+
 /**
  * Spawns the standalone server and blocks until it's shutdown.
  *
@@ -33,8 +35,8 @@ bool runServer(
     const McrouterStandaloneOptions& standaloneOpts,
     StandalonePreRunCb preRunCb = nullptr);
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 #include "Server-inl.h"

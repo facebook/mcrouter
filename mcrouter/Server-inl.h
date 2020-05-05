@@ -23,6 +23,7 @@
 #include "mcrouter/ServerOnRequest.h"
 #include "mcrouter/StandaloneConfig.h"
 #include "mcrouter/ThriftAcceptor.h"
+#include "mcrouter/ThriftObserver.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
@@ -96,6 +97,8 @@ void serverInit(
   auto proxy = router.getProxy(threadId);
   // Manually override proxy assignment
   routerClient->setProxyIndex(threadId);
+  // Set tlsWorkerThreadId which will be used by Thrift Observer
+  tlsWorkerThreadId = threadId;
 
   worker.setOnRequest(RequestHandlerType(
       *routerClient,
@@ -447,7 +450,8 @@ bool runServerDual(
     thriftServer->disableActiveRequestsTracking();
     thriftServer->setSocketMaxReadsPerEvent(1);
     // Set observer for connection stats
-    // TODO: observer needed for num_client_connections_stat
+    thriftServer->setObserver(
+        std::make_shared<ThriftObserver<RouterInfo>>(*router, shutdownStarted));
     // Don't enforce default timeouts, unless Client forces them.
     thriftServer->setQueueTimeout(std::chrono::milliseconds(0));
     thriftServer->setTaskExpireTime(std::chrono::milliseconds(0));
@@ -511,6 +515,8 @@ bool runServerDual(
     LOG(INFO) << "Started shutdown of CarbonRouterInstance";
     router->shutdown();
     freeAllRouters();
+    // Now free iothread pool
+    ioThreadPool.reset();
     LOG(INFO) << "Completed shutdown";
   } catch (const std::exception& e) {
     LOG(ERROR) << "Error creating dual mode AsyncMcServer: " << e.what();
