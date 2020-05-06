@@ -19,7 +19,7 @@
 
 namespace folly {
 class SSLContext;
-} // namespace folly
+} // folly
 
 namespace facebook {
 namespace memcache {
@@ -30,11 +30,12 @@ class ClientSSLContext : public folly::SSLContext {
  public:
   explicit ClientSSLContext(wangle::SSLSessionCallbacks& cache)
       : cache_(cache) {
-    wangle::SSLSessionCallbacks::attachCallbacksToContext(this, &cache_);
+    wangle::SSLSessionCallbacks::attachCallbacksToContext(getSSLCtx(), &cache_);
   }
 
   virtual ~ClientSSLContext() override {
-    wangle::SSLSessionCallbacks::detachCallbacksFromContext(this, &cache_);
+    wangle::SSLSessionCallbacks::detachCallbacksFromContext(
+        getSSLCtx(), &cache_);
   }
 
   wangle::SSLSessionCallbacks& getCache() {
@@ -86,5 +87,5 @@ ServerContextPair getServerContexts(
     folly::Optional<wangle::TLSTicketKeySeeds> seeds,
     bool preferOcbCipher = false);
 
-} // namespace memcache
-} // namespace facebook
+} // memcache
+} // facebook
