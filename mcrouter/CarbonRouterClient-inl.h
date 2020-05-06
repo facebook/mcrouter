@@ -347,7 +347,9 @@ CarbonRouterClient<RouterInfo>::makeProxyRequestContext(
       *proxy,
       req,
       [this, cb = std::forward<CallbackFunc>(callback)](
-          const Request& request, ReplyT<Request>&& reply) mutable {
+          auto& /* reqCtx */,
+          const Request& request,
+          ReplyT<Request>&& reply) mutable {
         detail::bumpCarbonRouterClientStats(stats_, request, reply);
         if (disconnected_) {
           // "Cancelled" reply.

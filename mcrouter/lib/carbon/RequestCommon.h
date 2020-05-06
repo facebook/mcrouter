@@ -10,7 +10,6 @@
 #include <utility>
 
 #include <folly/io/IOBuf.h>
-#include <folly/io/async/Request.h>
 
 #include "mcrouter/lib/Ref.h"
 #include "mcrouter/lib/carbon/MessageCommon.h"
@@ -50,51 +49,6 @@ class RequestCommon : public MessageCommon {
   RequestCommon(RequestCommon&&) = default;
   RequestCommon& operator=(RequestCommon&&) = default;
 #endif
-
-  /**
-   * Set preprocess function.
-   */
-  void setPreprocessFunction(std::function<void()>&& f) {
-    mcrouterPreprocess_ = f;
-  }
-
-  /**
-   * Returns true if preprocess function is null
-   */
-  bool preprocessFunctionIsNull() const {
-    return mcrouterPreprocess_ == nullptr;
-  }
-
-  /**
-   * Run preprocess function.
-   */
-  void runPreprocessFunction() const {
-    if (UNLIKELY(mcrouterPreprocess_ != nullptr)) {
-      mcrouterPreprocess_();
-    }
-  }
-
-  /**
-   * Set RequestContextScopeGuard to create folly::RequestContext.
-   */
-  void setRequestContextScopeGuard(
-      std::unique_ptr<folly::ShallowCopyRequestContextScopeGuard> guard) {
-    reqContextScopeGuard_.guard_ = std::move(guard);
-  }
-
-  /**
-   * Returns true if RequestContextScopeGuard is null
-   */
-  bool requestContextScopeGuardIsNull() const {
-    return reqContextScopeGuard_.guard_ == nullptr;
-  }
-
-  /**
-   * Destroy RequestContextScopeGuard to destroy folly::RequestContext.
-   */
-  void destroyRequestContextScopeGuard() {
-    reqContextScopeGuard_.guard_ = nullptr;
-  }
 
   std::pair<uint64_t, uint64_t> traceToInts() const {
     // Trace metadata consists of trace ID and node ID
@@ -183,29 +137,6 @@ class RequestCommon : public MessageCommon {
   static constexpr size_t kTraceIdSize = 11;
 
   const folly::IOBuf* serializedBuffer_{nullptr};
-
-  /**
-   * Functions to be executed before actual processing code.
-   */
-  std::function<void()> mcrouterPreprocess_{nullptr};
-
-  /**
-   * Wrapper class to manage unique_ptr for RequestContextScopeGuard
-   */
-  struct RequestContextScopeGuard {
-   public:
-    RequestContextScopeGuard() = default;
-    RequestContextScopeGuard(RequestContextScopeGuard&& other)
-        : guard_(std::move(other.guard_)) {}
-    RequestContextScopeGuard(const RequestContextScopeGuard&) {}
-
-    std::unique_ptr<folly::ShallowCopyRequestContextScopeGuard> guard_{nullptr};
-  };
-
-  /**
-   * folly RequestContextScopeGuard for managing folly::RequestContext
-   */
-  RequestContextScopeGuard reqContextScopeGuard_;
 
 #ifndef LIBMC_FBTRACE_DISABLE
   struct McFbtraceRefPolicy {

@@ -129,6 +129,37 @@ class ProxyRequestContext {
     return finalResult_;
   }
 
+  /**
+   * Set preprocess function.
+   */
+  void setPreprocessFunction(std::function<void()>&& f) {
+    mcrouterPreprocess_ = f;
+  }
+
+  /**
+   * Run preprocess function.
+   */
+  void runPreprocessFunction() const {
+    if (UNLIKELY(mcrouterPreprocess_ != nullptr)) {
+      mcrouterPreprocess_();
+    }
+  }
+
+  /**
+   * Set RequestContextScopeGuard to create folly::RequestContext.
+   */
+  void setRequestContextScopeGuard(
+      std::unique_ptr<folly::ShallowCopyRequestContextScopeGuard> guard) {
+    reqContextScopeGuard_ = std::move(guard);
+  }
+
+  /**
+   * Destroy RequestContextScopeGuard to destroy folly::RequestContext.
+   */
+  void destroyRequestContextScopeGuard() {
+    reqContextScopeGuard_.reset();
+  }
+
  protected:
   /**
    * The function that will be called when all replies (including async)
@@ -175,6 +206,13 @@ class ProxyRequestContext {
       we want to notify we're done on destruction. */
   bool processing_{false};
   bool recording_{false};
+
+  /**
+   * Functions to be executed before actual processing code.
+   */
+  std::function<void()> mcrouterPreprocess_{nullptr};
+  std::unique_ptr<folly::ShallowCopyRequestContextScopeGuard>
+      reqContextScopeGuard_{nullptr};
 
   ProxyRequestContext(const ProxyRequestContext&) = delete;
   ProxyRequestContext(ProxyRequestContext&&) noexcept = delete;

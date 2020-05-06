@@ -37,7 +37,7 @@ class ProxyRequestContextTypedWithCallback
   void sendReplyImpl(ReplyT<Request>&& reply) final {
     auto req = this->req_;
     fiber_local<RouterInfo>::runWithoutLocals(
-        [this, req, &reply]() { f_(*req, std::move(reply)); });
+        [this, req, &reply]() { f_(*this, *req, std::move(reply)); });
   }
 
  private:
@@ -121,7 +121,7 @@ bool precheckRequest(
   return true;
 }
 
-} // detail
+} // namespace detail
 
 template <class RouterInfo, class Request>
 void ProxyRequestContextTyped<RouterInfo, Request>::sendReply(
@@ -200,6 +200,6 @@ createProxyRequestContext(
   return std::make_unique<Type>(pr, req, std::forward<F>(f), priority);
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

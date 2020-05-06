@@ -43,7 +43,7 @@ bool processGetServiceInfoRequest(
   return true;
 }
 
-} // detail
+} // namespace detail
 
 template <class RouterInfo>
 template <class Request>
@@ -62,8 +62,9 @@ void Proxy<RouterInfo>::WaitingRequest<Request>::process(
     const auto durationInQueueUs = nowUs() - timePushedOnQueue_;
 
     if (durationInQueueUs >
-        1000 * static_cast<int64_t>(
-                   proxy->getRouterOptions().waiting_request_timeout_ms)) {
+        1000 *
+            static_cast<int64_t>(
+                proxy->getRouterOptions().waiting_request_timeout_ms)) {
       ctx_->sendReply(carbon::Result::BUSY);
       return;
     }
@@ -144,7 +145,7 @@ void Proxy<RouterInfo>::processRequest(
   ++numRequestsProcessing_;
   stats().increment(proxy_reqs_processing_stat);
 
-  req.runPreprocessFunction();
+  ctx->runPreprocessFunction();
   routeHandlesProcessRequest(req, std::move(ctx));
 
   stats().increment(request_sent_stat);
@@ -416,6 +417,6 @@ Proxy<RouterInfo>::rateLimited(ProxyRequestPriority priority, const Request&)
   return true;
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
