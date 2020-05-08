@@ -125,7 +125,7 @@ class TestDeterministicFailoverAllSleepServersSamePool(McrouterTestCase):
                     expected_values[i][1])
             self.assertEqual(int(stats["failover_num_collisions"]),
                     expected_values[i][2])
-            self.assertEqual(int(stats["failover_all_failed"]), i + 1)
+            self.assertEqual(int(stats["failover_all_failed_count"]), i + 1)
 
 class TestDeterministicFailoverAllSleepServersSharedConfig(McrouterTestCase):
     config = './mcrouter/test/test_deterministic_failover3.json'
@@ -168,7 +168,7 @@ class TestDeterministicFailoverAllSleepServersSharedConfig(McrouterTestCase):
                     expected_values[i][1])
             self.assertEqual(int(stats["failover_num_collisions"]),
                     expected_values[i][2])
-            self.assertEqual(int(stats["failover_all_failed"]), i + 1)
+            self.assertEqual(int(stats["failover_all_failed_count"]), i + 1)
 
 
 class TestDeterministicFailoverAllSleepServersFailureDomains(McrouterTestCase):
@@ -214,4 +214,4 @@ class TestDeterministicFailoverAllSleepServersFailureDomains(McrouterTestCase):
                     expected_values[i][2])
             self.assertEqual(int(stats["failover_num_failed_domain_collisions"]),
                     expected_values[i][3])
-            self.assertEqual(int(stats["failover_all_failed"]), i + 1)
+            self.assertEqual(int(stats["failover_all_failed_count"]), i + 1)

@@ -220,6 +220,7 @@ class FailoverRoute {
     if (iter == failoverPolicy_.end(req)) {
       if (isErrorResult(normalReply.result())) {
         proxy.stats().increment(failover_all_failed_stat);
+        proxy.stats().increment(failover_all_failed_count_stat);
         proxy.stats().increment(failoverPolicy_.getFailoverFailedStat());
       }
       return normalReply;
@@ -339,6 +340,7 @@ class FailoverRoute {
       }
       if (allFailed) {
         proxy.stats().increment(failover_all_failed_stat);
+        proxy.stats().increment(failover_all_failed_count_stat);
         proxy.stats().increment(failoverPolicy_.getFailoverFailedStat());
       }
       proxy.stats().increment(
