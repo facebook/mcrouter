@@ -168,16 +168,18 @@ class McGetReply : public carbon::ReplyCommon {
    result_ref() & {
     return underlyingThriftStruct_.result_ref();
   }
-  apache::thrift::optional_field_ref<const folly::IOBuf&> value() const {
+  apache::thrift::optional_field_ref<const folly::IOBuf&> value() const& {
     return underlyingThriftStruct_.value_ref();
   }
-  apache::thrift::optional_field_ref<folly::IOBuf&> value() {
+  apache::thrift::optional_field_ref<folly::IOBuf&> value() & {
     return underlyingThriftStruct_.value_ref();
   }
-  apache::thrift::optional_field_ref<const folly::IOBuf&> value_ref() const& {
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<const folly::IOBuf&>
+   value_ref() const& {
     return underlyingThriftStruct_.value_ref();
   }
-  apache::thrift::optional_field_ref<folly::IOBuf&> value_ref() & {
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<folly::IOBuf&>
+   value_ref() & {
     return underlyingThriftStruct_.value_ref();
   }
   uint64_t flags() const {
@@ -983,16 +985,18 @@ class McLeaseGetReply : public carbon::ReplyCommon {
    leaseToken_ref() & {
     return underlyingThriftStruct_.leaseToken_ref();
   }
-  apache::thrift::optional_field_ref<const folly::IOBuf&> value() const {
+  apache::thrift::optional_field_ref<const folly::IOBuf&> value() const& {
     return underlyingThriftStruct_.value_ref();
   }
-  apache::thrift::optional_field_ref<folly::IOBuf&> value() {
+  apache::thrift::optional_field_ref<folly::IOBuf&> value() & {
     return underlyingThriftStruct_.value_ref();
   }
-  apache::thrift::optional_field_ref<const folly::IOBuf&> value_ref() const& {
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<const folly::IOBuf&>
+   value_ref() const& {
     return underlyingThriftStruct_.value_ref();
   }
-  apache::thrift::optional_field_ref<folly::IOBuf&> value_ref() & {
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<folly::IOBuf&>
+   value_ref() & {
     return underlyingThriftStruct_.value_ref();
   }
   uint64_t flags() const {
@@ -1982,16 +1986,18 @@ class McGetsReply : public carbon::ReplyCommon {
    casToken_ref() & {
     return underlyingThriftStruct_.casToken_ref();
   }
-  apache::thrift::optional_field_ref<const folly::IOBuf&> value() const {
+  apache::thrift::optional_field_ref<const folly::IOBuf&> value() const& {
     return underlyingThriftStruct_.value_ref();
   }
-  apache::thrift::optional_field_ref<folly::IOBuf&> value() {
+  apache::thrift::optional_field_ref<folly::IOBuf&> value() & {
     return underlyingThriftStruct_.value_ref();
   }
-  apache::thrift::optional_field_ref<const folly::IOBuf&> value_ref() const& {
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<const folly::IOBuf&>
+   value_ref() const& {
     return underlyingThriftStruct_.value_ref();
   }
-  apache::thrift::optional_field_ref<folly::IOBuf&> value_ref() & {
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<folly::IOBuf&>
+   value_ref() & {
     return underlyingThriftStruct_.value_ref();
   }
   uint64_t flags() const {
@@ -4291,16 +4297,18 @@ class McGatReply : public carbon::ReplyCommon {
    result_ref() & {
     return underlyingThriftStruct_.result_ref();
   }
-  apache::thrift::optional_field_ref<const folly::IOBuf&> value() const {
+  apache::thrift::optional_field_ref<const folly::IOBuf&> value() const& {
     return underlyingThriftStruct_.value_ref();
   }
-  apache::thrift::optional_field_ref<folly::IOBuf&> value() {
+  apache::thrift::optional_field_ref<folly::IOBuf&> value() & {
     return underlyingThriftStruct_.value_ref();
   }
-  apache::thrift::optional_field_ref<const folly::IOBuf&> value_ref() const& {
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<const folly::IOBuf&>
+   value_ref() const& {
     return underlyingThriftStruct_.value_ref();
   }
-  apache::thrift::optional_field_ref<folly::IOBuf&> value_ref() & {
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<folly::IOBuf&>
+   value_ref() & {
     return underlyingThriftStruct_.value_ref();
   }
   uint64_t flags() const {
@@ -4544,16 +4552,18 @@ class McGatsReply : public carbon::ReplyCommon {
    casToken_ref() & {
     return underlyingThriftStruct_.casToken_ref();
   }
-  apache::thrift::optional_field_ref<const folly::IOBuf&> value() const {
+  apache::thrift::optional_field_ref<const folly::IOBuf&> value() const& {
     return underlyingThriftStruct_.value_ref();
   }
-  apache::thrift::optional_field_ref<folly::IOBuf&> value() {
+  apache::thrift::optional_field_ref<folly::IOBuf&> value() & {
     return underlyingThriftStruct_.value_ref();
   }
-  apache::thrift::optional_field_ref<const folly::IOBuf&> value_ref() const& {
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<const folly::IOBuf&>
+   value_ref() const& {
     return underlyingThriftStruct_.value_ref();
   }
-  apache::thrift::optional_field_ref<folly::IOBuf&> value_ref() & {
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<folly::IOBuf&>
+   value_ref() & {
     return underlyingThriftStruct_.value_ref();
   }
   uint64_t flags() const {
