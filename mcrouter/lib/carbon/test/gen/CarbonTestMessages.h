@@ -388,6 +388,27 @@ class TestRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return testF14VectorSet_;
   }
+  apache::thrift::optional_field_ref<const std::string&> testOptionalKeywordString() const& {
+    return {this->testOptionalKeywordString_, __isset.testOptionalKeywordString};
+  }
+  apache::thrift::optional_field_ref<std::string&> testOptionalKeywordString() & {
+    markBufferAsDirty();
+    return {this->testOptionalKeywordString_, __isset.testOptionalKeywordString};
+  }
+  apache::thrift::optional_field_ref<const folly::IOBuf&> testOptionalKeywordIobuf() const& {
+    return {this->testOptionalKeywordIobuf_, __isset.testOptionalKeywordIobuf};
+  }
+  apache::thrift::optional_field_ref<folly::IOBuf&> testOptionalKeywordIobuf() & {
+    markBufferAsDirty();
+    return {this->testOptionalKeywordIobuf_, __isset.testOptionalKeywordIobuf};
+  }
+  apache::thrift::optional_field_ref<const bool&> testOptionalKeywordBool() const& {
+    return {this->testOptionalKeywordBool_, __isset.testOptionalKeywordBool};
+  }
+  apache::thrift::optional_field_ref<bool&> testOptionalKeywordBool() & {
+    markBufferAsDirty();
+    return {this->testOptionalKeywordBool_, __isset.testOptionalKeywordBool};
+  }
   const UserType& testType() const {
     return testType_;
   }
@@ -691,6 +712,30 @@ class TestRequest : public carbon::RequestCommon {
    testF14VectorSet_ref() & {
     return {this->testF14VectorSet_, __isset.testF14VectorSet};
   }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<const std::string&>
+   testOptionalKeywordString_ref() const& {
+    return {this->testOptionalKeywordString_, __isset.testOptionalKeywordString};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<std::string&>
+   testOptionalKeywordString_ref() & {
+    return {this->testOptionalKeywordString_, __isset.testOptionalKeywordString};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<const folly::IOBuf&>
+   testOptionalKeywordIobuf_ref() const& {
+    return {this->testOptionalKeywordIobuf_, __isset.testOptionalKeywordIobuf};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<folly::IOBuf&>
+   testOptionalKeywordIobuf_ref() & {
+    return {this->testOptionalKeywordIobuf_, __isset.testOptionalKeywordIobuf};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<const bool&>
+   testOptionalKeywordBool_ref() const& {
+    return {this->testOptionalKeywordBool_, __isset.testOptionalKeywordBool};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<bool&>
+   testOptionalKeywordBool_ref() & {
+    return {this->testOptionalKeywordBool_, __isset.testOptionalKeywordBool};
+  }
   FOLLY_ERASE ::apache::thrift::field_ref<const UserType&>
    testType_ref() const& {
     return {this->testType_, __isset.testType};
@@ -751,6 +796,9 @@ class TestRequest : public carbon::RequestCommon {
     bool testF14NodeSet;
     bool testF14ValueSet;
     bool testF14VectorSet;
+    bool testOptionalKeywordString;
+    bool testOptionalKeywordIobuf;
+    bool testOptionalKeywordBool;
     bool testType;
   } __isset = {};
 
@@ -786,6 +834,8 @@ class TestRequest : public carbon::RequestCommon {
   folly::F14NodeSet<std::string> testF14NodeSet_;
   folly::F14ValueSet<std::string> testF14ValueSet_;
   folly::F14VectorSet<std::string> testF14VectorSet_;
+  std::string testOptionalKeywordString_;
+  folly::IOBuf testOptionalKeywordIobuf_;
   UserType testType_;
   int32_t testInt32_{0};
   uint32_t testUInt32_{0};
@@ -796,6 +846,7 @@ class TestRequest : public carbon::RequestCommon {
   char testChar_{'\0'};
   int8_t testInt8_{0};
   uint8_t testUInt8_{0};
+  bool testOptionalKeywordBool_{false};
 };
 
 class TestReply : public carbon::ReplyCommon {

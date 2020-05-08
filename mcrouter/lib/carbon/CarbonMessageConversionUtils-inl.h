@@ -8,6 +8,7 @@
 #include <string>
 
 #include <folly/json.h>
+#include <thrift/lib/cpp2/FieldRef.h>
 
 #include "mcrouter/lib/carbon/CommonSerializationTraits.h"
 #include "mcrouter/lib/carbon/Fields.h"
@@ -46,6 +47,18 @@ class ToDynamicVisitor {
 
   template <class T>
   bool visitField(uint16_t /* id */, folly::StringPiece name, const T& value) {
+    auto val = toDynamic(value);
+    if (val != nullptr && shouldSerialize(val)) {
+      value_.insert(name, std::move(val));
+    }
+    return true;
+  }
+
+  template <class T>
+  bool visitField(
+      uint16_t /* id */,
+      folly::StringPiece name,
+      const apache::thrift::optional_field_ref<const T&> value) {
     auto val = toDynamic(value);
     if (val != nullptr && shouldSerialize(val)) {
       value_.insert(name, std::move(val));
@@ -102,6 +115,15 @@ class ToDynamicVisitor {
   template <class T>
   folly::dynamic toDynamic(const folly::Optional<T>& value) const {
     if (value.hasValue()) {
+      return toDynamic(*value);
+    }
+    return nullptr;
+  }
+
+  template <class T>
+  folly::dynamic toDynamic(
+      const apache::thrift::optional_field_ref<T&> value) const& {
+    if (value.has_value()) {
       return toDynamic(*value);
     }
     return nullptr;
@@ -253,7 +275,7 @@ class FromDynamicVisitor {
       std::function<void(folly::StringPiece, folly::StringPiece)> onChildError;
       if (onError_) {
         onChildError = [this, &name](
-            folly::StringPiece field, folly::StringPiece msg) {
+                           folly::StringPiece field, folly::StringPiece msg) {
           onError(folly::to<std::string>(name, ".", field), msg);
         };
       }
@@ -269,6 +291,17 @@ class FromDynamicVisitor {
 
   template <class T>
   bool visitField(uint16_t /* id */, folly::StringPiece name, T& value) {
+    if (auto jsonPtr = json_.get_ptr(name)) {
+      fromDynamic(name, *jsonPtr, value);
+    }
+    return true;
+  }
+
+  template <class T>
+  bool visitField(
+      uint16_t /* id */,
+      folly::StringPiece name,
+      apache::thrift::optional_field_ref<T&> value) {
     if (auto jsonPtr = json_.get_ptr(name)) {
       fromDynamic(name, *jsonPtr, value);
     }
@@ -353,6 +386,19 @@ class FromDynamicVisitor {
   bool fromDynamic(
       folly::StringPiece name,
       const folly::dynamic& json,
+      apache::thrift::optional_field_ref<T&> valRef) & {
+    T val;
+    if (fromDynamic(name, json, val)) {
+      valRef = std::move(val);
+      return true;
+    }
+    return false;
+  }
+
+  template <class T>
+  bool fromDynamic(
+      folly::StringPiece name,
+      const folly::dynamic& json,
       Keys<T>& valRef) {
     if (!json.isString()) {
       onError(name, "Invalid type. String expected.");
@@ -417,7 +463,7 @@ class FromDynamicVisitor {
   fromDynamic4(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
     size_t numChildErrors = 0;
     auto onChildError = [this, &name, &numChildErrors](
-        folly::StringPiece field, folly::StringPiece msg) {
+                            folly::StringPiece field, folly::StringPiece msg) {
       numChildErrors++;
       onError(folly::to<std::string>(name, ".", field), msg);
     };
@@ -438,7 +484,7 @@ class FromDynamicVisitor {
   fromDynamic5(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
     size_t numChildErrors = 0;
     auto onChildError = [this, &name, &numChildErrors](
-        folly::StringPiece field, folly::StringPiece msg) {
+                            folly::StringPiece field, folly::StringPiece msg) {
       numChildErrors++;
       onError(folly::to<std::string>(name, ".", field), msg);
     };
@@ -546,7 +592,7 @@ class FromDynamicVisitor {
   }
 };
 
-} // detail
+} // namespace detail
 
 template <class Message>
 folly::dynamic convertToFollyDynamic(
@@ -567,4 +613,4 @@ void convertFromFollyDynamic(
   m.visitFields(visitor);
 }
 
-} // carbon
+} // namespace carbon

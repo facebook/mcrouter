@@ -150,6 +150,16 @@ TEST(CarbonBasic, defaultConstructed) {
   EXPECT_FALSE(req.testOptionalString());
   EXPECT_FALSE(req.testOptionalIobuf());
 
+  // optional fields
+  EXPECT_FALSE(req.testOptionalKeywordString());
+  EXPECT_FALSE(req.testOptionalKeywordIobuf());
+  EXPECT_FALSE(req.testOptionalKeywordBool());
+
+  // optional fields field_ref
+  EXPECT_FALSE(req.testOptionalKeywordString_ref());
+  EXPECT_FALSE(req.testOptionalKeywordIobuf_ref());
+  EXPECT_FALSE(req.testOptionalKeywordBool_ref());
+
   // Unordered map
   EXPECT_TRUE(req.testUMap().empty());
 
@@ -291,6 +301,27 @@ TEST(CarbonBasic, setAndGet) {
   ovec.emplace_back(folly::Optional<std::string>("hello"));
   req.testOptionalVec() = ovec;
   EXPECT_EQ(ovec, req.testOptionalVec());
+
+  // optional fields
+  const auto lstring = longString();
+  req.testOptionalKeywordString() = lstring;
+  EXPECT_EQ(lstring, *req.testOptionalKeywordString());
+  req.testOptionalKeywordIobuf() =
+      folly::IOBuf(folly::IOBuf::COPY_BUFFER, lstring);
+  EXPECT_EQ(lstring, coalesceAndGetRange(*req.testOptionalKeywordIobuf()));
+  req.testOptionalKeywordBool() = false;
+  EXPECT_EQ(false, *req.testOptionalKeywordBool());
+
+  // optional fields ref api
+  const auto lstringRef = longString();
+  req.testOptionalKeywordString_ref() = lstringRef;
+  EXPECT_EQ(lstringRef, *req.testOptionalKeywordString_ref());
+  req.testOptionalKeywordIobuf_ref() =
+      folly::IOBuf(folly::IOBuf::COPY_BUFFER, lstringRef);
+  EXPECT_EQ(
+      lstringRef, coalesceAndGetRange(*req.testOptionalKeywordIobuf_ref()));
+  req.testOptionalKeywordBool_ref() = false;
+  EXPECT_EQ(false, *req.testOptionalKeywordBool_ref());
 
   // Unordered map
   std::unordered_map<std::string, std::string> stringmap;
@@ -871,6 +902,16 @@ TEST(CarbonBasic, setAndGetFieldRefAPI) {
   req.testList_ref() = strings;
   EXPECT_EQ(strings, *req.testList_ref());
 
+  // optionals
+  EXPECT_FALSE(req.testOptionalKeywordString());
+  EXPECT_FALSE(req.testOptionalKeywordIobuf());
+  EXPECT_FALSE(req.testOptionalKeywordBool());
+
+  // optionals field_ref
+  EXPECT_FALSE(req.testOptionalKeywordString_ref());
+  EXPECT_FALSE(req.testOptionalKeywordIobuf_ref());
+  EXPECT_FALSE(req.testOptionalKeywordBool_ref());
+
   // Vector of enums
   std::vector<SimpleEnum> enums = {SimpleEnum::One,
                                    SimpleEnum::Zero,
@@ -971,6 +1012,27 @@ TEST(CarbonBasic, setAndGetFieldRefAPIThrift) {
   // double
   req.testDouble_ref() = 12345.789;
   EXPECT_DOUBLE_EQ(12345.789, *(req.testDouble_ref()));
+
+  // optional fields
+  const auto lstring = longString();
+  req.testOptionalKeywordString() = lstring;
+  EXPECT_EQ(lstring, *req.testOptionalKeywordString());
+  req.testOptionalKeywordIobuf() =
+      folly::IOBuf(folly::IOBuf::COPY_BUFFER, lstring);
+  EXPECT_EQ(lstring, coalesceAndGetRange(*req.testOptionalKeywordIobuf()));
+  req.testOptionalKeywordBool() = false;
+  EXPECT_EQ(false, *req.testOptionalKeywordBool());
+
+  // optionals field_ref
+  const auto lstringRef = longString();
+  req.testOptionalKeywordString_ref() = lstringRef;
+  EXPECT_EQ(lstringRef, *req.testOptionalKeywordString_ref());
+  req.testOptionalKeywordIobuf_ref() =
+      folly::IOBuf(folly::IOBuf::COPY_BUFFER, lstringRef);
+  EXPECT_EQ(
+      lstringRef, coalesceAndGetRange(*req.testOptionalKeywordIobuf_ref()));
+  req.testOptionalKeywordBool_ref() = false;
+  EXPECT_EQ(false, *req.testOptionalKeywordBool_ref());
 
   // string
   req.testShortString_ref() = kShortString.str();

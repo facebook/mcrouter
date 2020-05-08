@@ -48,6 +48,12 @@ class StructWithEnumField {
   StructWithEnumField(StructWithEnumField&&) = default;
   StructWithEnumField& operator=(StructWithEnumField&&) = default;
 
+  const Foo& test() const {
+    return underlyingThriftStruct_.test;
+  }
+  Foo& test() {
+    return underlyingThriftStruct_.test;
+  }
   FOLLY_ERASE ::apache::thrift::field_ref<const Foo&>
    test_ref() const& {
     return underlyingThriftStruct_.test_ref();
@@ -55,12 +61,6 @@ class StructWithEnumField {
   FOLLY_ERASE ::apache::thrift::field_ref<Foo&>
    test_ref() & {
     return underlyingThriftStruct_.test_ref();
-  }
-  const Foo& test() const {
-    return underlyingThriftStruct_.test;
-  }
-  Foo& test() {
-    return underlyingThriftStruct_.test;
   }
   const carbon::test_enum::thrift::StructWithEnumField& getThriftStruct() const {
     return underlyingThriftStruct_;

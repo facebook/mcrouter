@@ -195,6 +195,18 @@ void TestRequest::deserialize(carbon::CarbonProtocolReader& reader) {
         reader.readField(testF14VectorSet(), fieldType);
         break;
       }
+      case 41: {
+        reader.readField(testOptionalKeywordString(), fieldType);
+        break;
+      }
+      case 42: {
+        reader.readField(testOptionalKeywordIobuf(), fieldType);
+        break;
+      }
+      case 43: {
+        reader.readField(testOptionalKeywordBool(), fieldType);
+        break;
+      }
       case 100: {
         reader.readField(testType(), fieldType);
         break;

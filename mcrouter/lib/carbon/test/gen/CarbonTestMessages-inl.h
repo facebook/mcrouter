@@ -60,6 +60,9 @@ void TestRequest::serialize(Writer&& writer) const {
   writer.writeField(38 /* field id */, testF14NodeSet());
   writer.writeField(39 /* field id */, testF14ValueSet());
   writer.writeField(40 /* field id */, testF14VectorSet());
+  writer.writeField(41 /* field id */, testOptionalKeywordString());
+  writer.writeField(42 /* field id */, testOptionalKeywordIobuf());
+  writer.writeField(43 /* field id */, testOptionalKeywordBool());
   writer.writeField(100 /* field id */, testType());
   writer.writeFieldStop();
   writer.writeStructEnd();
@@ -193,6 +196,15 @@ void TestRequest::visitFields(V&& v) {
   if (!v.visitField(40, "testF14VectorSet", this->testF14VectorSet())) {
     return;
   }
+  if (!v.visitField(41, "testOptionalKeywordString", this->testOptionalKeywordString())) {
+    return;
+  }
+  if (!v.visitField(42, "testOptionalKeywordIobuf", this->testOptionalKeywordIobuf())) {
+    return;
+  }
+  if (!v.visitField(43, "testOptionalKeywordBool", this->testOptionalKeywordBool())) {
+    return;
+  }
   if (!v.visitField(100, "testType", this->testType())) {
     return;
   }
@@ -324,6 +336,15 @@ void TestRequest::visitFields(V&& v) const {
     return;
   }
   if (!v.visitField(40, "testF14VectorSet", this->testF14VectorSet())) {
+    return;
+  }
+  if (!v.visitField(41, "testOptionalKeywordString", this->testOptionalKeywordString())) {
+    return;
+  }
+  if (!v.visitField(42, "testOptionalKeywordIobuf", this->testOptionalKeywordIobuf())) {
+    return;
+  }
+  if (!v.visitField(43, "testOptionalKeywordBool", this->testOptionalKeywordBool())) {
     return;
   }
   if (!v.visitField(100, "testType", this->testType())) {

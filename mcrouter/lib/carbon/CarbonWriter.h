@@ -262,6 +262,15 @@ class CarbonWriter {
         false, "Unsupported type with CarbonWriter!");
   }
 
+  template <class T>
+  void writeField(
+      const int16_t id,
+      const apache::thrift::optional_field_ref<const T&> data) {
+    if (data.has_value()) {
+      writeFieldAlways(id, *data);
+    }
+  }
+
   void writeStructBegin() {
     writer_.writeStructBegin("");
   }

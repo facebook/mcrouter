@@ -35,6 +35,9 @@ void DummyThriftRequest::serialize(Writer&& writer) const {
   writer.writeField(14 /* field id */, testLongString());
   writer.writeField(15 /* field id */, testIobuf());
   writer.writeField(16 /* field id */, testList());
+  writer.writeField(17 /* field id */, testOptionalKeywordBool());
+  writer.writeField(18 /* field id */, testOptionalKeywordString());
+  writer.writeField(19 /* field id */, testOptionalKeywordIobuf());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
@@ -89,6 +92,15 @@ void DummyThriftRequest::visitFields(V&& v) {
   if (!v.visitField(16, "testList", this->testList())) {
     return;
   }
+  if (!v.visitField(17, "testOptionalKeywordBool", this->testOptionalKeywordBool())) {
+    return;
+  }
+  if (!v.visitField(18, "testOptionalKeywordString", this->testOptionalKeywordString())) {
+    return;
+  }
+  if (!v.visitField(19, "testOptionalKeywordIobuf", this->testOptionalKeywordIobuf())) {
+    return;
+  }
 }
 
 template <class V>
@@ -139,6 +151,15 @@ void DummyThriftRequest::visitFields(V&& v) const {
     return;
   }
   if (!v.visitField(16, "testList", this->testList())) {
+    return;
+  }
+  if (!v.visitField(17, "testOptionalKeywordBool", this->testOptionalKeywordBool())) {
+    return;
+  }
+  if (!v.visitField(18, "testOptionalKeywordString", this->testOptionalKeywordString())) {
+    return;
+  }
+  if (!v.visitField(19, "testOptionalKeywordIobuf", this->testOptionalKeywordIobuf())) {
     return;
   }
 }

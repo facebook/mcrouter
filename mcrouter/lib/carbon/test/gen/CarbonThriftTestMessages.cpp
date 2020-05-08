@@ -95,6 +95,18 @@ void DummyThriftRequest::deserialize(carbon::CarbonProtocolReader& reader) {
         reader.readField(testList(), fieldType);
         break;
       }
+      case 17: {
+        reader.readField(testOptionalKeywordBool(), fieldType);
+        break;
+      }
+      case 18: {
+        reader.readField(testOptionalKeywordString(), fieldType);
+        break;
+      }
+      case 19: {
+        reader.readField(testOptionalKeywordIobuf(), fieldType);
+        break;
+      }
       default: {
         reader.skip(fieldType);
         break;

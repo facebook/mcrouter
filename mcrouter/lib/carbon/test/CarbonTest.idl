@@ -53,6 +53,9 @@ request TestRequest with 1: SimpleStruct as Base {
   38: folly::F14NodeSet<std::string> testF14NodeSet;
   39: folly::F14ValueSet<std::string> testF14ValueSet;
   40: folly::F14VectorSet<std::string> testF14VectorSet;
+  41: optional std::string testOptionalKeywordString;
+  42: optional folly::IOBuf testOptionalKeywordIobuf;
+  43: optional bool testOptionalKeywordBool;
   100: UserType testType;
 };
 

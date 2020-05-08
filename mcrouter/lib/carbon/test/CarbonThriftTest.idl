@@ -24,6 +24,9 @@ request DummyThriftRequest {
   14: std::string testLongString;
   15: folly::IOBuf testIobuf;
   16: std::vector<std::string> testList;
+  17: optional bool testOptionalKeywordBool;
+  18: optional std::string testOptionalKeywordString;
+  19: optional folly::IOBuf testOptionalKeywordIobuf;
 };
 
 reply DummyThriftReply {
@@ -32,6 +35,6 @@ reply DummyThriftReply {
 };
 
 service {
-  gen_client_tool: true;
   enable_shutdown: true;
+  gen_client_tool: false;
 };

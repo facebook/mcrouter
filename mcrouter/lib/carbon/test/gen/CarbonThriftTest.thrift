@@ -35,6 +35,9 @@ struct DummyThriftRequest {
   14: string testLongString
   15: binary (cpp.type = "folly::IOBuf") testIobuf
   16: list<string> testList
+  17: optional bool testOptionalKeywordBool
+  18: optional string testOptionalKeywordString
+  19: optional binary (cpp.type = "folly::IOBuf") testOptionalKeywordIobuf
 }
 
 struct DummyThriftReply {
