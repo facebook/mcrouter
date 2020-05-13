@@ -46,8 +46,9 @@ inline mc_fbtrace_info_s* getFbTraceInfo(const carbon::RequestCommon&) {
   return nullptr;
 }
 
-template <class Request>
-inline nullptr_t traceRequestReceived(const Request& req) {
+inline nullptr_t traceRequestReceived(
+    const std::string& traceContext,
+    folly::StringPiece requestType) {
   // Do nothing by default.
   return nullptr;
 }
@@ -195,14 +196,8 @@ class TracingData;
 // Start tracing for a request.
 // NOTE: this function does not exist if LIBMC_FBTRACE_DISABLE is defined.
 std::shared_ptr<TracingData> traceRequestReceived(
-    const mc_fbtrace_info_t& trace,
+    const std::string& traceContext,
     folly::StringPiece requestType);
-
-template <class Request>
-inline std::shared_ptr<TracingData> traceRequestReceived(const Request& req) {
-  assert(getFbTraceInfo(req));
-  return traceRequestReceived(*getFbTraceInfo(req), Request::name);
-}
 
 #endif
 

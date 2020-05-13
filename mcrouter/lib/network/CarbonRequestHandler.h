@@ -70,7 +70,7 @@ class CarbonRequestHandler : public facebook::memcache::CarbonMessageDispatcher<
       const folly::IOBuf* reqBuf,
       std::true_type) {
     if (UNLIKELY(
-            facebook::mcrouter::getFbTraceInfo(req) != nullptr &&
+            !req.traceContext().empty() &&
             facebook::mcrouter::traceCheckRateLimit())) {
       onRequestImplWithTracingEnabled(
           std::move(ctx), std::move(req), headerInfo, reqBuf);
@@ -104,8 +104,8 @@ class CarbonRequestHandler : public facebook::memcache::CarbonMessageDispatcher<
       const folly::IOBuf* reqBuf) {
 #ifndef LIBMC_FBTRACE_DISABLE
     folly::RequestContextScopeGuard requestContextGuard;
-    auto tracingData =
-        facebook::mcrouter::traceRequestReceived(std::cref(req).get());
+    auto tracingData = facebook::mcrouter::traceRequestReceived(
+        req.traceContext(), Request::name);
     if (tracingData != nullptr) {
       // Mark the context as being traced by Artillery
       markContextAsTraced(ctx);
