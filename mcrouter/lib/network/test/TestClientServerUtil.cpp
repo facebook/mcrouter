@@ -14,6 +14,7 @@
 
 #include <glog/logging.h>
 
+#include <artillery/artillery2/api/cpp/instrumentation/mcrouter/MCRouterCarbonShim.h>
 #include <folly/Conv.h>
 #include <folly/fibers/EventBaseLoopController.h>
 #include <folly/fibers/FiberManager.h>
@@ -98,9 +99,7 @@ void TestServerOnRequest::onRequest(
       size_t valSize = folly::to<size_t>(key);
       value = std::string(valSize, 'a');
     } else if (req.key().fullKey() == "trace_id") {
-      const auto traceMetadata = req.traceToInts();
-      value =
-          folly::sformat("{}:{}", traceMetadata.first, traceMetadata.second);
+      value = folly::sformat("{}", req.traceContext());
     } else if (req.key().fullKey() != "empty") {
       value = req.key().fullKey().str();
     }
@@ -335,8 +334,10 @@ void TestClient::sendGet(
                this,
                timeoutMs]() {
     McGetRequest req(key);
+    std::string traceId;
     if (req.key().fullKey() == "trace_id") {
-      req.setTraceId({12345, 67890});
+      traceId = facebook::tracing::intsToString({12345, 67890});
+      req.setTraceContext(traceId);
     }
 
     try {
@@ -362,10 +363,10 @@ void TestClient::sendGet(
               value.size());
         } else if (req.key().fullKey() == "trace_id") {
           checkLogic(
-              value == "12345:67890",
+              value == traceId,
               "Expected value to equal trace ID {}, got {}",
-              "12345:67890",
-              value);
+              value,
+              traceId);
         } else {
           checkLogic(
               value == req.key().fullKey(),

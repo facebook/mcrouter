@@ -100,8 +100,6 @@ class McClientRequestContextBase
       const CodecIdRange& supportedCodecs,
       PayloadFormat payloadFormat);
 
-  virtual void sendTraceOnReply() = 0;
-
   virtual void replyErrorImpl(
       carbon::Result result,
       folly::StringPiece errorMessage) = 0;
@@ -199,11 +197,7 @@ class McClientRequestContext : public McClientRequestContextBase {
 
   // tracing fields
   const std::string& requestTraceContext_;
-#ifndef LIBMC_FBTRACE_DISABLE
-  const mc_fbtrace_info_s* fbtraceInfo_;
-#endif
 
-  void sendTraceOnReply() final;
   void replyErrorImpl(carbon::Result result, folly::StringPiece errorMessage)
       final;
 };

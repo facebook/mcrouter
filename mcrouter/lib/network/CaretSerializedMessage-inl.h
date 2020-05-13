@@ -18,10 +18,7 @@ namespace detail {
 
 template <class Request>
 std::pair<uint64_t, uint64_t> getRequestTraceId(const Request& req) {
-  if (!req.traceContext().empty()) {
-    return carbon::tracing::serializeTraceContext(req.traceContext());
-  }
-  return req.traceToInts();
+  return carbon::tracing::serializeTraceContext(req.traceContext());
 }
 
 template <class Reply>

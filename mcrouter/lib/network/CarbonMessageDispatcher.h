@@ -131,9 +131,6 @@ class CarbonMessageDispatcher {
     carbon::CarbonProtocolReader reader(cur);
     M req;
 
-    // set both traceId and traceContext, as there's no way of knowing which
-    // one we are using at this point.
-    req.setTraceId(headerInfo.traceId);
     req.setTraceContext(
         carbon::tracing::deserializeTraceContext(headerInfo.traceId));
 

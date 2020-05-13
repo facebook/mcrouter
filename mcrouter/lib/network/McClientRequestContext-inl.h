@@ -36,7 +36,6 @@ void McClientRequestContextBase::reply(Reply&& r) {
   auto* storage = reinterpret_cast<folly::Optional<Reply>*>(replyStorage_);
   assert(!storage->hasValue());
   storage->emplace(std::move(r));
-  sendTraceOnReply();
 }
 
 template <class Request>
@@ -132,21 +131,7 @@ McClientRequestContext<Request>::McClientRequestContext(
           onStateChange,
           supportedCodecs,
           payloadFormat),
-      requestTraceContext_(request.traceContext())
-#ifndef LIBMC_FBTRACE_DISABLE
-      ,
-      fbtraceInfo_(facebook::mcrouter::getFbTraceInfo(request))
-#endif
-{
-}
-
-template <class Request>
-void McClientRequestContext<Request>::sendTraceOnReply() {
-#ifndef LIBMC_FBTRACE_DISABLE
-  facebook::mcrouter::fbTraceOnReceive(
-      fbtraceInfo_, replyStorage_.value().result());
-#endif
-}
+      requestTraceContext_(request.traceContext()) {}
 
 template <class Reply>
 void McClientRequestContextQueue::reply(
