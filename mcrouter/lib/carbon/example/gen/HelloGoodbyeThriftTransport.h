@@ -51,8 +51,8 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
   hellogoodbye::GoodbyeReply sendSync(
       const hellogoodbye::GoodbyeRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<hellogoodbye::GoodbyeReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -61,6 +61,12 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
 #endif
         reply = thriftClient->sync_complete_goodbye(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif
@@ -77,8 +83,8 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
   hellogoodbye::HelloReply sendSync(
       const hellogoodbye::HelloRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<hellogoodbye::HelloReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -89,6 +95,12 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
         rpcOptions.setWriteHeader("message", folly::to<std::string>(request.message()));
         reply = thriftClient->sync_complete_hello(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif
@@ -105,8 +117,8 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
   McVersionReply sendSync(
       const McVersionRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -115,6 +127,12 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
 #endif
         reply = thriftClient->sync_complete_mcVersion(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif

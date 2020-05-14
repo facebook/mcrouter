@@ -51,8 +51,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
   McAddReply sendSync(
       const McAddRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McAddReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -61,6 +61,12 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
 #endif
         reply = thriftClient->sync_complete_mcAdd(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif
@@ -77,8 +83,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
   McAppendReply sendSync(
       const McAppendRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McAppendReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -87,6 +93,12 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
 #endif
         reply = thriftClient->sync_complete_mcAppend(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif
@@ -103,8 +115,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
   McCasReply sendSync(
       const McCasRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McCasReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -113,6 +125,12 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
 #endif
         reply = thriftClient->sync_complete_mcCas(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif
@@ -129,8 +147,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
   McDecrReply sendSync(
       const McDecrRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McDecrReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -139,6 +157,12 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
 #endif
         reply = thriftClient->sync_complete_mcDecr(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif
@@ -155,8 +179,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
   McDeleteReply sendSync(
       const McDeleteRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McDeleteReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -165,6 +189,12 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
 #endif
         reply = thriftClient->sync_complete_mcDelete(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif
@@ -181,8 +211,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
   McFlushAllReply sendSync(
       const McFlushAllRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McFlushAllReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -191,6 +221,12 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
 #endif
         reply = thriftClient->sync_complete_mcFlushAll(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif
@@ -207,8 +243,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
   McFlushReReply sendSync(
       const McFlushReRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McFlushReReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -217,6 +253,12 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
 #endif
         reply = thriftClient->sync_complete_mcFlushRe(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif
@@ -233,8 +275,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
   McGatReply sendSync(
       const McGatRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McGatReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -243,6 +285,12 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
 #endif
         reply = thriftClient->sync_complete_mcGat(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif
@@ -259,8 +307,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
   McGatsReply sendSync(
       const McGatsRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McGatsReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -269,6 +317,12 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
 #endif
         reply = thriftClient->sync_complete_mcGats(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif
@@ -285,8 +339,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
   McGetReply sendSync(
       const McGetRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McGetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -295,6 +349,12 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
 #endif
         reply = thriftClient->sync_complete_mcGet(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif
@@ -311,8 +371,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
   McGetsReply sendSync(
       const McGetsRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McGetsReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -321,6 +381,12 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
 #endif
         reply = thriftClient->sync_complete_mcGets(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif
@@ -337,8 +403,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
   McIncrReply sendSync(
       const McIncrRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McIncrReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -347,6 +413,12 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
 #endif
         reply = thriftClient->sync_complete_mcIncr(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif
@@ -363,8 +435,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
   McLeaseGetReply sendSync(
       const McLeaseGetRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McLeaseGetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -373,6 +445,12 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
 #endif
         reply = thriftClient->sync_complete_mcLeaseGet(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif
@@ -389,8 +467,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
   McLeaseSetReply sendSync(
       const McLeaseSetRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McLeaseSetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -399,6 +477,12 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
 #endif
         reply = thriftClient->sync_complete_mcLeaseSet(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif
@@ -415,8 +499,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
   McMetagetReply sendSync(
       const McMetagetRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McMetagetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -425,6 +509,12 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
 #endif
         reply = thriftClient->sync_complete_mcMetaget(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif
@@ -441,8 +531,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
   McPrependReply sendSync(
       const McPrependRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McPrependReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -451,6 +541,12 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
 #endif
         reply = thriftClient->sync_complete_mcPrepend(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif
@@ -467,8 +563,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
   McReplaceReply sendSync(
       const McReplaceRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McReplaceReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -477,6 +573,12 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
 #endif
         reply = thriftClient->sync_complete_mcReplace(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif
@@ -493,8 +595,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
   McSetReply sendSync(
       const McSetRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McSetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -503,6 +605,12 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
 #endif
         reply = thriftClient->sync_complete_mcSet(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif
@@ -519,8 +627,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
   McTouchReply sendSync(
       const McTouchRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McTouchReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -529,6 +637,12 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
 #endif
         reply = thriftClient->sync_complete_mcTouch(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif
@@ -545,8 +659,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
   McVersionReply sendSync(
       const McVersionRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -555,6 +669,12 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
 #endif
         reply = thriftClient->sync_complete_mcVersion(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif

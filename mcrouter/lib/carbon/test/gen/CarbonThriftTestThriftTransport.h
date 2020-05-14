@@ -51,8 +51,8 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
   carbon::test::DummyThriftReply sendSync(
       const carbon::test::DummyThriftRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<carbon::test::DummyThriftReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -61,6 +61,12 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
 #endif
         reply = thriftClient->sync_complete_thrift_test(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif
@@ -77,8 +83,8 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
   McVersionReply sendSync(
       const McVersionRequest& request,
       std::chrono::milliseconds timeout,
-      RpcStatsContext* /* rpcContext */ = nullptr) {
-    return sendSyncImpl([this, &request, timeout] {
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
@@ -87,6 +93,12 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
 #endif
         reply = thriftClient->sync_complete_mcVersion(
             rpcOptions, request);
+        if (rpcStatsContext && reply.hasValue()) {
+            auto& stats = reply->responseContext.rpcSizeStats;
+            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
 #endif
