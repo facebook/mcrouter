@@ -66,12 +66,28 @@ class TestRequest : public carbon::RequestCommon {
   const SimpleStruct& asBase() const {
     return _carbon_simplestruct_;
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<const SimpleStruct&>
+   base_ref() const& {
+    return {this->_carbon_simplestruct_, __isset._carbon_simplestruct_};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<SimpleStruct&>
+   base_ref() & {
+    return {this->_carbon_simplestruct_, __isset._carbon_simplestruct_};
+  }
   BaseStruct& asBaseStruct() {
     markBufferAsDirty();
     return asBase().asBaseStruct();
   }
   const BaseStruct& asBaseStruct() const {
     return asBase().asBaseStruct();
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<const BaseStruct&>
+   baseStruct_ref() const& {
+    return base_ref()->baseStruct_ref();
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<BaseStruct&>
+   baseStruct_ref() & {
+    return base_ref()->baseStruct_ref();
   }
   int32_t int32Member() const {
     return _carbon_simplestruct_.int32Member();
@@ -107,6 +123,46 @@ class TestRequest : public carbon::RequestCommon {
   int64_t& baseInt64Member() {
     markBufferAsDirty();
     return _carbon_simplestruct_.baseInt64Member();
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<const int32_t&>
+   int32Member_ref() const& {
+    return _carbon_simplestruct_.int32Member_ref();
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<int32_t&>
+   int32Member_ref() & {
+    return _carbon_simplestruct_.int32Member_ref();
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<const std::string&>
+   stringMember_ref() const& {
+    return _carbon_simplestruct_.stringMember_ref();
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<std::string&>
+   stringMember_ref() & {
+    return _carbon_simplestruct_.stringMember_ref();
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<const test2::util::SimpleEnum&>
+   enumMember_ref() const& {
+    return _carbon_simplestruct_.enumMember_ref();
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<test2::util::SimpleEnum&>
+   enumMember_ref() & {
+    return _carbon_simplestruct_.enumMember_ref();
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<const std::vector<test2::util::SimpleStruct>&>
+   vectorMember_ref() const& {
+    return _carbon_simplestruct_.vectorMember_ref();
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<std::vector<test2::util::SimpleStruct>&>
+   vectorMember_ref() & {
+    return _carbon_simplestruct_.vectorMember_ref();
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<const int64_t&>
+   baseInt64Member_ref() const& {
+    return _carbon_simplestruct_.baseInt64Member_ref();
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<int64_t&>
+   baseInt64Member_ref() & {
+    return _carbon_simplestruct_.baseInt64Member_ref();
   }
   const carbon::Keys<folly::IOBuf>& key() const {
     return key_;
@@ -756,6 +812,7 @@ class TestRequest : public carbon::RequestCommon {
 
  private:
   struct __isset {
+    bool _carbon_simplestruct_;
     bool key;
     bool testEnum;
     bool testBool;

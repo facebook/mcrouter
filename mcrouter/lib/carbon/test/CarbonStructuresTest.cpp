@@ -1051,3 +1051,32 @@ TEST(CarbonBasic, setAndGetFieldRefAPIThrift) {
   req.testList_ref() = strings;
   EXPECT_EQ(strings, *(req.testList_ref()));
 }
+
+TEST(CarbonBasic, defaultConstructedMixinFieldRefAPI) {
+  TestRequest req;
+  TestRequestStringKey req2;
+
+  // Mixed-in member functions
+  EXPECT_EQ(0, *req.int32Member_ref());
+  EXPECT_TRUE(req.stringMember_ref()->empty());
+  EXPECT_EQ(SimpleEnum::Twenty, *req.enumMember_ref());
+  EXPECT_EQ(0, *req.baseInt64Member_ref());
+
+  // Member struct
+  EXPECT_EQ(0, *req.testStruct_ref()->int32Member_ref());
+  EXPECT_TRUE(req.testStruct_ref()->stringMember_ref()->empty());
+  EXPECT_EQ(SimpleEnum::Twenty, *req.testStruct_ref()->enumMember_ref());
+}
+
+TEST(CarbonBasic, mixinsFieldRefAPI) {
+  TestRequest request;
+  EXPECT_EQ(0, *request.base_ref()->baseStruct_ref()->baseInt64Member_ref());
+
+  request.base_ref()->baseStruct_ref()->baseInt64Member_ref() = 12345;
+  // Exercise the different ways we can access the mixed-in baseInt64Member
+  EXPECT_EQ(
+      12345, *request.base_ref()->baseStruct_ref()->baseInt64Member_ref());
+  EXPECT_EQ(12345, *request.base_ref()->baseInt64Member_ref());
+  EXPECT_EQ(12345, *request.baseStruct_ref()->baseInt64Member_ref());
+  EXPECT_EQ(12345, *request.baseInt64Member_ref());
+}

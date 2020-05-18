@@ -92,11 +92,27 @@ class SimpleStruct {
   const BaseStruct& asBaseStruct() const {
     return _carbon_basestruct_;
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<const BaseStruct&>
+   baseStruct_ref() const& {
+    return {this->_carbon_basestruct_, __isset._carbon_basestruct_};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<BaseStruct&>
+   baseStruct_ref() & {
+    return {this->_carbon_basestruct_, __isset._carbon_basestruct_};
+  }
   int64_t baseInt64Member() const {
     return _carbon_basestruct_.baseInt64Member();
   }
   int64_t& baseInt64Member() {
     return _carbon_basestruct_.baseInt64Member();
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<const int64_t&>
+   baseInt64Member_ref() const& {
+    return _carbon_basestruct_.baseInt64Member_ref();
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<int64_t&>
+   baseInt64Member_ref() & {
+    return _carbon_basestruct_.baseInt64Member_ref();
   }
   int32_t int32Member() const {
     return int32Member_;
@@ -167,6 +183,7 @@ class SimpleStruct {
 
  private:
   struct __isset {
+    bool _carbon_basestruct_;
     bool int32Member;
     bool stringMember;
     bool enumMember;
