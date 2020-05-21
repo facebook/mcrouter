@@ -140,6 +140,10 @@ class ProxyDestinationBase {
    */
   virtual void resetInactive() = 0;
 
+  std::chrono::milliseconds shortestConnectTimeout() const {
+    return shortestConnectTimeout_;
+  }
+
  protected:
   virtual void updateTransportTimeoutsIfShorter(
       std::chrono::milliseconds shortestConnectTimeout,
@@ -156,9 +160,6 @@ class ProxyDestinationBase {
 
   Stats& stats() {
     return stats_;
-  }
-  std::chrono::milliseconds shortestConnectTimeout() const {
-    return shortestConnectTimeout_;
   }
   std::chrono::milliseconds shortestWriteTimeout() const {
     return shortestWriteTimeout_;

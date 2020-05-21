@@ -133,11 +133,12 @@ class DestinationRoute {
   ReplyT<Request> checkAndRoute(const Request& req) const {
     auto& ctx = fiber_local<RouterInfo>::getSharedCtx();
     auto requestClass = fiber_local<RouterInfo>::getRequestClass();
+    bool isShadow = requestClass.is(RequestClass::kShadow);
     auto proxy = &ctx->proxy();
     // If not a shadow destination, check if the request deadline has exceeded
     // If yes, return DeadlineExceeded reply
-    if (!requestClass.is(RequestClass::kShadow) &&
-        !disableRequestDeadlineCheck_ && isRequestDeadlineExceeded(req)) {
+    if (!isShadow && !disableRequestDeadlineCheck_ &&
+        isRequestDeadlineExceeded(req)) {
       // Return remote error until all clients are updated to latest version
       // And un-comment the following line for returning the correct response
       // return constructAndLog(req, *ctx, DeadlineExceededReply);
@@ -159,14 +160,13 @@ class DestinationRoute {
       ctx->setPoolStatsIndex(poolStatIndex_);
     }
     if (ctx->recording()) {
-      bool isShadow = requestClass.is(RequestClass::kShadow);
       ctx->recordDestination(
           PoolContext{poolName_, indexInPool_, isShadow},
           *destination_->accessPoint());
       return constructAndLog(req, *ctx, DefaultReply, req);
     }
 
-    if (requestClass.is(RequestClass::kShadow)) {
+    if (isShadow) {
       if (proxy->router().opts().target_max_shadow_requests > 0 &&
           pendingShadowReqs_ >=
               proxy->router().opts().target_max_shadow_requests) {
@@ -177,7 +177,7 @@ class DestinationRoute {
     }
 
     SCOPE_EXIT {
-      if (requestClass.is(RequestClass::kShadow)) {
+      if (isShadow) {
         auto& mutableCounter = const_cast<size_t&>(pendingShadowReqs_);
         --mutableCounter;
       }
@@ -229,11 +229,38 @@ class DestinationRoute {
       strippedRoutingPrefix = req.key().routingPrefix();
     }
 
-    if (fiber_local<RouterInfo>::getFailoverTag()) {
+    uint64_t remainingDeadlineTime = 0;
+    uint64_t totalDestTimeout = 0;
+    auto requestClass = fiber_local<RouterInfo>::getRequestClass();
+    bool isShadow = requestClass.is(RequestClass::kShadow);
+
+    if (!isShadow && !disableRequestDeadlineCheck_) {
+      auto remainingTime = getRemainingTime(req);
+      // If deadline request is being used, initialize total timeout
+      // (sum of request timeout and connect timeout) and remaining time to
+      // deadline
+      if (remainingTime.first) {
+        remainingDeadlineTime = remainingTime.second;
+        totalDestTimeout =
+            timeout_.count() + destination_->shortestConnectTimeout().count();
+      }
+    }
+
+    // Copy the request if failoverTag is set or if the total destination
+    // timeout is less the remaining time to deadline
+    if (fiber_local<RouterInfo>::getFailoverTag() ||
+        totalDestTimeout < remainingDeadlineTime) {
       if (!newReq) {
         newReq.emplace(req);
       }
-      carbon::detail::setRequestFailover(*newReq);
+      if (totalDestTimeout < remainingDeadlineTime) {
+        auto proxy = &fiber_local<RouterInfo>::getSharedCtx()->proxy();
+        proxy->stats().increment(request_deadline_num_copy_stat);
+        setRequestDeadline(*newReq, totalDestTimeout);
+      }
+      if (fiber_local<RouterInfo>::getFailoverTag()) {
+        carbon::detail::setRequestFailover(*newReq);
+      }
     }
 
     const auto& reqToSend = newReq ? *newReq : req;

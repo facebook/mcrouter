@@ -239,6 +239,7 @@ STUI(custom_policy_large_assoc_reqs_count, 0, 1)
 STUI(dest_with_no_failure_domain_count, 0, 1)
 STUI(failover_custom_db_disabled_region_count, 0, 1)
 STUI(failover_custom_db_disabled_all_regions_count, 0, 1)
+STUI(request_deadline_num_copy, 0, 1)
 #undef GROUP
 #define GROUP ods_stats | detailed_stats | rate_stats
 STUIR(final_result_error, 0, 1)

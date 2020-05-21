@@ -85,7 +85,7 @@ std::pair<bool, uint64_t> getRemainingTime(const Request& req) {
   if constexpr (hasConstDeadlineMs<Request>) {
     auto deadlineMs = req.deadlineMs();
     auto currentTime = facebook::memcache::mcrouter::getCurrentTimeInMs();
-    if (deadlineMs() > 0 && (deadlineMs > currentTime)) {
+    if (deadlineMs > 0 && (deadlineMs > currentTime)) {
       return {true, deadlineMs - currentTime};
     }
     return {true, 0};
