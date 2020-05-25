@@ -58,6 +58,11 @@ class BaseStruct {
    baseInt64Member_ref() & {
     return {this->baseInt64Member_, __isset.baseInt64Member};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<int64_t&&>
+   baseInt64Member_ref() && {
+      return {std::move(this->baseInt64Member_), __isset.baseInt64Member};
+  }
+  
 
   template <class Writer>
   void serialize(Writer&& writer) const;
@@ -146,6 +151,11 @@ class SimpleStruct {
    int32Member_ref() & {
     return {this->int32Member_, __isset.int32Member};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<int32_t&&>
+   int32Member_ref() && {
+      return {std::move(this->int32Member_), __isset.int32Member};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const std::string&>
    stringMember_ref() const& {
     return {this->stringMember_, __isset.stringMember};
@@ -154,6 +164,11 @@ class SimpleStruct {
    stringMember_ref() & {
     return {this->stringMember_, __isset.stringMember};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<std::string&&>
+   stringMember_ref() && {
+      return {std::move(this->stringMember_), __isset.stringMember};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const test2::util::SimpleEnum&>
    enumMember_ref() const& {
     return {this->enumMember_, __isset.enumMember};
@@ -162,6 +177,11 @@ class SimpleStruct {
    enumMember_ref() & {
     return {this->enumMember_, __isset.enumMember};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<test2::util::SimpleEnum&&>
+   enumMember_ref() && {
+      return {std::move(this->enumMember_), __isset.enumMember};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const std::vector<test2::util::SimpleStruct>&>
    vectorMember_ref() const& {
     return {this->vectorMember_, __isset.vectorMember};
@@ -170,6 +190,11 @@ class SimpleStruct {
    vectorMember_ref() & {
     return {this->vectorMember_, __isset.vectorMember};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<std::vector<test2::util::SimpleStruct>&&>
+   vectorMember_ref() && {
+      return {std::move(this->vectorMember_), __isset.vectorMember};
+  }
+  
 
   template <class Writer>
   void serialize(Writer&& writer) const;

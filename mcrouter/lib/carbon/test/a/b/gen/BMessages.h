@@ -66,6 +66,11 @@ class SimpleStruct {
    member1_ref() & {
     return {this->member1_, __isset.member1};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<int64_t&&>
+   member1_ref() && {
+      return {std::move(this->member1_), __isset.member1};
+  }
+  
 
   template <class Writer>
   void serialize(Writer&& writer) const;
@@ -253,6 +258,11 @@ class YetAnotherRequest : public carbon::RequestCommon {
    key_ref() & {
     return {this->key_, __isset.key};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Keys<folly::IOBuf>&&>
+   key_ref() && {
+      return {std::move(this->key_), __isset.key};
+  }
+  
   template <class Writer>
   void serialize(Writer&& writer) const;
 
@@ -298,6 +308,11 @@ class YetAnotherReply : public carbon::ReplyCommon {
    result_ref() & {
     return {this->result_, __isset.result};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Result&&>
+   result_ref() && {
+      return {std::move(this->result_), __isset.result};
+  }
+  
 
   template <class Writer>
   void serialize(Writer&& writer) const;

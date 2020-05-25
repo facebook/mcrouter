@@ -62,6 +62,11 @@ class StructWithEnumField {
    test_ref() & {
     return underlyingThriftStruct_.test_ref();
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<Foo&&>
+   test_ref() && {
+    return std::move(underlyingThriftStruct_).test_ref();
+  }
+  
   const carbon::test_enum::thrift::StructWithEnumField& getThriftStruct() const {
     return underlyingThriftStruct_;
   }

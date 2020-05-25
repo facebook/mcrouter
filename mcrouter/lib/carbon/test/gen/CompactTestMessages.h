@@ -183,6 +183,11 @@ class TestCompactRequest : public carbon::RequestCommon {
    key_ref() & {
     return {this->key_, __isset.key};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Keys<std::string>&&>
+   key_ref() && {
+      return {std::move(this->key_), __isset.key};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const SimpleEnum&>
    testEnum_ref() const& {
     return {this->testEnum_, __isset.testEnum};
@@ -191,6 +196,11 @@ class TestCompactRequest : public carbon::RequestCommon {
    testEnum_ref() & {
     return {this->testEnum_, __isset.testEnum};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<SimpleEnum&&>
+   testEnum_ref() && {
+      return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const bool&>
    testBool_ref() const& {
     return {this->testBool_, __isset.testBool};
@@ -199,6 +209,11 @@ class TestCompactRequest : public carbon::RequestCommon {
    testBool_ref() & {
     return {this->testBool_, __isset.testBool};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<bool&&>
+   testBool_ref() && {
+      return {std::move(this->testBool_), __isset.testBool};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const char&>
    testChar_ref() const& {
     return {this->testChar_, __isset.testChar};
@@ -207,6 +222,11 @@ class TestCompactRequest : public carbon::RequestCommon {
    testChar_ref() & {
     return {this->testChar_, __isset.testChar};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<char&&>
+   testChar_ref() && {
+      return {std::move(this->testChar_), __isset.testChar};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const int8_t&>
    testInt8_ref() const& {
     return {this->testInt8_, __isset.testInt8};
@@ -215,6 +235,11 @@ class TestCompactRequest : public carbon::RequestCommon {
    testInt8_ref() & {
     return {this->testInt8_, __isset.testInt8};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<int8_t&&>
+   testInt8_ref() && {
+      return {std::move(this->testInt8_), __isset.testInt8};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const int16_t&>
    testInt16_ref() const& {
     return {this->testInt16_, __isset.testInt16};
@@ -223,6 +248,11 @@ class TestCompactRequest : public carbon::RequestCommon {
    testInt16_ref() & {
     return {this->testInt16_, __isset.testInt16};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<int16_t&&>
+   testInt16_ref() && {
+      return {std::move(this->testInt16_), __isset.testInt16};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const int32_t&>
    testInt32_ref() const& {
     return {this->testInt32_, __isset.testInt32};
@@ -231,6 +261,11 @@ class TestCompactRequest : public carbon::RequestCommon {
    testInt32_ref() & {
     return {this->testInt32_, __isset.testInt32};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<int32_t&&>
+   testInt32_ref() && {
+      return {std::move(this->testInt32_), __isset.testInt32};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const int64_t&>
    testInt64_ref() const& {
     return {this->testInt64_, __isset.testInt64};
@@ -239,6 +274,11 @@ class TestCompactRequest : public carbon::RequestCommon {
    testInt64_ref() & {
     return {this->testInt64_, __isset.testInt64};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<int64_t&&>
+   testInt64_ref() && {
+      return {std::move(this->testInt64_), __isset.testInt64};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const uint8_t&>
    testUInt8_ref() const& {
     return {this->testUInt8_, __isset.testUInt8};
@@ -247,6 +287,11 @@ class TestCompactRequest : public carbon::RequestCommon {
    testUInt8_ref() & {
     return {this->testUInt8_, __isset.testUInt8};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<uint8_t&&>
+   testUInt8_ref() && {
+      return {std::move(this->testUInt8_), __isset.testUInt8};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const uint16_t&>
    testUInt16_ref() const& {
     return {this->testUInt16_, __isset.testUInt16};
@@ -255,6 +300,11 @@ class TestCompactRequest : public carbon::RequestCommon {
    testUInt16_ref() & {
     return {this->testUInt16_, __isset.testUInt16};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<uint16_t&&>
+   testUInt16_ref() && {
+      return {std::move(this->testUInt16_), __isset.testUInt16};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const uint32_t&>
    testUInt32_ref() const& {
     return {this->testUInt32_, __isset.testUInt32};
@@ -263,6 +313,11 @@ class TestCompactRequest : public carbon::RequestCommon {
    testUInt32_ref() & {
     return {this->testUInt32_, __isset.testUInt32};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<uint32_t&&>
+   testUInt32_ref() && {
+      return {std::move(this->testUInt32_), __isset.testUInt32};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const uint64_t&>
    testUInt64_ref() const& {
     return {this->testUInt64_, __isset.testUInt64};
@@ -271,6 +326,11 @@ class TestCompactRequest : public carbon::RequestCommon {
    testUInt64_ref() & {
     return {this->testUInt64_, __isset.testUInt64};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<uint64_t&&>
+   testUInt64_ref() && {
+      return {std::move(this->testUInt64_), __isset.testUInt64};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const std::string&>
    testShortString_ref() const& {
     return {this->testShortString_, __isset.testShortString};
@@ -279,6 +339,11 @@ class TestCompactRequest : public carbon::RequestCommon {
    testShortString_ref() & {
     return {this->testShortString_, __isset.testShortString};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<std::string&&>
+   testShortString_ref() && {
+      return {std::move(this->testShortString_), __isset.testShortString};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const std::string&>
    testLongString_ref() const& {
     return {this->testLongString_, __isset.testLongString};
@@ -287,6 +352,11 @@ class TestCompactRequest : public carbon::RequestCommon {
    testLongString_ref() & {
     return {this->testLongString_, __isset.testLongString};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<std::string&&>
+   testLongString_ref() && {
+      return {std::move(this->testLongString_), __isset.testLongString};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    testIobuf_ref() const& {
     return {this->testIobuf_, __isset.testIobuf};
@@ -295,6 +365,11 @@ class TestCompactRequest : public carbon::RequestCommon {
    testIobuf_ref() & {
     return {this->testIobuf_, __isset.testIobuf};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   testIobuf_ref() && {
+      return {std::move(this->testIobuf_), __isset.testIobuf};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const std::vector<std::string>&>
    testList_ref() const& {
     return {this->testList_, __isset.testList};
@@ -303,6 +378,11 @@ class TestCompactRequest : public carbon::RequestCommon {
    testList_ref() & {
     return {this->testList_, __isset.testList};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<std::vector<std::string>&&>
+   testList_ref() && {
+      return {std::move(this->testList_), __isset.testList};
+  }
+  
   template <class Writer>
   void serialize(Writer&& writer) const;
 
@@ -390,6 +470,11 @@ class TestCompactReply : public carbon::ReplyCommon {
    result_ref() & {
     return {this->result_, __isset.result};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Result&&>
+   result_ref() && {
+      return {std::move(this->result_), __isset.result};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const int32_t&>
    valInt32_ref() const& {
     return {this->valInt32_, __isset.valInt32};
@@ -398,6 +483,11 @@ class TestCompactReply : public carbon::ReplyCommon {
    valInt32_ref() & {
     return {this->valInt32_, __isset.valInt32};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<int32_t&&>
+   valInt32_ref() && {
+      return {std::move(this->valInt32_), __isset.valInt32};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const int64_t&>
    valInt64_ref() const& {
     return {this->valInt64_, __isset.valInt64};
@@ -406,6 +496,11 @@ class TestCompactReply : public carbon::ReplyCommon {
    valInt64_ref() & {
     return {this->valInt64_, __isset.valInt64};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<int64_t&&>
+   valInt64_ref() && {
+      return {std::move(this->valInt64_), __isset.valInt64};
+  }
+  
 
   template <class Writer>
   void serialize(Writer&& writer) const;

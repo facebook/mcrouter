@@ -291,6 +291,11 @@ class ManyFields {
    buf1_ref() & {
     return {this->buf1_, __isset.buf1};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf1_ref() && {
+      return {std::move(this->buf1_), __isset.buf1};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf2_ref() const& {
     return {this->buf2_, __isset.buf2};
@@ -299,6 +304,11 @@ class ManyFields {
    buf2_ref() & {
     return {this->buf2_, __isset.buf2};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf2_ref() && {
+      return {std::move(this->buf2_), __isset.buf2};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf3_ref() const& {
     return {this->buf3_, __isset.buf3};
@@ -307,6 +317,11 @@ class ManyFields {
    buf3_ref() & {
     return {this->buf3_, __isset.buf3};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf3_ref() && {
+      return {std::move(this->buf3_), __isset.buf3};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf4_ref() const& {
     return {this->buf4_, __isset.buf4};
@@ -315,6 +330,11 @@ class ManyFields {
    buf4_ref() & {
     return {this->buf4_, __isset.buf4};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf4_ref() && {
+      return {std::move(this->buf4_), __isset.buf4};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf5_ref() const& {
     return {this->buf5_, __isset.buf5};
@@ -323,6 +343,11 @@ class ManyFields {
    buf5_ref() & {
     return {this->buf5_, __isset.buf5};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf5_ref() && {
+      return {std::move(this->buf5_), __isset.buf5};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf6_ref() const& {
     return {this->buf6_, __isset.buf6};
@@ -331,6 +356,11 @@ class ManyFields {
    buf6_ref() & {
     return {this->buf6_, __isset.buf6};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf6_ref() && {
+      return {std::move(this->buf6_), __isset.buf6};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf7_ref() const& {
     return {this->buf7_, __isset.buf7};
@@ -339,6 +369,11 @@ class ManyFields {
    buf7_ref() & {
     return {this->buf7_, __isset.buf7};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf7_ref() && {
+      return {std::move(this->buf7_), __isset.buf7};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf8_ref() const& {
     return {this->buf8_, __isset.buf8};
@@ -347,6 +382,11 @@ class ManyFields {
    buf8_ref() & {
     return {this->buf8_, __isset.buf8};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf8_ref() && {
+      return {std::move(this->buf8_), __isset.buf8};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf9_ref() const& {
     return {this->buf9_, __isset.buf9};
@@ -355,6 +395,11 @@ class ManyFields {
    buf9_ref() & {
     return {this->buf9_, __isset.buf9};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf9_ref() && {
+      return {std::move(this->buf9_), __isset.buf9};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf10_ref() const& {
     return {this->buf10_, __isset.buf10};
@@ -363,6 +408,11 @@ class ManyFields {
    buf10_ref() & {
     return {this->buf10_, __isset.buf10};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf10_ref() && {
+      return {std::move(this->buf10_), __isset.buf10};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf11_ref() const& {
     return {this->buf11_, __isset.buf11};
@@ -371,6 +421,11 @@ class ManyFields {
    buf11_ref() & {
     return {this->buf11_, __isset.buf11};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf11_ref() && {
+      return {std::move(this->buf11_), __isset.buf11};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf12_ref() const& {
     return {this->buf12_, __isset.buf12};
@@ -379,6 +434,11 @@ class ManyFields {
    buf12_ref() & {
     return {this->buf12_, __isset.buf12};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf12_ref() && {
+      return {std::move(this->buf12_), __isset.buf12};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf13_ref() const& {
     return {this->buf13_, __isset.buf13};
@@ -387,6 +447,11 @@ class ManyFields {
    buf13_ref() & {
     return {this->buf13_, __isset.buf13};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf13_ref() && {
+      return {std::move(this->buf13_), __isset.buf13};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf14_ref() const& {
     return {this->buf14_, __isset.buf14};
@@ -395,6 +460,11 @@ class ManyFields {
    buf14_ref() & {
     return {this->buf14_, __isset.buf14};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf14_ref() && {
+      return {std::move(this->buf14_), __isset.buf14};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf15_ref() const& {
     return {this->buf15_, __isset.buf15};
@@ -403,6 +473,11 @@ class ManyFields {
    buf15_ref() & {
     return {this->buf15_, __isset.buf15};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf15_ref() && {
+      return {std::move(this->buf15_), __isset.buf15};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf16_ref() const& {
     return {this->buf16_, __isset.buf16};
@@ -411,6 +486,11 @@ class ManyFields {
    buf16_ref() & {
     return {this->buf16_, __isset.buf16};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf16_ref() && {
+      return {std::move(this->buf16_), __isset.buf16};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf17_ref() const& {
     return {this->buf17_, __isset.buf17};
@@ -419,6 +499,11 @@ class ManyFields {
    buf17_ref() & {
     return {this->buf17_, __isset.buf17};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf17_ref() && {
+      return {std::move(this->buf17_), __isset.buf17};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf18_ref() const& {
     return {this->buf18_, __isset.buf18};
@@ -427,6 +512,11 @@ class ManyFields {
    buf18_ref() & {
     return {this->buf18_, __isset.buf18};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf18_ref() && {
+      return {std::move(this->buf18_), __isset.buf18};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf19_ref() const& {
     return {this->buf19_, __isset.buf19};
@@ -435,6 +525,11 @@ class ManyFields {
    buf19_ref() & {
     return {this->buf19_, __isset.buf19};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf19_ref() && {
+      return {std::move(this->buf19_), __isset.buf19};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf20_ref() const& {
     return {this->buf20_, __isset.buf20};
@@ -443,6 +538,11 @@ class ManyFields {
    buf20_ref() & {
     return {this->buf20_, __isset.buf20};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf20_ref() && {
+      return {std::move(this->buf20_), __isset.buf20};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf21_ref() const& {
     return {this->buf21_, __isset.buf21};
@@ -451,6 +551,11 @@ class ManyFields {
    buf21_ref() & {
     return {this->buf21_, __isset.buf21};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf21_ref() && {
+      return {std::move(this->buf21_), __isset.buf21};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf22_ref() const& {
     return {this->buf22_, __isset.buf22};
@@ -459,6 +564,11 @@ class ManyFields {
    buf22_ref() & {
     return {this->buf22_, __isset.buf22};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf22_ref() && {
+      return {std::move(this->buf22_), __isset.buf22};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf23_ref() const& {
     return {this->buf23_, __isset.buf23};
@@ -467,6 +577,11 @@ class ManyFields {
    buf23_ref() & {
     return {this->buf23_, __isset.buf23};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf23_ref() && {
+      return {std::move(this->buf23_), __isset.buf23};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf24_ref() const& {
     return {this->buf24_, __isset.buf24};
@@ -475,6 +590,11 @@ class ManyFields {
    buf24_ref() & {
     return {this->buf24_, __isset.buf24};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf24_ref() && {
+      return {std::move(this->buf24_), __isset.buf24};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf25_ref() const& {
     return {this->buf25_, __isset.buf25};
@@ -483,6 +603,11 @@ class ManyFields {
    buf25_ref() & {
     return {this->buf25_, __isset.buf25};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf25_ref() && {
+      return {std::move(this->buf25_), __isset.buf25};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf26_ref() const& {
     return {this->buf26_, __isset.buf26};
@@ -491,6 +616,11 @@ class ManyFields {
    buf26_ref() & {
     return {this->buf26_, __isset.buf26};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf26_ref() && {
+      return {std::move(this->buf26_), __isset.buf26};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf27_ref() const& {
     return {this->buf27_, __isset.buf27};
@@ -499,6 +629,11 @@ class ManyFields {
    buf27_ref() & {
     return {this->buf27_, __isset.buf27};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf27_ref() && {
+      return {std::move(this->buf27_), __isset.buf27};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf28_ref() const& {
     return {this->buf28_, __isset.buf28};
@@ -507,6 +642,11 @@ class ManyFields {
    buf28_ref() & {
     return {this->buf28_, __isset.buf28};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf28_ref() && {
+      return {std::move(this->buf28_), __isset.buf28};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf29_ref() const& {
     return {this->buf29_, __isset.buf29};
@@ -515,6 +655,11 @@ class ManyFields {
    buf29_ref() & {
     return {this->buf29_, __isset.buf29};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf29_ref() && {
+      return {std::move(this->buf29_), __isset.buf29};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf30_ref() const& {
     return {this->buf30_, __isset.buf30};
@@ -523,6 +668,11 @@ class ManyFields {
    buf30_ref() & {
     return {this->buf30_, __isset.buf30};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf30_ref() && {
+      return {std::move(this->buf30_), __isset.buf30};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf31_ref() const& {
     return {this->buf31_, __isset.buf31};
@@ -531,6 +681,11 @@ class ManyFields {
    buf31_ref() & {
     return {this->buf31_, __isset.buf31};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf31_ref() && {
+      return {std::move(this->buf31_), __isset.buf31};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf32_ref() const& {
     return {this->buf32_, __isset.buf32};
@@ -539,6 +694,11 @@ class ManyFields {
    buf32_ref() & {
     return {this->buf32_, __isset.buf32};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf32_ref() && {
+      return {std::move(this->buf32_), __isset.buf32};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf33_ref() const& {
     return {this->buf33_, __isset.buf33};
@@ -547,6 +707,11 @@ class ManyFields {
    buf33_ref() & {
     return {this->buf33_, __isset.buf33};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf33_ref() && {
+      return {std::move(this->buf33_), __isset.buf33};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf34_ref() const& {
     return {this->buf34_, __isset.buf34};
@@ -555,6 +720,11 @@ class ManyFields {
    buf34_ref() & {
     return {this->buf34_, __isset.buf34};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf34_ref() && {
+      return {std::move(this->buf34_), __isset.buf34};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf35_ref() const& {
     return {this->buf35_, __isset.buf35};
@@ -563,6 +733,11 @@ class ManyFields {
    buf35_ref() & {
     return {this->buf35_, __isset.buf35};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf35_ref() && {
+      return {std::move(this->buf35_), __isset.buf35};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf36_ref() const& {
     return {this->buf36_, __isset.buf36};
@@ -571,6 +746,11 @@ class ManyFields {
    buf36_ref() & {
     return {this->buf36_, __isset.buf36};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf36_ref() && {
+      return {std::move(this->buf36_), __isset.buf36};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf37_ref() const& {
     return {this->buf37_, __isset.buf37};
@@ -579,6 +759,11 @@ class ManyFields {
    buf37_ref() & {
     return {this->buf37_, __isset.buf37};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf37_ref() && {
+      return {std::move(this->buf37_), __isset.buf37};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf38_ref() const& {
     return {this->buf38_, __isset.buf38};
@@ -587,6 +772,11 @@ class ManyFields {
    buf38_ref() & {
     return {this->buf38_, __isset.buf38};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf38_ref() && {
+      return {std::move(this->buf38_), __isset.buf38};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf39_ref() const& {
     return {this->buf39_, __isset.buf39};
@@ -595,6 +785,11 @@ class ManyFields {
    buf39_ref() & {
     return {this->buf39_, __isset.buf39};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf39_ref() && {
+      return {std::move(this->buf39_), __isset.buf39};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    buf40_ref() const& {
     return {this->buf40_, __isset.buf40};
@@ -603,6 +798,11 @@ class ManyFields {
    buf40_ref() & {
     return {this->buf40_, __isset.buf40};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   buf40_ref() && {
+      return {std::move(this->buf40_), __isset.buf40};
+  }
+  
 
   template <class Writer>
   void serialize(Writer&& writer) const;
@@ -739,6 +939,11 @@ class McExpTestRequest {
    key_ref() & {
     return {this->key_, __isset.key};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Keys<folly::IOBuf>&&>
+   key_ref() && {
+      return {std::move(this->key_), __isset.key};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const uint64_t&>
    flags_ref() const& {
     return {this->flags_, __isset.flags};
@@ -747,6 +952,11 @@ class McExpTestRequest {
    flags_ref() & {
     return {this->flags_, __isset.flags};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<uint64_t&&>
+   flags_ref() && {
+      return {std::move(this->flags_), __isset.flags};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const uint64_t&>
    deadlineMs_ref() const& {
     return {this->deadlineMs_, __isset.deadlineMs};
@@ -755,6 +965,11 @@ class McExpTestRequest {
    deadlineMs_ref() & {
     return {this->deadlineMs_, __isset.deadlineMs};
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<uint64_t&&>
+   deadlineMs_ref() && {
+      return {std::move(this->deadlineMs_), __isset.deadlineMs};
+  }
+  
 
   template <class Writer>
   void serialize(Writer&& writer) const;

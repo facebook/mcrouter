@@ -73,6 +73,11 @@ class DummyThriftRequest : public carbon::RequestCommon {
    key_ref() & {
     return underlyingThriftStruct_.key_ref();
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Keys<folly::IOBuf>&&>
+   key_ref() && {
+    return std::move(underlyingThriftStruct_).key_ref();
+  }
+  
   bool testBool() const {
     return underlyingThriftStruct_.testBool;
   }
@@ -88,6 +93,11 @@ class DummyThriftRequest : public carbon::RequestCommon {
    testBool_ref() & {
     return underlyingThriftStruct_.testBool_ref();
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<bool&&>
+   testBool_ref() && {
+    return std::move(underlyingThriftStruct_).testBool_ref();
+  }
+  
   int8_t testInt8() const {
     return underlyingThriftStruct_.testInt8;
   }
@@ -103,6 +113,11 @@ class DummyThriftRequest : public carbon::RequestCommon {
    testInt8_ref() & {
     return underlyingThriftStruct_.testInt8_ref();
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<int8_t&&>
+   testInt8_ref() && {
+    return std::move(underlyingThriftStruct_).testInt8_ref();
+  }
+  
   int16_t testInt16() const {
     return underlyingThriftStruct_.testInt16;
   }
@@ -118,6 +133,11 @@ class DummyThriftRequest : public carbon::RequestCommon {
    testInt16_ref() & {
     return underlyingThriftStruct_.testInt16_ref();
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<int16_t&&>
+   testInt16_ref() && {
+    return std::move(underlyingThriftStruct_).testInt16_ref();
+  }
+  
   int32_t testInt32() const {
     return underlyingThriftStruct_.testInt32;
   }
@@ -133,6 +153,11 @@ class DummyThriftRequest : public carbon::RequestCommon {
    testInt32_ref() & {
     return underlyingThriftStruct_.testInt32_ref();
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<int32_t&&>
+   testInt32_ref() && {
+    return std::move(underlyingThriftStruct_).testInt32_ref();
+  }
+  
   int64_t testInt64() const {
     return underlyingThriftStruct_.testInt64;
   }
@@ -148,6 +173,11 @@ class DummyThriftRequest : public carbon::RequestCommon {
    testInt64_ref() & {
     return underlyingThriftStruct_.testInt64_ref();
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<int64_t&&>
+   testInt64_ref() && {
+    return std::move(underlyingThriftStruct_).testInt64_ref();
+  }
+  
   uint8_t testUInt8() const {
     return underlyingThriftStruct_.testUInt8;
   }
@@ -163,6 +193,11 @@ class DummyThriftRequest : public carbon::RequestCommon {
    testUInt8_ref() & {
     return underlyingThriftStruct_.testUInt8_ref();
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<uint8_t&&>
+   testUInt8_ref() && {
+    return std::move(underlyingThriftStruct_).testUInt8_ref();
+  }
+  
   uint16_t testUInt16() const {
     return underlyingThriftStruct_.testUInt16;
   }
@@ -178,6 +213,11 @@ class DummyThriftRequest : public carbon::RequestCommon {
    testUInt16_ref() & {
     return underlyingThriftStruct_.testUInt16_ref();
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<uint16_t&&>
+   testUInt16_ref() && {
+    return std::move(underlyingThriftStruct_).testUInt16_ref();
+  }
+  
   uint32_t testUInt32() const {
     return underlyingThriftStruct_.testUInt32;
   }
@@ -193,6 +233,11 @@ class DummyThriftRequest : public carbon::RequestCommon {
    testUInt32_ref() & {
     return underlyingThriftStruct_.testUInt32_ref();
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<uint32_t&&>
+   testUInt32_ref() && {
+    return std::move(underlyingThriftStruct_).testUInt32_ref();
+  }
+  
   uint64_t testUInt64() const {
     return underlyingThriftStruct_.testUInt64;
   }
@@ -208,6 +253,11 @@ class DummyThriftRequest : public carbon::RequestCommon {
    testUInt64_ref() & {
     return underlyingThriftStruct_.testUInt64_ref();
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<uint64_t&&>
+   testUInt64_ref() && {
+    return std::move(underlyingThriftStruct_).testUInt64_ref();
+  }
+  
   float testFloat() const {
     return underlyingThriftStruct_.testFloat;
   }
@@ -223,6 +273,11 @@ class DummyThriftRequest : public carbon::RequestCommon {
    testFloat_ref() & {
     return underlyingThriftStruct_.testFloat_ref();
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<float&&>
+   testFloat_ref() && {
+    return std::move(underlyingThriftStruct_).testFloat_ref();
+  }
+  
   double testDouble() const {
     return underlyingThriftStruct_.testDouble;
   }
@@ -238,6 +293,11 @@ class DummyThriftRequest : public carbon::RequestCommon {
    testDouble_ref() & {
     return underlyingThriftStruct_.testDouble_ref();
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<double&&>
+   testDouble_ref() && {
+    return std::move(underlyingThriftStruct_).testDouble_ref();
+  }
+  
   const std::string& testShortString() const {
     return underlyingThriftStruct_.testShortString;
   }
@@ -253,6 +313,11 @@ class DummyThriftRequest : public carbon::RequestCommon {
    testShortString_ref() & {
     return underlyingThriftStruct_.testShortString_ref();
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<std::string&&>
+   testShortString_ref() && {
+    return std::move(underlyingThriftStruct_).testShortString_ref();
+  }
+  
   const std::string& testLongString() const {
     return underlyingThriftStruct_.testLongString;
   }
@@ -268,6 +333,11 @@ class DummyThriftRequest : public carbon::RequestCommon {
    testLongString_ref() & {
     return underlyingThriftStruct_.testLongString_ref();
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<std::string&&>
+   testLongString_ref() && {
+    return std::move(underlyingThriftStruct_).testLongString_ref();
+  }
+  
   const folly::IOBuf& testIobuf() const {
     return underlyingThriftStruct_.testIobuf;
   }
@@ -283,6 +353,11 @@ class DummyThriftRequest : public carbon::RequestCommon {
    testIobuf_ref() & {
     return underlyingThriftStruct_.testIobuf_ref();
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
+   testIobuf_ref() && {
+    return std::move(underlyingThriftStruct_).testIobuf_ref();
+  }
+  
   const std::vector<std::string>& testList() const {
     return underlyingThriftStruct_.testList;
   }
@@ -298,6 +373,11 @@ class DummyThriftRequest : public carbon::RequestCommon {
    testList_ref() & {
     return underlyingThriftStruct_.testList_ref();
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<std::vector<std::string>&&>
+   testList_ref() && {
+    return std::move(underlyingThriftStruct_).testList_ref();
+  }
+  
   apache::thrift::optional_field_ref<const bool&> testOptionalKeywordBool() const& {
     return underlyingThriftStruct_.testOptionalKeywordBool_ref();
   }
@@ -305,6 +385,11 @@ class DummyThriftRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return underlyingThriftStruct_.testOptionalKeywordBool_ref();
   }
+  apache::thrift::optional_field_ref<bool&&> testOptionalKeywordBool() && {
+    markBufferAsDirty();
+    return std::move(underlyingThriftStruct_).testOptionalKeywordBool_ref();
+  }
+  
   FOLLY_ERASE ::apache::thrift::optional_field_ref<const bool&>
    testOptionalKeywordBool_ref() const& {
     return underlyingThriftStruct_.testOptionalKeywordBool_ref();
@@ -313,6 +398,11 @@ class DummyThriftRequest : public carbon::RequestCommon {
    testOptionalKeywordBool_ref() & {
     return underlyingThriftStruct_.testOptionalKeywordBool_ref();
   }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<bool&&>
+   testOptionalKeywordBool_ref() && {
+    return std::move(underlyingThriftStruct_).testOptionalKeywordBool_ref();
+  }
+  
   apache::thrift::optional_field_ref<const std::string&> testOptionalKeywordString() const& {
     return underlyingThriftStruct_.testOptionalKeywordString_ref();
   }
@@ -320,6 +410,11 @@ class DummyThriftRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return underlyingThriftStruct_.testOptionalKeywordString_ref();
   }
+  apache::thrift::optional_field_ref<std::string&&> testOptionalKeywordString() && {
+    markBufferAsDirty();
+    return std::move(underlyingThriftStruct_).testOptionalKeywordString_ref();
+  }
+  
   FOLLY_ERASE ::apache::thrift::optional_field_ref<const std::string&>
    testOptionalKeywordString_ref() const& {
     return underlyingThriftStruct_.testOptionalKeywordString_ref();
@@ -328,6 +423,11 @@ class DummyThriftRequest : public carbon::RequestCommon {
    testOptionalKeywordString_ref() & {
     return underlyingThriftStruct_.testOptionalKeywordString_ref();
   }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<std::string&&>
+   testOptionalKeywordString_ref() && {
+    return std::move(underlyingThriftStruct_).testOptionalKeywordString_ref();
+  }
+  
   apache::thrift::optional_field_ref<const folly::IOBuf&> testOptionalKeywordIobuf() const& {
     return underlyingThriftStruct_.testOptionalKeywordIobuf_ref();
   }
@@ -335,6 +435,11 @@ class DummyThriftRequest : public carbon::RequestCommon {
     markBufferAsDirty();
     return underlyingThriftStruct_.testOptionalKeywordIobuf_ref();
   }
+  apache::thrift::optional_field_ref<folly::IOBuf&&> testOptionalKeywordIobuf() && {
+    markBufferAsDirty();
+    return std::move(underlyingThriftStruct_).testOptionalKeywordIobuf_ref();
+  }
+  
   FOLLY_ERASE ::apache::thrift::optional_field_ref<const folly::IOBuf&>
    testOptionalKeywordIobuf_ref() const& {
     return underlyingThriftStruct_.testOptionalKeywordIobuf_ref();
@@ -343,6 +448,11 @@ class DummyThriftRequest : public carbon::RequestCommon {
    testOptionalKeywordIobuf_ref() & {
     return underlyingThriftStruct_.testOptionalKeywordIobuf_ref();
   }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<folly::IOBuf&&>
+   testOptionalKeywordIobuf_ref() && {
+    return std::move(underlyingThriftStruct_).testOptionalKeywordIobuf_ref();
+  }
+  
   const carbon::test::thrift::DummyThriftRequest& getThriftStruct() const {
     return underlyingThriftStruct_;
   }
@@ -440,6 +550,11 @@ class DummyThriftReply : public carbon::ReplyCommon {
    result_ref() & {
     return underlyingThriftStruct_.result_ref();
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Result&&>
+   result_ref() && {
+    return std::move(underlyingThriftStruct_).result_ref();
+  }
+  
   const std::string& message() const {
     return underlyingThriftStruct_.message;
   }
@@ -454,6 +569,11 @@ class DummyThriftReply : public carbon::ReplyCommon {
    message_ref() & {
     return underlyingThriftStruct_.message_ref();
   }
+  FOLLY_ERASE ::apache::thrift::field_ref<std::string&&>
+   message_ref() && {
+    return std::move(underlyingThriftStruct_).message_ref();
+  }
+  
   const carbon::test::thrift::DummyThriftReply& getThriftStruct() const {
     return underlyingThriftStruct_;
   }
