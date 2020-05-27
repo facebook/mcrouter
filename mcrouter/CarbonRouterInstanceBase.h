@@ -20,6 +20,7 @@
 #include <folly/synchronization/CallOnce.h>
 
 #include "mcrouter/ConfigApi.h"
+#include "mcrouter/ExternalStatsHandler.h"
 #include "mcrouter/LeaseTokenMap.h"
 #include "mcrouter/Observable.h"
 #include "mcrouter/PoolStats.h"
@@ -83,6 +84,10 @@ class CarbonRouterInstanceBase {
 
   TkoTrackerMap& tkoTrackerMap() {
     return tkoTrackerMap_;
+  }
+
+  ExternalStatsHandler& externalStatsHandler() {
+    return externalStatsHandler_;
   }
 
   ConfigApi& configApi() {
@@ -241,6 +246,7 @@ class CarbonRouterInstanceBase {
   }
 
   TkoTrackerMap tkoTrackerMap_;
+  ExternalStatsHandler externalStatsHandler_;
   std::unique_ptr<const CompressionCodecManager> compressionCodecManager_;
 
   // Stores data for runtime variables.
