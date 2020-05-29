@@ -52,6 +52,12 @@ class McThriftCallback {
     return *(underlying_->getEventBase());
   }
 
+  const folly::AsyncTransportWrapper* getTransport() const noexcept {
+    return underlying_->getConnectionContext()
+        ->getConnectionContext()
+        ->getTransport();
+  }
+
  private:
   std::unique_ptr<apache::thrift::HandlerCallback<Reply>> underlying_;
 };
