@@ -12,6 +12,7 @@
 
 #include <folly/Optional.h>
 #include <folly/io/IOBuf.h>
+#include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/EventBase.h>
 
 #include "mcrouter/lib/Operation.h"
@@ -65,6 +66,7 @@ class McServerRequestContext {
   folly::Optional<std::string> getPeerSocketAddressStr();
 
   folly::EventBase& getSessionEventBase() const noexcept;
+  const folly::AsyncTransportWrapper* getTransport() const noexcept;
 
   void markAsTraced();
 
