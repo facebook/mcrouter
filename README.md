@@ -1,7 +1,7 @@
 # Mcrouter [![Build Status](https://travis-ci.org/facebook/mcrouter.svg?branch=master)](https://travis-ci.org/facebook/mcrouter)
 
 Mcrouter is a memcached protocol router for scaling memcached
-(http://memcached.org/) deployments. It's a core component of cache
+(https://memcached.org/) deployments. It's a core component of cache
 infrastructure at Facebook and Instagram where mcrouter handles almost
 5 billion requests per second at peak.
 
