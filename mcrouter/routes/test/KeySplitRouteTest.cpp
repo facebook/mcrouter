@@ -71,12 +71,14 @@ class KeySplitRouteTest : public RouteHandleTestBase<HelloGoodbyeRouterInfo> {
 
         // verify
         auto expectedKeyReplica = folly::to<std::string>(
-            req.key().fullKey(), kMemcacheReplicaSeparator, i % numReplicas);
+            req.key_ref()->fullKey(),
+            kMemcacheReplicaSeparator,
+            i % numReplicas);
         EXPECT_FALSE(th_->saw_keys.empty());
 
         // first replica is the original key
         if (i == 0) {
-          EXPECT_EQ(req.key().fullKey(), th_->saw_keys[0]);
+          EXPECT_EQ(req.key_ref()->fullKey(), th_->saw_keys[0]);
         } else {
           EXPECT_EQ(expectedKeyReplica, th_->saw_keys[0]);
         }
@@ -90,7 +92,7 @@ class KeySplitRouteTest : public RouteHandleTestBase<HelloGoodbyeRouterInfo> {
   template <class Request>
   void testAllSync(const Request& req, size_t hostid, size_t numReplicas = 10) {
     globals::HostidMock hostidMock(hostid);
-    std::string key = folly::to<std::string>(req.key().fullKey());
+    std::string key = folly::to<std::string>(req.key_ref()->fullKey());
 
     // create expected keys, the first key is not modified.
     std::vector<std::string> expectedKeys;
@@ -134,7 +136,7 @@ TEST_F(KeySplitRouteTest, NoAllSyncSet) {
 
     // single set should not use the fiber manager
     McSetRequest reqSet(key);
-    reqSet.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
+    reqSet.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
 
     auto reply = rh_->route(reqSet);
 
@@ -158,7 +160,7 @@ TEST_F(KeySplitRouteTest, AllSyncSet) {
 
   std::string key = "abc";
   McSetRequest reqSet(key);
-  reqSet.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
+  reqSet.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
 
   for (size_t i = 0; i < 10; ++i) {
     testAllSync(reqSet, i);
@@ -211,7 +213,7 @@ TEST_F(KeySplitRouteTest, DeleteAllSync) {
 TEST_F(KeySplitRouteTest, LeasesSetTest) {
   constexpr folly::StringPiece key = "abc";
   McLeaseSetRequest reqSet(key);
-  reqSet.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
+  reqSet.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
 
   testLeases(reqSet);
 }
@@ -244,7 +246,7 @@ TEST_F(KeySplitRouteTest, FirstHitTest) {
   TestFiberManager fm;
   fm.runAll({[&]() {
     auto reply = rh->route(req);
-    EXPECT_EQ(reply.result(), carbon::Result::FOUND);
+    EXPECT_EQ(*reply.result_ref(), carbon::Result::FOUND);
   }});
   EXPECT_FALSE(th->saw_keys.empty());
 
@@ -257,7 +259,7 @@ TEST_F(KeySplitRouteTest, FirstHitTest) {
 
   fm.runAll({[&]() {
     auto reply = rh->route(req);
-    EXPECT_EQ(reply.result(), carbon::Result::FOUND);
+    EXPECT_EQ(*reply.result_ref(), carbon::Result::FOUND);
   }});
 
   EXPECT_EQ(vector<std::string>{expectedKeys}, th->saw_keys);
@@ -282,7 +284,7 @@ TEST_F(KeySplitRouteTest, FirstHitWorstCaseTest) {
   TestFiberManager fm;
   fm.runAll({[&]() {
     auto reply = rh->route(req);
-    EXPECT_EQ(reply.result(), carbon::Result::NOTFOUND);
+    EXPECT_EQ(*reply.result_ref(), carbon::Result::NOTFOUND);
   }});
 
   EXPECT_FALSE(th->saw_keys.empty());

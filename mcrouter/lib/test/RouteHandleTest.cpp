@@ -29,8 +29,8 @@
 using namespace facebook::memcache;
 using namespace facebook::memcache::mcrouter;
 
-using std::make_unique;
 using std::make_shared;
+using std::make_unique;
 using std::string;
 using std::vector;
 
@@ -42,51 +42,51 @@ TEST(routeHandleTest, nullGet) {
   McGetRequest req("key");
 
   auto reply = rh.route(req);
-  EXPECT_EQ(carbon::Result::NOTFOUND, reply.result());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
 }
 
 TEST(routeHandleTest, nullSet) {
   TestRouteHandle<NullRoute<TestRouteHandleIf>> rh;
   McSetRequest req("key");
-  req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
+  req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
   auto reply = rh.route(std::move(req));
-  EXPECT_EQ(carbon::Result::NOTSTORED, reply.result());
+  EXPECT_EQ(carbon::Result::NOTSTORED, *reply.result_ref());
 }
 
 TEST(routeHandleTest, nullDelete) {
   TestRouteHandle<NullRoute<TestRouteHandleIf>> rh;
   auto reply = rh.route(McDeleteRequest("key"));
-  EXPECT_EQ(carbon::Result::NOTFOUND, reply.result());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
 }
 
 TEST(routeHandleTest, nullTouch) {
   TestRouteHandle<NullRoute<TestRouteHandleIf>> rh;
   auto reply = rh.route(McTouchRequest("key"));
-  EXPECT_EQ(carbon::Result::NOTFOUND, reply.result());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
 }
 
 TEST(routeHandleTest, nullIncr) {
   TestRouteHandle<NullRoute<TestRouteHandleIf>> rh;
   McIncrRequest req("key");
-  req.delta() = 1;
+  req.delta_ref() = 1;
   auto reply = rh.route(std::move(req));
-  EXPECT_EQ(carbon::Result::NOTFOUND, reply.result());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
 }
 
 TEST(routeHandleTest, nullAppend) {
   TestRouteHandle<NullRoute<TestRouteHandleIf>> rh;
   McAppendRequest req("key");
-  req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
+  *req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
   auto reply = rh.route(std::move(req));
-  EXPECT_EQ(carbon::Result::NOTSTORED, reply.result());
+  EXPECT_EQ(carbon::Result::NOTSTORED, *reply.result_ref());
 }
 
 TEST(routeHandleTest, nullPrepend) {
   TestRouteHandle<NullRoute<TestRouteHandleIf>> rh;
   McPrependRequest req("key");
-  req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
+  *req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
   auto reply = rh.route(std::move(req));
-  EXPECT_EQ(carbon::Result::NOTSTORED, reply.result());
+  EXPECT_EQ(carbon::Result::NOTSTORED, *reply.result_ref());
 }
 
 TEST(routeHandleTest, allSync) {
@@ -105,7 +105,7 @@ TEST(routeHandleTest, allSync) {
     auto reply = rh.route(McGetRequest("key"));
 
     /* Check that we got the worst result back */
-    EXPECT_EQ(carbon::Result::REMOTE_ERROR, reply.result());
+    EXPECT_EQ(carbon::Result::REMOTE_ERROR, *reply.result_ref());
     EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
 
     for (auto& h : test_handles) {
@@ -132,8 +132,8 @@ TEST(routeHandleTest, allSyncTyped) {
     auto reply = rh.route(req);
 
     /* Check that we got the worst result back */
-    EXPECT_EQ(carbon::Result::REMOTE_ERROR, reply.result());
-    EXPECT_EQ("c", coalesceAndGetRange(reply.value()).str());
+    EXPECT_EQ(carbon::Result::REMOTE_ERROR, *reply.result_ref());
+    EXPECT_EQ("c", coalesceAndGetRange(*reply.value_ref()).str());
 
     for (auto& h : test_handles) {
       EXPECT_EQ(vector<string>{"key"}, h->saw_keys);
@@ -157,7 +157,7 @@ TEST(routeHandleTest, allAsync) {
     auto reply = rh.route(McGetRequest("key"));
 
     /* Check that we got no result back */
-    EXPECT_EQ(carbon::Result::NOTFOUND, reply.result());
+    EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
   }});
 
   /* Check that everything is complete in the background */
@@ -182,7 +182,7 @@ TEST(routeHandleTest, allInitial) {
     auto reply = rh.route(McGetRequest("key"));
 
     /* Check that we got the initial result back */
-    EXPECT_EQ(carbon::Result::FOUND, reply.result());
+    EXPECT_EQ(carbon::Result::FOUND, *reply.result_ref());
     EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
   }});
 
@@ -219,7 +219,7 @@ TEST(routeHandleTest, allMajority) {
 
     /* Check that we got the majority reply
        without waiting for "b", which is paused */
-    EXPECT_EQ(carbon::Result::REMOTE_ERROR, reply.result());
+    EXPECT_EQ(carbon::Result::REMOTE_ERROR, *reply.result_ref());
 
     EXPECT_EQ(vector<string>{"key"}, test_handles[0]->saw_keys);
     EXPECT_EQ(vector<string>{}, test_handles[1]->saw_keys);
@@ -252,7 +252,7 @@ TEST(routeHandleTest, allMajorityTie) {
     auto reply = rh.route(McGetRequest("key"));
 
     /* Check that we got the _worst_ majority reply */
-    EXPECT_EQ(carbon::Result::REMOTE_ERROR, reply.result());
+    EXPECT_EQ(carbon::Result::REMOTE_ERROR, *reply.result_ref());
   }});
 
   /* Check that everything is complete */
@@ -280,7 +280,7 @@ TEST(routeHandleTest, allFastest) {
 
     /* Check that we got the fastest non-error result back
        ('b' is paused) */
-    EXPECT_EQ(carbon::Result::FOUND, reply.result());
+    EXPECT_EQ(carbon::Result::FOUND, *reply.result_ref());
     EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
 
     EXPECT_EQ(vector<string>{"key"}, test_handles[0]->saw_keys);
@@ -397,7 +397,7 @@ TEST(routeHandleTest, allSyncCollector) {
     auto reply = rh.route(McGetRequest("key"));
 
     /* Check that we got the worst result back */
-    EXPECT_EQ(carbon::Result::REMOTE_ERROR, reply.result());
+    EXPECT_EQ(carbon::Result::REMOTE_ERROR, *reply.result_ref());
     EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
 
     for (auto& h : test_handles) {

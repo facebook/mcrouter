@@ -58,7 +58,7 @@ class AllFastestRoute {
     auto taskIt = folly::fibers::addTasks(funcs.begin(), funcs.end());
     while (true) {
       auto reply = taskIt.awaitNext();
-      if (!isFailoverErrorResult(reply.result()) || !taskIt.hasNext()) {
+      if (!isFailoverErrorResult(*reply.result_ref()) || !taskIt.hasNext()) {
         return reply;
       }
     }
@@ -67,5 +67,5 @@ class AllFastestRoute {
  private:
   const std::vector<std::shared_ptr<RouteHandleIf>> children_;
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

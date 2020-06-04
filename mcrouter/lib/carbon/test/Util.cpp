@@ -43,7 +43,7 @@ void expectEqSimpleStruct(const SimpleStruct& a, const SimpleStruct& b) {
 }
 
 void expectEqTestRequest(const TestRequest& a, const TestRequest& b) {
-  EXPECT_EQ(a.key().fullKey(), b.key().fullKey());
+  EXPECT_EQ(a.key_ref()->fullKey(), b.key_ref()->fullKey());
 
   EXPECT_EQ(a.testBool(), b.testBool());
   EXPECT_EQ(a.testChar(), b.testChar());
@@ -112,7 +112,7 @@ void expectEqTestRequest(const TestRequest& a, const TestRequest& b) {
 void expectEqTestCompactRequest(
     const TestCompactRequest& a,
     const TestCompactRequest& b) {
-  EXPECT_EQ(a.key().fullKey(), b.key().fullKey());
+  EXPECT_EQ(a.key_ref()->fullKey(), b.key_ref()->fullKey());
 
   EXPECT_EQ(a.testBool(), b.testBool());
   EXPECT_EQ(a.testChar(), b.testChar());

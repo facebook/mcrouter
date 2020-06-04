@@ -44,7 +44,7 @@ class AllSyncCollectionRouteFactoryTest
     fm.run([&rh]() {
       GoodbyeRequest req;
       auto reply = rh->route(req);
-      EXPECT_TRUE(isErrorResult(reply.result()));
+      EXPECT_TRUE(isErrorResult(*reply.result_ref()));
     });
   }
 };
@@ -83,7 +83,7 @@ class ArgumentPassingCollectionRouteFactoryTest
     fm.run([&rh]() {
       GoodbyeRequest req;
       auto reply = rh->route(req);
-      EXPECT_TRUE(isErrorResult(reply.result()));
+      EXPECT_TRUE(isErrorResult(*reply.result_ref()));
     });
   }
 

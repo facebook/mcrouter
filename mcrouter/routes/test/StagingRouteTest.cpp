@@ -51,7 +51,7 @@ class StagingRouteTest : public RouteHandleTestBase<HelloGoodbyeRouterInfo> {
       auto reply = rh_->route(req);
 
       // we should always expect the warm reply
-      EXPECT_EQ(reply.result(), expectedReply);
+      EXPECT_EQ(*reply.result_ref(), expectedReply);
     }});
   }
 
@@ -169,7 +169,7 @@ TEST_F(StagingRouteTest, LeaseGetWarmMiss) {
 TEST_F(StagingRouteTest, TestSet) {
   // test set: send to both warm/staging
   McSetRequest req("abc");
-  req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "set_value");
+  req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "set_value");
 
   createAndRun(
       req,
@@ -191,7 +191,7 @@ TEST_F(StagingRouteTest, TestSet) {
 TEST_F(StagingRouteTest, TestSetFail) {
   // test set fail, staging should not be hit
   McSetRequest req("abc");
-  req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "set_value");
+  req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "set_value");
 
   createAndRun(
       req,
@@ -213,7 +213,7 @@ TEST_F(StagingRouteTest, TestSetFail) {
 TEST_F(StagingRouteTest, TestLeaseSet) {
   // test lease-set: lease-set on warm, translate to set on staging
   McLeaseSetRequest req("abc");
-  req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "set_value");
+  req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "set_value");
 
   createAndRun(
       req,
@@ -255,7 +255,7 @@ TEST_F(StagingRouteTest, TestDelete) {
 
 TEST_F(StagingRouteTest, TestCas) {
   McCasRequest req("abc");
-  req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "set_value");
+  req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "set_value");
   createAndRun(
       req,
       UpdateRouteTestData(carbon::Result::STORED, 0),
@@ -334,7 +334,7 @@ TEST_F(StagingRouteTest, TestAddSuccess) {
   // test general operations for non-special cases.
   // route to warm, if successful, async route to staging.
   McAddRequest req("abc");
-  req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "set_value");
+  req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "set_value");
   createAndRun(
       req,
       UpdateRouteTestData(carbon::Result::STORED, 0),
@@ -356,7 +356,7 @@ TEST_F(StagingRouteTest, TestAddFailure) {
   // test general operations for non-special cases.
   // route to warm, if successful, async route to staging.
   McAddRequest req("abc");
-  req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "set_value");
+  req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "set_value");
   createAndRun(
       req,
       UpdateRouteTestData(carbon::Result::TIMEOUT, 0),

@@ -577,7 +577,7 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
     McGetRequest req("hold");
     auto reply = client->sendSync(req, std::chrono::milliseconds(100));
     EXPECT_STREQ(
-        carbon::resultToString(reply.result()),
+        carbon::resultToString(*reply.result_ref()),
         carbon::resultToString(carbon::Result::CONNECT_TIMEOUT));
     replied = true;
   });

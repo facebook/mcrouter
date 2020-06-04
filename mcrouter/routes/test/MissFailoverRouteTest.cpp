@@ -75,7 +75,7 @@ TEST(missMissFailoverRouteTest, fail) {
 
   // Should get the last reply
   EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
-  EXPECT_EQ(carbon::Result::TIMEOUT, reply.result());
+  EXPECT_EQ(carbon::Result::TIMEOUT, *reply.result_ref());
 }
 
 TEST(missMissFailoverRouteTest, bestOnError1) {
@@ -91,7 +91,7 @@ TEST(missMissFailoverRouteTest, bestOnError1) {
 
   // Should return the first and the only healthy reply
   EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
-  EXPECT_EQ(carbon::Result::NOTFOUND, reply.result());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
 }
 
 TEST(missMissFailoverRouteTest, bestOnError2) {
@@ -107,7 +107,7 @@ TEST(missMissFailoverRouteTest, bestOnError2) {
 
   // Should return the only failover-healthy reply
   EXPECT_EQ("b", carbon::valueRangeSlow(reply).str());
-  EXPECT_EQ(carbon::Result::NOTFOUND, reply.result());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
 }
 
 TEST(missMissFailoverRouteTest, bestOnError3) {
@@ -123,7 +123,7 @@ TEST(missMissFailoverRouteTest, bestOnError3) {
 
   // Should get the LAST healthy reply
   EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
-  EXPECT_EQ(carbon::Result::NOTFOUND, reply.result());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
 }
 
 TEST(missMissFailoverRouteTest, nonGetLike) {
@@ -136,10 +136,10 @@ TEST(missMissFailoverRouteTest, nonGetLike) {
       get_route_handles(test_handles));
 
   McSetRequest req("0");
-  req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "a");
+  req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "a");
   auto reply = rh.route(std::move(req));
 
-  EXPECT_EQ(carbon::Result::NOTSTORED, reply.result());
+  EXPECT_EQ(carbon::Result::NOTSTORED, *reply.result_ref());
   // only first handle sees the key
   EXPECT_EQ(vector<std::string>{"0"}, test_handles[0]->saw_keys);
   EXPECT_TRUE(test_handles[1]->saw_keys.empty());

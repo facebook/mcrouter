@@ -29,7 +29,7 @@ TEST(CarbonQueueAppenderTest, longString) {
   // Require more space than CarbonQueueAppenderStorage's internal 512B buffer.
   // This will append() a copy of the string allocated on the heap.
   const std::string message(1024, 'a');
-  reply.message() = message;
+  reply.message_ref() = message;
 
   carbon::CarbonProtocolWriter writer(storage);
   reply.serialize(writer);
@@ -66,8 +66,8 @@ TEST(CarbonQueueAppenderTest, longString) {
   carbon::CarbonProtocolReader reader(folly::io::Cursor(inputBody.get()));
   inputReply.deserialize(reader);
 
-  EXPECT_EQ(carbon::Result::REMOTE_ERROR, inputReply.result());
-  EXPECT_EQ(message, inputReply.message());
+  EXPECT_EQ(carbon::Result::REMOTE_ERROR, *inputReply.result_ref());
+  EXPECT_EQ(message, *inputReply.message_ref());
 }
 
 namespace {
@@ -76,7 +76,7 @@ void writeToBuf(folly::IOBuf& dest, const char* src, size_t len) {
   std::memcpy(dest.writableTail(), src, len);
   dest.append(len);
 }
-} // anonymous
+} // namespace
 
 TEST(CarbonQueueAppender, manyFields) {
   carbon::CarbonQueueAppenderStorage storage;

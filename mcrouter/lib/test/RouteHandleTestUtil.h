@@ -36,7 +36,7 @@ template <class M>
 typename std::enable_if<HasFlagsTrait<M>::value>::type testSetFlags(
     M& message,
     uint64_t flags) {
-  message.flags() = flags;
+  message.flags_ref() = flags;
 }
 template <class M>
 typename std::enable_if<!HasFlagsTrait<M>::value>::type testSetFlags(
@@ -47,7 +47,7 @@ template <class Reply>
 typename std::enable_if<HasValueTrait<Reply>::value, void>::type setReplyValue(
     Reply& reply,
     const std::string& val) {
-  reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, val);
+  reply.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, val);
 }
 template <class Reply>
 typename std::enable_if<!HasValueTrait<Reply>::value, void>::type setReplyValue(
@@ -278,7 +278,7 @@ struct RecordingRoute {
   }
 
   McLeaseSetReply route(const McLeaseSetRequest& req) {
-    h_->sawLeaseTokensSet.push_back(req.leaseToken());
+    h_->sawLeaseTokensSet.push_back(*req.leaseToken_ref());
     return routeInternal(req);
   }
 
@@ -296,7 +296,7 @@ struct RecordingRoute {
   template <typename T>
   struct has_app_error<
       T,
-      folly::void_t<decltype(std::declval<T>().appSpecificErrorCode())>>
+      folly::void_t<decltype(std::declval<T>().appSpecificErrorCode_ref())>>
       : std::true_type {};
 
   template <
@@ -308,7 +308,7 @@ struct RecordingRoute {
       typename Reply,
       typename std::enable_if_t<has_app_error<Reply>::value>* = nullptr>
   void setAppspecificErrorCode(Reply& reply) {
-    reply.appSpecificErrorCode() = dataGet_.appSpecificErrorCode_;
+    reply.appSpecificErrorCode_ref() = dataGet_.appSpecificErrorCode_;
   }
 
   template <class Request>
@@ -323,14 +323,14 @@ struct RecordingRoute {
       h_->wait();
     }
 
-    h_->saw_keys.push_back(req.key().fullKey().str());
+    h_->saw_keys.push_back(req.key_ref()->fullKey().str());
     h_->sawOperations.push_back(Request::name);
     h_->sawExptimes.push_back(getExptimeIfExist(req));
     h_->sawFlags.push_back(getFlagsIfExist(req));
     recordShadowId(req);
     if (carbon::GetLike<Request>::value) {
-      reply.result() = h_->resultGenerator_.hasValue()
-          ? (*h_->resultGenerator_)(req.key().fullKey().str())
+      reply.result_ref() = h_->resultGenerator_.hasValue()
+          ? (*h_->resultGenerator_)(req.key_ref()->fullKey().str())
           : dataGet_.result_;
       detail::setReplyValue(reply, dataGet_.value_);
       detail::testSetFlags(reply, dataGet_.flags_);
@@ -343,15 +343,15 @@ struct RecordingRoute {
         folly::StringPiece sp_value = coalesceAndGetRange(val);
         h_->sawValues.push_back(sp_value.str());
       }
-      reply.result() = h_->resultGenerator_.hasValue()
-          ? (*h_->resultGenerator_)(req.key().fullKey().str())
+      reply.result_ref() = h_->resultGenerator_.hasValue()
+          ? (*h_->resultGenerator_)(req.key_ref()->fullKey().str())
           : dataUpdate_.result_;
       detail::testSetFlags(reply, dataUpdate_.flags_);
       return reply;
     }
     if (carbon::DeleteLike<Request>::value) {
-      reply.result() = h_->resultGenerator_.hasValue()
-          ? (*h_->resultGenerator_)(req.key().fullKey().str())
+      reply.result_ref() = h_->resultGenerator_.hasValue()
+          ? (*h_->resultGenerator_)(req.key_ref()->fullKey().str())
           : dataDelete_.result_;
       return reply;
     }

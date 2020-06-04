@@ -81,38 +81,38 @@ void TestServerOnRequest::onRequest(
     McGetRequest&& req) {
   using Reply = McGetReply;
 
-  if (req.key().fullKey() == "sleep") {
+  if (req.key_ref()->fullKey() == "sleep") {
     /* sleep override */
     std::this_thread::sleep_for(std::chrono::seconds(1));
     processReply(std::move(ctx), Reply(carbon::Result::NOTFOUND));
-  } else if (req.key().fullKey() == "shutdown") {
+  } else if (req.key_ref()->fullKey() == "shutdown") {
     shutdownLock_.post();
     processReply(std::move(ctx), Reply(carbon::Result::NOTFOUND));
     flushQueue();
-  } else if (req.key().fullKey() == "busy") {
+  } else if (req.key_ref()->fullKey() == "busy") {
     processReply(std::move(ctx), Reply(carbon::Result::BUSY));
   } else {
     std::string value;
-    if (req.key().fullKey().startsWith("value_size:")) {
-      auto key = req.key().fullKey();
+    if (req.key_ref()->fullKey().startsWith("value_size:")) {
+      auto key = req.key_ref()->fullKey();
       key.removePrefix("value_size:");
       size_t valSize = folly::to<size_t>(key);
       value = std::string(valSize, 'a');
-    } else if (req.key().fullKey() == "trace_id") {
+    } else if (req.key_ref()->fullKey() == "trace_id") {
       value = folly::sformat("{}", req.traceContext());
-    } else if (req.key().fullKey() != "empty") {
-      value = req.key().fullKey().str();
+    } else if (req.key_ref()->fullKey() != "empty") {
+      value = req.key_ref()->fullKey().str();
     }
 
     Reply foundReply(carbon::Result::FOUND);
-    foundReply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, value);
+    foundReply.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, value);
 
-    if (req.key().fullKey() == "hold") {
+    if (req.key_ref()->fullKey() == "hold") {
       waitingReplies_.push_back(
           [ctx = std::move(ctx), reply = std::move(foundReply)]() mutable {
             McServerRequestContext::reply(std::move(ctx), std::move(reply));
           });
-    } else if (req.key().fullKey() == "flush") {
+    } else if (req.key_ref()->fullKey() == "flush") {
       processReply(std::move(ctx), std::move(foundReply));
       flushQueue();
     } else {
@@ -131,7 +131,7 @@ void TestServerOnRequest::onRequest(
     McServerRequestContext&& ctx,
     McVersionRequest&&) {
   McVersionReply reply(carbon::Result::OK);
-  reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, kServerVersion);
+  reply.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, kServerVersion);
   processReply(std::move(ctx), std::move(reply));
 }
 
@@ -335,7 +335,7 @@ void TestClient::sendGet(
                timeoutMs]() {
     McGetRequest req(key);
     std::string traceId;
-    if (req.key().fullKey() == "trace_id") {
+    if (req.key_ref()->fullKey() == "trace_id") {
       traceId = facebook::tracing::intsToString({12345, 67890});
       req.setTraceContext(traceId);
     }
@@ -348,12 +348,12 @@ void TestClient::sendGet(
         rpcStatsCallback(rpcStatsContext);
       }
 
-      if (reply.result() == carbon::Result::FOUND) {
+      if (*reply.result_ref() == carbon::Result::FOUND) {
         auto value = carbon::valueRangeSlow(reply);
-        if (req.key().fullKey() == "empty") {
+        if (req.key_ref()->fullKey() == "empty") {
           checkLogic(value.empty(), "Expected empty value, got {}", value);
-        } else if (req.key().fullKey().startsWith("value_size:")) {
-          auto key = req.key().fullKey();
+        } else if (req.key_ref()->fullKey().startsWith("value_size:")) {
+          auto key = req.key_ref()->fullKey();
           key.removePrefix("value_size:");
           size_t valSize = folly::to<size_t>(key);
           checkLogic(
@@ -361,7 +361,7 @@ void TestClient::sendGet(
               "Expected value of size {}, got {}",
               valSize,
               value.size());
-        } else if (req.key().fullKey() == "trace_id") {
+        } else if (req.key_ref()->fullKey() == "trace_id") {
           checkLogic(
               value == traceId,
               "Expected value to equal trace ID {}, got {}",
@@ -369,18 +369,18 @@ void TestClient::sendGet(
               traceId);
         } else {
           checkLogic(
-              value == req.key().fullKey(),
+              value == req.key_ref()->fullKey(),
               "Expected {}, got {}",
-              req.key().fullKey(),
+              req.key_ref()->fullKey(),
               value);
         }
       }
       checkLogic(
-          expectedResult == reply.result(),
+          expectedResult == *reply.result_ref(),
           "Expected {}, got {} for key '{}'. Reply message: {}",
           carbon::resultToString(expectedResult),
-          carbon::resultToString(reply.result()),
-          req.key().fullKey(),
+          carbon::resultToString(*reply.result_ref()),
+          req.key_ref()->fullKey(),
           carbon::getMessage(reply));
     } catch (const std::exception& e) {
       CHECK(false) << "Failed: " << e.what();
@@ -403,7 +403,8 @@ void TestClient::sendSet(
                this,
                timeoutMs]() {
     McSetRequest req(key);
-    req.value() = folly::IOBuf::wrapBufferAsValue(folly::StringPiece(value));
+    req.value_ref() =
+        folly::IOBuf::wrapBufferAsValue(folly::StringPiece(value));
 
     RpcStatsContext rpcStatsContext;
     auto reply = client_->sendSync(
@@ -412,9 +413,9 @@ void TestClient::sendSet(
       rpcStatsCallback(rpcStatsContext);
     }
 
-    CHECK(expectedResult == reply.result())
+    CHECK(expectedResult == *reply.result_ref())
         << "Expected: " << carbon::resultToString(expectedResult) << " got "
-        << carbon::resultToString(reply.result())
+        << carbon::resultToString(*reply.result_ref())
         << ". Reply message: " << carbon::getMessage(reply);
 
     inflight_--;
@@ -430,9 +431,9 @@ void TestClient::sendVersion(std::string expectedVersion) {
 
     CHECK_EQ(
         static_cast<size_t>(carbon::Result::OK),
-        static_cast<size_t>(reply.result()))
+        static_cast<size_t>(*reply.result_ref()))
         << "Expected result " << carbon::resultToString(carbon::Result::OK)
-        << ", got " << carbon::resultToString(reply.result());
+        << ", got " << carbon::resultToString(*reply.result_ref());
 
     CHECK_EQ(expectedVersion, carbon::valueRangeSlow(reply))
         << "Expected version " << expectedVersion << ", got "

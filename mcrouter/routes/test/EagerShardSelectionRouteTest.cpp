@@ -41,7 +41,7 @@ class EagerShardSelector {
 
   template <class Request>
   size_t select(const Request& req, size_t /* size */) const {
-    auto dest = shardsMap_.find(req.shardId());
+    auto dest = shardsMap_.find(*req.shardId_ref());
     if (dest == shardsMap_.end()) {
       // if the shard is not found in the map, return a value outside of range
       // of valid destinations (i.e. >= size), so that we error the request.
@@ -243,7 +243,7 @@ TEST_F(EagerShardSelectionRouteTest, traverseAndCheckChildrenIsLoadBalancer) {
 
   GoodbyeRequest req;
 
-  req.shardId() = 1;
+  *req.shardId_ref() = 1;
   size_t iterations = 0;
   RouteHandleTraverser<HelloGoodbyeRouterInfo::RouteHandleIf> t{
       [&iterations](const HelloGoodbyeRouterInfo::RouteHandleIf& r) {
@@ -317,7 +317,7 @@ TEST_F(EagerShardSelectionRouteTest, traverseAndCheckChildrenIsFailover) {
   // Shards 1 and 2 are served by 3 servers, with name starting
   // with "localhost:123"
   for (auto shardId : {1, 2}) {
-    req.shardId() = shardId;
+    *req.shardId_ref() = shardId;
     size_t iterations = 0;
     std::unordered_set<std::string> children;
     RouteHandleTraverser<HelloGoodbyeRouterInfo::RouteHandleIf> t{
@@ -340,7 +340,7 @@ TEST_F(EagerShardSelectionRouteTest, traverseAndCheckChildrenIsFailover) {
   }
 
   // Shard 3 is served by all 6 servers.
-  req.shardId() = 5;
+  *req.shardId_ref() = 5;
   size_t iterations = 0;
   std::unordered_set<std::string> children;
   RouteHandleTraverser<HelloGoodbyeRouterInfo::RouteHandleIf> t{
@@ -362,7 +362,7 @@ TEST_F(EagerShardSelectionRouteTest, traverseAndCheckChildrenIsFailover) {
   EXPECT_EQ(iterations, 3);
 
   // There is no shard 4.
-  req.shardId() = 4;
+  *req.shardId_ref() = 4;
   iterations = 0;
   t = RouteHandleTraverser<HelloGoodbyeRouterInfo::RouteHandleIf>{
       [&iterations](const HelloGoodbyeRouterInfo::RouteHandleIf& r) {
@@ -374,7 +374,7 @@ TEST_F(EagerShardSelectionRouteTest, traverseAndCheckChildrenIsFailover) {
   EXPECT_EQ(iterations, 1);
 
   // Shard 5 is served by 2 servers, with name starting with "localhost:356"
-  req.shardId() = 5;
+  *req.shardId_ref() = 5;
   iterations = 0;
   children.clear();
   t = RouteHandleTraverser<HelloGoodbyeRouterInfo::RouteHandleIf>{
@@ -394,7 +394,7 @@ TEST_F(EagerShardSelectionRouteTest, traverseAndCheckChildrenIsFailover) {
   EXPECT_EQ(iterations, 3);
 
   // Shard 6 is served only by server "localhost:35602"
-  req.shardId() = 6;
+  *req.shardId_ref() = 6;
   iterations = 0;
   t = RouteHandleTraverser<HelloGoodbyeRouterInfo::RouteHandleIf>{
       [&iterations](const HelloGoodbyeRouterInfo::RouteHandleIf& r) {
@@ -458,7 +458,7 @@ TEST_F(EagerShardSelectionRouteTest, customChildrenRoute) {
 
   GoodbyeRequest req;
 
-  req.shardId() = 1;
+  *req.shardId_ref() = 1;
   size_t iterations = 0;
   RouteHandleTraverser<HelloGoodbyeRouterInfo::RouteHandleIf> t{
       [&iterations](const HelloGoodbyeRouterInfo::RouteHandleIf& r) {
@@ -520,7 +520,7 @@ TEST_F(EagerShardSelectionRouteTest, customJsonmRoute) {
 
   GoodbyeRequest req;
 
-  req.shardId() = 2;
+  *req.shardId_ref() = 2;
   size_t iterations = 0;
   RouteHandleTraverser<HelloGoodbyeRouterInfo::RouteHandleIf> t{
       [&iterations](const HelloGoodbyeRouterInfo::RouteHandleIf& r) {
@@ -601,7 +601,7 @@ TEST_F(EagerShardSelectionRouteTest, customJsonmRoute_twice) {
 
   GoodbyeRequest req;
 
-  req.shardId() = 2;
+  *req.shardId_ref() = 2;
   size_t iterations = 0;
   RouteHandleTraverser<HelloGoodbyeRouterInfo::RouteHandleIf> t{
       [&iterations](const HelloGoodbyeRouterInfo::RouteHandleIf& r) {

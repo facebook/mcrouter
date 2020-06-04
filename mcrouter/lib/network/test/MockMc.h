@@ -32,13 +32,13 @@ class MockMc {
     explicit Item(std::unique_ptr<folly::IOBuf> v);
     template <class Request>
     explicit Item(const Request& req)
-        : value(req.value().clone()),
+        : value(req.value_ref()->clone()),
           creationTime(time(nullptr)),
           exptime(
-              req.exptime() != 0 && req.exptime() <= 60 * 60 * 24 * 30
-                  ? req.exptime() + time(nullptr)
-                  : req.exptime()),
-          flags(req.flags()) {}
+              *req.exptime_ref() != 0 && *req.exptime_ref() <= 60 * 60 * 24 * 30
+                  ? *req.exptime_ref() + time(nullptr)
+                  : *req.exptime_ref()),
+          flags(*req.flags_ref()) {}
 
     Item(const folly::IOBuf& v, int32_t t, uint64_t f);
   };
@@ -177,5 +177,5 @@ class MockMc {
       folly::StringPiece key);
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

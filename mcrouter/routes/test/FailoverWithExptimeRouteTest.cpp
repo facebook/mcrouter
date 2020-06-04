@@ -30,7 +30,7 @@ namespace mcrouter {
 namespace {
 using FiberManagerContextTag =
     typename fiber_local<MemcacheRouterInfo>::ContextTypeTag;
-} // anonymous
+} // namespace
 } // namespace mcrouter
 } // namespace memcache
 } // namespace facebook
@@ -92,7 +92,7 @@ TEST(failoverWithExptimeRouteTest, once) {
     EXPECT_EQ("b", carbon::valueRangeSlow(reply).str());
 
     auto reply2 = rh->route(McDeleteRequest("1"));
-    EXPECT_EQ(carbon::Result::NOTFOUND, reply2.result());
+    EXPECT_EQ(carbon::Result::NOTFOUND, *reply2.result_ref());
     EXPECT_EQ(vector<uint32_t>({0, 0}), normalHandle[0]->sawExptimes);
     EXPECT_EQ(vector<uint32_t>({0, 0}), failoverHandles[0]->sawExptimes);
     EXPECT_EQ(vector<uint32_t>{}, failoverHandles[1]->sawExptimes);
@@ -131,7 +131,7 @@ TEST(failoverWithExptimeRouteTest, twice) {
     EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
 
     auto reply2 = rh->route(McDeleteRequest("1"));
-    EXPECT_EQ(carbon::Result::NOTFOUND, reply2.result());
+    EXPECT_EQ(carbon::Result::NOTFOUND, *reply2.result_ref());
     EXPECT_EQ(vector<uint32_t>({0, 0}), normalHandle[0]->sawExptimes);
     EXPECT_EQ(vector<uint32_t>({0, 0}), failoverHandles[0]->sawExptimes);
     EXPECT_EQ(vector<uint32_t>({0, 0}), failoverHandles[1]->sawExptimes);
@@ -172,7 +172,7 @@ TEST(failoverWithExptimeRouteTest, fail) {
     EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
 
     auto reply2 = rh->route(McDeleteRequest("1"));
-    EXPECT_EQ(carbon::Result::TIMEOUT, reply2.result());
+    EXPECT_EQ(carbon::Result::TIMEOUT, *reply2.result_ref());
     EXPECT_EQ(vector<uint32_t>({0, 0}), normalHandle[0]->sawExptimes);
     EXPECT_EQ(vector<uint32_t>({0, 0}), failoverHandles[0]->sawExptimes);
     EXPECT_EQ(vector<uint32_t>({0, 0}), failoverHandles[1]->sawExptimes);
@@ -237,9 +237,9 @@ void testFailoverUpdate(carbon::Result res) {
   fm.run([&] {
     mockFiberContext();
     McSetRequest req("0");
-    req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "a");
+    req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "a");
     auto reply = rhNoFail->route(std::move(req));
-    EXPECT_EQ(res, reply.result());
+    EXPECT_EQ(res, *reply.result_ref());
     EXPECT_EQ(vector<uint32_t>{0}, normalHandle[0]->sawExptimes);
     // only normal handle sees the key
     EXPECT_EQ(vector<std::string>{"0"}, normalHandle[0]->saw_keys);
@@ -257,10 +257,10 @@ void testFailoverUpdate(carbon::Result res) {
   fm.run([&] {
     mockFiberContext();
     McSetRequest req("0");
-    req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "a");
+    req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "a");
     auto reply = rhFail->route(std::move(req));
 
-    EXPECT_EQ(carbon::Result::STORED, reply.result());
+    EXPECT_EQ(carbon::Result::STORED, *reply.result_ref());
     EXPECT_EQ(1, failoverHandles[0]->saw_keys.size());
     EXPECT_EQ(0, failoverHandles[1]->saw_keys.size());
   });
@@ -348,7 +348,7 @@ TEST(failoverWithExptimeRouteTest, noFailoverOnArithmetic) {
   fm.run([&] {
     mockFiberContext();
     McIncrRequest req("0");
-    req.delta() = 1;
+    req.delta_ref() = 1;
     auto reply = rh->route(std::move(req));
 
     EXPECT_EQ(vector<uint32_t>{0}, normalHandle[0]->sawExptimes);

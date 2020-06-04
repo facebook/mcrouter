@@ -34,7 +34,7 @@ TEST(randomRouteTest, success) {
       get_route_handles(test_handles));
 
   auto reply = rh.route(McGetRequest("0"));
-  EXPECT_TRUE(isHitResult(reply.result()));
+  EXPECT_TRUE(isHitResult(*reply.result_ref()));
 }
 
 TEST(randomRouteTest, cover) {
@@ -50,8 +50,8 @@ TEST(randomRouteTest, cover) {
   const int rounds = 32;
   for (int i = 0; i < rounds; i++) {
     auto reply = rh.route(McGetRequest("0"));
-    hit += isHitResult(reply.result());
-    miss += isMissResult(reply.result());
+    hit += ((isHitResult(*reply.result_ref())) ? 1 : 0);
+    miss += ((isMissResult(*reply.result_ref())) ? 1 : 0);
   }
 
   EXPECT_GT(hit, 0);
@@ -72,5 +72,5 @@ TEST(randomRouteTest, fail) {
 
   auto reply = rh.route(McGetRequest("0"));
 
-  EXPECT_TRUE(!isHitResult(reply.result()));
+  EXPECT_TRUE(!isHitResult(*reply.result_ref()));
 }

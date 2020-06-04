@@ -50,9 +50,9 @@ void testShardingForOp(ShardSplitter splitter, uint64_t requestFlags = 0) {
     fm.run([&] {
       mockFiberContext<RouterInfo>();
       Request req("test:123:");
-      req.flags() = requestFlags;
+      req.flags_ref() = requestFlags;
       auto reply = splitRoute.route(req);
-      EXPECT_EQ(carbon::Result::FOUND, reply.result());
+      EXPECT_EQ(carbon::Result::FOUND, *reply.result_ref());
     });
 
     if (i == 0) {
@@ -68,7 +68,7 @@ void testShardingForOp(ShardSplitter splitter, uint64_t requestFlags = 0) {
   }
 }
 
-} // test
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace test
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

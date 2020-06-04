@@ -62,7 +62,7 @@ class EagerShardShadowSelectorPolicy {
   template <class Reply>
   folly::Function<void(const Reply&)> makePostShadowReplyFn() const {
     folly::Function<void(const Reply&)> fn = [&](const Reply& reply) {
-      std::string v = reply.message();
+      std::string v = *reply.message_ref();
       auto it = shadowResults_.find(v);
       if (it != shadowResults_.end()) {
         shadowResults_[v]++;
@@ -89,7 +89,7 @@ class EagerShardShadowSelector {
 
   template <class Request>
   size_t select(const Request& req, size_t /* size */) const {
-    auto dest = shardsMap_.find(req.shardId());
+    auto dest = shardsMap_.find(*req.shardId_ref());
     if (dest == shardsMap_.end()) {
       // if the shard is not found in the map, return a value outside of range
       // of valid destinations (i.e. >= size), so that we error the request.
@@ -259,7 +259,7 @@ TEST_F(EagerShardSelectionShadowRouteTest, customChildrenRoute) {
 
   GoodbyeRequest req;
 
-  req.shardId() = 1;
+  *req.shardId_ref() = 1;
   size_t iterations = 0;
   RouteHandleTraverser<HelloGoodbyeRouterInfo::RouteHandleIf> t{
       [&iterations](const HelloGoodbyeRouterInfo::RouteHandleIf& r) {
@@ -680,9 +680,9 @@ TEST_F(EagerShardSelectionShadowRouteTest, basicRequestTest) {
   fm.run([&]() {
     for (int i = 0; i < 100; i++) {
       GoodbyeRequest req;
-      req.shardId() = 1;
+      *req.shardId_ref() = 1;
       auto reply = rh->route(req);
-      std::string v = reply.message();
+      std::string v = *reply.message_ref();
       auto it = normalResults.find(v);
       if (it != normalResults.end()) {
         normalResults[v]++;
@@ -767,9 +767,9 @@ TEST_F(EagerShardSelectionShadowRouteTest, basicShardTest) {
   fm.run([&]() {
     for (int i = 0; i < 100; i++) {
       GoodbyeRequest req;
-      req.shardId() = 1;
+      *req.shardId_ref() = 1;
       auto reply = rh->route(req);
-      std::string v = reply.message();
+      std::string v = *reply.message_ref();
       auto it = normalResults.find(v);
       if (it != normalResults.end()) {
         normalResults[v]++;
@@ -859,9 +859,9 @@ TEST_F(EagerShardSelectionShadowRouteTest, basicShardWithWeightsTest) {
   fm.run([&]() {
     for (int i = 0; i < 100; i++) {
       GoodbyeRequest req;
-      req.shardId() = 1;
+      *req.shardId_ref() = 1;
       auto reply = rh->route(req);
-      std::string v = reply.message();
+      std::string v = *reply.message_ref();
       auto it = normalResults.find(v);
       if (it != normalResults.end()) {
         normalResults[v]++;
@@ -951,9 +951,9 @@ TEST_F(EagerShardSelectionShadowRouteTest, basicShardWithLowWeightsTest) {
   fm.run([&]() {
     for (int i = 0; i < 100; i++) {
       GoodbyeRequest req;
-      req.shardId() = 1;
+      *req.shardId_ref() = 1;
       auto reply = rh->route(req);
-      std::string v = reply.message();
+      std::string v = *reply.message_ref();
       auto it = normalResults.find(v);
       if (it != normalResults.end()) {
         normalResults[v]++;
@@ -1088,9 +1088,9 @@ TEST_F(EagerShardSelectionShadowRouteTest, basicShadowShardTest) {
   fm.run([&]() {
     for (int i = 0; i < 100; i++) {
       GoodbyeRequest req;
-      req.shardId() = 1;
+      *req.shardId_ref() = 1;
       auto reply = rh->route(req);
-      std::string v = reply.message();
+      std::string v = *reply.message_ref();
       auto it = normalResults.find(v);
       if (it != normalResults.end()) {
         normalResults[v]++;
@@ -1221,9 +1221,9 @@ TEST_F(EagerShardSelectionShadowRouteTest, basicShadowShardWithShardTest) {
   fm.run([&]() {
     for (int i = 0; i < 100; i++) {
       GoodbyeRequest req;
-      req.shardId() = 1;
+      *req.shardId_ref() = 1;
       auto reply = rh->route(req);
-      EXPECT_EQ("Out of range!", reply.message());
+      EXPECT_EQ("Out of range!", *reply.message_ref());
     }
   });
   // 100 requests on shadow path
@@ -1339,9 +1339,9 @@ TEST_F(EagerShardSelectionShadowRouteTest, basicShadowShardWithNoShardTest) {
   fm.run([&]() {
     for (int i = 0; i < 100; i++) {
       GoodbyeRequest req;
-      req.shardId() = 1;
+      *req.shardId_ref() = 1;
       auto reply = rh->route(req);
-      EXPECT_EQ("Out of range!", reply.message());
+      EXPECT_EQ("Out of range!", *reply.message_ref());
     }
   });
   // 100 requests on shadow path

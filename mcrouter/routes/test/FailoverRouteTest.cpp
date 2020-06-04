@@ -190,9 +190,9 @@ TEST(failoverRouteTest, customErrorUpdate) {
       /* failoverTagging */ false);
 
   McSetRequest req("0");
-  req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
+  req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
   auto reply = rh->route(std::move(req));
-  EXPECT_EQ(carbon::Result::LOCAL_ERROR, reply.result());
+  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result_ref());
 }
 
 TEST(failoverRouteTest, separateErrorsGet) {
@@ -236,21 +236,21 @@ TEST(failoverRouteTest, separateErrorsUpdate) {
 
   {
     McSetRequest req("0");
-    req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
+    req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
     auto reply1 = rh->route(std::move(req));
-    EXPECT_EQ(carbon::Result::STORED, reply1.result());
+    EXPECT_EQ(carbon::Result::STORED, *reply1.result_ref());
   }
   {
     McAppendRequest req("0");
-    req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
+    req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
     auto reply2 = rh->route(std::move(req));
-    EXPECT_EQ(carbon::Result::STORED, reply2.result());
+    EXPECT_EQ(carbon::Result::STORED, *reply2.result_ref());
   }
   {
     McPrependRequest req("0");
-    req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
+    req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
     auto reply3 = rh->route(std::move(req));
-    EXPECT_EQ(carbon::Result::STORED, reply3.result());
+    EXPECT_EQ(carbon::Result::STORED, *reply3.result_ref());
   }
 }
 
@@ -272,7 +272,7 @@ TEST(failoverRouteTest, separateErrorsDelete) {
       /* failoverTagging */ false);
 
   auto reply = rh->route(McDeleteRequest("0"));
-  EXPECT_EQ(carbon::Result::REMOTE_ERROR, reply.result());
+  EXPECT_EQ(carbon::Result::REMOTE_ERROR, *reply.result_ref());
 }
 
 TEST(failoverRouteTest, rateLimit) {
@@ -289,16 +289,16 @@ TEST(failoverRouteTest, rateLimit) {
 
   // tokens: 1
   auto reply1 = rh->route(McGetRequest("0"));
-  EXPECT_EQ(carbon::Result::FOUND, reply1.result());
+  EXPECT_EQ(carbon::Result::FOUND, *reply1.result_ref());
   // tokens: 0
   auto reply2 = rh->route(McGetRequest("0"));
-  EXPECT_EQ(carbon::Result::TIMEOUT, reply2.result());
+  EXPECT_EQ(carbon::Result::TIMEOUT, *reply2.result_ref());
   // tokens: 0.5
   auto reply3 = rh->route(McGetRequest("0"));
-  EXPECT_EQ(carbon::Result::FOUND, reply3.result());
+  EXPECT_EQ(carbon::Result::FOUND, *reply3.result_ref());
   // tokens: 0
   auto reply4 = rh->route(McGetRequest("0"));
-  EXPECT_EQ(carbon::Result::TIMEOUT, reply4.result());
+  EXPECT_EQ(carbon::Result::TIMEOUT, *reply4.result_ref());
 }
 
 TEST(failoverRouteTest, rateLimitWithTKO) {
@@ -315,16 +315,16 @@ TEST(failoverRouteTest, rateLimitWithTKO) {
 
   // tokens: 1
   auto reply1 = rh->route(McGetRequest("0"));
-  EXPECT_EQ(carbon::Result::FOUND, reply1.result());
+  EXPECT_EQ(carbon::Result::FOUND, *reply1.result_ref());
   // tokens: 0
   auto reply2 = rh->route(McGetRequest("0"));
-  EXPECT_EQ(carbon::Result::FOUND, reply2.result());
+  EXPECT_EQ(carbon::Result::FOUND, *reply2.result_ref());
   // tokens: 0.5
   auto reply3 = rh->route(McGetRequest("0"));
-  EXPECT_EQ(carbon::Result::FOUND, reply3.result());
+  EXPECT_EQ(carbon::Result::FOUND, *reply3.result_ref());
   // tokens: 0
   auto reply4 = rh->route(McGetRequest("0"));
-  EXPECT_EQ(carbon::Result::FOUND, reply4.result());
+  EXPECT_EQ(carbon::Result::FOUND, *reply4.result_ref());
 }
 
 TEST(failoverRouteTest, leastFailuresNoFailover) {
@@ -549,7 +549,7 @@ TEST(failoverRouteTest, leastFailuresComplex) {
   // At this point, b has failed 2 times, c has failed 1 time
   // Next request is routed to c
   McSetRequest req("0");
-  req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
+  req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
   rh->route(req);
 
   // Now both b and c have error count 2.  Next request routed to b.

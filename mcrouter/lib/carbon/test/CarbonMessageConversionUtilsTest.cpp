@@ -25,7 +25,7 @@ TEST(CarbonMessageConversionUtils, toFollyDynamic_Complex) {
   r.vectorMember().back().member1() = 342;
   r.vectorMember().emplace_back();
   r.vectorMember().back().member1() = 123;
-  r.key() = carbon::Keys<folly::IOBuf>("/test/key/");
+  r.key_ref() = carbon::Keys<folly::IOBuf>("/test/key/");
   r.testEnum() = carbon::test2::util::SimpleEnum::Negative;
   r.testBool() = true;
   r.testChar() = 'a';
@@ -340,7 +340,7 @@ TEST(CarbonMessageConversionUtils, fromFollyDynamic_Complex) {
 
   EXPECT_EQ(0, numErrors);
 
-  EXPECT_EQ("sampleKey", r.key().fullKey());
+  EXPECT_EQ("sampleKey", r.key_ref()->fullKey());
 
   // Simple struct
   EXPECT_EQ(32, r.int32Member());

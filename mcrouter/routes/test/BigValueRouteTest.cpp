@@ -30,7 +30,7 @@ namespace {
 constexpr int version = 1;
 constexpr size_t threshold = 128;
 constexpr BigValueRouteOptions opts(threshold, /* batchSize= */ 0);
-} // anonymous
+} // namespace
 
 TEST(BigValueRouteTest, smallvalue) {
   // for small values, this route handle simply passes it to child route handle
@@ -55,10 +55,10 @@ TEST(BigValueRouteTest, smallvalue) {
     testHandles[0]->saw_keys.clear();
 
     McSetRequest reqSet(keySet);
-    reqSet.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
+    reqSet.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
 
     auto fSet = rh.route(reqSet);
-    EXPECT_EQ(carbon::Result::STORED, fSet.result());
+    EXPECT_EQ(carbon::Result::STORED, *fSet.result_ref());
     EXPECT_EQ(testHandles[0]->saw_keys, vector<std::string>{keySet});
   }});
 }
@@ -125,7 +125,7 @@ TEST(BigValueRouteTest, bigvalue) {
       // first get the result for original key, then return
       // carbon::Result::NOTFOUND
       EXPECT_EQ(keyGet, keys_get.front());
-      EXPECT_EQ(carbon::Result::NOTFOUND, fGet.result());
+      EXPECT_EQ(carbon::Result::NOTFOUND, *fGet.result_ref());
       EXPECT_EQ("", carbon::valueRangeSlow(fGet).str());
     }
 
@@ -138,7 +138,7 @@ TEST(BigValueRouteTest, bigvalue) {
       std::string chunk_type_1(threshold, 't');
       std::string chunk_type_2(threshold, 's');
       McSetRequest reqSet(keySet);
-      reqSet.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, bigValue);
+      reqSet.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, bigValue);
 
       auto fSet = rh.route(reqSet);
       auto keys_set = testHandles[2]->saw_keys;
@@ -181,7 +181,7 @@ TEST(BigValueRouteTest, bigvalue) {
           std::string(threshold * (num_chunks / 2), 's'));
 
       McLeaseSetRequest reqSet(keySet);
-      reqSet.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, bigValue);
+      reqSet.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, bigValue);
 
       auto fSet = rh.route(reqSet);
       auto keys_set = testHandles[3]->saw_keys;
@@ -212,7 +212,7 @@ TEST(BigValueRouteTest, bigvalue) {
       std::string chunk_type_1(threshold, 't');
       std::string chunk_type_2(threshold, 's');
       McAddRequest reqSet(keySet);
-      reqSet.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, bigValue);
+      reqSet.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, bigValue);
 
       auto fSet = rh.route(reqSet);
       auto keys_set = testHandles[4]->saw_keys;
@@ -249,6 +249,5 @@ TEST(BigValueRouteTest, bigvalue) {
           folly::sformat("{}-{}-{}", version, num_chunks, rand_suffix_set);
       EXPECT_EQ(chunks_info, values_set[num_chunks]);
     }
-
   }});
 }

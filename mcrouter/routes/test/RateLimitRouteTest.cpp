@@ -71,19 +71,19 @@ void test(
     usleep(1001000);
     /* Rate is 4/sec, but we can only have 3 at a time */
     auto reply = rh.route(req);
-    EXPECT_EQ(reply.result(), ok);
+    EXPECT_EQ(*reply.result_ref(), ok);
     reply = rh.route(req);
-    EXPECT_EQ(reply.result(), ok);
+    EXPECT_EQ(*reply.result_ref(), ok);
     reply = rh.route(req);
-    EXPECT_EQ(reply.result(), ok);
+    EXPECT_EQ(*reply.result_ref(), ok);
     reply = rh.route(req);
-    EXPECT_EQ(reply.result(), fallback ? fallbackRes : reject);
+    EXPECT_EQ(*reply.result_ref(), fallback ? fallbackRes : reject);
   } else {
     usleep(501000);
     auto reply = rh.route(req);
-    EXPECT_EQ(reply.result(), ok);
+    EXPECT_EQ(*reply.result_ref(), ok);
     reply = rh.route(req);
-    EXPECT_EQ(reply.result(), fallback ? fallbackRes : reject);
+    EXPECT_EQ(*reply.result_ref(), fallback ? fallbackRes : reject);
   }
 }
 

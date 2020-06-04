@@ -64,7 +64,7 @@ TEST_F(ErrorRouteTest, createWithBusyReply) {
   auto rh = getErrorRoute(kErrorRouteConfigWithBusyReply);
   EXPECT_EQ("error|log|mc_res_busy", rh->routeName());
   auto reply = rh->route(GoodbyeRequest());
-  EXPECT_EQ(reply.result(), carbon::Result::BUSY);
+  EXPECT_EQ(*reply.result_ref(), carbon::Result::BUSY);
 }
 
 TEST_F(ErrorRouteTest, createWithUnknownReply) {
@@ -95,12 +95,12 @@ TEST(ErrorRoute, createCustomMessage) {
 TEST(ErrorRoute, route) {
   TestRouteHandle<ErrorRoute<TestRouterInfo>> rh;
   auto reply = rh.route(McGetRequest("key"));
-  EXPECT_TRUE(isErrorResult(reply.result()));
+  EXPECT_TRUE(isErrorResult(*reply.result_ref()));
 }
 
 TEST(ErrorRoute, routeCustomMessage) {
   TestRouteHandle<ErrorRoute<TestRouterInfo>> rh("custom msg");
   auto reply = rh.route(McGetRequest("key"));
-  EXPECT_TRUE(isErrorResult(reply.result()));
-  EXPECT_EQ("custom msg", reply.message());
+  EXPECT_TRUE(isErrorResult(*reply.result_ref()));
+  EXPECT_EQ("custom msg", *reply.message_ref());
 }

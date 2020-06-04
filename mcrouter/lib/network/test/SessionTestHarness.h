@@ -151,7 +151,7 @@ class SessionTestHarness {
     Transaction(Request&& req, folly::Function<void(const Request&)> replyFn)
         : req_(std::move(req)), replyFn_(std::move(replyFn)) {}
     std::string key() const final {
-      return req_.key().fullKey().str();
+      return req_.key_ref()->fullKey().str();
     }
     void reply() final {
       replyFn_(req_);
@@ -216,11 +216,11 @@ class SessionTestHarness {
   std::unique_ptr<Transaction<McGetRequest>> makeTransaction(
       McServerRequestContext&& ctx,
       McGetRequest&& req) {
-    auto value = req.key().fullKey().str() + "_value";
+    auto value = req.key_ref()->fullKey().str() + "_value";
     auto replyFn = [ctx = std::move(ctx),
                     value = std::move(value)](const McGetRequest&) mutable {
       McGetReply reply(carbon::Result::FOUND);
-      reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, value);
+      reply.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, value);
       McServerRequestContext::reply(std::move(ctx), std::move(reply));
     };
     return std::make_unique<Transaction<McGetRequest>>(
@@ -245,5 +245,5 @@ class SessionTestHarness {
 
 inline SessionTestHarness::TransactionIf::~TransactionIf() {}
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

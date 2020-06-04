@@ -57,7 +57,7 @@ TEST(warmUpRouteTest, warmUp) {
     (test_handles[1]->saw_keys).clear();
 
     auto reply_del = rh.route(McDeleteRequest("key_del"));
-    EXPECT_EQ(carbon::Result::NOTFOUND, reply_del.result());
+    EXPECT_EQ(carbon::Result::NOTFOUND, *reply_del.result_ref());
     EXPECT_NE(vector<string>{"key_del"}, test_handles[0]->saw_keys);
     EXPECT_EQ(vector<string>{"key_del"}, test_handles[1]->saw_keys);
   });
@@ -82,7 +82,7 @@ TEST(warmUpRouteTest, warmUp) {
         route_handles[0], route_handles[2], 1);
 
     auto reply_del = rh.route(McDeleteRequest("key_del"));
-    EXPECT_EQ(carbon::Result::NOTFOUND, reply_del.result());
+    EXPECT_EQ(carbon::Result::NOTFOUND, *reply_del.result_ref());
     EXPECT_NE(vector<string>{"key_del"}, test_handles[0]->saw_keys);
     EXPECT_EQ(vector<string>{"key_del"}, test_handles[2]->saw_keys);
   });

@@ -41,7 +41,7 @@ void testDirectOp(ShardSplitter splitter) {
   fm.run([&] {
     mockFiberContext();
     auto reply = splitRoute.route(Request("test:123zz:"));
-    EXPECT_EQ(carbon::Result::FOUND, reply.result());
+    EXPECT_EQ(carbon::Result::FOUND, *reply.result_ref());
   });
 
   EXPECT_EQ(vector<string>{"test:123zz:"}, handles[0]->saw_keys);
@@ -92,7 +92,7 @@ TEST(shardSplitRoute, simpleSplit_deleteFanout) {
   fm.run([&] {
     mockFiberContext();
     auto reply = splitRoute.route(McDeleteRequest("test:123:"));
-    EXPECT_EQ(carbon::Result::FOUND, reply.result());
+    EXPECT_EQ(carbon::Result::FOUND, *reply.result_ref());
   });
 
   EXPECT_EQ(allKeys, handles[0]->saw_keys);

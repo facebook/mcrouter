@@ -26,7 +26,7 @@ class AllSyncCollector : public Collector<Request, AllSyncCollector, Args...> {
 
   folly::Optional<Reply> iterImpl(const Reply& reply) {
     if (!finalReply_ ||
-        worseThan(reply.result(), finalReply_.value().result())) {
+        worseThan(*reply.result_ref(), *finalReply_.value().result_ref())) {
       finalReply_ = reply;
     }
 

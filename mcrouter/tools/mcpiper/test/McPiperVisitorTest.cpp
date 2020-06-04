@@ -21,8 +21,8 @@ namespace {
 
 void testBasic(bool scriptMode) {
   McLeaseSetReply msg(carbon::Result::FOUND);
-  msg.appSpecificErrorCode() = 17;
-  msg.message() = "A message";
+  msg.appSpecificErrorCode_ref() = 17;
+  *msg.message_ref() = "A message";
 
   McPiperVisitor v(scriptMode);
   msg.visitFields(v);

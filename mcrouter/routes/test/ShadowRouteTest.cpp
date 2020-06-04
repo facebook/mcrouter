@@ -45,7 +45,8 @@ TEST(shadowRouteTest, defaultPolicy) {
 
   auto shadowRhs = get_route_handles(shadowHandles);
   McrouterShadowData shadowData{
-      {std::move(shadowRhs[0]), settings}, {std::move(shadowRhs[1]), settings},
+      {std::move(shadowRhs[0]), settings},
+      {std::move(shadowRhs[1]), settings},
   };
 
   McrouterRouteHandle<ShadowRoute<McrouterRouterInfo, DefaultShadowPolicy>> rh(
@@ -55,7 +56,7 @@ TEST(shadowRouteTest, defaultPolicy) {
     mockFiberContext();
     auto reply = rh.route(McGetRequest("key"));
 
-    EXPECT_EQ(carbon::Result::FOUND, reply.result());
+    EXPECT_EQ(carbon::Result::FOUND, *reply.result_ref());
     EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
   });
 
@@ -67,7 +68,7 @@ TEST(shadowRouteTest, defaultPolicy) {
     mockFiberContext();
     auto reply = rh.route(McGetRequest("key"));
 
-    EXPECT_EQ(carbon::Result::FOUND, reply.result());
+    EXPECT_EQ(carbon::Result::FOUND, *reply.result_ref());
     EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
   });
 

@@ -58,7 +58,7 @@ TEST(latestRouteTest, one) {
   test_handles[third]->setTko();
   /* three boxes are now TKO, we hit the failover limit */
   auto reply = rh->route(McGetRequest("key"));
-  EXPECT_EQ(carbon::Result::TKO, reply.result());
+  EXPECT_EQ(carbon::Result::TKO, *reply.result_ref());
 }
 
 TEST(latestRouteTest, weights) {

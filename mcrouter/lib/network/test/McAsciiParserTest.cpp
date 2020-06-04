@@ -167,37 +167,37 @@ void McAsciiParserHarness::runTest(int maxPieceSize) {
 
 template <class Reply>
 Reply setValue(Reply reply, folly::StringPiece str) {
-  reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, str);
+  reply.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, str);
   return reply;
 }
 
 template <class Reply>
 Reply setFlags(Reply reply, uint64_t flags) {
-  reply.flags() = flags;
+  reply.flags_ref() = flags;
   return reply;
 }
 
 template <class Reply>
 Reply setLeaseToken(Reply reply, uint64_t token) {
-  reply.leaseToken() = token;
+  reply.leaseToken_ref() = token;
   return reply;
 }
 
 template <class Reply>
 Reply setDelta(Reply reply, uint64_t delta) {
-  reply.delta() = delta;
+  reply.delta_ref() = delta;
   return reply;
 }
 
 template <class Reply>
 Reply setCas(Reply reply, uint64_t cas) {
-  reply.casToken() = cas;
+  reply.casToken_ref() = cas;
   return reply;
 }
 
 template <class Reply>
 Reply setVersion(Reply reply, std::string version) {
-  reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, version);
+  reply.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, version);
   return reply;
 }
 
@@ -207,23 +207,23 @@ McMetagetReply createMetagetHitReply(
     uint64_t /* flags */,
     std::string host) {
   McMetagetReply msg;
-  msg.age() = age;
-  msg.exptime() = exptime;
+  msg.age_ref() = age;
+  msg.exptime_ref() = exptime;
 
   if (host != "unknown") {
     struct in6_addr addr;
     memset(&addr, 0, sizeof(addr));
     if (strchr(host.data(), ':') != nullptr) {
       EXPECT_TRUE(inet_pton(AF_INET6, host.data(), &addr) > 0);
-      msg.ipv() = 6;
+      msg.ipv_ref() = 6;
     } else {
       EXPECT_TRUE(inet_pton(AF_INET, host.data(), &addr) > 0);
-      msg.ipv() = 4;
+      msg.ipv_ref() = 4;
     }
   }
-  msg.result() = carbon::Result::FOUND;
+  *msg.result_ref() = carbon::Result::FOUND;
   if (host != "unknown") {
-    msg.ipAddress() = host;
+    msg.ipAddress_ref() = host;
   }
   return msg;
 }
@@ -231,11 +231,11 @@ McMetagetReply createMetagetHitReply(
 template <class Reply>
 Reply replyWithMessage(carbon::Result res, std::string msg) {
   Reply reply(res);
-  reply.message() = std::move(msg);
+  reply.message_ref() = std::move(msg);
   return reply;
 }
 
-} // anonymous
+} // namespace
 
 /**
  * Test get
