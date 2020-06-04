@@ -88,7 +88,7 @@ class RouteHandlesCommandDispatcher {
     if (!key.empty() && key[0] == '{' && key[key.size() - 1] == '}') {
       carbon::convertFromFollyDynamic(folly::parseJson(key), request);
     } else {
-      request.key() = key;
+      request.key_ref() = key;
     }
     proxyRoute.traverse(request, t);
     return tree;
@@ -133,7 +133,7 @@ class RouteCommandDispatcher {
             carbon::convertFromFollyDynamic(
                 folly::parseJson(keyStr), recordingReq);
           } else {
-            recordingReq.key() = keyStr;
+            recordingReq.key_ref() = keyStr;
           }
           fiber_local<RouterInfo>::runWithLocals(
               [ctx = std::move(rctx), &recordingReq, &proxyRoute]() mutable {
@@ -155,7 +155,7 @@ class RouteCommandDispatcher {
             str.append(d);
           }
           ReplyT<ServiceInfoRequest> reply(carbon::Result::FOUND);
-          reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, str);
+          reply.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, str);
           ctx->sendReply(std::move(reply));
         });
   }
@@ -175,7 +175,7 @@ class RouteCommandDispatcher {
       dispatcher_;
 };
 
-} // detail
+} // namespace detail
 
 template <class RouterInfo>
 struct ServiceInfo<RouterInfo>::ServiceInfoImpl {
@@ -403,7 +403,7 @@ void ServiceInfo<RouterInfo>::ServiceInfoImpl::handleRequest(
     replyStr = std::string("ERROR: ") + e.what();
   }
   ReplyT<ServiceInfoRequest> reply(carbon::Result::FOUND);
-  reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, replyStr);
+  reply.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, replyStr);
   ctx->sendReply(std::move(reply));
 }
 
@@ -436,6 +436,6 @@ void ServiceInfo<RouterInfo>::handleRequest(
   impl_->handleRequest(key, ctx);
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

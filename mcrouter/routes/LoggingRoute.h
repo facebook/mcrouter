@@ -77,7 +77,8 @@ class LoggingRoute {
 
     auto& callback = ctx->proxy().router().postprocessCallback();
     if (callback) {
-      if (isHitResult(reply.result()) || isStoredResult(reply.result())) {
+      if (isHitResult(*reply.result_ref()) ||
+          isStoredResult(*reply.result_ref())) {
         callback(
             carbon::convertToFollyDynamic(req),
             carbon::convertToFollyDynamic(reply),
@@ -113,6 +114,6 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeLoggingRoute(
   return createLoggingRoute<RouterInfo>(std::move(target));
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

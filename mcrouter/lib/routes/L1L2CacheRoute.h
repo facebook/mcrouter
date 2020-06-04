@@ -77,7 +77,7 @@ class L1L2CacheRoute {
   template <class Request>
   ReplyT<Request> route(const Request& req, carbon::GetLikeT<Request> = 0) {
     auto l1Reply = l1_->route(req);
-    if (isHitResult(l1Reply.result())) {
+    if (isHitResult(*l1Reply.result_ref())) {
       if (getFlagsIfExist(l1Reply) & MC_MSG_FLAG_NEGATIVE_CACHE) {
         if (ncacheUpdatePeriod_) {
           if (ncacheUpdateCounter_ == 1) {
@@ -96,12 +96,12 @@ class L1L2CacheRoute {
 
     /* else */
     auto l2Reply = l2_->route(req);
-    if (isHitResult(l2Reply.result())) {
+    if (isHitResult(*l2Reply.result_ref())) {
       folly::fibers::addTask(
           [l1 = l1_,
            addReq = l1UpdateFromL2<McAddRequest>(
                req, l2Reply, upgradingL1Exptime_)]() { l1->route(addReq); });
-    } else if (isMissResult(l2Reply.result()) && ncacheUpdatePeriod_) {
+    } else if (isMissResult(*l2Reply.result_ref()) && ncacheUpdatePeriod_) {
       folly::fibers::addTask(
           [l1 = l1_, addReq = l1Ncache<McAddRequest>(req, ncacheExptime_)]() {
             l1->route(addReq);
@@ -131,22 +131,22 @@ class L1L2CacheRoute {
       const Reply& reply,
       size_t upgradingL1Exptime) {
     ToRequest req;
-    req.key() = origReq.key();
+    req.key_ref() = *origReq.key_ref();
     if (auto replyValue = carbon::valuePtrUnsafe(reply)) {
-      req.value() = replyValue->cloneAsValue();
+      req.value_ref() = replyValue->cloneAsValue();
     }
-    req.flags() = getFlagsIfExist(reply);
-    req.exptime() = upgradingL1Exptime;
+    req.flags_ref() = getFlagsIfExist(reply);
+    req.exptime_ref() = upgradingL1Exptime;
     return req;
   }
 
   template <class ToRequest, class Request>
   static ToRequest l1Ncache(const Request& origReq, size_t ncacheExptime) {
     ToRequest req;
-    req.key() = origReq.key();
-    req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "ncache");
-    req.flags() = MC_MSG_FLAG_NEGATIVE_CACHE;
-    req.exptime() = ncacheExptime;
+    req.key_ref() = *origReq.key_ref();
+    req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "ncache");
+    req.flags_ref() = MC_MSG_FLAG_NEGATIVE_CACHE;
+    req.exptime_ref() = ncacheExptime;
     return req;
   }
 
@@ -158,7 +158,7 @@ class L1L2CacheRoute {
                             upgradingL1Exptime = upgradingL1Exptime_,
                             ncacheExptime = ncacheExptime_]() {
       auto l2Reply = l2->route(creq);
-      if (isHitResult(l2Reply.result())) {
+      if (isHitResult(*l2Reply.result_ref())) {
         l1->route(
             l1UpdateFromL2<McSetRequest>(creq, l2Reply, upgradingL1Exptime));
       } else {

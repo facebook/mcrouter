@@ -103,7 +103,7 @@ class ServerOnRequest {
   template <class Callback>
   void onRequest(Callback&& ctx, McVersionRequest&&) {
     McVersionReply reply(carbon::Result::OK);
-    reply.value() =
+    reply.value_ref() =
         folly::IOBuf(folly::IOBuf::COPY_BUFFER, MCROUTER_PACKAGE_STRING);
 
     sendReply(std::move(ctx), std::move(reply));

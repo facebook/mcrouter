@@ -18,7 +18,7 @@ namespace detail {
 template <class Request>
 typename std::enable_if<HasKeyTrait<Request>::value, uint64_t>::type getKeySize(
     const Request& req) {
-  return req.key().size();
+  return req.key_ref()->size();
 }
 
 template <class Request>

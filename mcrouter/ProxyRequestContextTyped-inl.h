@@ -53,7 +53,7 @@ bool precheckKey(
   constexpr bool kIsMemcacheRequest =
       ListContains<McRequestList, Request>::value;
 
-  auto key = req.key().fullKey();
+  auto key = req.key_ref()->fullKey();
   auto err = isKeyValid<kIsMemcacheRequest>(key);
   if (err != mc_req_err_valid) {
     ReplyT<Request> reply(carbon::Result::LOCAL_ERROR);
@@ -134,7 +134,7 @@ void ProxyRequestContextTyped<RouterInfo, Request>::sendReply(
     return;
   }
   this->replied_ = true;
-  auto result = reply.result();
+  auto result = *reply.result_ref();
 
   sendReplyImpl(std::move(reply));
   req_ = nullptr;

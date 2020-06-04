@@ -169,7 +169,8 @@ class KeySplitRoute {
   template <class Request>
   bool canAugmentRequest(const Request& req) const {
     // don't augment if length of key is too long
-    return req.key().fullKey().size() + kExtraKeySpaceNeeded <= kMaxMcKeyLength;
+    return req.key_ref()->fullKey().size() + kExtraKeySpaceNeeded <=
+        kMaxMcKeyLength;
   }
 
   bool shouldAugmentRequest(size_t replicaId) const {
@@ -180,8 +181,8 @@ class KeySplitRoute {
   template <class Request>
   Request copyAndAugment(Request& originalReq, uint64_t replicaId) const {
     auto req = originalReq;
-    req.key() = folly::to<std::string>(
-        req.key().fullKey(), kMemcacheReplicaSeparator, replicaId);
+    req.key_ref() = folly::to<std::string>(
+        req.key_ref()->fullKey(), kMemcacheReplicaSeparator, replicaId);
     return req;
   }
 
@@ -235,11 +236,11 @@ class KeySplitRoute {
     while (true) {
       auto reply = taskIt.awaitNext();
       if (folly::IsOneOf<Request, McGetRequest, McLeaseGetRequest>::value) {
-        if (isHitResult(reply.result()) || !taskIt.hasNext()) {
+        if (isHitResult(*reply.result_ref()) || !taskIt.hasNext()) {
           return reply;
         }
       } else {
-        if (isStoredResult(reply.result()) || !taskIt.hasNext()) {
+        if (isStoredResult(*reply.result_ref()) || !taskIt.hasNext()) {
           return reply;
         }
       }

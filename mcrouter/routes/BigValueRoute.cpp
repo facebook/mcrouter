@@ -54,25 +54,25 @@ McLeaseGetReply BigValueRoute::doLeaseGetRoute(
     const McLeaseGetRequest& req,
     size_t retriesLeft) const {
   auto initialReply = ch_->route(req);
-  if (!(initialReply.flags() & MC_MSG_FLAG_BIG_VALUE) ||
-      !isHitResult(initialReply.result())) {
+  if (!(*initialReply.flags_ref() & MC_MSG_FLAG_BIG_VALUE) ||
+      !isHitResult(*initialReply.result_ref())) {
     return initialReply;
   }
 
-  ChunksInfo chunksInfo(coalesceAndGetRange(initialReply.value()));
+  ChunksInfo chunksInfo(coalesceAndGetRange(initialReply.value_ref()));
   if (!chunksInfo.valid()) {
     // We cannot return carbon::Result::NOTFOUND without a valid lease token. We
     // err on the side of allowing clients to make progress by returning a lease
     // token of -1.
     McLeaseGetReply missReply(carbon::Result::NOTFOUND);
-    missReply.leaseToken() = static_cast<uint64_t>(-1);
+    missReply.leaseToken_ref() = static_cast<uint64_t>(-1);
     return missReply;
   }
 
   // Send a gets request for the metadata while sending ordinary get requests
   // to fetch the subpieces. We may need to use the returned CAS token to
   // invalidate the metadata piece later on.
-  const auto key = req.key().fullKey();
+  const auto key = req.key_ref()->fullKey();
   McGetsRequest getsMetadataReq(key);
   const auto reqs = chunkGetRequests(req, chunksInfo);
   std::vector<std::function<McGetReply()>> fs;
@@ -89,7 +89,7 @@ McLeaseGetReply BigValueRoute::doLeaseGetRoute(
   tasks.emplace_back([&getsMetadataReq, &getsMetadataReply, &target]() {
     getsMetadataReply = target.route(getsMetadataReq);
   });
-  tasks.emplace_back([ this, &replies, fs = std::move(fs) ]() mutable {
+  tasks.emplace_back([this, &replies, fs = std::move(fs)]() mutable {
     replies = collectAllByBatches(fs.begin(), fs.end());
   });
 
@@ -98,16 +98,16 @@ McLeaseGetReply BigValueRoute::doLeaseGetRoute(
       replies.begin(), replies.end(), std::move(initialReply));
 
   // Return reducedReply on hit or error
-  if (!isMissResult(reducedReply.result())) {
+  if (!isMissResult(*reducedReply.result_ref())) {
     return reducedReply;
   }
 
-  if (isErrorResult(getsMetadataReply.result())) {
+  if (isErrorResult(*getsMetadataReply.result_ref())) {
     if (retriesLeft > 0) {
       return doLeaseGetRoute(req, --retriesLeft);
     }
-    McLeaseGetReply errorReply(getsMetadataReply.result());
-    errorReply.message() = std::move(getsMetadataReply.message());
+    McLeaseGetReply errorReply(*getsMetadataReply.result_ref());
+    errorReply.message_ref() = std::move(*getsMetadataReply.message_ref());
     return errorReply;
   }
 
@@ -117,14 +117,14 @@ McLeaseGetReply BigValueRoute::doLeaseGetRoute(
   // to get a valid lease token.
   // TODO: Consider also firing off async deletes for the subpieces for better
   // cache use.
-  if (isHitResult(getsMetadataReply.result())) {
+  if (isHitResult(*getsMetadataReply.result_ref())) {
     McCasRequest invalidateReq(key);
-    invalidateReq.exptime() = -1;
-    invalidateReq.casToken() = getsMetadataReply.casToken();
+    invalidateReq.exptime_ref() = -1;
+    invalidateReq.casToken_ref() = *getsMetadataReply.casToken_ref();
     auto invalidateReply = ch_->route(invalidateReq);
-    if (isErrorResult(invalidateReply.result())) {
-      McLeaseGetReply errorReply(invalidateReply.result());
-      errorReply.message() = std::move(invalidateReply.message());
+    if (isErrorResult(*invalidateReply.result_ref())) {
+      McLeaseGetReply errorReply(*invalidateReply.result_ref());
+      errorReply.message_ref() = std::move(*invalidateReply.message_ref());
       return errorReply;
     }
   }
@@ -134,7 +134,7 @@ McLeaseGetReply BigValueRoute::doLeaseGetRoute(
   }
 
   McLeaseGetReply reply(carbon::Result::REMOTE_ERROR);
-  reply.message() = folly::sformat(
+  reply.message_ref() = folly::sformat(
       "BigValueRoute: exhausted retries for lease-get for key {}", key);
   return reply;
 }
@@ -201,6 +201,6 @@ McrouterRouteHandlePtr makeBigValueRoute(
       std::move(rh), std::move(options));
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

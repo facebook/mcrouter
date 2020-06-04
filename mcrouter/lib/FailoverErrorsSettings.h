@@ -39,8 +39,8 @@ class FailoverErrorsSettings : public FailoverErrorsSettingsBase {
       const ReplyT<Request>& reply,
       const Request&,
       carbon::DeleteLikeT<Request> = 0) const {
-    return deletes_.shouldFailover(reply.result()) ? FailoverType::NORMAL
-                                                   : FailoverType::NONE;
+    return deletes_.shouldFailover(*reply.result_ref()) ? FailoverType::NORMAL
+                                                        : FailoverType::NONE;
   }
 
   template <class Request>
@@ -48,8 +48,8 @@ class FailoverErrorsSettings : public FailoverErrorsSettingsBase {
       const ReplyT<Request>& reply,
       const Request&,
       carbon::GetLikeT<Request> = 0) const {
-    return gets_.shouldFailover(reply.result()) ? FailoverType::NORMAL
-                                                : FailoverType::NONE;
+    return gets_.shouldFailover(*reply.result_ref()) ? FailoverType::NORMAL
+                                                     : FailoverType::NONE;
   }
 
   template <class Request>
@@ -57,8 +57,8 @@ class FailoverErrorsSettings : public FailoverErrorsSettingsBase {
       const ReplyT<Request>& reply,
       const Request&,
       carbon::UpdateLikeT<Request> = 0) const {
-    return updates_.shouldFailover(reply.result()) ? FailoverType::NORMAL
-                                                   : FailoverType::NONE;
+    return updates_.shouldFailover(*reply.result_ref()) ? FailoverType::NORMAL
+                                                        : FailoverType::NONE;
   }
 
   template <class Request>
@@ -70,8 +70,8 @@ class FailoverErrorsSettings : public FailoverErrorsSettingsBase {
           carbon::DeleteLike<>,
           carbon::GetLike<>,
           carbon::UpdateLike<>> = 0) const {
-    return isFailoverErrorResult(reply.result()) ? FailoverType::NORMAL
-                                                 : FailoverType::NONE;
+    return isFailoverErrorResult(*reply.result_ref()) ? FailoverType::NORMAL
+                                                      : FailoverType::NONE;
   }
 };
 } // namespace memcache

@@ -41,7 +41,10 @@ ReplyT<Request> ProxyDestination<Transport>::send(
   markAsActive();
   auto reply = getTransport().sendSync(request, timeout, &rpcStatsContext);
   onReply(
-      reply.result(), requestContext, rpcStatsContext, request.isBufferDirty());
+      *reply.result_ref(),
+      requestContext,
+      rpcStatsContext,
+      request.isBufferDirty());
   return reply;
 }
 
@@ -138,7 +141,8 @@ carbon::Result ProxyDestination<Transport>::sendProbe() {
   // connection, so just using shortestConnectTimeout() here.
   return getTransport()
       .sendSync(McVersionRequest(), shortestWriteTimeout())
-      .result();
+      .result_ref()
+      .value();
 }
 
 template <class Transport>

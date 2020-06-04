@@ -57,9 +57,9 @@ class ProxyRoute {
     auto reply = root_->route(req);
 
     auto& requestContext = fiber_local<RouterInfo>::getSharedCtx();
-    requestContext->setFinalResult(reply.result());
+    requestContext->setFinalResult(*reply.result_ref());
 
-    if (isErrorResult(reply.result())) {
+    if (isErrorResult(*reply.result_ref())) {
       proxy_.stats().increment(final_result_error_stat);
     }
 
@@ -81,8 +81,8 @@ class ProxyRoute {
   getAllDestinations() const;
 };
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 #include "ProxyRoute-inl.h"

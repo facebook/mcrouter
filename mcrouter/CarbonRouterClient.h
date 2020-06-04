@@ -84,8 +84,8 @@ class CarbonRouterClient : public CarbonRouterClientBase {
    * @param callback  The callback to call when request is completed.
    *                  Should have the following signature:
    *                    f(const Request& request, ReplyT<Request>&& reply)
-   *                  The reply.result() carbon::Result::UNKNOWN means that the
-   *                  request was canceled.
+   *                  The reply.result_ref() carbon::Result::UNKNOWN means
+   *                  that the request was canceled.
    *                  The callback will be moved into a temporary storage
    *                  before being called.
    *                  The callback will be destroyed only after callback is

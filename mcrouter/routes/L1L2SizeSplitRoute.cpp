@@ -32,11 +32,12 @@ McGetReply L1L2SizeSplitRoute::route(const McGetRequest& req) const {
   // TODO It's probably fine to const_cast and avoid the copy here
   const auto l1ReqWithFlag = [&req]() {
     auto r = req;
-    r.flags() |= MC_MSG_FLAG_SIZE_SPLIT;
+    r.flags_ref() = *r.flags_ref() | MC_MSG_FLAG_SIZE_SPLIT;
     return r;
   }();
   auto reply = l1_->route(l1ReqWithFlag);
-  if (isHitResult(reply.result()) && (reply.flags() & MC_MSG_FLAG_SIZE_SPLIT)) {
+  if (isHitResult(*reply.result_ref()) &&
+      (*reply.flags_ref() & MC_MSG_FLAG_SIZE_SPLIT)) {
     // Real value lives in the L2 pool
     // Note that for both get and set, keys read from/written to L2 are not
     // suffixed with |==|<rand>.
@@ -54,19 +55,19 @@ McSetReply L1L2SizeSplitRoute::route(const McSetRequest& req) const {
   // Value is large enough to warrant split sets
   if (bothFullSet_) {
     auto l1Reply = l1_->route(req);
-    if (isStoredResult(l1Reply.result())) {
+    if (isStoredResult(*l1Reply.result_ref())) {
       folly::fibers::addTask([l2 = l2_, req]() { l2->route(req); });
     }
     return l1Reply;
   } else {
     // Store to L2 first to avoid race
     auto reply = l2_->route(req);
-    if (isStoredResult(reply.result())) {
+    if (isStoredResult(*reply.result_ref())) {
       // Set key to L1 with empty value and special sentinel flag
       const auto l1Sentinel = [&req]() {
         auto r = req;
-        r.value() = folly::IOBuf();
-        r.flags() |= MC_MSG_FLAG_SIZE_SPLIT;
+        r.value_ref() = folly::IOBuf();
+        r.flags_ref() = *r.flags_ref() | MC_MSG_FLAG_SIZE_SPLIT;
         return r;
       }();
       return l1_->route(l1Sentinel);
@@ -81,9 +82,9 @@ folly::Optional<McLeaseGetReply> L1L2SizeSplitRoute::doFilter(
   constexpr uint64_t kHotMissToken = 1;
   // We got an L1 sentinel, but a nonzero lease token. Note that we may convert
   // a stale hit on a sentinel to a regular lease miss or hot miss.
-  if (static_cast<uint64_t>(reply.leaseToken()) >= kHotMissToken) {
+  if (static_cast<uint64_t>(*reply.leaseToken_ref()) >= kHotMissToken) {
     McLeaseGetReply r(carbon::Result::NOTFOUND);
-    r.leaseToken() = reply.leaseToken();
+    r.leaseToken_ref() = *reply.leaseToken_ref();
     ret.assign(std::move(r));
   }
   return ret;
@@ -104,13 +105,13 @@ L1L2SizeSplitRoute::doRoute(const Request& req, size_t retriesLeft) const {
   // when this flag is present in order to accommodate old clients.
   const auto l1ReqWithFlag = [&req]() {
     auto r = req;
-    r.flags() |= MC_MSG_FLAG_SIZE_SPLIT;
+    r.flags_ref() = *r.flags_ref() | MC_MSG_FLAG_SIZE_SPLIT;
     return r;
   }();
   auto l1Reply = l1_->route(l1ReqWithFlag);
 
   // If we didn't receive a sentinel value, return immediately.
-  if (!(l1Reply.flags() & MC_MSG_FLAG_SIZE_SPLIT)) {
+  if (!(*l1Reply.flags_ref() & MC_MSG_FLAG_SIZE_SPLIT)) {
     return l1Reply;
   }
 
@@ -120,31 +121,31 @@ L1L2SizeSplitRoute::doRoute(const Request& req, size_t retriesLeft) const {
   }
 
   // At this point, we got a non-stale sentinel hit from L1.
-  const auto l1Value = coalesceAndGetRange(l1Reply.value());
+  const auto l1Value = coalesceAndGetRange(l1Reply.value_ref());
   const auto l2Req = l1Value.empty()
-      ? McGetRequest(req.key().fullKey())
-      : McGetRequest(makeL2Key(req.key().fullKey(), l1Value));
+      ? McGetRequest(req.key_ref()->fullKey())
+      : McGetRequest(makeL2Key(req.key_ref()->fullKey(), l1Value));
 
   auto l2Reply = l2_->route(l2Req);
-  if (isHitResult(l2Reply.result())) {
+  if (isHitResult(*l2Reply.result_ref())) {
     ReplyT<Request> reply(carbon::Result::FOUND);
-    reply.flags() = l2Reply.flags();
-    reply.value().move_from(l2Reply.value());
+    reply.flags_ref() = *l2Reply.flags_ref();
+    reply.value_ref().move_from(l2Reply.value_ref());
     augmentReply(reply, l1Reply);
     return reply;
   }
 
-  if (isErrorResult(l2Reply.result())) {
-    return ReplyT<Request>(l2Reply.result());
+  if (isErrorResult(*l2Reply.result_ref())) {
+    return ReplyT<Request>(*l2Reply.result_ref());
   } else if (retriesLeft != 0) {
     [&]() {
-      McGetsRequest l1GetsRequest(req.key().fullKey());
+      McGetsRequest l1GetsRequest(req.key_ref()->fullKey());
       auto l1GetsReply = l1_->route(l1GetsRequest);
-      if (isHitResult(l1GetsReply.result()) &&
-          coalesceAndGetRange(l1GetsReply.value()) == l1Value) {
-        McCasRequest l1CasRequest(req.key().fullKey());
-        l1CasRequest.casToken() = l1GetsReply.casToken();
-        l1CasRequest.exptime() = -1;
+      if (isHitResult(*l1GetsReply.result_ref()) &&
+          coalesceAndGetRange(l1GetsReply.value_ref()) == l1Value) {
+        McCasRequest l1CasRequest(req.key_ref()->fullKey());
+        l1CasRequest.casToken_ref() = *l1GetsReply.casToken_ref();
+        l1CasRequest.exptime_ref() = -1;
         l1_->route(l1CasRequest);
       }
     }();
@@ -162,18 +163,18 @@ McLeaseSetReply L1L2SizeSplitRoute::route(const McLeaseSetRequest& req) const {
   if (bothFullSet_) {
     auto adjustedReq = [&]() {
       auto r = req;
-      r.key() = makeL2Key(
-          req.key().fullKey(), folly::to<std::string>(randomGenerator_()));
+      r.key_ref() = makeL2Key(
+          req.key_ref()->fullKey(), folly::to<std::string>(randomGenerator_()));
       return r;
     }();
     auto l1Reply = l1_->route(adjustedReq);
 
-    if (isStoredResult(l1Reply.result())) {
+    if (isStoredResult(*l1Reply.result_ref())) {
       auto makeL2Req = [&]() {
-        McSetRequest r(adjustedReq.key().fullKey());
-        r.flags() = req.flags();
-        r.exptime() = req.exptime();
-        r.value() = std::move(adjustedReq.value());
+        McSetRequest r(adjustedReq.key_ref()->fullKey());
+        r.flags_ref() = *req.flags_ref();
+        r.exptime_ref() = *req.exptime_ref();
+        r.value_ref() = std::move(*adjustedReq.value_ref());
         return r;
       };
       folly::fibers::addTask(
@@ -185,19 +186,19 @@ McLeaseSetReply L1L2SizeSplitRoute::route(const McLeaseSetRequest& req) const {
     // and will be mixed into the key for L2.
     const auto randInt = randomGenerator_();
     auto l2SetReq = [&]() {
-      McSetRequest r(makeL2Key(req.key().fullKey(), randInt));
-      r.value() = req.value();
-      r.flags() = req.flags();
-      r.exptime() = req.exptime();
+      McSetRequest r(makeL2Key(req.key_ref()->fullKey(), randInt));
+      r.value_ref() = *req.value_ref();
+      r.flags_ref() = *req.flags_ref();
+      r.exptime_ref() = *req.exptime_ref();
       return r;
     }();
     auto l2Reply = l2_->route(l2SetReq);
 
-    if (isStoredResult(l2Reply.result())) {
+    if (isStoredResult(*l2Reply.result_ref())) {
       const auto l1SentinelReq = [&]() {
         auto r = req;
-        r.flags() |= MC_MSG_FLAG_SIZE_SPLIT;
-        r.value() = folly::IOBuf(
+        r.flags_ref() = *r.flags_ref() | MC_MSG_FLAG_SIZE_SPLIT;
+        r.value_ref() = folly::IOBuf(
             folly::IOBuf::CopyBufferOp(), folly::to<std::string>(randInt));
         return r;
       }();
@@ -207,8 +208,8 @@ McLeaseSetReply L1L2SizeSplitRoute::route(const McLeaseSetRequest& req) const {
       // If L2 is failing, cut the exptime down and store full value to L1.
       const auto l1FallbackReq = [&]() {
         auto r = req;
-        if (r.exptime() > failureTtl_ || r.exptime() == 0) {
-          r.exptime() = failureTtl_;
+        if (*r.exptime_ref() > failureTtl_ || *r.exptime_ref() == 0) {
+          r.exptime_ref() = failureTtl_;
         }
         return r;
       }();

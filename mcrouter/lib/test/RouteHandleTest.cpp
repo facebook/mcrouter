@@ -133,7 +133,7 @@ TEST(routeHandleTest, allSyncTyped) {
 
     /* Check that we got the worst result back */
     EXPECT_EQ(carbon::Result::REMOTE_ERROR, *reply.result_ref());
-    EXPECT_EQ("c", coalesceAndGetRange(*reply.value_ref()).str());
+    EXPECT_EQ("c", coalesceAndGetRange(reply.value_ref()).str());
 
     for (auto& h : test_handles) {
       EXPECT_EQ(vector<string>{"key"}, h->saw_keys);

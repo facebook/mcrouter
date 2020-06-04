@@ -29,9 +29,9 @@ McStatsReply StatsReply::getReply() {
         folly::to<std::string>("STAT ", s.first, ' ', s.second));
   }
 
-  reply.stats() = std::move(statsList);
+  reply.stats_ref() = std::move(statsList);
 
   return reply;
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

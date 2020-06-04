@@ -47,6 +47,16 @@ folly::StringPiece coalesceAndGetRange(
   return buf.has_value() ? coalesceAndGetRange(*buf) : folly::StringPiece();
 }
 
+folly::StringPiece coalesceAndGetRange(
+    apache::thrift::field_ref<const folly::IOBuf&> buf) {
+  return coalesceAndGetRange(const_cast<folly::IOBuf&>(*buf));
+}
+
+folly::StringPiece coalesceAndGetRange(
+    apache::thrift::field_ref<folly::IOBuf&> buf) {
+  return coalesceAndGetRange(*buf);
+}
+
 void copyInto(char* raw, const folly::IOBuf& buf) {
   auto cur = &buf;
   auto next = cur->next();
@@ -84,5 +94,5 @@ coalesceIovecs(const struct iovec* iov, size_t iovcnt, size_t destCapacity) {
   }
   return coalesceSlow(iov, iovcnt, destCapacity);
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

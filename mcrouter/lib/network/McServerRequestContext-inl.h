@@ -46,9 +46,9 @@ McServerRequestContext::replyImpl(
     Args&&... args) {
   // On error, multi-get parent may assume responsiblity of replying
   if (ctx.moveReplyToParent(
-          reply.result(),
-          reply.appSpecificErrorCode(),
-          std::move(reply.message()))) {
+          *reply.result_ref(),
+          *reply.appSpecificErrorCode_ref(),
+          std::move(*reply.message_ref()))) {
     replyImpl2(std::move(ctx), Reply(), std::forward<Args>(args)...);
   } else {
     replyImpl2(std::move(ctx), std::move(reply), std::forward<Args>(args)...);
@@ -131,7 +131,7 @@ bool McServerRequestContext::noReply(const Reply& r) const {
   if (!hasParent()) {
     return false;
   }
-  return isParentError() || r.result() != carbon::Result::FOUND;
+  return isParentError() || *r.result_ref() != carbon::Result::FOUND;
 }
 
 inline bool McServerRequestContext::noReply(const McLeaseGetReply&) const {

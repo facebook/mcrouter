@@ -151,12 +151,13 @@ class L1L2SizeSplitRoute {
   template <class Request>
   bool fullSetShouldGoToL1(const Request& req) const {
     return threshold_ == 0 ||
-        req.value().computeChainDataLength() < threshold_ ||
-        (ttlThreshold_ != 0 && req.exptime() < ttlThreshold_) ||
-        req.key().fullKey().size() + kExtraKeySpaceNeeded > kMaxMcKeyLength;
+        req.value_ref()->computeChainDataLength() < threshold_ ||
+        (ttlThreshold_ != 0 && *req.exptime_ref() < ttlThreshold_) ||
+        req.key_ref()->fullKey().size() + kExtraKeySpaceNeeded >
+        kMaxMcKeyLength;
   }
   void augmentReply(McGetsReply& reply, const McGetsReply& l1Reply) const {
-    reply.casToken() = l1Reply.casToken();
+    reply.casToken_ref() = *l1Reply.casToken_ref();
   }
   void augmentReply(
       McLeaseGetReply& /* unused */,

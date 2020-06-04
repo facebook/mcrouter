@@ -57,7 +57,8 @@ class AllSyncRoute {
     folly::Optional<Reply> reply;
     folly::fibers::forEach(
         fs.begin(), fs.end(), [&reply](size_t /* id */, Reply newReply) {
-          if (!reply || worseThan(newReply.result(), reply.value().result())) {
+          if (!reply ||
+              worseThan(*newReply.result_ref(), *reply.value().result_ref())) {
             reply = std::move(newReply);
           }
         });
@@ -67,5 +68,5 @@ class AllSyncRoute {
  private:
   const std::vector<std::shared_ptr<RouteHandleIf>> children_;
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

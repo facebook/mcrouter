@@ -638,7 +638,7 @@ McStatsReply stats_reply(ProxyBase* proxy, folly::StringPiece group_str) {
   auto groups = stat_parse_group_str(group_str);
   if (groups == unknown_stats) {
     McStatsReply errorReply(carbon::Result::CLIENT_ERROR);
-    errorReply.message() = "bad stats command";
+    errorReply.message_ref() = "bad stats command";
     return errorReply;
   }
 

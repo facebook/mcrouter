@@ -87,7 +87,7 @@ class MissFailoverRoute {
   template <class Request>
   ReplyT<Request> routeImpl(const Request& req) const {
     auto reply = targets_[0]->route(req);
-    if (!shouldFailover(reply.result())) {
+    if (!shouldFailover(*reply.result_ref())) {
       return reply;
     }
 
@@ -97,13 +97,14 @@ class MissFailoverRoute {
           fiber_local<RouterInfo>::addRequestClass(RequestClass::kFailover);
           for (size_t i = 1; i < targets_.size(); ++i) {
             auto failoverReply = targets_[i]->route(req);
-            if (!shouldFailover(failoverReply.result())) {
+            if (!shouldFailover(*failoverReply.result_ref())) {
               return failoverReply;
             }
             if (returnBestOnError_) {
               // Prefer returning a miss from a healthy host rather than
               // an error from the last broken host.
-              if (!worseThan(failoverReply.result(), bestReply.result())) {
+              if (!worseThan(
+                      *failoverReply.result_ref(), *bestReply.result_ref())) {
                 // This reply is "better" than we already have.
                 bestReply = std::move(failoverReply);
               }

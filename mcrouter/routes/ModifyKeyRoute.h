@@ -77,16 +77,16 @@ class ModifyKeyRoute {
       const Request& req,
       const RouteHandleTraverser<RouteHandleIf>& t) const {
     auto cloneReq = req;
-    auto key = getModifiedKey(req.key());
+    auto key = getModifiedKey(*req.key_ref());
     if (key) {
-      cloneReq.key() = key.value();
+      cloneReq.key_ref() = key.value();
     }
     return t(*target_, cloneReq);
   }
 
   template <class Request>
   ReplyT<Request> route(const Request& req) const {
-    const auto key = getModifiedKey(req.key());
+    const auto key = getModifiedKey(*req.key_ref());
     if (key) {
       return routeReqWithKey(req, key.value());
     }
@@ -141,7 +141,7 @@ class ModifyKeyRoute {
               std::string(mc_req_err_to_string(err)));
     }
     auto cloneReq = req;
-    cloneReq.key() = key;
+    cloneReq.key_ref() = key;
     return target_->route(cloneReq);
   }
 };
@@ -217,6 +217,6 @@ typename RouterInfo::RouteHandlePtr makeModifyKeyRoute(
       std::move(keyReplace),
       std::move(keySuffix));
 }
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

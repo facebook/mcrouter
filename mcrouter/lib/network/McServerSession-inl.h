@@ -40,7 +40,7 @@ void McServerSession::asciiRequestReady(
 
   McServerRequestContext ctx(*this, reqid, noreply, currentMultiop_);
 
-  ctx.asciiKey().emplace(req.key().raw().cloneOneAsValue());
+  ctx.asciiKey().emplace(req.key_ref()->raw().cloneOneAsValue());
 
   if (result == carbon::Result::BAD_KEY) {
     McServerRequestContext::reply(

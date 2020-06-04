@@ -113,9 +113,9 @@ class SlowWarmUpRoute {
   template <class Request>
   ReplyT<Request> routeImpl(const Request& req) const {
     auto reply = target_->route(req);
-    if (isHitResult(reply.result())) {
+    if (isHitResult(*reply.result_ref())) {
       ++stats_.hits;
-    } else if (isMissResult(reply.result())) {
+    } else if (isMissResult(*reply.result_ref())) {
       ++stats_.misses;
     }
     return reply;
@@ -167,6 +167,6 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeSlowWarmUpRoute(
       std::move(target), std::move(failoverTarget), std::move(settings));
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

@@ -17,7 +17,7 @@
 
 namespace folly {
 class IOBuf;
-} // folly
+} // namespace folly
 
 namespace facebook {
 namespace memcache {
@@ -35,16 +35,16 @@ struct FailoverContext {
       const ReplyT<Request>& normal,
       const ReplyT<Request>& failover)
       : requestName(Request::name),
-        fullKey(request.key().fullKey()),
-        routingKey(request.key().routingKey()),
-        keyWithoutRoute(request.key().keyWithoutRoute()),
+        fullKey(request.key_ref()->fullKey()),
+        routingKey(request.key_ref()->routingKey()),
+        keyWithoutRoute(request.key_ref()->keyWithoutRoute()),
         requestValue(carbon::valuePtrUnsafe(request)),
         normalValue(carbon::valuePtrUnsafe(normal)),
         normalDestination(normal.destination().get()),
-        normalResult(normal.result()),
+        normalResult(*normal.result_ref()),
         failoverValue(carbon::valuePtrUnsafe(failover)),
         failoverDestination(failover.destination().get()),
-        failoverResult(failover.result()),
+        failoverResult(*failover.result_ref()),
         numRetries(numRetries_),
         maxRetries(maxRetries_) {}
 
@@ -72,6 +72,6 @@ struct FailoverContext {
   const size_t numRetries;
   const size_t maxRetries;
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

@@ -28,7 +28,7 @@ namespace detail {
 template <class M>
 typename std::enable_if<HasExptimeTrait<M>::value, int32_t>::type getExptime(
     const M& req) {
-  return req.exptime();
+  return *req.exptime_ref();
 }
 template <class M>
 typename std::enable_if<!HasExptimeTrait<M>::value, int32_t>::type getExptime(
@@ -42,10 +42,10 @@ int64_t getLeaseToken(const M& /* msg */) {
   return 0;
 }
 inline int64_t getLeaseToken(const McLeaseGetReply& msg) {
-  return msg.leaseToken();
+  return *msg.leaseToken_ref();
 }
 inline int64_t getLeaseToken(const McLeaseSetRequest& msg) {
-  return msg.leaseToken();
+  return *msg.leaseToken_ref();
 }
 
 // Message
@@ -60,7 +60,7 @@ template <class M>
 typename std::
     enable_if<carbon::detail::HasMessage<M>::value, folly::StringPiece>::type
     getMessage(const M& msg) {
-  return msg.message();
+  return *msg.message_ref();
 }
 
 template <class M>
@@ -89,7 +89,7 @@ void MessagePrinter::requestReady(
   if (auto out = filterAndBuildOutput(
           msgId,
           request,
-          request.key().fullKey().str(),
+          request.key_ref()->fullKey().str(),
           carbon::Result::UNKNOWN,
           from,
           to,
@@ -116,7 +116,7 @@ void MessagePrinter::replyReady(
           msgId,
           reply,
           key,
-          reply.result(),
+          *reply.result_ref(),
           from,
           to,
           protocol,

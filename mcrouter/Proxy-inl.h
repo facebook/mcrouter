@@ -33,11 +33,11 @@ bool processGetServiceInfoRequest(
     std::shared_ptr<ProxyRequestContextTyped<RouterInfo, McGetRequest>>& ctx) {
   constexpr folly::StringPiece kInternalGetPrefix("__mcrouter__.");
 
-  if (!req.key().fullKey().startsWith(kInternalGetPrefix)) {
+  if (!req.key_ref()->fullKey().startsWith(kInternalGetPrefix)) {
     return false;
   }
   auto& config = ctx->proxyConfig();
-  auto key = req.key().fullKey();
+  auto key = req.key_ref()->fullKey();
   key.advance(kInternalGetPrefix.size());
   config.serviceInfo()->handleRequest(key, ctx);
   return true;
@@ -329,10 +329,10 @@ void Proxy<RouterInfo>::routeHandlesProcessRequest(
     std::unique_ptr<ProxyRequestContextTyped<RouterInfo, McStatsRequest>> ctx) {
   McStatsReply reply;
   try {
-    reply = stats_reply(this, req.key().fullKey());
+    reply = stats_reply(this, req.key_ref()->fullKey());
   } catch (const std::exception& e) {
-    reply.result() = carbon::Result::LOCAL_ERROR;
-    reply.message() =
+    reply.result_ref() = carbon::Result::LOCAL_ERROR;
+    reply.message_ref() =
         folly::to<std::string>("Error processing stats request: ", e.what());
   }
   ctx->sendReply(std::move(reply));
@@ -344,7 +344,7 @@ void Proxy<RouterInfo>::routeHandlesProcessRequest(
     std::unique_ptr<ProxyRequestContextTyped<RouterInfo, McVersionRequest>>
         ctx) {
   McVersionReply reply(carbon::Result::OK);
-  reply.value() =
+  reply.value_ref() =
       folly::IOBuf(folly::IOBuf::COPY_BUFFER, MCROUTER_PACKAGE_STRING);
   ctx->sendReply(std::move(reply));
 }

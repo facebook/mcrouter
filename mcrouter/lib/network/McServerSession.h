@@ -449,7 +449,7 @@ class McServerSession
   template <class Request>
   void onRequest(Request&& req, bool noreply) {
     carbon::Result result = carbon::Result::UNKNOWN;
-    if (req.key().fullKey().size() > MC_KEY_MAX_LEN_ASCII) {
+    if (req.key_ref()->fullKey().size() > MC_KEY_MAX_LEN_ASCII) {
       result = carbon::Result::BAD_KEY;
     }
     asciiRequestReady(std::move(req), result, noreply);

@@ -95,7 +95,7 @@ class ModifyExptimeRoute {
       ReplyT<Request>>::type
   route(const Request& req) const {
     auto mutReq = req;
-    mutReq.exptime() = exptime_;
+    mutReq.exptime_ref() = exptime_;
     return target_->route(mutReq);
   }
 
@@ -107,9 +107,9 @@ class ModifyExptimeRoute {
       ReplyT<Request>>::type
   route(const Request& req) const {
     /* 0 means infinite exptime. Set minimum of request exptime, exptime. */
-    if (req.exptime() == 0 || req.exptime() > exptime_) {
+    if (*req.exptime_ref() == 0 || *req.exptime_ref() > exptime_) {
       auto mutReq = req;
-      mutReq.exptime() = exptime_;
+      mutReq.exptime_ref() = exptime_;
       return target_->route(mutReq);
     }
     return target_->route(req);

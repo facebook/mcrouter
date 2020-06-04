@@ -15,14 +15,14 @@ constexpr auto hasConstDeadlineMs = false;
 template <typename T>
 constexpr auto hasConstDeadlineMs<
     T,
-    std::void_t<decltype(std::declval<const T&>().deadlineMs())>> = true;
+    std::void_t<decltype(std::declval<const T&>().deadlineMs_ref())>> = true;
 
 template <typename T, typename = std::void_t<>>
 constexpr auto hasNonConstDeadlineMs = false;
 template <typename T>
 constexpr auto hasNonConstDeadlineMs<
     T,
-    std::void_t<decltype(std::declval<std::decay_t<T>&>().deadlineMs())>> =
+    std::void_t<decltype(std::declval<std::decay_t<T>&>().deadlineMs_ref())>> =
     true;
 
 /**
@@ -35,7 +35,7 @@ constexpr auto hasNonConstDeadlineMs<
 template <class Request>
 void setRequestDeadline(Request& req, uint64_t deadlineMs) {
   if constexpr (hasNonConstDeadlineMs<Request>) {
-    req.deadlineMs() =
+    req.deadlineMs_ref() =
         facebook::memcache::mcrouter::getCurrentTimeInMs() + deadlineMs;
   }
 }
@@ -53,9 +53,9 @@ void setRequestDeadline(Request& req, uint64_t deadlineMs) {
 template <class Request>
 bool isRequestDeadlineExceeded(const Request& req) {
   if constexpr (hasConstDeadlineMs<Request>) {
-    if (req.deadlineMs() > 0) {
+    if (*req.deadlineMs_ref() > 0) {
       return facebook::memcache::mcrouter::getCurrentTimeInMs() >
-          req.deadlineMs();
+          *req.deadlineMs_ref();
     }
   }
   return false;
@@ -70,7 +70,7 @@ bool isRequestDeadlineExceeded(const Request& req) {
 template <class Request>
 std::pair<bool, uint64_t> getDeadline(const Request& req) {
   if constexpr (hasConstDeadlineMs<Request>) {
-    return {true, req.deadlineMs()};
+    return {true, *req.deadlineMs_ref()};
   }
   return {false, 0};
 }
@@ -83,7 +83,7 @@ std::pair<bool, uint64_t> getDeadline(const Request& req) {
 template <class Request>
 std::pair<bool, uint64_t> getRemainingTime(const Request& req) {
   if constexpr (hasConstDeadlineMs<Request>) {
-    auto deadlineMs = req.deadlineMs();
+    auto deadlineMs = *req.deadlineMs_ref();
     auto currentTime = facebook::memcache::mcrouter::getCurrentTimeInMs();
     if (deadlineMs > 0 && (deadlineMs > currentTime)) {
       return {true, deadlineMs - currentTime};

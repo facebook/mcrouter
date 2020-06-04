@@ -15,7 +15,7 @@ namespace detail {
 // Timeout to evict unused matching messages' key.
 const std::chrono::milliseconds kMatchingKeyTimeout{5000};
 
-} // detail namespace
+} // namespace detail
 
 template <class Callback, class RequestList>
 SnifferParser<Callback, RequestList>::SnifferParser(Callback& cb) noexcept
@@ -44,7 +44,10 @@ void SnifferParserBase<Callback>::requestReady(
     auto msgIt = msgs_.emplace(
         msgId,
         Item(
-            msgId, request.key().fullKey().str(), currentMsgStartTimeUs_, now));
+            msgId,
+            request.key_ref()->fullKey().str(),
+            currentMsgStartTimeUs_,
+            now));
     evictionQueue_.push_back(msgIt.first->second);
   }
   callback_.requestReady(
@@ -77,5 +80,5 @@ void SnifferParserBase<Callback>::replyReady(
       latency,
       rpcStatsContext);
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

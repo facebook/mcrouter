@@ -89,19 +89,21 @@ class WarmUpRoute {
   //////////////////////////////// get /////////////////////////////////////
   McGetReply route(const McGetRequest& req) {
     auto coldReply = cold_->route(req);
-    if (isHitResult(coldReply.result())) {
+    if (isHitResult(*coldReply.result_ref())) {
       return coldReply;
     }
 
     /* else */
     auto warmReply = warm_->route(req);
     uint32_t exptime = 0;
-    if (isHitResult(warmReply.result()) && getExptimeForCold(req, exptime)) {
-      folly::fibers::addTask([cold = cold_,
-                              addReq = createRequestFromMessage<McAddRequest>(
-                                  req.key().fullKey(), warmReply, exptime)]() {
-        cold->route(addReq);
-      });
+    if (isHitResult(*warmReply.result_ref()) &&
+        getExptimeForCold(req, exptime)) {
+      folly::fibers::addTask(
+          [cold = cold_,
+           addReq = createRequestFromMessage<McAddRequest>(
+               req.key_ref()->fullKey(), warmReply, exptime)]() {
+            cold->route(addReq);
+          });
     }
     return warmReply;
   }
@@ -109,7 +111,7 @@ class WarmUpRoute {
   ///////////////////////////////metaget//////////////////////////////////
   McMetagetReply route(const McMetagetRequest& req) {
     auto coldReply = cold_->route(req);
-    if (isHitResult(coldReply.result())) {
+    if (isHitResult(*coldReply.result_ref())) {
       return coldReply;
     }
     return warm_->route(req);
@@ -118,29 +120,29 @@ class WarmUpRoute {
   /////////////////////////////lease_get//////////////////////////////////
   McLeaseGetReply route(const McLeaseGetRequest& req) {
     auto coldReply = cold_->route(req);
-    if (isHitResult(coldReply.result()) ||
-        isHotMissResult(coldReply.result())) {
+    if (isHitResult(*coldReply.result_ref()) ||
+        isHotMissResult(*coldReply.result_ref())) {
       // in case of a hot miss somebody else will set the value
       return coldReply;
     }
 
     // miss with lease token from cold route: send simple get to warm route
-    McGetRequest reqOpGet(req.key().fullKey());
+    McGetRequest reqOpGet(req.key_ref()->fullKey());
     auto warmReply = warm_->route(reqOpGet);
     uint32_t exptime = 0;
-    if (isHitResult(warmReply.result()) &&
+    if (isHitResult(*warmReply.result_ref()) &&
         getExptimeForCold(reqOpGet, exptime)) {
       // update cold route with lease set
       auto setReq = createRequestFromMessage<McLeaseSetRequest>(
-          reqOpGet.key().fullKey(), warmReply, exptime);
-      setReq.leaseToken() = coldReply.leaseToken();
+          reqOpGet.key_ref()->fullKey(), warmReply, exptime);
+      setReq.leaseToken_ref() = *coldReply.leaseToken_ref();
 
       folly::fibers::addTask(
-          [ cold = cold_, req = std::move(setReq) ]() { cold->route(req); });
+          [cold = cold_, req = std::move(setReq)]() { cold->route(req); });
       // On hit, no need to copy appSpecificErrorCode or message
-      McLeaseGetReply reply(warmReply.result());
-      reply.flags() = warmReply.flags();
-      reply.value().move_from(warmReply.value());
+      McLeaseGetReply reply(*warmReply.result_ref());
+      reply.flags_ref() = *warmReply.flags_ref();
+      reply.value_ref().move_from(warmReply.value_ref());
       return reply;
     }
     return coldReply;
@@ -149,18 +151,19 @@ class WarmUpRoute {
   ////////////////////////////////gets////////////////////////////////////
   McGetsReply route(const McGetsRequest& req) {
     auto coldReply = cold_->route(req);
-    if (isHitResult(coldReply.result())) {
+    if (isHitResult(*coldReply.result_ref())) {
       return coldReply;
     }
 
     // miss: send simple get to warm route
-    McGetRequest reqGet(req.key().fullKey());
+    McGetRequest reqGet(req.key_ref()->fullKey());
     auto warmReply = warm_->route(reqGet);
     uint32_t exptime = 0;
-    if (isHitResult(warmReply.result()) && getExptimeForCold(req, exptime)) {
+    if (isHitResult(*warmReply.result_ref()) &&
+        getExptimeForCold(req, exptime)) {
       // update cold route if we have the value
       auto addReq = createRequestFromMessage<McAddRequest>(
-          req.key().fullKey(), warmReply, exptime);
+          req.key_ref()->fullKey(), warmReply, exptime);
       cold_->route(addReq);
       // and grab cas token again
       return cold_->route(req);
@@ -171,17 +174,17 @@ class WarmUpRoute {
   //////////////////////////////// gat /////////////////////////////////////
   McGatReply route(const McGatRequest& req) {
     auto coldReply = cold_->route(req);
-    if (isHitResult(coldReply.result())) {
+    if (isHitResult(*coldReply.result_ref())) {
       return coldReply;
     }
 
     // miss: send simple get to warm route
-    McGetRequest reqGet(req.key().fullKey());
+    McGetRequest reqGet(req.key_ref()->fullKey());
     auto warmReply = warm_->route(reqGet);
-    if (isHitResult(warmReply.result())) {
+    if (isHitResult(*warmReply.result_ref())) {
       // update cold route if we have the value
       auto addReq = createRequestFromMessage<McAddRequest>(
-          req.key().fullKey(), warmReply, req.exptime());
+          req.key_ref()->fullKey(), warmReply, *req.exptime_ref());
       cold_->route(addReq);
       return cold_->route(req);
     }
@@ -191,17 +194,17 @@ class WarmUpRoute {
   ////////////////////////////////gats////////////////////////////////////
   McGatsReply route(const McGatsRequest& req) {
     auto coldReply = cold_->route(req);
-    if (isHitResult(coldReply.result())) {
+    if (isHitResult(*coldReply.result_ref())) {
       return coldReply;
     }
 
     // miss: send simple get to warm route
-    McGetRequest reqGet(req.key().fullKey());
+    McGetRequest reqGet(req.key_ref()->fullKey());
     auto warmReply = warm_->route(reqGet);
-    if (isHitResult(warmReply.result())) {
+    if (isHitResult(*warmReply.result_ref())) {
       // update cold route if we have the value
       auto addReq = createRequestFromMessage<McAddRequest>(
-          req.key().fullKey(), warmReply, req.exptime());
+          req.key_ref()->fullKey(), warmReply, *req.exptime_ref());
       cold_->route(addReq);
       // and grab cas token again
       return cold_->route(req);
@@ -230,9 +233,9 @@ class WarmUpRoute {
       return true;
     }
     return getExptimeFromRoute<RouteHandleIf>(
-        warm_, req.key().fullKey(), exptime);
+        warm_, req.key_ref()->fullKey(), exptime);
   }
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

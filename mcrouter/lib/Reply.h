@@ -98,7 +98,7 @@ void setReplyResultAndMessage(
     Reply& reply,
     carbon::Result res,
     std::string errorMessage) {
-  reply.result() = res;
+  reply.result_ref() = res;
   carbon::setMessageIfPresent(reply, std::move(errorMessage));
 }
 

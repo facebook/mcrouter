@@ -130,13 +130,14 @@ class FailoverRoute {
     // Look into LeaseTokenMap
     auto& proxy = fiber_local<RouterInfo>::getSharedCtx()->proxy();
     auto& map = proxy.router().leaseTokenMap();
-    if (auto item = map.query(name_, req.leaseToken())) {
+    if (auto item = map.query(name_, *req.leaseToken_ref())) {
       auto mutReq = req;
-      mutReq.leaseToken() = item->originalToken;
+      mutReq.leaseToken_ref() = item->originalToken;
       proxy.stats().increment(redirected_lease_set_count_stat);
       if (targets_.size() <= item->routeHandleChildIndex) {
         McLeaseSetReply errorReply(carbon::Result::LOCAL_ERROR);
-        errorReply.message() = "LeaseSet failover destination out-of-range.";
+        errorReply.message_ref() =
+            "LeaseSet failover destination out-of-range.";
         return errorReply;
       }
       return targets_[item->routeHandleChildIndex]->route(mutReq);
@@ -149,7 +150,7 @@ class FailoverRoute {
   McLeaseGetReply route(const McLeaseGetRequest& req) {
     size_t childIndex = 0;
     auto reply = doRoute(req, childIndex);
-    const auto leaseToken = reply.leaseToken();
+    const auto leaseToken = *reply.leaseToken_ref();
 
     if (!enableLeasePairing_ || leaseToken <= 1) {
       return reply;
@@ -166,7 +167,7 @@ class FailoverRoute {
     if (childIndex > 0 || map.conflicts(leaseToken)) {
       auto specialToken =
           map.insert(name_, {static_cast<uint64_t>(leaseToken), childIndex});
-      reply.leaseToken() = specialToken;
+      reply.leaseToken_ref() = specialToken;
     }
 
     return reply;
@@ -204,8 +205,8 @@ class FailoverRoute {
     auto policyCtx = failoverPolicy_.context(req);
     auto iter = failoverPolicy_.begin(req);
     auto normalReply = iter->route(req, policyCtx);
-    if (isErrorResult(normalReply.result())) {
-      if (!isTkoOrHardTkoResult(normalReply.result())) {
+    if (isErrorResult(*normalReply.result_ref())) {
+      if (!isTkoOrHardTkoResult(*normalReply.result_ref())) {
         proxy.stats().increment(failover_policy_result_error_stat);
       } else {
         proxy.stats().increment(failover_policy_tko_error_stat);
@@ -218,7 +219,7 @@ class FailoverRoute {
     }
     ++iter;
     if (iter == failoverPolicy_.end(req)) {
-      if (isErrorResult(normalReply.result())) {
+      if (isErrorResult(*normalReply.result_ref())) {
         proxy.stats().increment(failover_all_failed_stat);
         proxy.stats().increment(failover_all_failed_count_stat);
         proxy.stats().increment(failoverPolicy_.getFailoverFailedStat());
@@ -245,15 +246,15 @@ class FailoverRoute {
     proxy.stats().increment(failover_all_stat);
     proxy.stats().increment(failoverPolicy_.getFailoverStat());
 
-    if (rateLimiter_ && !isTkoOrHardTkoResult(normalReply.result()) &&
+    if (rateLimiter_ && !isTkoOrHardTkoResult(*normalReply.result_ref()) &&
         !rateLimiter_->failoverAllowed()) {
       proxy.stats().increment(failover_rate_limited_stat);
       return normalReply;
     }
 
     // We didn't do any work for TKO or hard TKO. Don't count it as a try.
-    if (!isTkoOrHardTkoResult(normalReply.result()) &&
-        !failoverPolicy_.excludeError(normalReply.result())) {
+    if (!isTkoOrHardTkoResult(*normalReply.result_ref()) &&
+        !failoverPolicy_.excludeError(*normalReply.result_ref())) {
       ++policyCtx.numTries_;
     }
 
@@ -279,8 +280,8 @@ class FailoverRoute {
                 failoverReply);
             logFailover(proxy, failoverContext);
             carbon::setIsFailoverIfPresent(failoverReply, true);
-            if (isErrorResult(failoverReply.result())) {
-              if (!isTkoOrHardTkoResult(failoverReply.result())) {
+            if (isErrorResult(*failoverReply.result_ref())) {
+              if (!isTkoOrHardTkoResult(*failoverReply.result_ref())) {
                 proxy.stats().increment(failover_policy_result_error_stat);
               } else {
                 proxy.stats().increment(failover_policy_tko_error_stat);
@@ -312,14 +313,15 @@ class FailoverRoute {
           default:
             break;
         }
-        if (rateLimiter_ && !isTkoOrHardTkoResult(failoverReply.result()) &&
+        if (rateLimiter_ &&
+            !isTkoOrHardTkoResult(*failoverReply.result_ref()) &&
             !rateLimiter_->failoverAllowed()) {
           proxy.stats().increment(failover_rate_limited_stat);
           return failoverReply;
         }
         // We didn't do any work for TKO or hard TKO. Don't count it as a try.
-        if (!isTkoOrHardTkoResult(failoverReply.result()) &&
-            !failoverPolicy_.excludeError(failoverReply.result())) {
+        if (!isTkoOrHardTkoResult(*failoverReply.result_ref()) &&
+            !failoverPolicy_.excludeError(*failoverReply.result_ref())) {
           ++policyCtx.numTries_;
         } else {
           // If it is Tko or Hard Tko set the failure domain so that
@@ -334,7 +336,7 @@ class FailoverRoute {
       bool allFailed = true;
       if (policyCtx.numTries_ < failoverPolicy_.maxErrorTries()) {
         failoverReply = doFailover(cur);
-        if (!isErrorResult(failoverReply.result())) {
+        if (!isErrorResult(*failoverReply.result_ref())) {
           allFailed = false;
         }
       }

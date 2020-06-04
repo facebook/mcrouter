@@ -41,7 +41,7 @@ class HelloGoodbyeCarbonLookasideHelper {
   template <typename Request>
   std::string buildKey(const Request& req) {
     if (facebook::memcache::HasKeyTrait<Request>::value) {
-      return req.key().fullKey().str();
+      return req.key_ref()->fullKey().str();
     }
     return std::string();
   }

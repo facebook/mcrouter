@@ -47,7 +47,7 @@ class RootRoute {
       const Request& req,
       const RouteHandleTraverser<RouteHandleIf>& t) const {
     const auto* rhPtr = rhMap_.getTargetsForKeyFast(
-        req.key().routingPrefix(), req.key().routingKey());
+        req.key_ref()->routingPrefix(), req.key_ref()->routingKey());
     if (LIKELY(rhPtr != nullptr)) {
       for (const auto& rh : *rhPtr) {
         if (t(*rh, req)) {
@@ -57,7 +57,7 @@ class RootRoute {
       return false;
     }
     auto v = rhMap_.getTargetsForKeySlow(
-        req.key().routingPrefix(), req.key().routingKey());
+        req.key_ref()->routingPrefix(), req.key_ref()->routingKey());
     for (const auto& rh : v) {
       if (t(*rh, req)) {
         return true;
@@ -74,16 +74,16 @@ class RootRoute {
 
        This is a good default for /star/star/ requests. */
     const auto* rhPtr = rhMap_.getTargetsForKeyFast(
-        req.key().routingPrefix(), req.key().routingKey());
+        req.key_ref()->routingPrefix(), req.key_ref()->routingKey());
 
     auto reply = UNLIKELY(rhPtr == nullptr)
         ? routeImpl(
               rhMap_.getTargetsForKeySlow(
-                  req.key().routingPrefix(), req.key().routingKey()),
+                  req.key_ref()->routingPrefix(), req.key_ref()->routingKey()),
               req)
         : routeImpl(*rhPtr, req);
 
-    if (isErrorResult(reply.result()) && opts_.group_remote_errors) {
+    if (isErrorResult(*reply.result_ref()) && opts_.group_remote_errors) {
       reply = ReplyT<Request>(carbon::Result::REMOTE_ERROR);
     }
 
@@ -100,11 +100,11 @@ class RootRoute {
       const Request& req,
       carbon::GetLikeT<Request> = 0) const {
     auto reply = doRoute(rh, req);
-    if (isErrorResult(reply.result()) && opts_.miss_on_get_errors &&
+    if (isErrorResult(*reply.result_ref()) && opts_.miss_on_get_errors &&
         !rh.empty()) {
       /* rh.empty() case: for backwards compatibility,
          always surface invalid routing errors */
-      auto originalResult = reply.result();
+      auto originalResult = *reply.result_ref();
       reply = createReply(DefaultReply, req);
       carbon::setMessageIfPresent(
           reply,
@@ -123,7 +123,8 @@ class RootRoute {
       carbon::ArithmeticLikeT<Request> = 0) const {
     auto reply = opts_.allow_only_gets ? createReply(DefaultReply, req)
                                        : doRoute(rh, req);
-    if (isErrorResult(reply.result()) && !opts_.disable_miss_on_arith_errors) {
+    if (isErrorResult(*reply.result_ref()) &&
+        !opts_.disable_miss_on_arith_errors) {
       reply = createReply(DefaultReply, req);
     }
     return reply;

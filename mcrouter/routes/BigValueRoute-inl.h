@@ -32,12 +32,12 @@ InputIterator reduce(InputIterator begin, InputIterator end) {
     return end;
   }
   InputIterator worstIt = begin;
-  auto worstSeverity = resultSeverity(begin->result());
+  auto worstSeverity = resultSeverity(*begin->result_ref());
 
   for (++begin; begin != end; ++begin) {
-    if (resultSeverity(begin->result()) > worstSeverity) {
+    if (resultSeverity(*begin->result_ref()) > worstSeverity) {
       worstIt = begin;
-      worstSeverity = resultSeverity(begin->result());
+      worstSeverity = resultSeverity(*begin->result_ref());
     }
   }
   return worstIt;
@@ -106,12 +106,12 @@ typename std::enable_if<
     ReplyT<Request>>::type
 BigValueRoute::route(const Request& req) const {
   auto initialReply = ch_->route(req);
-  if (!isHitResult(initialReply.result()) ||
-      !(initialReply.flags() & MC_MSG_FLAG_BIG_VALUE)) {
+  if (!isHitResult(*initialReply.result_ref()) ||
+      !(*initialReply.flags_ref() & MC_MSG_FLAG_BIG_VALUE)) {
     return initialReply;
   }
 
-  ChunksInfo chunksInfo(coalesceAndGetRange(initialReply.value()));
+  ChunksInfo chunksInfo(coalesceAndGetRange(initialReply.value_ref()));
   if (!chunksInfo.valid()) {
     return createReply(DefaultReply, req);
   }
@@ -134,7 +134,7 @@ template <class Request>
 ReplyT<Request> BigValueRoute::route(
     const Request& req,
     carbon::UpdateLikeT<Request>) const {
-  if (req.value().computeChainDataLength() <= options_.threshold) {
+  if (req.value_ref()->computeChainDataLength() <= options_.threshold) {
     return ch_->route(req);
   }
 
@@ -143,7 +143,7 @@ ReplyT<Request> BigValueRoute::route(
   using ReplyType = typename detail::ReducedUpdateType<Request>::ReplyType;
 
   auto reqsInfoPair = chunkUpdateRequests<RequestType>(
-      req.key().fullKey(), req.value(), req.exptime());
+      req.key_ref()->fullKey(), *req.value_ref(), *req.exptime_ref());
   std::vector<std::function<ReplyType()>> fs;
   auto& chunkReqs = reqsInfoPair.first;
   fs.reserve(chunkReqs.size());
@@ -157,14 +157,14 @@ ReplyT<Request> BigValueRoute::route(
 
   // reply for all chunk update requests
   auto reducedReply = detail::reduce(replies.begin(), replies.end());
-  if (isStoredResult(reducedReply->result())) {
+  if (isStoredResult(*reducedReply->result_ref())) {
     // original key with modified value stored at the back
     auto newReq = req;
-    newReq.flags() = req.flags() | MC_MSG_FLAG_BIG_VALUE;
-    newReq.value() = reqsInfoPair.second.toStringType();
+    newReq.flags_ref() = *req.flags_ref() | MC_MSG_FLAG_BIG_VALUE;
+    newReq.value_ref() = reqsInfoPair.second.toStringType();
     return ch_->route(newReq);
   } else {
-    return ReplyT<Request>(reducedReply->result());
+    return ReplyT<Request>(*reducedReply->result_ref());
   }
 }
 
@@ -183,7 +183,7 @@ std::vector<McGetRequest> BigValueRoute::chunkGetRequests(
   std::vector<McGetRequest> bigGetReqs;
   bigGetReqs.reserve(info.numChunks());
 
-  auto baseKey = req.key().fullKey();
+  auto baseKey = req.key_ref()->fullKey();
   for (uint32_t i = 0; i < info.numChunks(); i++) {
     // override key with chunk keys
     bigGetReqs.emplace_back(createChunkKey(baseKey, i, info.suffix()));
@@ -198,21 +198,21 @@ Reply BigValueRoute::mergeChunkGetReplies(
     InputIterator end,
     Reply&& initialReply) const {
   auto reducedReplyIt = detail::reduce(begin, end);
-  if (!isHitResult(reducedReplyIt->result())) {
-    return Reply(reducedReplyIt->result());
+  if (!isHitResult(*reducedReplyIt->result_ref())) {
+    return Reply(*reducedReplyIt->result_ref());
   }
 
-  initialReply.result() = reducedReplyIt->result();
+  initialReply.result_ref() = *reducedReplyIt->result_ref();
 
   std::vector<std::unique_ptr<folly::IOBuf>> dataVec;
   while (begin != end) {
-    if (begin->value().has_value()) {
-      dataVec.push_back(begin->value()->clone());
+    if (begin->value_ref().has_value()) {
+      dataVec.push_back(begin->value_ref()->clone());
     }
     ++begin;
   }
 
-  initialReply.value() = concatAll(dataVec.begin(), dataVec.end());
+  initialReply.value_ref() = concatAll(dataVec.begin(), dataVec.end());
   return std::move(initialReply);
 }
 
@@ -234,13 +234,13 @@ BigValueRoute::chunkUpdateRequests(
   for (int i = 0; i < numChunks; ++i) {
     cursor.cloneAtMost(chunkValue, options_.threshold);
     chunkReqs.emplace_back(createChunkKey(baseKey, i, info.suffix()));
-    chunkReqs.back().value() = std::move(chunkValue);
-    chunkReqs.back().exptime() = exptime;
+    chunkReqs.back().value_ref() = std::move(chunkValue);
+    chunkReqs.back().exptime_ref() = exptime;
   }
 
   return std::make_pair(std::move(chunkReqs), info);
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

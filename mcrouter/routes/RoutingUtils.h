@@ -35,8 +35,8 @@ static bool getExptimeFromRoute(
     uint32_t& newExptime) {
   McMetagetRequest reqMetaget(key);
   auto warmMeta = rh->route(reqMetaget);
-  if (isHitResult(warmMeta.result())) {
-    newExptime = warmMeta.exptime();
+  if (isHitResult(*warmMeta.result_ref())) {
+    newExptime = *warmMeta.exptime_ref();
     if (newExptime != 0) {
       auto curTime = time(nullptr);
       if (curTime >= newExptime) {
@@ -68,9 +68,9 @@ static ToRequest createRequestFromMessage(
   folly::IOBuf cloned = carbon::valuePtrUnsafe(message)
       ? carbon::valuePtrUnsafe(message)->cloneAsValue()
       : folly::IOBuf();
-  newReq.value() = std::move(cloned);
-  newReq.flags() = message.flags();
-  newReq.exptime() = exptime;
+  newReq.value_ref() = std::move(cloned);
+  newReq.flags_ref() = *message.flags_ref();
+  newReq.exptime_ref() = exptime;
   return newReq;
 }
 

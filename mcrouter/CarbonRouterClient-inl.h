@@ -26,7 +26,7 @@ void bumpCarbonRouterClientStats(
   auto replyBytes = carbon::valuePtrUnsafe(reply)
       ? carbon::valuePtrUnsafe(reply)->computeChainDataLength()
       : 0;
-  stats.recordFetchRequest(req.key().fullKey().size(), replyBytes);
+  stats.recordFetchRequest(req.key_ref()->fullKey().size(), replyBytes);
 }
 
 template <class Request>
@@ -38,7 +38,7 @@ void bumpCarbonRouterClientStats(
   auto valueBytes = carbon::valuePtrUnsafe(req)
       ? carbon::valuePtrUnsafe(req)->computeChainDataLength()
       : 0;
-  stats.recordUpdateRequest(req.key().fullKey().size(), valueBytes);
+  stats.recordUpdateRequest(req.key_ref()->fullKey().size(), valueBytes);
 }
 
 template <class Request>
@@ -47,7 +47,7 @@ void bumpCarbonRouterClientStats(
     const Request& req,
     const ReplyT<Request>&,
     carbon::ArithmeticLikeT<Request> = 0) {
-  stats.recordUpdateRequest(req.key().fullKey().size(), 0);
+  stats.recordUpdateRequest(req.key_ref()->fullKey().size(), 0);
 }
 
 template <class Request>
@@ -56,7 +56,7 @@ void bumpCarbonRouterClientStats(
     const Request& req,
     const ReplyT<Request>&,
     carbon::DeleteLikeT<Request> = 0) {
-  stats.recordInvalidateRequest(req.key().fullKey().size());
+  stats.recordInvalidateRequest(req.key_ref()->fullKey().size());
 }
 
 template <class Request>

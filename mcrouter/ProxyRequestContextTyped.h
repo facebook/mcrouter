@@ -163,7 +163,7 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
         requestClass,
         startTimeUs,
         endTimeUs,
-        reply.result(),
+        *reply.result_ref(),
         rpcStatsContext,
         networkTransportTimeUs);
     assert(logger_.hasValue());

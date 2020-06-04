@@ -109,10 +109,11 @@ class ShadowSettings {
   std::enable_if_t<HasKeyTrait<Request>::value, bool> shouldShadowKey(
       const Request& req) const {
     // If configured to use an explicit list of keys to be shadowed, check for
-    // req.key() in that list. Otherwise, decide to shadow based on keyRange().
+    // req.key_ref() in that list. Otherwise, decide to shadow based on
+    // keyRange().
     if (!keysToShadow_.empty()) {
-      const auto hashAndKeyToFind =
-          std::make_tuple(req.key().routingKeyHash(), req.key().routingKey());
+      const auto hashAndKeyToFind = std::make_tuple(
+          req.key_ref()->routingKeyHash(), req.key_ref()->routingKey());
       return std::binary_search(
           keysToShadow_.begin(),
           keysToShadow_.end(),
@@ -121,8 +122,8 @@ class ShadowSettings {
     }
 
     auto range = keyRange();
-    return range.first <= req.key().routingKeyHash() &&
-        req.key().routingKeyHash() <= range.second;
+    return range.first <= req.key_ref()->routingKeyHash() &&
+        req.key_ref()->routingKeyHash() <= range.second;
   }
   template <class Request>
   std::enable_if_t<!HasKeyTrait<Request>::value, bool> shouldShadowKey(

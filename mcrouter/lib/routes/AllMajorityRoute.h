@@ -67,11 +67,11 @@ class AllMajorityRoute {
     taskIt.reserve(children_.size() / 2 + 1);
     while (taskIt.hasNext() && majorityCount < children_.size() / 2 + 1) {
       auto reply = taskIt.awaitNext();
-      auto result = static_cast<size_t>(reply.result());
+      auto result = static_cast<size_t>(*reply.result_ref());
 
       ++counts[result];
       if ((counts[result] == majorityCount &&
-           worseThan(reply.result(), majorityReply.result())) ||
+           worseThan(*reply.result_ref(), *majorityReply.result_ref())) ||
           (counts[result] > majorityCount)) {
         majorityReply = std::move(reply);
         majorityCount = counts[result];

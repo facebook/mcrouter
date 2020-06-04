@@ -94,7 +94,7 @@ TEST(SlowWarmUpRoute, basic) {
     // send 90 deletes (which return miss) -> moves hit rate to 0.1
     for (int i = 0; i < 90; ++i) {
       auto reply = rh.route(McDeleteRequest("0"));
-      EXPECT_EQ(carbon::Result::NOTFOUND, reply.result());
+      EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
     }
 
     // send 1000 gets (round 1) -> should have normal and failover results
@@ -164,7 +164,7 @@ TEST(SlowWarmUpRoute, minRequests) {
     // send 90 deletes (which return miss) -> hit rate is 0.
     for (int i = 0; i < 90; ++i) {
       auto reply = rh.route(McDeleteRequest("0"));
-      EXPECT_EQ(carbon::Result::NOTFOUND, reply.result());
+      EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
     }
 
     // as we have not reached minReqs yet (100), use always normal target.

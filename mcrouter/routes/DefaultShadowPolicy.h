@@ -49,8 +49,8 @@ class DefaultShadowPolicy {
     }
 
     auto shadowReq = std::make_shared<McLeaseSetRequest>(*normalReq);
-    shadowReq->leaseToken() = router_->shadowLeaseTokenMap().withLock(
-        [normalToken = normalReq->leaseToken()](const auto& tokenMap) {
+    shadowReq->leaseToken_ref() = router_->shadowLeaseTokenMap().withLock(
+        [normalToken = *normalReq->leaseToken_ref()](const auto& tokenMap) {
           // For now, we assume at most one shadow request per normal request,
           // i.e., there is a mapping from normal lease token -> shadow lease
           // token. This can be made more robust by reworking the mapping to be
@@ -83,24 +83,24 @@ DefaultShadowPolicy::makePostShadowReplyFn(
   constexpr uint64_t kHotMissLeaseToken = 1;
 
   if (!router_ ||
-      !(isMissResult(normalReply.result()) &&
-        static_cast<uint64_t>(normalReply.leaseToken()) > kHotMissLeaseToken)) {
+      !(isMissResult(*normalReply.result_ref()) &&
+        static_cast<uint64_t>(*normalReply.leaseToken_ref()) >
+            kHotMissLeaseToken)) {
     return {};
   }
 
   return [&shadowTokenMap = router_->shadowLeaseTokenMap(),
-          normalToken =
-              normalReply.leaseToken()](const McLeaseGetReply& shadowReply) {
-    if (!(isMissResult(shadowReply.result()) &&
-          static_cast<uint64_t>(shadowReply.leaseToken()) >
+          normalToken = *normalReply.leaseToken_ref()](
+             const McLeaseGetReply& shadowReply) {
+    if (!(isMissResult(*shadowReply.result_ref()) &&
+          static_cast<uint64_t>(*shadowReply.leaseToken_ref()) >
               kHotMissLeaseToken)) {
       return;
     }
 
     shadowTokenMap.withLock(
-        [normalToken, shadowToken = shadowReply.leaseToken()](auto& tokenMap) {
-          tokenMap.set(normalToken, shadowToken);
-        });
+        [normalToken, shadowToken = *shadowReply.leaseToken_ref()](
+            auto& tokenMap) { tokenMap.set(normalToken, shadowToken); });
   };
 }
 
@@ -113,6 +113,6 @@ constexpr bool DefaultShadowPolicy::shouldDelayShadow<McLeaseGetRequest>()
   return true;
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

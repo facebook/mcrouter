@@ -195,7 +195,7 @@ class LoadBalancerRoute {
 
   template <class Reply>
   bool shouldFailover(const Reply& reply) {
-    return isErrorResult(reply.result());
+    return isErrorResult(*reply.result_ref());
   }
 
   template <class Request>
@@ -250,10 +250,10 @@ class LoadBalancerRoute {
       folly::StringPiece salt) const {
     size_t n = 0;
     if (salt.empty()) {
-      n = WeightedCh3HashFunc::hash(req.key().routingKey(), weights);
+      n = WeightedCh3HashFunc::hash(req.key_ref()->routingKey(), weights);
     } else {
       n = hashWithSalt(
-          req.key().routingKey(),
+          req.key_ref()->routingKey(),
           salt,
           [&weights](const folly::StringPiece sp) {
             return WeightedCh3HashFunc::hash(sp, weights);

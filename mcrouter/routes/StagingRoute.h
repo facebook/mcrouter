@@ -112,20 +112,20 @@ class StagingRoute {
   route(const Request& req) const {
     auto reply = warm_->route(req);
 
-    if (isHitResult(reply.result())) {
+    if (isHitResult(*reply.result_ref())) {
       folly::fibers::addTask([req, reply, warm = warm_, staging = staging_]() {
-        McMetagetRequest reqMetaget(req.key().fullKey());
+        McMetagetRequest reqMetaget(req.key_ref()->fullKey());
         auto metaReply = staging->route(reqMetaget);
-        if (metaReply.result() != carbon::Result::BUSY &&
-            !isHitResult(metaReply.result())) {
+        if (*metaReply.result_ref() != carbon::Result::BUSY &&
+            !isHitResult(*metaReply.result_ref())) {
           // Add to the staging side if we don't get a busy or a miss.
           // We will have to retrieve the exptime from the warm side through
           // a metaget and use the reply from the warm side for the value.
           uint32_t calculatedExptime = 0;
           if (getExptimeFromRoute(
-                  warm, req.key().fullKey(), calculatedExptime)) {
+                  warm, req.key_ref()->fullKey(), calculatedExptime)) {
             auto addReq = createRequestFromMessage<McAddRequest>(
-                req.key().fullKey(), reply, calculatedExptime);
+                req.key_ref()->fullKey(), reply, calculatedExptime);
             staging->route(addReq);
           }
         }
@@ -151,11 +151,12 @@ class StagingRoute {
     auto reply = warm_->route(req);
 
     // route a metaget to staging side if we have a hit
-    if (isHitResult(reply.result())) {
-      folly::fibers::addTask([staging = staging_,
-                              metaReq = McMetagetRequest(req.key().fullKey())] {
-        staging->route(metaReq);
-      });
+    if (isHitResult(*reply.result_ref())) {
+      folly::fibers::addTask(
+          [staging = staging_,
+           metaReq = McMetagetRequest(req.key_ref()->fullKey())] {
+            staging->route(metaReq);
+          });
     }
 
     // always return warm reply
@@ -179,12 +180,12 @@ class StagingRoute {
 
     // Set the data to the staging side as a normal set using the
     // original request value.
-    int32_t exptime = req.exptime();
-    if (isStoredResult(reply.result())) {
+    int32_t exptime = *req.exptime_ref();
+    if (isStoredResult(*reply.result_ref())) {
       folly::fibers::addTask(
           [staging = staging_,
            setReq = createRequestFromMessage<McSetRequest, Request>(
-               req.key().fullKey(), req, exptime)]() {
+               req.key_ref()->fullKey(), req, exptime)]() {
             staging->route(setReq);
           });
     }
@@ -218,7 +219,8 @@ class StagingRoute {
         fs.begin(),
         fs.end(),
         [&reply, &bFirstReply](size_t /* id */, Reply newReply) {
-          if (bFirstReply || worseThan(newReply.result(), reply.result())) {
+          if (bFirstReply ||
+              worseThan(*newReply.result_ref(), *reply.result_ref())) {
             reply = std::move(newReply);
             bFirstReply = false;
           }
@@ -245,7 +247,7 @@ class StagingRoute {
       ReplyT<Request>>::type
   route(const Request& req) const {
     auto reply = warm_->route(req);
-    if (!isErrorResult(reply.result())) {
+    if (!isErrorResult(*reply.result_ref())) {
       folly::fibers::addTask(
           [staging = staging_, asyncReq = req]() { staging->route(asyncReq); });
     }

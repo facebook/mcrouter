@@ -92,12 +92,12 @@ class ShardSplitRoute {
     auto* ctx = fiber_local<RouterInfo>::getTraverseCtx();
     if (ctx) {
       bool isShadow =
-        fiber_local<RouterInfo>::getRequestClass().is(RequestClass::kShadow);
+          fiber_local<RouterInfo>::getRequestClass().is(RequestClass::kShadow);
       ctx->recordShardSplitter(shardSplitter_, isShadow);
     }
 
     folly::StringPiece shard;
-    if (!getShardId(req.key().routingKey(), shard)) {
+    if (!getShardId(req.key_ref()->routingKey(), shard)) {
       // key does not contain shard id, just do regular routing
       return t(*rh_, req);
     }
@@ -142,7 +142,8 @@ class ShardSplitRoute {
   template <class Request>
   ReplyT<Request> route(const Request& req) const {
     folly::StringPiece shard;
-    auto split = shardSplitter_.getShardSplit(req.key().routingKey(), shard);
+    auto split =
+        shardSplitter_.getShardSplit(req.key_ref()->routingKey(), shard);
     if (split == nullptr) {
       return rh_->route(req);
     }
@@ -177,7 +178,8 @@ class ShardSplitRoute {
   Request splitReq(const Request& req, size_t offset, folly::StringPiece shard)
       const {
     auto reqCopy = req;
-    reqCopy.key() = detail::createSplitKey(req.key().fullKey(), offset, shard);
+    reqCopy.key_ref() =
+        detail::createSplitKey(req.key_ref()->fullKey(), offset, shard);
     return reqCopy;
   }
 };

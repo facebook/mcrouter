@@ -294,7 +294,7 @@ TEST(CarbonBasic, setAndGet) {
   req.testOptionalString() = s;
   EXPECT_EQ(s, *req.testOptionalString());
   req.testOptionalIobuf() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, s);
-  EXPECT_EQ(s, coalesceAndGetRange(*req.testOptionalIobuf()));
+  EXPECT_EQ(s, coalesceAndGetRange(req.testOptionalIobuf()));
   req.testOptionalBool() = false;
   EXPECT_EQ(false, *req.testOptionalBool());
   std::vector<folly::Optional<std::string>> ovec;
@@ -308,7 +308,7 @@ TEST(CarbonBasic, setAndGet) {
   EXPECT_EQ(lstring, *req.testOptionalKeywordString());
   req.testOptionalKeywordIobuf() =
       folly::IOBuf(folly::IOBuf::COPY_BUFFER, lstring);
-  EXPECT_EQ(lstring, coalesceAndGetRange(*req.testOptionalKeywordIobuf()));
+  EXPECT_EQ(lstring, coalesceAndGetRange(req.testOptionalKeywordIobuf()));
   req.testOptionalKeywordBool() = false;
   EXPECT_EQ(false, *req.testOptionalKeywordBool());
 
@@ -319,7 +319,7 @@ TEST(CarbonBasic, setAndGet) {
   req.testOptionalKeywordIobuf_ref() =
       folly::IOBuf(folly::IOBuf::COPY_BUFFER, lstringRef);
   EXPECT_EQ(
-      lstringRef, coalesceAndGetRange(*req.testOptionalKeywordIobuf_ref()));
+      lstringRef, coalesceAndGetRange(req.testOptionalKeywordIobuf_ref()));
   req.testOptionalKeywordBool_ref() = false;
   EXPECT_EQ(false, *req.testOptionalKeywordBool_ref());
 
@@ -895,7 +895,7 @@ TEST(CarbonBasic, setAndGetFieldRefAPI) {
   req.testIobuf_ref() = iobuf;
   EXPECT_EQ(
       coalesceAndGetRange(iobuf).str(),
-      coalesceAndGetRange(*req.testIobuf_ref()).str());
+      coalesceAndGetRange(req.testIobuf_ref()).str());
 
   std::vector<std::string> strings = {
       "abcdefg", "xyz", kShortString.str(), longString()};
@@ -1020,7 +1020,7 @@ TEST(CarbonBasic, setAndGetFieldRefAPIThrift) {
   req.testOptionalKeywordIobuf_ref() =
       folly::IOBuf(folly::IOBuf::COPY_BUFFER, lstringRef);
   EXPECT_EQ(
-      lstringRef, coalesceAndGetRange(*req.testOptionalKeywordIobuf_ref()));
+      lstringRef, coalesceAndGetRange(req.testOptionalKeywordIobuf_ref()));
   req.testOptionalKeywordBool_ref() = false;
   EXPECT_EQ(false, *req.testOptionalKeywordBool_ref());
 
@@ -1034,7 +1034,7 @@ TEST(CarbonBasic, setAndGetFieldRefAPIThrift) {
   req.testIobuf_ref() = iobuf;
   EXPECT_EQ(
       coalesceAndGetRange(iobuf).str(),
-      coalesceAndGetRange(*(req.testIobuf_ref())).str());
+      coalesceAndGetRange(req.testIobuf_ref()).str());
 
   std::vector<std::string> strings = {
       "abcdefg", "xyz", kShortString.str(), longString()};

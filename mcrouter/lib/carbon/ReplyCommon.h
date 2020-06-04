@@ -15,8 +15,8 @@
 namespace facebook {
 namespace memcache {
 struct AccessPoint;
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
 
 namespace carbon {
 
@@ -49,8 +49,19 @@ class ReplyCommonThrift : public ReplyCommon {
     return result_;
   }
 
+  apache::thrift::field_ref<const carbon::Result&> result_ref() const& {
+    return {this->result_, __isset.result};
+  }
+
+  apache::thrift::field_ref<carbon::Result&> result_ref() & {
+    return {this->result_, __isset.result};
+  }
+
  private:
+  struct __isset {
+    bool result;
+  } __isset = {};
   carbon::Result result_{carbon::Result::UNKNOWN};
 };
 
-} // carbon
+} // namespace carbon

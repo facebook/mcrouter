@@ -97,12 +97,11 @@ std::weak_ptr<Client> ThreadInfo::createClient(
     ExternalCarbonConnectionImpl::Options options) {
   return folly::fibers::await(
       [&](folly::fibers::Promise<std::weak_ptr<Client>> p) {
-        fiberManager_.addTaskRemote([
-          this,
-          promise = std::move(p),
-          connectionOptions = std::move(connectionOptions),
-          options
-        ]() mutable {
+        fiberManager_.addTaskRemote([this,
+                                     promise = std::move(p),
+                                     connectionOptions =
+                                         std::move(connectionOptions),
+                                     options]() mutable {
           auto client = std::make_shared<Client>(connectionOptions, options);
           clients_.insert(client);
           promise.setValue(client);
@@ -126,7 +125,7 @@ ThreadInfo::~ThreadInfo() {
   thread_.join();
 }
 
-} // detail
+} // namespace detail
 
 namespace {
 
@@ -210,7 +209,7 @@ bool ExternalCarbonConnectionImpl::Impl::healthCheck() {
     }
 
     auto reply = client->sendRequest(facebook::memcache::McVersionRequest());
-    ret = !facebook::memcache::isErrorResult(reply.result());
+    ret = !facebook::memcache::isErrorResult(*reply.result_ref());
     baton.post();
   });
 
@@ -233,4 +232,4 @@ bool ExternalCarbonConnectionImpl::healthCheck() {
     return impl_->healthCheck();
   }
 }
-} // carbon
+} // namespace carbon

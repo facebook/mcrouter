@@ -100,7 +100,7 @@ class DestinationRoute {
 
   memcache::McDeleteReply route(const memcache::McDeleteRequest& req) const {
     auto reply = routeWithDestination(req);
-    if (isFailoverErrorResult(reply.result()) && spool(req)) {
+    if (isFailoverErrorResult(*reply.result_ref()) && spool(req)) {
       reply = createReply(DefaultReply, req);
       reply.setDestination(destination_->accessPoint());
     }
@@ -223,10 +223,10 @@ class DestinationRoute {
     DestinationRequestCtx dctx(nowUs());
     folly::Optional<Request> newReq;
     folly::StringPiece strippedRoutingPrefix;
-    if (!keepRoutingPrefix_ && !req.key().routingPrefix().empty()) {
+    if (!keepRoutingPrefix_ && !req.key_ref()->routingPrefix().empty()) {
       newReq.emplace(req);
-      newReq->key().stripRoutingPrefix();
-      strippedRoutingPrefix = req.key().routingPrefix();
+      newReq->key_ref()->stripRoutingPrefix();
+      strippedRoutingPrefix = req.key_ref()->routingPrefix();
     }
 
     uint64_t remainingDeadlineTime = 0;
@@ -299,14 +299,15 @@ class DestinationRoute {
       return false;
     }
 
-    folly::StringPiece key =
-        keepRoutingPrefix_ ? req.key().fullKey() : req.key().keyWithoutRoute();
+    folly::StringPiece key = keepRoutingPrefix_
+        ? req.key_ref()->fullKey()
+        : req.key_ref()->keyWithoutRoute();
 
     auto proxy = &fiber_local<RouterInfo>::getSharedCtx()->proxy();
     auto& ap = *destination_->accessPoint();
     folly::fibers::Baton b;
     auto res = false;
-    auto attr = req.attributes();
+    auto attr = *req.attributes_ref();
     const auto asyncWriteStartUs = nowUs();
     if (auto asyncWriter = proxy->router().asyncWriter()) {
       res = asyncWriter->run([&b, &ap, &attr, proxy, key, asynclogName]() {

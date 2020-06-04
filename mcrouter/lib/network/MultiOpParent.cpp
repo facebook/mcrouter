@@ -26,8 +26,8 @@ bool MultiOpParent::reply(
     stolen = true;
     error_ = true;
     reply_.emplace(result);
-    reply_->message() = std::move(errorMessage);
-    reply_->appSpecificErrorCode() = errorCode;
+    reply_->message_ref() = std::move(errorMessage);
+    reply_->appSpecificErrorCode_ref() = errorCode;
   }
 
   assert(waiting_ > 0);
@@ -61,5 +61,5 @@ void MultiOpParent::release() {
   // blocking context
   McServerRequestContext::reply(std::move(block_), McGetReply());
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

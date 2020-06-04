@@ -169,7 +169,7 @@ class CarbonLookasideRoute {
 
     auto reply = child_->route(req);
 
-    if (cacheCandidate && !isErrorResult(reply.result()) &&
+    if (cacheCandidate && !isErrorResult(*reply.result_ref()) &&
         carbonLookasideHelper_.shouldCacheReply(reply)) {
       carbonLookasideSet(key, reply, leaseToken);
     }
@@ -207,9 +207,9 @@ class CarbonLookasideRoute {
     client_->send(
         cacheRequest,
         [&baton, &ret](const McGetRequest&, McGetReply&& cacheReply) {
-          if (isHitResult(cacheReply.result()) &&
-              cacheReply.value().has_value()) {
-            folly::io::Cursor cur(&cacheReply.value().value());
+          if (isHitResult(*cacheReply.result_ref()) &&
+              cacheReply.value_ref().has_value()) {
+            folly::io::Cursor cur(&cacheReply.value_ref().value());
             carbon::CarbonProtocolReader reader(cur);
             ReplyT<Request> reply;
             reply.deserialize(reader);
@@ -244,21 +244,21 @@ class CarbonLookasideRoute {
           [&baton, &ret, &retry, &leaseToken](
               const McLeaseGetRequest&, McLeaseGetReply&& cacheReply) {
             retry = false;
-            if (isHitResult(cacheReply.result()) &&
-                cacheReply.value().has_value()) {
-              folly::io::Cursor cur(&cacheReply.value().value());
+            if (isHitResult(*cacheReply.result_ref()) &&
+                cacheReply.value_ref().has_value()) {
+              folly::io::Cursor cur(&cacheReply.value_ref().value());
               carbon::CarbonProtocolReader reader(cur);
               ReplyT<Request> reply;
               reply.deserialize(reader);
               ret.assign(std::move(reply));
-            } else if (isMissResult(cacheReply.result())) {
+            } else if (isMissResult(*cacheReply.result_ref())) {
               // Hot miss will retry using an expoential backoff.
               // A miss will return with the lease token set.
               constexpr size_t kLeaseHotMissToken = 1;
-              if (cacheReply.leaseToken() == kLeaseHotMissToken) {
+              if (*cacheReply.leaseToken_ref() == kLeaseHotMissToken) {
                 retry = true;
               } else {
-                leaseToken = cacheReply.leaseToken();
+                leaseToken = *cacheReply.leaseToken_ref();
               }
             }
             baton.post();
@@ -307,11 +307,11 @@ class CarbonLookasideRoute {
     if (subSecTTL_) {
       // ms ttl translates to a 1 second ttl on the server. Sub-second
       // ttl is acheived by appending a time based suffix to the key.
-      req.exptime() = 1;
+      req.exptime_ref() = 1;
     } else {
-      req.exptime() = ttl_;
+      req.exptime_ref() = ttl_;
     }
-    req.value() = serializeOffFiber(reply);
+    req.value_ref() = serializeOffFiber(reply);
     folly::fibers::addTask([this, req = std::move(req)]() {
       folly::fibers::Baton baton;
       client_->send(
@@ -331,12 +331,12 @@ class CarbonLookasideRoute {
     if (subSecTTL_) {
       // ms ttl translates to a 1 second ttl on the server. Sub-second
       // ttl is acheived by appending a time based suffix to the key.
-      req.exptime() = 1;
+      req.exptime_ref() = 1;
     } else {
-      req.exptime() = ttl_;
+      req.exptime_ref() = ttl_;
     }
-    req.leaseToken() = leaseToken;
-    req.value() = serializeOffFiber(reply);
+    req.leaseToken_ref() = leaseToken;
+    req.value_ref() = serializeOffFiber(reply);
     folly::fibers::addTask([this, req = std::move(req)]() {
       folly::fibers::Baton baton;
       client_->send(req, [&baton](const McLeaseSetRequest&, McLeaseSetReply&&) {

@@ -29,15 +29,15 @@ setRequestFailover(Request& req) {
 template <class Request>
 typename std::enable_if<!HasFailover<Request>::value, void>::type
 setRequestFailover(Request& req) {
-  if (!req.key().hasHashStop()) {
+  if (!req.key_ref()->hasHashStop()) {
     return;
   }
   constexpr folly::StringPiece kFailoverTag = ":failover=1";
   auto keyWithFailover =
-      folly::to<std::string>(req.key().fullKey(), kFailoverTag);
+      folly::to<std::string>(req.key_ref()->fullKey(), kFailoverTag);
   /* It's always safe to not append a failover tag */
   if (keyWithFailover.size() <= MC_KEY_MAX_LEN) {
-    req.key() = std::move(keyWithFailover);
+    req.key_ref() = std::move(keyWithFailover);
   }
 }
 

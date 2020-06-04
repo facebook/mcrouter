@@ -30,23 +30,25 @@ namespace carbon {
 
 namespace detail {
 
-template <typename T, typename = bool&>
+template <typename T, typename = std::enable_if_t<true>>
 struct HasIsFailover : std::false_type {};
 template <typename T>
-struct HasIsFailover<T, decltype(std::declval<T>().isFailover())>
+struct HasIsFailover<T, std::void_t<decltype(std::declval<T>().isFailover())>>
     : std::true_type {};
 
-template <typename T, typename = std::string&>
+template <typename T, typename = std::enable_if_t<true>>
 struct HasMessage : std::false_type {};
 template <typename T>
-struct HasMessage<T, decltype(std::declval<T>().message())> : std::true_type {};
+struct HasMessage<T, std::void_t<decltype(std::declval<T>().message_ref())>>
+    : std::true_type {};
 
-template <typename T, typename = int16_t&>
+template <typename T, typename = std::enable_if_t<true>>
 struct HasAppSpecificErrorCode : std::false_type {};
 template <typename T>
 struct HasAppSpecificErrorCode<
     T,
-    decltype(std::declval<T>().appSpecificErrorCode())> : std::true_type {};
+    std::void_t<decltype(std::declval<T>().appSpecificErrorCode_ref())>>
+    : std::true_type {};
 
 template <class RequestList>
 struct GetRequestReplyPairsImpl;
@@ -73,7 +75,7 @@ template <typename Reply>
 typename std::enable_if_t<detail::HasMessage<Reply>::value> setMessageIfPresent(
     Reply& reply,
     std::string msg) {
-  reply.message() = std::move(msg);
+  reply.message_ref() = std::move(msg);
 }
 template <typename Reply>
 typename std::enable_if_t<!detail::HasMessage<Reply>::value>
@@ -82,7 +84,7 @@ setMessageIfPresent(Reply&, std::string) {}
 template <typename Reply>
 typename std::enable_if_t<detail::HasMessage<Reply>::value, folly::StringPiece>
 getMessage(const Reply& reply) {
-  return reply.message();
+  return *reply.message_ref();
 }
 template <typename Reply>
 typename std::enable_if_t<!detail::HasMessage<Reply>::value, folly::StringPiece>
@@ -104,7 +106,7 @@ typename std::enable_if_t<
     facebook::memcache::HasKeyTrait<Request>::value,
     folly::StringPiece>
 getFullKey(const Request& req) {
-  return req.key().fullKey();
+  return req.key_ref()->fullKey();
 }
 template <class Request>
 typename std::enable_if_t<
@@ -119,7 +121,7 @@ typename std::enable_if_t<
     detail::HasAppSpecificErrorCode<Reply>::value,
     folly::Optional<int16_t>>
 getAppSpecificErrorCode(const Reply& reply) {
-  return reply.appSpecificErrorCode();
+  return *reply.appSpecificErrorCode_ref();
 }
 template <typename Reply>
 typename std::enable_if_t<
@@ -145,6 +147,14 @@ inline const folly::IOBuf* bufPtr(const folly::IOBuf& buf) {
   return &buf;
 }
 
+inline folly::IOBuf* bufPtr(apache::thrift::field_ref<folly::IOBuf&> buf) {
+  return &buf.value();
+}
+inline const folly::IOBuf* bufPtr(
+    apache::thrift::field_ref<const folly::IOBuf&> buf) {
+  return &buf.value();
+}
+
 inline folly::IOBuf* bufPtr(
     apache::thrift::optional_field_ref<folly::IOBuf&> buf) {
   return buf.has_value() ? &buf.value() : nullptr;
@@ -161,13 +171,13 @@ typename std::enable_if<
     facebook::memcache::HasValueTrait<R>::value,
     const folly::IOBuf*>::type
 valuePtrUnsafe(const R& requestOrReply) {
-  return detail::bufPtr(requestOrReply.value());
+  return detail::bufPtr(requestOrReply.value_ref());
 }
 template <class R>
 typename std::
     enable_if<facebook::memcache::HasValueTrait<R>::value, folly::IOBuf*>::type
     valuePtrUnsafe(R& requestOrReply) {
-  return detail::bufPtr(requestOrReply.value());
+  return detail::bufPtr(requestOrReply.value_ref());
 }
 template <class R>
 typename std::
@@ -181,7 +191,7 @@ typename std::enable_if<
     facebook::memcache::HasValueTrait<R>::value,
     folly::StringPiece>::type
 valueRangeSlow(R& requestOrReply) {
-  auto* buf = detail::bufPtr(requestOrReply.value());
+  auto* buf = detail::bufPtr(requestOrReply.value_ref());
   return buf ? folly::StringPiece(buf->coalesce()) : folly::StringPiece();
 }
 
@@ -209,7 +219,7 @@ template <class R>
 typename std::enable_if<facebook::memcache::HasFlagsTrait<R>::value, uint64_t>::
     type
     getFlags(const R& requestOrReply) {
-  return requestOrReply.flags();
+  return *requestOrReply.flags_ref();
 }
 
 template <class R>

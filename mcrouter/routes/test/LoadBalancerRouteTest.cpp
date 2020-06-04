@@ -41,7 +41,7 @@ typename std::enable_if<HasValueTrait<Reply>::value, void>::type setReplyValue(
         ServerLoad(ServerLoad::fromPercentLoad(it->second)));
   }
 
-  reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, val);
+  reply.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, val);
 }
 template <class Reply>
 typename std::enable_if<!HasValueTrait<Reply>::value, void>::type setReplyValue(
@@ -330,27 +330,27 @@ TEST(LoadBalancerRouteTest, failover) {
   auto reply1 = rh1Failover.route(McGetRequest(key));
   auto reply2 = rh2Failover.route(McGetRequest(key));
   auto reply3 = rh3Failover.route(McGetRequest(key));
-  EXPECT_EQ(carbon::Result::OK, reply1.result());
-  EXPECT_EQ(carbon::Result::OK, reply2.result());
-  EXPECT_EQ(carbon::Result::OK, reply3.result());
+  EXPECT_EQ(carbon::Result::OK, *reply1.result_ref());
+  EXPECT_EQ(carbon::Result::OK, *reply2.result_ref());
+  EXPECT_EQ(carbon::Result::OK, *reply3.result_ref());
 
   // success on the second try.
   key = "req05";
   reply1 = rh1Failover.route(McGetRequest(key));
   reply2 = rh2Failover.route(McGetRequest(key));
   reply3 = rh3Failover.route(McGetRequest(key));
-  EXPECT_EQ(carbon::Result::REMOTE_ERROR, reply1.result());
-  EXPECT_EQ(carbon::Result::OK, reply2.result());
-  EXPECT_EQ(carbon::Result::OK, reply3.result());
+  EXPECT_EQ(carbon::Result::REMOTE_ERROR, *reply1.result_ref());
+  EXPECT_EQ(carbon::Result::OK, *reply2.result_ref());
+  EXPECT_EQ(carbon::Result::OK, *reply3.result_ref());
 
   // success on the third try.
   key = "req10";
   reply1 = rh1Failover.route(McGetRequest(key));
   reply2 = rh2Failover.route(McGetRequest(key));
   reply3 = rh3Failover.route(McGetRequest(key));
-  EXPECT_EQ(carbon::Result::REMOTE_ERROR, reply1.result());
-  EXPECT_EQ(carbon::Result::TIMEOUT, reply2.result());
-  EXPECT_EQ(carbon::Result::OK, reply3.result());
+  EXPECT_EQ(carbon::Result::REMOTE_ERROR, *reply1.result_ref());
+  EXPECT_EQ(carbon::Result::TIMEOUT, *reply2.result_ref());
+  EXPECT_EQ(carbon::Result::OK, *reply3.result_ref());
 }
 
 TEST(LoadBalancerRouteTest, failoverStress) {
@@ -374,7 +374,7 @@ TEST(LoadBalancerRouteTest, failoverStress) {
 
   for (size_t i = 0; i < 1000; ++i) {
     auto reply = rh.route(McGetRequest(folly::to<std::string>(i)));
-    EXPECT_EQ(carbon::Result::OK, reply.result());
+    EXPECT_EQ(carbon::Result::OK, *reply.result_ref());
     EXPECT_EQ("cpuc", carbon::valueRangeSlow(reply).str());
   }
 }

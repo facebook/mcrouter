@@ -75,7 +75,7 @@ class MemcacheCarbonLookasideHelper {
   template <typename Request>
   std::string buildKey(const Request& req) const {
     if (HasKeyTrait<Request>::value) {
-      return req.key().fullKey().str();
+      return req.key_ref()->fullKey().str();
     }
     return std::string();
   }
