@@ -19,28 +19,28 @@ namespace memcache {
 template <class Writer>
 void McGetRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeField(2 /* field id */, flags());
+  writer.writeField(1 /* field id */, key_ref());
+  writer.writeField(2 /* field id */, flags_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McGetRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "flags", this->flags())) {
+  if (!v.visitField(2, "flags", *this->flags_ref())) {
     return;
   }
 }
 
 template <class V>
 void McGetRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "flags", this->flags())) {
+  if (!v.visitField(2, "flags", *this->flags_ref())) {
     return;
   }
 }
@@ -48,49 +48,49 @@ void McGetRequest::visitFields(V&& v) const {
 template <class Writer>
 void McGetReply::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, value());
-  writer.writeField(3 /* field id */, flags());
-  writer.writeField(4 /* field id */, message());
-  writer.writeField(5 /* field id */, appSpecificErrorCode());
+  writer.writeField(1 /* field id */, result_ref());
+  writer.writeField(2 /* field id */, value_ref());
+  writer.writeField(3 /* field id */, flags_ref());
+  writer.writeField(4 /* field id */, message_ref());
+  writer.writeField(5 /* field id */, appSpecificErrorCode_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McGetReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "value", this->value())) {
+  if (!v.visitField(2, "value", this->value_ref())) {
     return;
   }
-  if (!v.visitField(3, "flags", this->flags())) {
+  if (!v.visitField(3, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(4, "message", this->message())) {
+  if (!v.visitField(4, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(5, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(5, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
 
 template <class V>
 void McGetReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "value", this->value())) {
+  if (!v.visitField(2, "value", this->value_ref())) {
     return;
   }
-  if (!v.visitField(3, "flags", this->flags())) {
+  if (!v.visitField(3, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(4, "message", this->message())) {
+  if (!v.visitField(4, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(5, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(5, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
@@ -98,42 +98,42 @@ void McGetReply::visitFields(V&& v) const {
 template <class Writer>
 void McSetRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeField(2 /* field id */, exptime());
-  writer.writeField(3 /* field id */, flags());
-  writer.writeField(4 /* field id */, value());
+  writer.writeField(1 /* field id */, key_ref());
+  writer.writeField(2 /* field id */, exptime_ref());
+  writer.writeField(3 /* field id */, flags_ref());
+  writer.writeField(4 /* field id */, value_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McSetRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "exptime", this->exptime())) {
+  if (!v.visitField(2, "exptime", *this->exptime_ref())) {
     return;
   }
-  if (!v.visitField(3, "flags", this->flags())) {
+  if (!v.visitField(3, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(4, "value", this->value())) {
+  if (!v.visitField(4, "value", *this->value_ref())) {
     return;
   }
 }
 
 template <class V>
 void McSetRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "exptime", this->exptime())) {
+  if (!v.visitField(2, "exptime", *this->exptime_ref())) {
     return;
   }
-  if (!v.visitField(3, "flags", this->flags())) {
+  if (!v.visitField(3, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(4, "value", this->value())) {
+  if (!v.visitField(4, "value", *this->value_ref())) {
     return;
   }
 }
@@ -141,49 +141,49 @@ void McSetRequest::visitFields(V&& v) const {
 template <class Writer>
 void McSetReply::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, flags());
-  writer.writeField(3 /* field id */, value());
-  writer.writeField(4 /* field id */, message());
-  writer.writeField(5 /* field id */, appSpecificErrorCode());
+  writer.writeField(1 /* field id */, result_ref());
+  writer.writeField(2 /* field id */, flags_ref());
+  writer.writeField(3 /* field id */, value_ref());
+  writer.writeField(4 /* field id */, message_ref());
+  writer.writeField(5 /* field id */, appSpecificErrorCode_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McSetReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "flags", this->flags())) {
+  if (!v.visitField(2, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(3, "value", this->value())) {
+  if (!v.visitField(3, "value", *this->value_ref())) {
     return;
   }
-  if (!v.visitField(4, "message", this->message())) {
+  if (!v.visitField(4, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(5, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(5, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
 
 template <class V>
 void McSetReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "flags", this->flags())) {
+  if (!v.visitField(2, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(3, "value", this->value())) {
+  if (!v.visitField(3, "value", *this->value_ref())) {
     return;
   }
-  if (!v.visitField(4, "message", this->message())) {
+  if (!v.visitField(4, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(5, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(5, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
@@ -191,49 +191,49 @@ void McSetReply::visitFields(V&& v) const {
 template <class Writer>
 void McDeleteRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeField(2 /* field id */, flags());
-  writer.writeField(3 /* field id */, exptime());
-  writer.writeField(4 /* field id */, value());
-  writer.writeField(5 /* field id */, attributes());
+  writer.writeField(1 /* field id */, key_ref());
+  writer.writeField(2 /* field id */, flags_ref());
+  writer.writeField(3 /* field id */, exptime_ref());
+  writer.writeField(4 /* field id */, value_ref());
+  writer.writeField(5 /* field id */, attributes_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McDeleteRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "flags", this->flags())) {
+  if (!v.visitField(2, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(3, "exptime", this->exptime())) {
+  if (!v.visitField(3, "exptime", *this->exptime_ref())) {
     return;
   }
-  if (!v.visitField(4, "value", this->value())) {
+  if (!v.visitField(4, "value", *this->value_ref())) {
     return;
   }
-  if (!v.visitField(5, "attributes", this->attributes())) {
+  if (!v.visitField(5, "attributes", *this->attributes_ref())) {
     return;
   }
 }
 
 template <class V>
 void McDeleteRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "flags", this->flags())) {
+  if (!v.visitField(2, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(3, "exptime", this->exptime())) {
+  if (!v.visitField(3, "exptime", *this->exptime_ref())) {
     return;
   }
-  if (!v.visitField(4, "value", this->value())) {
+  if (!v.visitField(4, "value", *this->value_ref())) {
     return;
   }
-  if (!v.visitField(5, "attributes", this->attributes())) {
+  if (!v.visitField(5, "attributes", *this->attributes_ref())) {
     return;
   }
 }
@@ -241,49 +241,49 @@ void McDeleteRequest::visitFields(V&& v) const {
 template <class Writer>
 void McDeleteReply::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, flags());
-  writer.writeField(3 /* field id */, value());
-  writer.writeField(4 /* field id */, message());
-  writer.writeField(5 /* field id */, appSpecificErrorCode());
+  writer.writeField(1 /* field id */, result_ref());
+  writer.writeField(2 /* field id */, flags_ref());
+  writer.writeField(3 /* field id */, value_ref());
+  writer.writeField(4 /* field id */, message_ref());
+  writer.writeField(5 /* field id */, appSpecificErrorCode_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McDeleteReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "flags", this->flags())) {
+  if (!v.visitField(2, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(3, "value", this->value())) {
+  if (!v.visitField(3, "value", *this->value_ref())) {
     return;
   }
-  if (!v.visitField(4, "message", this->message())) {
+  if (!v.visitField(4, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(5, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(5, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
 
 template <class V>
 void McDeleteReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "flags", this->flags())) {
+  if (!v.visitField(2, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(3, "value", this->value())) {
+  if (!v.visitField(3, "value", *this->value_ref())) {
     return;
   }
-  if (!v.visitField(4, "message", this->message())) {
+  if (!v.visitField(4, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(5, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(5, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
@@ -291,28 +291,28 @@ void McDeleteReply::visitFields(V&& v) const {
 template <class Writer>
 void McLeaseGetRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeField(2 /* field id */, flags());
+  writer.writeField(1 /* field id */, key_ref());
+  writer.writeField(2 /* field id */, flags_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McLeaseGetRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "flags", this->flags())) {
+  if (!v.visitField(2, "flags", *this->flags_ref())) {
     return;
   }
 }
 
 template <class V>
 void McLeaseGetRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "flags", this->flags())) {
+  if (!v.visitField(2, "flags", *this->flags_ref())) {
     return;
   }
 }
@@ -320,56 +320,56 @@ void McLeaseGetRequest::visitFields(V&& v) const {
 template <class Writer>
 void McLeaseGetReply::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, leaseToken());
-  writer.writeField(3 /* field id */, value());
-  writer.writeField(4 /* field id */, flags());
-  writer.writeField(5 /* field id */, message());
-  writer.writeField(6 /* field id */, appSpecificErrorCode());
+  writer.writeField(1 /* field id */, result_ref());
+  writer.writeField(2 /* field id */, leaseToken_ref());
+  writer.writeField(3 /* field id */, value_ref());
+  writer.writeField(4 /* field id */, flags_ref());
+  writer.writeField(5 /* field id */, message_ref());
+  writer.writeField(6 /* field id */, appSpecificErrorCode_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McLeaseGetReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "leaseToken", this->leaseToken())) {
+  if (!v.visitField(2, "leaseToken", *this->leaseToken_ref())) {
     return;
   }
-  if (!v.visitField(3, "value", this->value())) {
+  if (!v.visitField(3, "value", this->value_ref())) {
     return;
   }
-  if (!v.visitField(4, "flags", this->flags())) {
+  if (!v.visitField(4, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(5, "message", this->message())) {
+  if (!v.visitField(5, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(6, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(6, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
 
 template <class V>
 void McLeaseGetReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "leaseToken", this->leaseToken())) {
+  if (!v.visitField(2, "leaseToken", *this->leaseToken_ref())) {
     return;
   }
-  if (!v.visitField(3, "value", this->value())) {
+  if (!v.visitField(3, "value", this->value_ref())) {
     return;
   }
-  if (!v.visitField(4, "flags", this->flags())) {
+  if (!v.visitField(4, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(5, "message", this->message())) {
+  if (!v.visitField(5, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(6, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(6, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
@@ -377,49 +377,49 @@ void McLeaseGetReply::visitFields(V&& v) const {
 template <class Writer>
 void McLeaseSetRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeField(2 /* field id */, exptime());
-  writer.writeField(3 /* field id */, flags());
-  writer.writeField(4 /* field id */, value());
-  writer.writeField(5 /* field id */, leaseToken());
+  writer.writeField(1 /* field id */, key_ref());
+  writer.writeField(2 /* field id */, exptime_ref());
+  writer.writeField(3 /* field id */, flags_ref());
+  writer.writeField(4 /* field id */, value_ref());
+  writer.writeField(5 /* field id */, leaseToken_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McLeaseSetRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "exptime", this->exptime())) {
+  if (!v.visitField(2, "exptime", *this->exptime_ref())) {
     return;
   }
-  if (!v.visitField(3, "flags", this->flags())) {
+  if (!v.visitField(3, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(4, "value", this->value())) {
+  if (!v.visitField(4, "value", *this->value_ref())) {
     return;
   }
-  if (!v.visitField(5, "leaseToken", this->leaseToken())) {
+  if (!v.visitField(5, "leaseToken", *this->leaseToken_ref())) {
     return;
   }
 }
 
 template <class V>
 void McLeaseSetRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "exptime", this->exptime())) {
+  if (!v.visitField(2, "exptime", *this->exptime_ref())) {
     return;
   }
-  if (!v.visitField(3, "flags", this->flags())) {
+  if (!v.visitField(3, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(4, "value", this->value())) {
+  if (!v.visitField(4, "value", *this->value_ref())) {
     return;
   }
-  if (!v.visitField(5, "leaseToken", this->leaseToken())) {
+  if (!v.visitField(5, "leaseToken", *this->leaseToken_ref())) {
     return;
   }
 }
@@ -427,35 +427,35 @@ void McLeaseSetRequest::visitFields(V&& v) const {
 template <class Writer>
 void McLeaseSetReply::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, message());
-  writer.writeField(3 /* field id */, appSpecificErrorCode());
+  writer.writeField(1 /* field id */, result_ref());
+  writer.writeField(2 /* field id */, message_ref());
+  writer.writeField(3 /* field id */, appSpecificErrorCode_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McLeaseSetReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "message", this->message())) {
+  if (!v.visitField(2, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(3, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
 
 template <class V>
 void McLeaseSetReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "message", this->message())) {
+  if (!v.visitField(2, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(3, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
@@ -463,42 +463,42 @@ void McLeaseSetReply::visitFields(V&& v) const {
 template <class Writer>
 void McAddRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeField(2 /* field id */, exptime());
-  writer.writeField(3 /* field id */, flags());
-  writer.writeField(4 /* field id */, value());
+  writer.writeField(1 /* field id */, key_ref());
+  writer.writeField(2 /* field id */, exptime_ref());
+  writer.writeField(3 /* field id */, flags_ref());
+  writer.writeField(4 /* field id */, value_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McAddRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "exptime", this->exptime())) {
+  if (!v.visitField(2, "exptime", *this->exptime_ref())) {
     return;
   }
-  if (!v.visitField(3, "flags", this->flags())) {
+  if (!v.visitField(3, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(4, "value", this->value())) {
+  if (!v.visitField(4, "value", *this->value_ref())) {
     return;
   }
 }
 
 template <class V>
 void McAddRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "exptime", this->exptime())) {
+  if (!v.visitField(2, "exptime", *this->exptime_ref())) {
     return;
   }
-  if (!v.visitField(3, "flags", this->flags())) {
+  if (!v.visitField(3, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(4, "value", this->value())) {
+  if (!v.visitField(4, "value", *this->value_ref())) {
     return;
   }
 }
@@ -506,35 +506,35 @@ void McAddRequest::visitFields(V&& v) const {
 template <class Writer>
 void McAddReply::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, message());
-  writer.writeField(3 /* field id */, appSpecificErrorCode());
+  writer.writeField(1 /* field id */, result_ref());
+  writer.writeField(2 /* field id */, message_ref());
+  writer.writeField(3 /* field id */, appSpecificErrorCode_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McAddReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "message", this->message())) {
+  if (!v.visitField(2, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(3, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
 
 template <class V>
 void McAddReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "message", this->message())) {
+  if (!v.visitField(2, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(3, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
@@ -542,42 +542,42 @@ void McAddReply::visitFields(V&& v) const {
 template <class Writer>
 void McReplaceRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeField(2 /* field id */, exptime());
-  writer.writeField(3 /* field id */, flags());
-  writer.writeField(4 /* field id */, value());
+  writer.writeField(1 /* field id */, key_ref());
+  writer.writeField(2 /* field id */, exptime_ref());
+  writer.writeField(3 /* field id */, flags_ref());
+  writer.writeField(4 /* field id */, value_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McReplaceRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "exptime", this->exptime())) {
+  if (!v.visitField(2, "exptime", *this->exptime_ref())) {
     return;
   }
-  if (!v.visitField(3, "flags", this->flags())) {
+  if (!v.visitField(3, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(4, "value", this->value())) {
+  if (!v.visitField(4, "value", *this->value_ref())) {
     return;
   }
 }
 
 template <class V>
 void McReplaceRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "exptime", this->exptime())) {
+  if (!v.visitField(2, "exptime", *this->exptime_ref())) {
     return;
   }
-  if (!v.visitField(3, "flags", this->flags())) {
+  if (!v.visitField(3, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(4, "value", this->value())) {
+  if (!v.visitField(4, "value", *this->value_ref())) {
     return;
   }
 }
@@ -585,35 +585,35 @@ void McReplaceRequest::visitFields(V&& v) const {
 template <class Writer>
 void McReplaceReply::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, message());
-  writer.writeField(3 /* field id */, appSpecificErrorCode());
+  writer.writeField(1 /* field id */, result_ref());
+  writer.writeField(2 /* field id */, message_ref());
+  writer.writeField(3 /* field id */, appSpecificErrorCode_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McReplaceReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "message", this->message())) {
+  if (!v.visitField(2, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(3, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
 
 template <class V>
 void McReplaceReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "message", this->message())) {
+  if (!v.visitField(2, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(3, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
@@ -621,28 +621,28 @@ void McReplaceReply::visitFields(V&& v) const {
 template <class Writer>
 void McGetsRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeField(2 /* field id */, flags());
+  writer.writeField(1 /* field id */, key_ref());
+  writer.writeField(2 /* field id */, flags_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McGetsRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "flags", this->flags())) {
+  if (!v.visitField(2, "flags", *this->flags_ref())) {
     return;
   }
 }
 
 template <class V>
 void McGetsRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "flags", this->flags())) {
+  if (!v.visitField(2, "flags", *this->flags_ref())) {
     return;
   }
 }
@@ -650,56 +650,56 @@ void McGetsRequest::visitFields(V&& v) const {
 template <class Writer>
 void McGetsReply::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, casToken());
-  writer.writeField(3 /* field id */, value());
-  writer.writeField(4 /* field id */, flags());
-  writer.writeField(5 /* field id */, message());
-  writer.writeField(6 /* field id */, appSpecificErrorCode());
+  writer.writeField(1 /* field id */, result_ref());
+  writer.writeField(2 /* field id */, casToken_ref());
+  writer.writeField(3 /* field id */, value_ref());
+  writer.writeField(4 /* field id */, flags_ref());
+  writer.writeField(5 /* field id */, message_ref());
+  writer.writeField(6 /* field id */, appSpecificErrorCode_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McGetsReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "casToken", this->casToken())) {
+  if (!v.visitField(2, "casToken", *this->casToken_ref())) {
     return;
   }
-  if (!v.visitField(3, "value", this->value())) {
+  if (!v.visitField(3, "value", this->value_ref())) {
     return;
   }
-  if (!v.visitField(4, "flags", this->flags())) {
+  if (!v.visitField(4, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(5, "message", this->message())) {
+  if (!v.visitField(5, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(6, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(6, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
 
 template <class V>
 void McGetsReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "casToken", this->casToken())) {
+  if (!v.visitField(2, "casToken", *this->casToken_ref())) {
     return;
   }
-  if (!v.visitField(3, "value", this->value())) {
+  if (!v.visitField(3, "value", this->value_ref())) {
     return;
   }
-  if (!v.visitField(4, "flags", this->flags())) {
+  if (!v.visitField(4, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(5, "message", this->message())) {
+  if (!v.visitField(5, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(6, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(6, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
@@ -707,49 +707,49 @@ void McGetsReply::visitFields(V&& v) const {
 template <class Writer>
 void McCasRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeField(2 /* field id */, exptime());
-  writer.writeField(3 /* field id */, flags());
-  writer.writeField(4 /* field id */, value());
-  writer.writeField(5 /* field id */, casToken());
+  writer.writeField(1 /* field id */, key_ref());
+  writer.writeField(2 /* field id */, exptime_ref());
+  writer.writeField(3 /* field id */, flags_ref());
+  writer.writeField(4 /* field id */, value_ref());
+  writer.writeField(5 /* field id */, casToken_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McCasRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "exptime", this->exptime())) {
+  if (!v.visitField(2, "exptime", *this->exptime_ref())) {
     return;
   }
-  if (!v.visitField(3, "flags", this->flags())) {
+  if (!v.visitField(3, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(4, "value", this->value())) {
+  if (!v.visitField(4, "value", *this->value_ref())) {
     return;
   }
-  if (!v.visitField(5, "casToken", this->casToken())) {
+  if (!v.visitField(5, "casToken", *this->casToken_ref())) {
     return;
   }
 }
 
 template <class V>
 void McCasRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "exptime", this->exptime())) {
+  if (!v.visitField(2, "exptime", *this->exptime_ref())) {
     return;
   }
-  if (!v.visitField(3, "flags", this->flags())) {
+  if (!v.visitField(3, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(4, "value", this->value())) {
+  if (!v.visitField(4, "value", *this->value_ref())) {
     return;
   }
-  if (!v.visitField(5, "casToken", this->casToken())) {
+  if (!v.visitField(5, "casToken", *this->casToken_ref())) {
     return;
   }
 }
@@ -757,35 +757,35 @@ void McCasRequest::visitFields(V&& v) const {
 template <class Writer>
 void McCasReply::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, message());
-  writer.writeField(3 /* field id */, appSpecificErrorCode());
+  writer.writeField(1 /* field id */, result_ref());
+  writer.writeField(2 /* field id */, message_ref());
+  writer.writeField(3 /* field id */, appSpecificErrorCode_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McCasReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "message", this->message())) {
+  if (!v.visitField(2, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(3, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
 
 template <class V>
 void McCasReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "message", this->message())) {
+  if (!v.visitField(2, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(3, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
@@ -793,28 +793,28 @@ void McCasReply::visitFields(V&& v) const {
 template <class Writer>
 void McIncrRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeField(2 /* field id */, delta());
+  writer.writeField(1 /* field id */, key_ref());
+  writer.writeField(2 /* field id */, delta_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McIncrRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "delta", this->delta())) {
+  if (!v.visitField(2, "delta", *this->delta_ref())) {
     return;
   }
 }
 
 template <class V>
 void McIncrRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "delta", this->delta())) {
+  if (!v.visitField(2, "delta", *this->delta_ref())) {
     return;
   }
 }
@@ -822,42 +822,42 @@ void McIncrRequest::visitFields(V&& v) const {
 template <class Writer>
 void McIncrReply::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, delta());
-  writer.writeField(3 /* field id */, message());
-  writer.writeField(4 /* field id */, appSpecificErrorCode());
+  writer.writeField(1 /* field id */, result_ref());
+  writer.writeField(2 /* field id */, delta_ref());
+  writer.writeField(3 /* field id */, message_ref());
+  writer.writeField(4 /* field id */, appSpecificErrorCode_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McIncrReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "delta", this->delta())) {
+  if (!v.visitField(2, "delta", *this->delta_ref())) {
     return;
   }
-  if (!v.visitField(3, "message", this->message())) {
+  if (!v.visitField(3, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(4, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(4, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
 
 template <class V>
 void McIncrReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "delta", this->delta())) {
+  if (!v.visitField(2, "delta", *this->delta_ref())) {
     return;
   }
-  if (!v.visitField(3, "message", this->message())) {
+  if (!v.visitField(3, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(4, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(4, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
@@ -865,28 +865,28 @@ void McIncrReply::visitFields(V&& v) const {
 template <class Writer>
 void McDecrRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeField(2 /* field id */, delta());
+  writer.writeField(1 /* field id */, key_ref());
+  writer.writeField(2 /* field id */, delta_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McDecrRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "delta", this->delta())) {
+  if (!v.visitField(2, "delta", *this->delta_ref())) {
     return;
   }
 }
 
 template <class V>
 void McDecrRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "delta", this->delta())) {
+  if (!v.visitField(2, "delta", *this->delta_ref())) {
     return;
   }
 }
@@ -894,42 +894,42 @@ void McDecrRequest::visitFields(V&& v) const {
 template <class Writer>
 void McDecrReply::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, delta());
-  writer.writeField(3 /* field id */, message());
-  writer.writeField(4 /* field id */, appSpecificErrorCode());
+  writer.writeField(1 /* field id */, result_ref());
+  writer.writeField(2 /* field id */, delta_ref());
+  writer.writeField(3 /* field id */, message_ref());
+  writer.writeField(4 /* field id */, appSpecificErrorCode_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McDecrReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "delta", this->delta())) {
+  if (!v.visitField(2, "delta", *this->delta_ref())) {
     return;
   }
-  if (!v.visitField(3, "message", this->message())) {
+  if (!v.visitField(3, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(4, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(4, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
 
 template <class V>
 void McDecrReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "delta", this->delta())) {
+  if (!v.visitField(2, "delta", *this->delta_ref())) {
     return;
   }
-  if (!v.visitField(3, "message", this->message())) {
+  if (!v.visitField(3, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(4, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(4, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
@@ -937,21 +937,21 @@ void McDecrReply::visitFields(V&& v) const {
 template <class Writer>
 void McMetagetRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
+  writer.writeField(1 /* field id */, key_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McMetagetRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
 }
 
 template <class V>
 void McMetagetRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
 }
@@ -959,63 +959,63 @@ void McMetagetRequest::visitFields(V&& v) const {
 template <class Writer>
 void McMetagetReply::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, age());
-  writer.writeField(3 /* field id */, exptime());
-  writer.writeField(4 /* field id */, ipv());
-  writer.writeField(5 /* field id */, ipAddress());
-  writer.writeField(6 /* field id */, message());
-  writer.writeField(7 /* field id */, appSpecificErrorCode());
+  writer.writeField(1 /* field id */, result_ref());
+  writer.writeField(2 /* field id */, age_ref());
+  writer.writeField(3 /* field id */, exptime_ref());
+  writer.writeField(4 /* field id */, ipv_ref());
+  writer.writeField(5 /* field id */, ipAddress_ref());
+  writer.writeField(6 /* field id */, message_ref());
+  writer.writeField(7 /* field id */, appSpecificErrorCode_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McMetagetReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "age", this->age())) {
+  if (!v.visitField(2, "age", *this->age_ref())) {
     return;
   }
-  if (!v.visitField(3, "exptime", this->exptime())) {
+  if (!v.visitField(3, "exptime", *this->exptime_ref())) {
     return;
   }
-  if (!v.visitField(4, "ipv", this->ipv())) {
+  if (!v.visitField(4, "ipv", *this->ipv_ref())) {
     return;
   }
-  if (!v.visitField(5, "ipAddress", this->ipAddress())) {
+  if (!v.visitField(5, "ipAddress", *this->ipAddress_ref())) {
     return;
   }
-  if (!v.visitField(6, "message", this->message())) {
+  if (!v.visitField(6, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(7, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(7, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
 
 template <class V>
 void McMetagetReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "age", this->age())) {
+  if (!v.visitField(2, "age", *this->age_ref())) {
     return;
   }
-  if (!v.visitField(3, "exptime", this->exptime())) {
+  if (!v.visitField(3, "exptime", *this->exptime_ref())) {
     return;
   }
-  if (!v.visitField(4, "ipv", this->ipv())) {
+  if (!v.visitField(4, "ipv", *this->ipv_ref())) {
     return;
   }
-  if (!v.visitField(5, "ipAddress", this->ipAddress())) {
+  if (!v.visitField(5, "ipAddress", *this->ipAddress_ref())) {
     return;
   }
-  if (!v.visitField(6, "message", this->message())) {
+  if (!v.visitField(6, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(7, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(7, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
@@ -1023,42 +1023,42 @@ void McMetagetReply::visitFields(V&& v) const {
 template <class Writer>
 void McAppendRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeField(2 /* field id */, exptime());
-  writer.writeField(3 /* field id */, flags());
-  writer.writeField(4 /* field id */, value());
+  writer.writeField(1 /* field id */, key_ref());
+  writer.writeField(2 /* field id */, exptime_ref());
+  writer.writeField(3 /* field id */, flags_ref());
+  writer.writeField(4 /* field id */, value_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McAppendRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "exptime", this->exptime())) {
+  if (!v.visitField(2, "exptime", *this->exptime_ref())) {
     return;
   }
-  if (!v.visitField(3, "flags", this->flags())) {
+  if (!v.visitField(3, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(4, "value", this->value())) {
+  if (!v.visitField(4, "value", *this->value_ref())) {
     return;
   }
 }
 
 template <class V>
 void McAppendRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "exptime", this->exptime())) {
+  if (!v.visitField(2, "exptime", *this->exptime_ref())) {
     return;
   }
-  if (!v.visitField(3, "flags", this->flags())) {
+  if (!v.visitField(3, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(4, "value", this->value())) {
+  if (!v.visitField(4, "value", *this->value_ref())) {
     return;
   }
 }
@@ -1066,35 +1066,35 @@ void McAppendRequest::visitFields(V&& v) const {
 template <class Writer>
 void McAppendReply::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, message());
-  writer.writeField(3 /* field id */, appSpecificErrorCode());
+  writer.writeField(1 /* field id */, result_ref());
+  writer.writeField(2 /* field id */, message_ref());
+  writer.writeField(3 /* field id */, appSpecificErrorCode_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McAppendReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "message", this->message())) {
+  if (!v.visitField(2, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(3, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
 
 template <class V>
 void McAppendReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "message", this->message())) {
+  if (!v.visitField(2, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(3, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
@@ -1102,42 +1102,42 @@ void McAppendReply::visitFields(V&& v) const {
 template <class Writer>
 void McPrependRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeField(2 /* field id */, exptime());
-  writer.writeField(3 /* field id */, flags());
-  writer.writeField(4 /* field id */, value());
+  writer.writeField(1 /* field id */, key_ref());
+  writer.writeField(2 /* field id */, exptime_ref());
+  writer.writeField(3 /* field id */, flags_ref());
+  writer.writeField(4 /* field id */, value_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McPrependRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "exptime", this->exptime())) {
+  if (!v.visitField(2, "exptime", *this->exptime_ref())) {
     return;
   }
-  if (!v.visitField(3, "flags", this->flags())) {
+  if (!v.visitField(3, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(4, "value", this->value())) {
+  if (!v.visitField(4, "value", *this->value_ref())) {
     return;
   }
 }
 
 template <class V>
 void McPrependRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "exptime", this->exptime())) {
+  if (!v.visitField(2, "exptime", *this->exptime_ref())) {
     return;
   }
-  if (!v.visitField(3, "flags", this->flags())) {
+  if (!v.visitField(3, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(4, "value", this->value())) {
+  if (!v.visitField(4, "value", *this->value_ref())) {
     return;
   }
 }
@@ -1145,35 +1145,35 @@ void McPrependRequest::visitFields(V&& v) const {
 template <class Writer>
 void McPrependReply::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, message());
-  writer.writeField(3 /* field id */, appSpecificErrorCode());
+  writer.writeField(1 /* field id */, result_ref());
+  writer.writeField(2 /* field id */, message_ref());
+  writer.writeField(3 /* field id */, appSpecificErrorCode_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McPrependReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "message", this->message())) {
+  if (!v.visitField(2, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(3, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
 
 template <class V>
 void McPrependReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "message", this->message())) {
+  if (!v.visitField(2, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(3, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
@@ -1181,28 +1181,28 @@ void McPrependReply::visitFields(V&& v) const {
 template <class Writer>
 void McTouchRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeField(2 /* field id */, exptime());
+  writer.writeField(1 /* field id */, key_ref());
+  writer.writeField(2 /* field id */, exptime_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McTouchRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "exptime", this->exptime())) {
+  if (!v.visitField(2, "exptime", *this->exptime_ref())) {
     return;
   }
 }
 
 template <class V>
 void McTouchRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "exptime", this->exptime())) {
+  if (!v.visitField(2, "exptime", *this->exptime_ref())) {
     return;
   }
 }
@@ -1210,35 +1210,35 @@ void McTouchRequest::visitFields(V&& v) const {
 template <class Writer>
 void McTouchReply::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, message());
-  writer.writeField(3 /* field id */, appSpecificErrorCode());
+  writer.writeField(1 /* field id */, result_ref());
+  writer.writeField(2 /* field id */, message_ref());
+  writer.writeField(3 /* field id */, appSpecificErrorCode_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McTouchReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "message", this->message())) {
+  if (!v.visitField(2, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(3, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
 
 template <class V>
 void McTouchReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "message", this->message())) {
+  if (!v.visitField(2, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(3, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
@@ -1246,21 +1246,21 @@ void McTouchReply::visitFields(V&& v) const {
 template <class Writer>
 void McFlushReRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
+  writer.writeField(1 /* field id */, key_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McFlushReRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
 }
 
 template <class V>
 void McFlushReRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
 }
@@ -1268,35 +1268,35 @@ void McFlushReRequest::visitFields(V&& v) const {
 template <class Writer>
 void McFlushReReply::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, message());
-  writer.writeField(3 /* field id */, appSpecificErrorCode());
+  writer.writeField(1 /* field id */, result_ref());
+  writer.writeField(2 /* field id */, message_ref());
+  writer.writeField(3 /* field id */, appSpecificErrorCode_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McFlushReReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "message", this->message())) {
+  if (!v.visitField(2, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(3, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
 
 template <class V>
 void McFlushReReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "message", this->message())) {
+  if (!v.visitField(2, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(3, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
@@ -1304,28 +1304,28 @@ void McFlushReReply::visitFields(V&& v) const {
 template <class Writer>
 void McFlushAllRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeField(2 /* field id */, delay());
+  writer.writeField(1 /* field id */, key_ref());
+  writer.writeField(2 /* field id */, delay_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McFlushAllRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "delay", this->delay())) {
+  if (!v.visitField(2, "delay", *this->delay_ref())) {
     return;
   }
 }
 
 template <class V>
 void McFlushAllRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "delay", this->delay())) {
+  if (!v.visitField(2, "delay", *this->delay_ref())) {
     return;
   }
 }
@@ -1333,35 +1333,35 @@ void McFlushAllRequest::visitFields(V&& v) const {
 template <class Writer>
 void McFlushAllReply::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, message());
-  writer.writeField(3 /* field id */, appSpecificErrorCode());
+  writer.writeField(1 /* field id */, result_ref());
+  writer.writeField(2 /* field id */, message_ref());
+  writer.writeField(3 /* field id */, appSpecificErrorCode_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McFlushAllReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "message", this->message())) {
+  if (!v.visitField(2, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(3, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
 
 template <class V>
 void McFlushAllReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "message", this->message())) {
+  if (!v.visitField(2, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(3, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(3, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
@@ -1369,28 +1369,28 @@ void McFlushAllReply::visitFields(V&& v) const {
 template <class Writer>
 void McGatRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, exptime());
-  writer.writeField(2 /* field id */, key());
+  writer.writeField(1 /* field id */, exptime_ref());
+  writer.writeField(2 /* field id */, key_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McGatRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "exptime", this->exptime())) {
+  if (!v.visitField(1, "exptime", *this->exptime_ref())) {
     return;
   }
-  if (!v.visitField(2, "key", this->key())) {
+  if (!v.visitField(2, "key", *this->key_ref())) {
     return;
   }
 }
 
 template <class V>
 void McGatRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "exptime", this->exptime())) {
+  if (!v.visitField(1, "exptime", *this->exptime_ref())) {
     return;
   }
-  if (!v.visitField(2, "key", this->key())) {
+  if (!v.visitField(2, "key", *this->key_ref())) {
     return;
   }
 }
@@ -1398,49 +1398,49 @@ void McGatRequest::visitFields(V&& v) const {
 template <class Writer>
 void McGatReply::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, value());
-  writer.writeField(3 /* field id */, flags());
-  writer.writeField(4 /* field id */, message());
-  writer.writeField(5 /* field id */, appSpecificErrorCode());
+  writer.writeField(1 /* field id */, result_ref());
+  writer.writeField(2 /* field id */, value_ref());
+  writer.writeField(3 /* field id */, flags_ref());
+  writer.writeField(4 /* field id */, message_ref());
+  writer.writeField(5 /* field id */, appSpecificErrorCode_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McGatReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "value", this->value())) {
+  if (!v.visitField(2, "value", this->value_ref())) {
     return;
   }
-  if (!v.visitField(3, "flags", this->flags())) {
+  if (!v.visitField(3, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(4, "message", this->message())) {
+  if (!v.visitField(4, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(5, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(5, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
 
 template <class V>
 void McGatReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "value", this->value())) {
+  if (!v.visitField(2, "value", this->value_ref())) {
     return;
   }
-  if (!v.visitField(3, "flags", this->flags())) {
+  if (!v.visitField(3, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(4, "message", this->message())) {
+  if (!v.visitField(4, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(5, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(5, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
@@ -1448,28 +1448,28 @@ void McGatReply::visitFields(V&& v) const {
 template <class Writer>
 void McGatsRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, exptime());
-  writer.writeField(2 /* field id */, key());
+  writer.writeField(1 /* field id */, exptime_ref());
+  writer.writeField(2 /* field id */, key_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McGatsRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "exptime", this->exptime())) {
+  if (!v.visitField(1, "exptime", *this->exptime_ref())) {
     return;
   }
-  if (!v.visitField(2, "key", this->key())) {
+  if (!v.visitField(2, "key", *this->key_ref())) {
     return;
   }
 }
 
 template <class V>
 void McGatsRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "exptime", this->exptime())) {
+  if (!v.visitField(1, "exptime", *this->exptime_ref())) {
     return;
   }
-  if (!v.visitField(2, "key", this->key())) {
+  if (!v.visitField(2, "key", *this->key_ref())) {
     return;
   }
 }
@@ -1477,56 +1477,56 @@ void McGatsRequest::visitFields(V&& v) const {
 template <class Writer>
 void McGatsReply::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, casToken());
-  writer.writeField(3 /* field id */, value());
-  writer.writeField(4 /* field id */, flags());
-  writer.writeField(5 /* field id */, message());
-  writer.writeField(6 /* field id */, appSpecificErrorCode());
+  writer.writeField(1 /* field id */, result_ref());
+  writer.writeField(2 /* field id */, casToken_ref());
+  writer.writeField(3 /* field id */, value_ref());
+  writer.writeField(4 /* field id */, flags_ref());
+  writer.writeField(5 /* field id */, message_ref());
+  writer.writeField(6 /* field id */, appSpecificErrorCode_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void McGatsReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "casToken", this->casToken())) {
+  if (!v.visitField(2, "casToken", *this->casToken_ref())) {
     return;
   }
-  if (!v.visitField(3, "value", this->value())) {
+  if (!v.visitField(3, "value", this->value_ref())) {
     return;
   }
-  if (!v.visitField(4, "flags", this->flags())) {
+  if (!v.visitField(4, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(5, "message", this->message())) {
+  if (!v.visitField(5, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(6, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(6, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }
 
 template <class V>
 void McGatsReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "casToken", this->casToken())) {
+  if (!v.visitField(2, "casToken", *this->casToken_ref())) {
     return;
   }
-  if (!v.visitField(3, "value", this->value())) {
+  if (!v.visitField(3, "value", this->value_ref())) {
     return;
   }
-  if (!v.visitField(4, "flags", this->flags())) {
+  if (!v.visitField(4, "flags", *this->flags_ref())) {
     return;
   }
-  if (!v.visitField(5, "message", this->message())) {
+  if (!v.visitField(5, "message", *this->message_ref())) {
     return;
   }
-  if (!v.visitField(6, "appSpecificErrorCode", this->appSpecificErrorCode())) {
+  if (!v.visitField(6, "appSpecificErrorCode", *this->appSpecificErrorCode_ref())) {
     return;
   }
 }

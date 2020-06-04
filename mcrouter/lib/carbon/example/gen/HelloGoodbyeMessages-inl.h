@@ -18,42 +18,42 @@ namespace hellogoodbye {
 template <class Writer>
 void HelloRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeField(2 /* field id */, shardId());
-  writer.writeField(3 /* field id */, deadlineMs());
-  writer.writeField(4 /* field id */, message());
+  writer.writeField(1 /* field id */, key_ref());
+  writer.writeField(2 /* field id */, shardId_ref());
+  writer.writeField(3 /* field id */, deadlineMs_ref());
+  writer.writeField(4 /* field id */, message_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void HelloRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "shardId", this->shardId())) {
+  if (!v.visitField(2, "shardId", *this->shardId_ref())) {
     return;
   }
-  if (!v.visitField(3, "deadlineMs", this->deadlineMs())) {
+  if (!v.visitField(3, "deadlineMs", *this->deadlineMs_ref())) {
     return;
   }
-  if (!v.visitField(4, "message", this->message())) {
+  if (!v.visitField(4, "message", *this->message_ref())) {
     return;
   }
 }
 
 template <class V>
 void HelloRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "shardId", this->shardId())) {
+  if (!v.visitField(2, "shardId", *this->shardId_ref())) {
     return;
   }
-  if (!v.visitField(3, "deadlineMs", this->deadlineMs())) {
+  if (!v.visitField(3, "deadlineMs", *this->deadlineMs_ref())) {
     return;
   }
-  if (!v.visitField(4, "message", this->message())) {
+  if (!v.visitField(4, "message", *this->message_ref())) {
     return;
   }
 }
@@ -61,28 +61,28 @@ void HelloRequest::visitFields(V&& v) const {
 template <class Writer>
 void HelloReply::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, message());
+  writer.writeField(1 /* field id */, result_ref());
+  writer.writeField(2 /* field id */, message_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void HelloReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "message", this->message())) {
+  if (!v.visitField(2, "message", *this->message_ref())) {
     return;
   }
 }
 
 template <class V>
 void HelloReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "message", this->message())) {
+  if (!v.visitField(2, "message", *this->message_ref())) {
     return;
   }
 }
@@ -90,28 +90,28 @@ void HelloReply::visitFields(V&& v) const {
 template <class Writer>
 void GoodbyeRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeField(2 /* field id */, shardId());
+  writer.writeField(1 /* field id */, key_ref());
+  writer.writeField(2 /* field id */, shardId_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void GoodbyeRequest::visitFields(V&& v) {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "shardId", this->shardId())) {
+  if (!v.visitField(2, "shardId", *this->shardId_ref())) {
     return;
   }
 }
 
 template <class V>
 void GoodbyeRequest::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(2, "shardId", this->shardId())) {
+  if (!v.visitField(2, "shardId", *this->shardId_ref())) {
     return;
   }
 }
@@ -119,28 +119,28 @@ void GoodbyeRequest::visitFields(V&& v) const {
 template <class Writer>
 void GoodbyeReply::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, message());
+  writer.writeField(1 /* field id */, result_ref());
+  writer.writeField(2 /* field id */, message_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void GoodbyeReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "message", this->message())) {
+  if (!v.visitField(2, "message", *this->message_ref())) {
     return;
   }
 }
 
 template <class V>
 void GoodbyeReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "message", this->message())) {
+  if (!v.visitField(2, "message", *this->message_ref())) {
     return;
   }
 }

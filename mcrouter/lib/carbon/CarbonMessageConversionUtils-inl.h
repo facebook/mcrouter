@@ -54,18 +54,6 @@ class ToDynamicVisitor {
     return true;
   }
 
-  template <class T>
-  bool visitField(
-      uint16_t /* id */,
-      folly::StringPiece name,
-      const apache::thrift::optional_field_ref<const T&> value) {
-    auto val = toDynamic(value);
-    if (val != nullptr && shouldSerialize(val)) {
-      value_.insert(name, std::move(val));
-    }
-    return true;
-  }
-
   /**
    * Obtain serialized output.
    */

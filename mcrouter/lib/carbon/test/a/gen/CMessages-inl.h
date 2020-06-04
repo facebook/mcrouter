@@ -19,21 +19,21 @@ namespace test_enum {
 template <class Writer>
 void StructWithEnumField::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, test());
+  writer.writeField(1 /* field id */, test_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void StructWithEnumField::visitFields(V&& v) {
-  if (!v.visitField(1, "test", this->test())) {
+  if (!v.visitField(1, "test", *this->test_ref())) {
     return;
   }
 }
 
 template <class V>
 void StructWithEnumField::visitFields(V&& v) const {
-  if (!v.visitField(1, "test", this->test())) {
+  if (!v.visitField(1, "test", *this->test_ref())) {
     return;
   }
 }

@@ -31,19 +31,19 @@ void HelloRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readField(key(), fieldType);
+        reader.readField(key_ref(), fieldType);
         break;
       }
       case 2: {
-        reader.readField(shardId(), fieldType);
+        reader.readField(shardId_ref(), fieldType);
         break;
       }
       case 3: {
-        reader.readField(deadlineMs(), fieldType);
+        reader.readField(deadlineMs_ref(), fieldType);
         break;
       }
       case 4: {
-        reader.readField(message(), fieldType);
+        reader.readField(message_ref(), fieldType);
         break;
       }
       default: {
@@ -68,11 +68,11 @@ void HelloReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readField(result(), fieldType);
+        reader.readField(result_ref(), fieldType);
         break;
       }
       case 2: {
-        reader.readField(message(), fieldType);
+        reader.readField(message_ref(), fieldType);
         break;
       }
       default: {
@@ -99,11 +99,11 @@ void GoodbyeRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readField(key(), fieldType);
+        reader.readField(key_ref(), fieldType);
         break;
       }
       case 2: {
-        reader.readField(shardId(), fieldType);
+        reader.readField(shardId_ref(), fieldType);
         break;
       }
       default: {
@@ -128,11 +128,11 @@ void GoodbyeReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readField(result(), fieldType);
+        reader.readField(result_ref(), fieldType);
         break;
       }
       case 2: {
-        reader.readField(message(), fieldType);
+        reader.readField(message_ref(), fieldType);
         break;
       }
       default: {

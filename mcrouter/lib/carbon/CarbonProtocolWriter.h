@@ -288,6 +288,13 @@ class CarbonProtocolWriterImpl {
     }
   }
 
+  template <class T>
+  void writeField(
+      const int16_t id,
+      const apache::thrift::field_ref<const T&> data) {
+    writeField(id, *data);
+  }
+
   // Serialize user-provided types that have suitable specializations of
   // carbon::SerializationTraits<>.
   template <class T>

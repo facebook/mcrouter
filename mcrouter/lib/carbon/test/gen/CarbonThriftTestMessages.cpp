@@ -32,79 +32,79 @@ void DummyThriftRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readField(key(), fieldType);
+        reader.readField(key_ref(), fieldType);
         break;
       }
       case 2: {
-        reader.readField(testBool(), fieldType);
+        reader.readField(testBool_ref(), fieldType);
         break;
       }
       case 3: {
-        reader.readField(testInt8(), fieldType);
+        reader.readField(testInt8_ref(), fieldType);
         break;
       }
       case 4: {
-        reader.readField(testInt16(), fieldType);
+        reader.readField(testInt16_ref(), fieldType);
         break;
       }
       case 5: {
-        reader.readField(testInt32(), fieldType);
+        reader.readField(testInt32_ref(), fieldType);
         break;
       }
       case 6: {
-        reader.readField(testInt64(), fieldType);
+        reader.readField(testInt64_ref(), fieldType);
         break;
       }
       case 7: {
-        reader.readField(testUInt8(), fieldType);
+        reader.readField(testUInt8_ref(), fieldType);
         break;
       }
       case 8: {
-        reader.readField(testUInt16(), fieldType);
+        reader.readField(testUInt16_ref(), fieldType);
         break;
       }
       case 9: {
-        reader.readField(testUInt32(), fieldType);
+        reader.readField(testUInt32_ref(), fieldType);
         break;
       }
       case 10: {
-        reader.readField(testUInt64(), fieldType);
+        reader.readField(testUInt64_ref(), fieldType);
         break;
       }
       case 11: {
-        reader.readField(testFloat(), fieldType);
+        reader.readField(testFloat_ref(), fieldType);
         break;
       }
       case 12: {
-        reader.readField(testDouble(), fieldType);
+        reader.readField(testDouble_ref(), fieldType);
         break;
       }
       case 13: {
-        reader.readField(testShortString(), fieldType);
+        reader.readField(testShortString_ref(), fieldType);
         break;
       }
       case 14: {
-        reader.readField(testLongString(), fieldType);
+        reader.readField(testLongString_ref(), fieldType);
         break;
       }
       case 15: {
-        reader.readField(testIobuf(), fieldType);
+        reader.readField(testIobuf_ref(), fieldType);
         break;
       }
       case 16: {
-        reader.readField(testList(), fieldType);
+        reader.readField(testList_ref(), fieldType);
         break;
       }
       case 17: {
-        reader.readField(testOptionalKeywordBool(), fieldType);
+        reader.readField(testOptionalKeywordBool_ref(), fieldType);
         break;
       }
       case 18: {
-        reader.readField(testOptionalKeywordString(), fieldType);
+        reader.readField(testOptionalKeywordString_ref(), fieldType);
         break;
       }
       case 19: {
-        reader.readField(testOptionalKeywordIobuf(), fieldType);
+        reader.readField(testOptionalKeywordIobuf_ref(), fieldType);
         break;
       }
       default: {
@@ -129,11 +129,11 @@ void DummyThriftReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readField(result(), fieldType);
+        reader.readField(result_ref(), fieldType);
         break;
       }
       case 2: {
-        reader.readField(message(), fieldType);
+        reader.readField(message_ref(), fieldType);
         break;
       }
       default: {

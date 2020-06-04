@@ -271,6 +271,13 @@ class CarbonWriter {
     }
   }
 
+  template <class T>
+  void writeField(
+      const int16_t id,
+      const apache::thrift::field_ref<const T&> data) {
+    writeField(id, *data);
+  }
+
   void writeStructBegin() {
     writer_.writeStructBegin("");
   }

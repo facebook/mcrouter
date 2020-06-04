@@ -40,7 +40,7 @@ void StructWithEnumField::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readField(test(), fieldType);
+        reader.readField(test_ref(), fieldType);
         break;
       }
       default: {

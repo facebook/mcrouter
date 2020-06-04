@@ -91,8 +91,8 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
 #ifndef LIBMC_FBTRACE_DISABLE
         traceRequest(request, rpcOptions);
 #endif
-        rpcOptions.setWriteHeader("shardId", folly::to<std::string>(request.shardId()));
-        rpcOptions.setWriteHeader("message", folly::to<std::string>(request.message()));
+        rpcOptions.setWriteHeader("shardId", folly::to<std::string>(*request.shardId_ref()));
+        rpcOptions.setWriteHeader("message", folly::to<std::string>(*request.message_ref()));
         reply = thriftClient->sync_complete_hello(
             rpcOptions, request);
         if (rpcStatsContext && reply.hasValue()) {

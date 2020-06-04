@@ -72,6 +72,13 @@ class CarbonProtocolReader {
   }
 
   template <class T>
+  void readField(apache::thrift::field_ref<T&> data, FieldType fieldType) {
+    T d;
+    readField(d, fieldType);
+    data = d;
+  }
+
+  template <class T>
   void readField(T& t, FieldType /* fieldType */) {
     readRawInto(t);
   }
