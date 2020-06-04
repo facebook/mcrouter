@@ -169,7 +169,7 @@ void sendHelloRequestSync(
     CarbonRouterClient<HelloGoodbyeRouterInfo>* client,
     std::string key) {
   HelloRequest req(std::move(key));
-  req.shardId() = 1;
+  req.shardId_ref() = 1;
   req.message_ref() = "test";
   folly::fibers::Baton baton;
 

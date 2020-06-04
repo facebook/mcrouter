@@ -33,7 +33,7 @@ class BasicShardSelector {
 
   template <class Request>
   size_t select(const Request& req, size_t /* size */) const {
-    auto it = shardsMap_.find(req.shardId());
+    auto it = shardsMap_.find(*req.shardId_ref());
     if (it == shardsMap_.end()) {
       return std::numeric_limits<size_t>::max();
     }

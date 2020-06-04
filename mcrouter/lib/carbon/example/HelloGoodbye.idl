@@ -1,3 +1,4 @@
+gen_ref_api_only;
 namespace hellogoodbye;
 thrift_namespace hellogoodbye.thrift;
 

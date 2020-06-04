@@ -1,3 +1,4 @@
+gen_ref_api_only;
 namespace facebook::memcache;
 thrift_namespace facebook.memcache.thrift;
 

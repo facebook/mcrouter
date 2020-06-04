@@ -48,12 +48,6 @@ class StructWithEnumField {
   StructWithEnumField(StructWithEnumField&&) = default;
   StructWithEnumField& operator=(StructWithEnumField&&) = default;
 
-  const Foo& test() const {
-    return underlyingThriftStruct_.test;
-  }
-  Foo& test() {
-    return underlyingThriftStruct_.test;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const Foo&>
    test_ref() const& {
     return underlyingThriftStruct_.test_ref();

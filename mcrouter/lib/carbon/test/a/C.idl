@@ -1,5 +1,5 @@
+gen_ref_api_only;
 namespace carbon::test_enum;
-
 thrift_namespace carbon.test_enum.thrift;
 
 enum Foo {

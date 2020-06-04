@@ -147,6 +147,24 @@ class McVersionReply : public carbon::ReplyCommon {
   carbon::Result& result() {
     return underlyingThriftStruct_.result;
   }
+  const folly::IOBuf& value() const {
+    return underlyingThriftStruct_.value;
+  }
+  folly::IOBuf& value() {
+    return underlyingThriftStruct_.value;
+  }
+  const std::string& message() const {
+    return underlyingThriftStruct_.message;
+  }
+  std::string& message() {
+    return underlyingThriftStruct_.message;
+  }
+  int16_t appSpecificErrorCode() const {
+    return underlyingThriftStruct_.appSpecificErrorCode;
+  }
+  int16_t& appSpecificErrorCode() {
+    return underlyingThriftStruct_.appSpecificErrorCode;
+  }
   FOLLY_ERASE ::apache::thrift::field_ref<const carbon::Result&>
    result_ref() const& {
     return underlyingThriftStruct_.result_ref();
@@ -160,12 +178,6 @@ class McVersionReply : public carbon::ReplyCommon {
     return std::move(underlyingThriftStruct_).result_ref();
   }
   
-  const folly::IOBuf& value() const {
-    return underlyingThriftStruct_.value;
-  }
-  folly::IOBuf& value() {
-    return underlyingThriftStruct_.value;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
    value_ref() const& {
     return underlyingThriftStruct_.value_ref();
@@ -179,12 +191,6 @@ class McVersionReply : public carbon::ReplyCommon {
     return std::move(underlyingThriftStruct_).value_ref();
   }
   
-  const std::string& message() const {
-    return underlyingThriftStruct_.message;
-  }
-  std::string& message() {
-    return underlyingThriftStruct_.message;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const std::string&>
    message_ref() const& {
     return underlyingThriftStruct_.message_ref();
@@ -198,12 +204,6 @@ class McVersionReply : public carbon::ReplyCommon {
     return std::move(underlyingThriftStruct_).message_ref();
   }
   
-  int16_t appSpecificErrorCode() const {
-    return underlyingThriftStruct_.appSpecificErrorCode;
-  }
-  int16_t& appSpecificErrorCode() {
-    return underlyingThriftStruct_.appSpecificErrorCode;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const int16_t&>
    appSpecificErrorCode_ref() const& {
     return underlyingThriftStruct_.appSpecificErrorCode_ref();
@@ -382,6 +382,24 @@ class McStatsReply : public carbon::ReplyCommon {
   carbon::Result& result() {
     return underlyingThriftStruct_.result;
   }
+  const std::string& message() const {
+    return underlyingThriftStruct_.message;
+  }
+  std::string& message() {
+    return underlyingThriftStruct_.message;
+  }
+  const std::vector<std::string>& stats() const {
+    return underlyingThriftStruct_.stats;
+  }
+  std::vector<std::string>& stats() {
+    return underlyingThriftStruct_.stats;
+  }
+  int16_t appSpecificErrorCode() const {
+    return underlyingThriftStruct_.appSpecificErrorCode;
+  }
+  int16_t& appSpecificErrorCode() {
+    return underlyingThriftStruct_.appSpecificErrorCode;
+  }
   FOLLY_ERASE ::apache::thrift::field_ref<const carbon::Result&>
    result_ref() const& {
     return underlyingThriftStruct_.result_ref();
@@ -395,12 +413,6 @@ class McStatsReply : public carbon::ReplyCommon {
     return std::move(underlyingThriftStruct_).result_ref();
   }
   
-  const std::string& message() const {
-    return underlyingThriftStruct_.message;
-  }
-  std::string& message() {
-    return underlyingThriftStruct_.message;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const std::string&>
    message_ref() const& {
     return underlyingThriftStruct_.message_ref();
@@ -414,12 +426,6 @@ class McStatsReply : public carbon::ReplyCommon {
     return std::move(underlyingThriftStruct_).message_ref();
   }
   
-  const std::vector<std::string>& stats() const {
-    return underlyingThriftStruct_.stats;
-  }
-  std::vector<std::string>& stats() {
-    return underlyingThriftStruct_.stats;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const std::vector<std::string>&>
    stats_ref() const& {
     return underlyingThriftStruct_.stats_ref();
@@ -433,12 +439,6 @@ class McStatsReply : public carbon::ReplyCommon {
     return std::move(underlyingThriftStruct_).stats_ref();
   }
   
-  int16_t appSpecificErrorCode() const {
-    return underlyingThriftStruct_.appSpecificErrorCode;
-  }
-  int16_t& appSpecificErrorCode() {
-    return underlyingThriftStruct_.appSpecificErrorCode;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const int16_t&>
    appSpecificErrorCode_ref() const& {
     return underlyingThriftStruct_.appSpecificErrorCode_ref();
@@ -617,6 +617,18 @@ class McShutdownReply : public carbon::ReplyCommon {
   carbon::Result& result() {
     return underlyingThriftStruct_.result;
   }
+  const std::string& message() const {
+    return underlyingThriftStruct_.message;
+  }
+  std::string& message() {
+    return underlyingThriftStruct_.message;
+  }
+  int16_t appSpecificErrorCode() const {
+    return underlyingThriftStruct_.appSpecificErrorCode;
+  }
+  int16_t& appSpecificErrorCode() {
+    return underlyingThriftStruct_.appSpecificErrorCode;
+  }
   FOLLY_ERASE ::apache::thrift::field_ref<const carbon::Result&>
    result_ref() const& {
     return underlyingThriftStruct_.result_ref();
@@ -630,12 +642,6 @@ class McShutdownReply : public carbon::ReplyCommon {
     return std::move(underlyingThriftStruct_).result_ref();
   }
   
-  const std::string& message() const {
-    return underlyingThriftStruct_.message;
-  }
-  std::string& message() {
-    return underlyingThriftStruct_.message;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const std::string&>
    message_ref() const& {
     return underlyingThriftStruct_.message_ref();
@@ -649,12 +655,6 @@ class McShutdownReply : public carbon::ReplyCommon {
     return std::move(underlyingThriftStruct_).message_ref();
   }
   
-  int16_t appSpecificErrorCode() const {
-    return underlyingThriftStruct_.appSpecificErrorCode;
-  }
-  int16_t& appSpecificErrorCode() {
-    return underlyingThriftStruct_.appSpecificErrorCode;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const int16_t&>
    appSpecificErrorCode_ref() const& {
     return underlyingThriftStruct_.appSpecificErrorCode_ref();
@@ -832,6 +832,18 @@ class McQuitReply : public carbon::ReplyCommon {
   carbon::Result& result() {
     return underlyingThriftStruct_.result;
   }
+  const std::string& message() const {
+    return underlyingThriftStruct_.message;
+  }
+  std::string& message() {
+    return underlyingThriftStruct_.message;
+  }
+  int16_t appSpecificErrorCode() const {
+    return underlyingThriftStruct_.appSpecificErrorCode;
+  }
+  int16_t& appSpecificErrorCode() {
+    return underlyingThriftStruct_.appSpecificErrorCode;
+  }
   FOLLY_ERASE ::apache::thrift::field_ref<const carbon::Result&>
    result_ref() const& {
     return underlyingThriftStruct_.result_ref();
@@ -845,12 +857,6 @@ class McQuitReply : public carbon::ReplyCommon {
     return std::move(underlyingThriftStruct_).result_ref();
   }
   
-  const std::string& message() const {
-    return underlyingThriftStruct_.message;
-  }
-  std::string& message() {
-    return underlyingThriftStruct_.message;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const std::string&>
    message_ref() const& {
     return underlyingThriftStruct_.message_ref();
@@ -864,12 +870,6 @@ class McQuitReply : public carbon::ReplyCommon {
     return std::move(underlyingThriftStruct_).message_ref();
   }
   
-  int16_t appSpecificErrorCode() const {
-    return underlyingThriftStruct_.appSpecificErrorCode;
-  }
-  int16_t& appSpecificErrorCode() {
-    return underlyingThriftStruct_.appSpecificErrorCode;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const int16_t&>
    appSpecificErrorCode_ref() const& {
     return underlyingThriftStruct_.appSpecificErrorCode_ref();
@@ -1047,6 +1047,24 @@ class McExecReply : public carbon::ReplyCommon {
   carbon::Result& result() {
     return underlyingThriftStruct_.result;
   }
+  const std::string& response() const {
+    return underlyingThriftStruct_.response;
+  }
+  std::string& response() {
+    return underlyingThriftStruct_.response;
+  }
+  const std::string& message() const {
+    return underlyingThriftStruct_.message;
+  }
+  std::string& message() {
+    return underlyingThriftStruct_.message;
+  }
+  int16_t appSpecificErrorCode() const {
+    return underlyingThriftStruct_.appSpecificErrorCode;
+  }
+  int16_t& appSpecificErrorCode() {
+    return underlyingThriftStruct_.appSpecificErrorCode;
+  }
   FOLLY_ERASE ::apache::thrift::field_ref<const carbon::Result&>
    result_ref() const& {
     return underlyingThriftStruct_.result_ref();
@@ -1060,12 +1078,6 @@ class McExecReply : public carbon::ReplyCommon {
     return std::move(underlyingThriftStruct_).result_ref();
   }
   
-  const std::string& response() const {
-    return underlyingThriftStruct_.response;
-  }
-  std::string& response() {
-    return underlyingThriftStruct_.response;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const std::string&>
    response_ref() const& {
     return underlyingThriftStruct_.response_ref();
@@ -1079,12 +1091,6 @@ class McExecReply : public carbon::ReplyCommon {
     return std::move(underlyingThriftStruct_).response_ref();
   }
   
-  const std::string& message() const {
-    return underlyingThriftStruct_.message;
-  }
-  std::string& message() {
-    return underlyingThriftStruct_.message;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const std::string&>
    message_ref() const& {
     return underlyingThriftStruct_.message_ref();
@@ -1098,12 +1104,6 @@ class McExecReply : public carbon::ReplyCommon {
     return std::move(underlyingThriftStruct_).message_ref();
   }
   
-  int16_t appSpecificErrorCode() const {
-    return underlyingThriftStruct_.appSpecificErrorCode;
-  }
-  int16_t& appSpecificErrorCode() {
-    return underlyingThriftStruct_.appSpecificErrorCode;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const int16_t&>
    appSpecificErrorCode_ref() const& {
     return underlyingThriftStruct_.appSpecificErrorCode_ref();
@@ -1256,6 +1256,12 @@ class GoAwayRequest : public carbon::ReplyCommon {
   carbon::Result& result() {
     return underlyingThriftStruct_.result;
   }
+  const std::string& reason() const {
+    return underlyingThriftStruct_.reason;
+  }
+  std::string& reason() {
+    return underlyingThriftStruct_.reason;
+  }
   FOLLY_ERASE ::apache::thrift::field_ref<const carbon::Result&>
    result_ref() const& {
     return underlyingThriftStruct_.result_ref();
@@ -1269,12 +1275,6 @@ class GoAwayRequest : public carbon::ReplyCommon {
     return std::move(underlyingThriftStruct_).result_ref();
   }
   
-  const std::string& reason() const {
-    return underlyingThriftStruct_.reason;
-  }
-  std::string& reason() {
-    return underlyingThriftStruct_.reason;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const std::string&>
    reason_ref() const& {
     return underlyingThriftStruct_.reason_ref();

@@ -1,3 +1,4 @@
+gen_ref_api_only;
 namespace carbon::test;
 thrift_namespace carbon.test.thrift;
 

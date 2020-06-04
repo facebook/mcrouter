@@ -57,13 +57,6 @@ class HelloRequest : public carbon::RequestCommon {
     underlyingThriftStruct_.key = std::move(carbonKey);
   }
 
-  const carbon::Keys<folly::IOBuf>& key() const {
-    return underlyingThriftStruct_.key;
-  }
-  carbon::Keys<folly::IOBuf>& key() {
-    markBufferAsDirty();
-    return underlyingThriftStruct_.key;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const carbon::Keys<folly::IOBuf>&>
    key_ref() const& {
     return underlyingThriftStruct_.key_ref();
@@ -77,13 +70,6 @@ class HelloRequest : public carbon::RequestCommon {
     return std::move(underlyingThriftStruct_).key_ref();
   }
   
-  uint64_t shardId() const {
-    return underlyingThriftStruct_.shardId;
-  }
-  uint64_t& shardId() {
-    markBufferAsDirty();
-    return underlyingThriftStruct_.shardId;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const uint64_t&>
    shardId_ref() const& {
     return underlyingThriftStruct_.shardId_ref();
@@ -97,13 +83,6 @@ class HelloRequest : public carbon::RequestCommon {
     return std::move(underlyingThriftStruct_).shardId_ref();
   }
   
-  uint64_t deadlineMs() const {
-    return underlyingThriftStruct_.deadlineMs;
-  }
-  uint64_t& deadlineMs() {
-    markBufferAsDirty();
-    return underlyingThriftStruct_.deadlineMs;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const uint64_t&>
    deadlineMs_ref() const& {
     return underlyingThriftStruct_.deadlineMs_ref();
@@ -117,13 +96,6 @@ class HelloRequest : public carbon::RequestCommon {
     return std::move(underlyingThriftStruct_).deadlineMs_ref();
   }
   
-  const std::string& message() const {
-    return underlyingThriftStruct_.message;
-  }
-  std::string& message() {
-    markBufferAsDirty();
-    return underlyingThriftStruct_.message;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const std::string&>
    message_ref() const& {
     return underlyingThriftStruct_.message_ref();
@@ -205,12 +177,6 @@ class HelloReply : public carbon::ReplyCommon {
     underlyingThriftStruct_.result = carbonResult;
   }
 
-  carbon::Result result() const {
-    return underlyingThriftStruct_.result;
-  }
-  carbon::Result& result() {
-    return underlyingThriftStruct_.result;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const carbon::Result&>
    result_ref() const& {
     return underlyingThriftStruct_.result_ref();
@@ -224,12 +190,6 @@ class HelloReply : public carbon::ReplyCommon {
     return std::move(underlyingThriftStruct_).result_ref();
   }
   
-  const std::string& message() const {
-    return underlyingThriftStruct_.message;
-  }
-  std::string& message() {
-    return underlyingThriftStruct_.message;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const std::string&>
    message_ref() const& {
     return underlyingThriftStruct_.message_ref();
@@ -315,13 +275,6 @@ class GoodbyeRequest : public carbon::RequestCommon {
     underlyingThriftStruct_.key = std::move(carbonKey);
   }
 
-  const carbon::Keys<folly::IOBuf>& key() const {
-    return underlyingThriftStruct_.key;
-  }
-  carbon::Keys<folly::IOBuf>& key() {
-    markBufferAsDirty();
-    return underlyingThriftStruct_.key;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const carbon::Keys<folly::IOBuf>&>
    key_ref() const& {
     return underlyingThriftStruct_.key_ref();
@@ -335,13 +288,6 @@ class GoodbyeRequest : public carbon::RequestCommon {
     return std::move(underlyingThriftStruct_).key_ref();
   }
   
-  uint64_t shardId() const {
-    return underlyingThriftStruct_.shardId;
-  }
-  uint64_t& shardId() {
-    markBufferAsDirty();
-    return underlyingThriftStruct_.shardId;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const uint64_t&>
    shardId_ref() const& {
     return underlyingThriftStruct_.shardId_ref();
@@ -421,12 +367,6 @@ class GoodbyeReply : public carbon::ReplyCommon {
     underlyingThriftStruct_.result = carbonResult;
   }
 
-  carbon::Result result() const {
-    return underlyingThriftStruct_.result;
-  }
-  carbon::Result& result() {
-    return underlyingThriftStruct_.result;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const carbon::Result&>
    result_ref() const& {
     return underlyingThriftStruct_.result_ref();
@@ -440,12 +380,6 @@ class GoodbyeReply : public carbon::ReplyCommon {
     return std::move(underlyingThriftStruct_).result_ref();
   }
   
-  const std::string& message() const {
-    return underlyingThriftStruct_.message;
-  }
-  std::string& message() {
-    return underlyingThriftStruct_.message;
-  }
   FOLLY_ERASE ::apache::thrift::field_ref<const std::string&>
    message_ref() const& {
     return underlyingThriftStruct_.message_ref();
