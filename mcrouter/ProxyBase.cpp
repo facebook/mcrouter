@@ -7,6 +7,8 @@
 
 #include "ProxyBase.h"
 
+#include <folly/Portability.h>
+
 #include "mcrouter/CarbonRouterInstanceBase.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
@@ -26,6 +28,11 @@ folly::fibers::FiberManager::Options ProxyBase::getFiberManagerOptions(
     const McrouterOptions& opts) {
   folly::fibers::FiberManager::Options fmOpts;
   fmOpts.stackSize = opts.fibers_stack_size;
+  if (folly::kIsSanitize) {
+    fmOpts.stackSizeMultiplier = 16;
+  } else if (folly::kIsDebug) {
+    fmOpts.stackSizeMultiplier = 2;
+  }
   fmOpts.recordStackEvery = opts.fibers_record_stack_size_every;
   fmOpts.maxFibersPoolSize = opts.fibers_max_pool_size;
   fmOpts.guardPagesPerStack = (opts.fibers_use_guard_pages ? 1 : 0);
