@@ -19,7 +19,7 @@
 
 // forward declarations
 namespace folly {
-class AsyncTransportWrapper;
+class AsyncTransport;
 }
 
 namespace facebook {
@@ -64,7 +64,7 @@ class Transport {
       boost::intrusive::constant_time_size<false>>;
 
   using SvcIdentAuthCallbackFunc = std::function<
-      bool(const folly::AsyncTransportWrapper&, const ConnectionOptions&)>;
+      bool(const folly::AsyncTransport&, const ConnectionOptions&)>;
 
   /**
    * Struct containing callbacks regarding connection state changes.
@@ -75,8 +75,7 @@ class Transport {
      * server. Will be called immediately if we're already connected.
      * Can be nullptr.
      */
-    std::function<
-        void(const folly::AsyncTransportWrapper&, size_t numConnectRetries)>
+    std::function<void(const folly::AsyncTransport&, size_t numConnectRetries)>
         onUp;
 
     /**
@@ -216,7 +215,7 @@ class Transport {
    *
    * @return  The transport used to manage socket.
    */
-  virtual const folly::AsyncTransportWrapper* getTransport() const = 0;
+  virtual const folly::AsyncTransport* getTransport() const = 0;
 
   /**
    * Return retransmit information about this connection.
