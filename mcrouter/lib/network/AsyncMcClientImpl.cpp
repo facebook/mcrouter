@@ -825,10 +825,9 @@ double AsyncMcClientImpl::getRetransmitsPerKb() {
     struct tcp_info tcpinfo;
     socklen_t len = sizeof(struct tcp_info);
 
-    auto& socket = dynamic_cast<folly::AsyncSocket&>(*socket_);
-
-    if (socket.getSockOpt(IPPROTO_TCP, TCP_INFO, &tcpinfo, &len) == 0) {
-      const uint64_t totalKBytes = socket.getRawBytesWritten() / 1000;
+    if (socket_->getUnderlyingTransport<folly::AsyncSocket>()->getSockOpt(
+            IPPROTO_TCP, TCP_INFO, &tcpinfo, &len) == 0) {
+      const uint64_t totalKBytes = socket_->getRawBytesWritten() / 1024;
       if (totalKBytes == lastKBytes_) {
         return 0.0;
       }

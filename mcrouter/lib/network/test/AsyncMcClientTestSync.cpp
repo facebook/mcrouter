@@ -391,6 +391,17 @@ class AsyncMcClientBasicTestBase {
         clientSsl,
         qosClass,
         qosPath);
+    AsyncMcClient::ConnectionStatusCallbacks connCallbacks;
+    bool onUpCalled = false;
+    connCallbacks.onUp = [&client, &onUpCalled](
+                             const folly::AsyncTransport&,
+                             size_t /* numConnectRetries */) {
+      // Make sure socket exists when calling
+      // AsyncMcClientImpl::getRetransmitsPerKb()
+      EXPECT_GE(0, client.getClient().getRetransmitsPerKb());
+      onUpCalled = true;
+    };
+    client.getClient().setConnectionStatusCallbacks(connCallbacks);
     client.sendGet("test1", carbon::Result::FOUND);
     client.sendGet("test2", carbon::Result::FOUND);
     client.sendGet("empty", carbon::Result::FOUND);
@@ -405,6 +416,7 @@ class AsyncMcClientBasicTestBase {
     client.waitForReplies();
     server->join();
     EXPECT_EQ(1, server->getAcceptedConns());
+    EXPECT_TRUE(onUpCalled);
   }
 
   TestServer::Config config;
