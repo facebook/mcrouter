@@ -88,6 +88,9 @@ class ServerOnRequest {
 
   template <class Request>
   void onRequestThrift(McThriftCallback<ReplyT<Request>>&& ctx, Request&& req) {
+    if (HasKeyTrait<Request>::value) {
+      req.key_ref()->update();
+    }
     send(
         std::move(ctx),
         std::move(req),
