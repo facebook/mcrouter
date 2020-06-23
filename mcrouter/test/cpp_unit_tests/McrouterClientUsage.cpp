@@ -441,6 +441,8 @@ TEST(CarbonRouterClient, requestExpiryTest) {
           const hellogoodbye::HelloRequest&, hellogoodbye::HelloReply&& reply) {
         // for now, REMOTE_ERROR is returned in place of DEADLINE_EXCEEDED
         EXPECT_EQ(carbon::Result::REMOTE_ERROR, *reply.result_ref());
+        EXPECT_NE(
+            reply.message_ref()->find("deadline exceeded"), std::string::npos);
         replyReceived = true;
         baton.post();
       });
@@ -652,6 +654,8 @@ TEST(CarbonRouterClient, requestExpiryTestWithLatencyInjectionRoute) {
           const hellogoodbye::HelloRequest&, hellogoodbye::HelloReply&& reply) {
         // for now, REMOTE_ERROR is returned in place of DEADLINE_EXCEEDED
         EXPECT_EQ(carbon::Result::REMOTE_ERROR, *reply.result_ref());
+        EXPECT_NE(
+            reply.message_ref()->find("deadline exceeded"), std::string::npos);
         replyReceived = true;
         baton.post();
       });

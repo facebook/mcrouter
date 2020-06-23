@@ -56,6 +56,13 @@ ReplyT<Request> createReply(RemoteErrorReplyT) {
 }
 
 template <class Request>
+ReplyT<Request> createReply(RemoteErrorReplyT, std::string errorMessage) {
+  ReplyT<Request> reply(carbon::Result::REMOTE_ERROR);
+  carbon::setMessageIfPresent(reply, std::move(errorMessage));
+  return reply;
+}
+
+template <class Request>
 ReplyT<Request> createReply(DeadlineExceededReplyT) {
   return ReplyT<Request>(carbon::Result::DEADLINE_EXCEEDED);
 }

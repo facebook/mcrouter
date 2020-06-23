@@ -142,7 +142,11 @@ class DestinationRoute {
       // Return remote error until all clients are updated to latest version
       // And un-comment the following line for returning the correct response
       // return constructAndLog(req, *ctx, DeadlineExceededReply);
-      return constructAndLog(req, *ctx, RemoteErrorReply);
+      return constructAndLog(
+          req,
+          *ctx,
+          RemoteErrorReply,
+          std::string("Failed to send request - deadline exceeded"));
     }
 
     carbon::Result tkoReason;
