@@ -18,6 +18,7 @@
 #include <folly/fibers/FiberManager.h>
 #include <folly/io/IOBuf.h>
 
+#include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/McKey.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
@@ -146,6 +147,21 @@ class L1L2SizeSplitRoute {
   template <class Suffix>
   static std::string makeL2Key(folly::StringPiece key, Suffix randomSuffix) {
     return folly::to<std::string>(key, kHashAlias, randomSuffix);
+  }
+
+  template <class Request>
+  inline void deleteSentinel(const Request& req, folly::StringPiece l1Value)
+      const {
+    McGetsRequest l1GetsRequest(req.key_ref()->fullKey());
+    auto l1GetsReply = l1_->route(l1GetsRequest);
+    if (isHitResult(*l1GetsReply.result_ref()) &&
+        coalesceAndGetRange(*l1GetsReply.value_ref()) == l1Value) {
+      McCasRequest l1CasRequest(req.key_ref()->fullKey());
+      l1CasRequest.casToken_ref() = *l1GetsReply.casToken_ref();
+      l1CasRequest.exptime_ref() = -1;
+      l1_->route(l1CasRequest);
+    }
+    return;
   }
 
   template <class Request>

@@ -856,6 +856,47 @@ class TestMcrouterBasicL1L2(McrouterTestCase):
         self.assertEqual(self.l1.gat(0, "key1"), "value1")
 
 
+class TestMcrouterBasicL1MultipleL2SizeSplit(McrouterTestCase):
+
+    config_multil2 = './mcrouter/test/test_basic_l1_multiple_l2_sizesplit.json'
+    extra_args = []
+    MC_MSG_FLAG_SIZE_SPLIT = 0x20
+
+    def setUp(self):
+        # The order here corresponds to the order of hosts in the .json
+        self.l1 = self.add_server(Memcached())
+        self.l2_1 = self.add_server(Memcached())
+        self.l2_2 = self.add_server(Memcached())
+        self.l2_3 = self.add_server(Memcached())
+
+    def get_mcrouter(self, config):
+        return self.add_mcrouter(config, extra_args=self.extra_args)
+
+    def test_l1_multiple_l2_sizesplit_get_after_leaseset(self):
+        """
+        Basic functionality tests. Simple Get after Set-lease should work
+        in a setup with single L1 and multiple L2's.
+        """
+        mcr = self.get_mcrouter(self.config_multil2)
+
+        # Issue leaseGet with a non-existing key, we should get a valid lease token
+        result = mcr.leaseGet("key1")
+        real_token = result["token"]
+        self.assertNotEqual(real_token, None)
+
+        # Issue leaseSet with a very long value, the key should end up split
+        long_value = "foo" * 200
+        result["value"] = long_value
+        self.assertTrue(mcr.leaseSet("key1", result))
+
+        # Verify that sentinel flag is set in L1
+        l1res = self.l1.get("key1", return_all_info=True)
+        self.assertTrue(l1res["flags"] & self.MC_MSG_FLAG_SIZE_SPLIT)
+
+        # Issue simple Get. It should ALWAYS get the original long value.
+        self.assertEqual(mcr.get("key1"), long_value)
+
+
 class TestMcrouterBasicL1L2SizeSplit(McrouterTestCase):
     config = './mcrouter/test/test_basic_l1_l2_sizesplit.json'
     config_bothset = './mcrouter/test/test_basic_l1_l2_sizesplit_bothset.json'

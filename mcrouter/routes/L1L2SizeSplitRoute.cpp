@@ -38,9 +38,28 @@ McGetReply L1L2SizeSplitRoute::route(const McGetRequest& req) const {
   auto reply = l1_->route(l1ReqWithFlag);
   if (isHitResult(*reply.result_ref()) &&
       (*reply.flags_ref() & MC_MSG_FLAG_SIZE_SPLIT)) {
-    // Real value lives in the L2 pool
-    // Note that for both get and set, keys read from/written to L2 are not
-    // suffixed with |==|<rand>.
+    const auto l1Value = coalesceAndGetRange(reply.value_ref());
+    // Real value lives in the L2 pool. If L1 reply has a non-empty value, then
+    // we need to route to L2 using key suffixed with |==|<rand>
+    if (!l1Value.empty()) {
+      const auto l2ReqWithKeyAndSuffix =
+          McGetRequest(makeL2Key(req.key_ref()->fullKey(), l1Value));
+      auto l2Reply = l2_->route(l2ReqWithKeyAndSuffix);
+
+      if (isHitResult(*l2Reply.result_ref())) {
+        McGetReply l2ReplyWithHitResult(carbon::Result::FOUND);
+        l2ReplyWithHitResult.flags_ref() = *l2Reply.flags_ref();
+        l2ReplyWithHitResult.value_ref().move_from(l2Reply.value_ref());
+        return l2ReplyWithHitResult;
+      }
+
+      if (isErrorResult(*l2Reply.result_ref())) {
+        return McGetReply(*l2Reply.result_ref());
+      } else {
+        deleteSentinel(req, l1Value);
+        return McGetReply(carbon::Result::LOCAL_ERROR);
+      }
+    }
     reply = l2_->route(req);
   }
   // If we didn't get a sentinel value, pass along
@@ -138,17 +157,7 @@ L1L2SizeSplitRoute::doRoute(const Request& req, size_t retriesLeft) const {
   if (isErrorResult(*l2Reply.result_ref())) {
     return ReplyT<Request>(*l2Reply.result_ref());
   } else if (retriesLeft != 0) {
-    [&]() {
-      McGetsRequest l1GetsRequest(req.key_ref()->fullKey());
-      auto l1GetsReply = l1_->route(l1GetsRequest);
-      if (isHitResult(*l1GetsReply.result_ref()) &&
-          coalesceAndGetRange(l1GetsReply.value_ref()) == l1Value) {
-        McCasRequest l1CasRequest(req.key_ref()->fullKey());
-        l1CasRequest.casToken_ref() = *l1GetsReply.casToken_ref();
-        l1CasRequest.exptime_ref() = -1;
-        l1_->route(l1CasRequest);
-      }
-    }();
+    deleteSentinel(req, l1Value);
     return doRoute(req, retriesLeft - 1);
   } else {
     return ReplyT<Request>(carbon::Result::LOCAL_ERROR);
