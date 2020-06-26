@@ -23,6 +23,7 @@
 #include "mcrouter/routes/LatestRoute.h"
 #include "mcrouter/routes/LoadBalancerRoute.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
+#include "mcrouter/routes/RendezvousRouteHelpers.h"
 #include "mcrouter/routes/ShardHashFunc.h"
 
 namespace facebook {
@@ -90,21 +91,7 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> createHashRoute(
   } else if (
       funcType == RendezvousHashFunc::type() ||
       funcType == WeightedRendezvousHashFunc::type()) {
-    std::vector<folly::StringPiece> endpoints;
-
-    auto jtags = json.get_ptr("tags");
-    checkLogic(jtags, "HashRoute: tags needed for Rendezvous hash route");
-    checkLogic(jtags->isArray(), "HashRoute: tags is not an array");
-    checkLogic(
-        jtags->size() == rh.size(),
-        "HashRoute: number of tags doesn't match number of route handles");
-
-    endpoints.reserve(jtags->size());
-    for (const auto& jtag : *jtags) {
-      checkLogic(jtag.isString(), "HashRoute: tag is not a string");
-      endpoints.push_back(jtag.stringPiece());
-    }
-
+    auto endpoints = getTags(json, rh.size(), "HashRoute");
     if (funcType == RendezvousHashFunc::type()) {
       return createHashRoute<RouterInfo, RendezvousHashFunc>(
           std::move(rh),
