@@ -155,6 +155,8 @@ libmcroutercore_a_SOURCES = \
   routes/RandomRouteFactory.h \
   routes/RateLimiter.cpp \
   routes/RateLimiter.h \
+  routes/RendezvousRouteHelpers.cpp \
+  routes/RendezvousRouteHelpers.h \
   routes/RateLimitRoute.h \
   routes/RootRoute.h \
   routes/RouteHandleMap-inl.h \
