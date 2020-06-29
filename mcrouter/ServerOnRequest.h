@@ -13,6 +13,7 @@
 #include <mcrouter/lib/network/gen/Memcache.h>
 #include <mcrouter/lib/network/gen/gen-cpp2/Memcache.h>
 #include "mcrouter/CarbonRouterClient.h"
+#include "mcrouter/RequestAclChecker.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
@@ -47,17 +48,20 @@ class ServerOnRequest {
   using ReplyFunction =
       void (*)(Callback&& ctx, ReplyT<Request>&& reply, bool flush);
 
+  template <class... Args>
   ServerOnRequest(
       CarbonRouterClient<RouterInfo>& client,
       folly::EventBase& eventBase,
       bool retainSourceIp,
       bool enablePassThroughMode,
-      bool remoteThread)
+      bool remoteThread,
+      Args&&... args)
       : client_(client),
         eventBase_(eventBase),
         retainSourceIp_(retainSourceIp),
         enablePassThroughMode_(enablePassThroughMode),
-        remoteThread_(remoteThread) {}
+        remoteThread_(remoteThread),
+        aclChecker_(std::forward<Args>(args)...) {}
 
   template <class Reply, class Callback>
   void sendReply(Callback&& ctx, Reply&& reply) {
@@ -129,6 +133,15 @@ class ServerOnRequest {
       ReplyFunction<Callback, Request> replyFn,
       const CaretMessageInfo* headerInfo = nullptr,
       const folly::IOBuf* reqBuffer = nullptr) {
+    /*
+     * If we don't have an AclChecker specialized
+     * for this router, don't bother running Acl checks
+     */
+    if constexpr (decltype(aclChecker_)::value) {
+      if (aclChecker_(std::move(ctx), std::move(req))) {
+        return;
+      }
+    }
     // We just reuse buffers iff:
     //  1) enablePassThroughMode_ is true.
     //  2) headerInfo is not NULL.
@@ -176,6 +189,7 @@ class ServerOnRequest {
   const bool retainSourceIp_{false};
   const bool enablePassThroughMode_{false};
   const bool remoteThread_{false};
+  const RequestAclChecker<RouterInfo> aclChecker_;
 };
 
 template <class RouterInfo>

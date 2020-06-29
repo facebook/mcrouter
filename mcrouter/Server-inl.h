@@ -105,7 +105,9 @@ void serverInit(
       evb,
       standaloneOpts.retain_source_ip,
       standaloneOpts.enable_pass_through_mode,
-      standaloneOpts.remote_thread));
+      standaloneOpts.remote_thread,
+      router.externalStatsHandler(),
+      standaloneOpts.prefix_acl_checker_enable));
 
   worker.setOnConnectionAccepted(
       [proxy, &aclChecker](McServerSession& session) mutable {
@@ -389,7 +391,9 @@ bool runServerDual(
               *evb,
               standaloneOpts.retain_source_ip,
               standaloneOpts.enable_pass_through_mode,
-              standaloneOpts.remote_thread));
+              standaloneOpts.remote_thread,
+              router->externalStatsHandler(),
+              standaloneOpts.prefix_acl_checker_enable));
       carbonRouterClients.push_back(std::move(routerClient));
     }
     CHECK_EQ(carbonRouterClients.size(), mcrouterOpts.num_proxies);
