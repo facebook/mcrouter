@@ -99,4 +99,4 @@ class TestDualCaretSanityMock(TestMcrouterSanityMock):
     config = './mcrouter/test/test_caret.json'
 
     def make_memcached(self):
-        return MockMemcachedDual()
+        return MockMemcachedDual(mcrouterUseThrift=False)

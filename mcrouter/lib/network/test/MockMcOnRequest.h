@@ -10,12 +10,15 @@
 #include <folly/Format.h>
 
 #include "mcrouter/lib/Reply.h"
+#include "mcrouter/lib/StatsReply.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/network/gen/MemcacheMessages.h"
 #include "mcrouter/lib/network/test/MockMc.h"
 
 namespace facebook {
 namespace memcache {
+
+static std::atomic_uint64_t cmd_get_count{0};
 
 class MockMcOnRequest {
  public:
@@ -47,6 +50,7 @@ class MockMcOnRequest {
   template <class Context>
   void onRequest(Context&& ctx, McGetRequest&& req) {
     using Reply = McGetReply;
+    cmd_get_count++;
 
     auto key = req.key_ref()->fullKey();
 
@@ -340,6 +344,20 @@ class MockMcOnRequest {
       case MockMc::CasResult::STORED:
         Context::reply(std::move(ctx), Reply(carbon::Result::STORED));
         break;
+    }
+  }
+
+  template <class Context>
+  void onRequest(Context&& ctx, McStatsRequest&& req) {
+    using Reply = McStatsReply;
+
+    auto key = req.key_ref()->fullKey().str();
+    if (key == "__mockmc__") {
+      StatsReply stats;
+      stats.addStat("cmd_get_count", cmd_get_count.load());
+      Context::reply(std::move(ctx), stats.getReply());
+    } else {
+      Context::reply(std::move(ctx), Reply(carbon::Result::BAD_COMMAND));
     }
   }
 

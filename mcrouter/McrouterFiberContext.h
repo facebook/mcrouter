@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <bitset>
 #include <memory>
 #include <utility>
 
@@ -53,15 +54,21 @@ class RequestClass {
 template <class RouterInfo>
 class fiber_local {
  private:
+  enum FeatureFlag : size_t {
+    FAILOVER_TAG,
+    FAILOVER_DISABLED,
+    THRIFT_SERVER_LOAD_ENABLED,
+    NUM_FLAGS
+  };
+
   struct McrouterFiberContext {
     std::shared_ptr<ProxyRequestContextWithInfo<RouterInfo>> sharedCtx;
     folly::StringPiece asynclogName;
     ServerLoad load{0};
     RequestClass requestClass;
-    bool failoverTag{false};
-    bool failoverDisabled{false};
     int32_t selectedIndex{-1};
     int64_t networkTransportTimeUs{0};
+    std::bitset<NUM_FLAGS> featureFlags;
   };
 
  public:
@@ -163,14 +170,16 @@ class fiber_local {
    * Update failover tag for current fiber (thread, if we're not on fiber)
    */
   static void setFailoverTag(bool value) {
-    folly::fibers::local<McrouterFiberContext>().failoverTag = value;
+    folly::fibers::local<McrouterFiberContext>().featureFlags.set(
+        FeatureFlag::FAILOVER_TAG, value);
   }
 
   /**
    * Get failover tag of current fiber (thread, if we're not on fiber)
    */
   static bool getFailoverTag() {
-    return folly::fibers::local<McrouterFiberContext>().failoverTag;
+    return folly::fibers::local<McrouterFiberContext>().featureFlags.test(
+        FeatureFlag::FAILOVER_TAG);
   }
 
   /**
@@ -193,14 +202,16 @@ class fiber_local {
    * fiber)
    */
   static void setFailoverDisabled(bool value) {
-    folly::fibers::local<McrouterFiberContext>().failoverDisabled = value;
+    folly::fibers::local<McrouterFiberContext>().featureFlags.set(
+        FeatureFlag::FAILOVER_DISABLED, value);
   }
 
   /**
    * Get failover disabled tag of current fiber (thread, if we're not on fiber)
    */
   static bool getFailoverDisabled() {
-    return folly::fibers::local<McrouterFiberContext>().failoverDisabled;
+    return folly::fibers::local<McrouterFiberContext>().featureFlags.test(
+        FeatureFlag::FAILOVER_DISABLED);
   }
 
   static void setServerLoad(ServerLoad load) {
@@ -218,6 +229,16 @@ class fiber_local {
 
   static int64_t getNetworkTransportTimeUs() {
     return folly::fibers::local<McrouterFiberContext>().networkTransportTimeUs;
+  }
+
+  static void setThriftServerLoadEnabled(bool value) {
+    folly::fibers::local<McrouterFiberContext>().featureFlags.set(
+        FeatureFlag::THRIFT_SERVER_LOAD_ENABLED, value);
+  }
+
+  static bool getThriftServerLoadEnabled() {
+    return folly::fibers::local<McrouterFiberContext>().featureFlags.test(
+        FeatureFlag::THRIFT_SERVER_LOAD_ENABLED);
   }
 };
 

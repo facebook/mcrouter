@@ -19,6 +19,7 @@
 
 #include <mcrouter/lib/network/RpcStatsContext.h>
 #include <mcrouter/lib/network/ThriftTransport.h>
+#include <mcrouter/McrouterFiberContext.h>
 #include <thrift/lib/cpp/TApplicationException.h>
 #include <thrift/lib/cpp/transport/TTransportException.h>
 #include <thrift/lib/cpp2/async/RequestChannel.h>
@@ -56,6 +57,11 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
       folly::Try<apache::thrift::RpcResponseComplete<hellogoodbye::GoodbyeReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
+        bool needServerLoad = mcrouter::fiber_local<hellogoodbye::HelloGoodbyeRouterInfo>::getThriftServerLoadEnabled();
+        if (needServerLoad) {
+          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+        }
+
 #ifndef LIBMC_FBTRACE_DISABLE
         traceRequest(request, rpcOptions);
 #endif
@@ -66,6 +72,9 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
             rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
             rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
             rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
+        if (rpcStatsContext && needServerLoad) {
+          extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
         }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
@@ -88,6 +97,11 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
       folly::Try<apache::thrift::RpcResponseComplete<hellogoodbye::HelloReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
+        bool needServerLoad = mcrouter::fiber_local<hellogoodbye::HelloGoodbyeRouterInfo>::getThriftServerLoadEnabled();
+        if (needServerLoad) {
+          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+        }
+
 #ifndef LIBMC_FBTRACE_DISABLE
         traceRequest(request, rpcOptions);
 #endif
@@ -100,6 +114,9 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
             rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
             rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
             rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
+        if (rpcStatsContext && needServerLoad) {
+          extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
         }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
@@ -122,6 +139,11 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
       folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
+        bool needServerLoad = mcrouter::fiber_local<hellogoodbye::HelloGoodbyeRouterInfo>::getThriftServerLoadEnabled();
+        if (needServerLoad) {
+          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+        }
+
 #ifndef LIBMC_FBTRACE_DISABLE
         traceRequest(request, rpcOptions);
 #endif
@@ -132,6 +154,9 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
             rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
             rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
             rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+        }
+        if (rpcStatsContext && needServerLoad) {
+          extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
         }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
@@ -149,6 +174,9 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
  private:
   std::unique_ptr<hellogoodbye::thrift::HelloGoodbyeAsyncClient> thriftClient_;
   FlushList* flushList_{nullptr};
+
+  static inline const std::string kLoadHeader = "load";
+  static inline const std::string kDefaultLoadCounter = "default";
 
   hellogoodbye::thrift::HelloGoodbyeAsyncClient* getThriftClient() {
     if (UNLIKELY(!thriftClient_)) {
@@ -172,6 +200,19 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
       }
       thriftClient_.reset();
     }
+  }
+  bool extractServerLoad(
+      const std::map<std::string, std::string>& headers,
+      ServerLoad& serverLoad) {
+    auto it = headers.find(kLoadHeader);
+    if (it != headers.end()) {
+      try {
+        serverLoad = ServerLoad(folly::to<int32_t>(it->second));
+        return true;
+      } catch (std::exception const&) {
+      }
+    }
+    return false;
   }
 };
 

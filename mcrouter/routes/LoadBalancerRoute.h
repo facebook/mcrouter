@@ -80,7 +80,8 @@ class LoadBalancerRoute {
       std::chrono::microseconds loadTtl,
       size_t failoverCount,
       AlgorithmType algorithm = AlgorithmType::WEIGHTED_HASHING,
-      uint32_t seed = nowUs())
+      uint32_t seed = nowUs(),
+      bool enableThriftServerLoad = false)
       : children_(std::move(children)),
         salt_(std::move(salt)),
         loadTtl_(loadTtl),
@@ -89,7 +90,8 @@ class LoadBalancerRoute {
         medianLoadScratch_(children_.size()),
         expTimes_(children_.size(), std::chrono::microseconds(0)),
         gen_(seed),
-        algorithm_(algorithm) {
+        algorithm_(algorithm),
+        enableThriftServerLoad_(enableThriftServerLoad) {
     assert(children_.size() >= 2);
   }
 
@@ -165,6 +167,8 @@ class LoadBalancerRoute {
   std::ranlux24_base gen_;
   // Load balancing algorithm
   AlgorithmType algorithm_;
+  // When enabled, thrift request would ask server for load stat
+  bool enableThriftServerLoad_;
 
   // route the request and update server load.
   template <class Request>
@@ -175,6 +179,9 @@ class LoadBalancerRoute {
         [this, &req, idx, isFailover]() {
           if (isFailover) {
             fiber_local<RouterInfo>::addRequestClass(RequestClass::kFailover);
+          }
+          if (enableThriftServerLoad_) {
+            fiber_local<RouterInfo>::setThriftServerLoadEnabled(true);
           }
           auto reply = children_[idx]->route(req);
           auto load = mcrouter::fiber_local<RouterInfo>::getServerLoad();
@@ -201,6 +208,9 @@ class LoadBalancerRoute {
   template <class Request>
   ReplyT<Request> routeTwoRandomChoices(const Request& req) {
     std::pair<size_t, size_t> idxs = selectTwoRandomChoices();
+    if (enableThriftServerLoad_) {
+      mcrouter::fiber_local<RouterInfo>::setThriftServerLoadEnabled(true);
+    }
     auto rep = children_[idxs.first]->route(req);
     auto load = mcrouter::fiber_local<RouterInfo>::getServerLoad();
     loadComplements_[idxs.first] = load.complement().percentLoad() / 100;
@@ -328,6 +338,7 @@ struct LoadBalancerRouteOptions {
   size_t failoverCount{1};
   typename LoadBalancerRoute<RouterInfo>::AlgorithmType algorithm{
       LoadBalancerRoute<RouterInfo>::AlgorithmType::WEIGHTED_HASHING};
+  bool enableThriftServerLoad{false};
 };
 
 template <class RouterInfo>
@@ -370,6 +381,14 @@ LoadBalancerRouteOptions<RouterInfo> parseLoadBalancerRouteJson(
     }
   }
 
+  if (auto jEnableThriftServerLoad =
+          json.get_ptr("enable_thrift_server_load")) {
+    checkLogic(
+        jEnableThriftServerLoad->isBool(),
+        "LoadBalancerRoute: enable_thrift_server_load is not a bool");
+    options.enableThriftServerLoad = jEnableThriftServerLoad->getBool();
+  }
+
   return options;
 }
 
@@ -389,7 +408,9 @@ typename RouterInfo::RouteHandlePtr createLoadBalancerRoute(
       options.salt.str(),
       options.loadTtl,
       options.failoverCount,
-      options.algorithm);
+      options.algorithm,
+      nowUs(),
+      options.enableThriftServerLoad);
 }
 
 template <class RouterInfo>

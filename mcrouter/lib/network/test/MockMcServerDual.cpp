@@ -24,6 +24,7 @@
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/CarbonMessageDispatcher.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
+#include "mcrouter/lib/network/ServerLoad.h"
 #include "mcrouter/lib/network/test/MockMcThriftServerHandler.h"
 
 /**
@@ -53,12 +54,16 @@ void serverInit(
 }
 
 [[noreturn]] void usage(char** argv) {
-  std::cerr << "Arguments:\n"
-               "  -P <port>      TCP port on which to listen\n"
-               "  -t <fd>        TCP listen sock fd\n"
-               "Usage:\n"
-               "  $ "
-            << argv[0] << " -p 15213\n";
+  std::cerr
+      << "Arguments:\n"
+         "  -P <port>      TCP port on which to listen for AsyncMcServer\n"
+         "  -T <fd>        TCP listen sock fd for AsyncMcServer\n"
+         "  -p <port>      TCP port on which to listen for thrift\n"
+         "  -t <fd>        TCP listen sock fd for thrift\n"
+         "  -l <load>      Fixed server load thrift server returns when requested"
+         "Usage:\n"
+         "  $ "
+      << argv[0] << " -p 15213\n";
   exit(1);
 }
 
@@ -78,7 +83,6 @@ void shutdown() {
   }
   if (gThriftServer) {
     gThriftServer->stop();
-    gThriftServer.reset();
   }
 }
 
@@ -128,9 +132,11 @@ int main(int argc, char** argv) {
   uint16_t thriftPort = 0;
   int thriftExistingSocketFd = 0;
   size_t numThreads = 1;
+  int64_t load = 0;
+  bool hasLoad = false;
 
   int c;
-  while ((c = getopt(argc, argv, "P:T:p:t:h")) >= 0) {
+  while ((c = getopt(argc, argv, "P:T:p:t:l:h")) >= 0) {
     switch (c) {
       case 'P':
         asyncOpts.ports.push_back(folly::to<uint16_t>(optarg));
@@ -146,6 +152,10 @@ int main(int argc, char** argv) {
         break;
       case 'n':
         numThreads = folly::to<size_t>(optarg);
+        break;
+      case 'l':
+        load = folly::to<int64_t>(optarg);
+        hasLoad = true;
         break;
       default:
         usage(argv);
@@ -183,6 +193,15 @@ int main(int argc, char** argv) {
     gThriftServer->setTaskExpireTime(std::chrono::milliseconds(0));
     gThriftServer->setSocketMaxReadsPerEvent(4);
 
+    if (hasLoad) {
+      gThriftServer->setGetLoad([load](const std::string& counter) -> int64_t {
+        if (counter == "default") {
+          return ServerLoad::fromPercentLoad(load).raw();
+        }
+        return 0;
+      });
+    }
+
     // Register signal handler.
     folly::EventBase* evb =
         gThriftServer->getEventBaseManager()->getEventBase();
@@ -204,7 +223,7 @@ int main(int argc, char** argv) {
     // Now start ThriftServer
     gThriftServer->serve();
     LOG(INFO) << "Shutting down AsyncMcServer and ThriftServer.";
-    shutdown();
+    gThriftServer.reset();
   } catch (const std::exception& e) {
     LOG(ERROR) << e.what();
   }

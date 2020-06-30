@@ -858,32 +858,42 @@ class MockMemcachedThrift(MCProcess):
 
 
 class MockMemcachedDual(MCProcess):
-    def __init__(self, thriftPort=None, asyncPort=None):
+    def __init__(self, thriftPort=None, asyncPort=None, extra_args=None, mcrouterUseThrift=True):
         args = [McrouterGlobals.binPath('mockmcdual')]
-        listen_sock = None
         pass_fds = []
         if thriftPort is None:
-            self.listenSocketThrift = create_listen_socket()
-            thriftPort = self.listenSocketThrift.getsockname()[1]
-            sock_fd = self.listenSocketThrift.fileno()
+            listenSocketThrift = create_listen_socket()
+            thriftPort = listenSocketThrift.getsockname()[1]
+            sock_fd = listenSocketThrift.fileno()
             args.extend(['-t', str(sock_fd)])
             pass_fds.append(sock_fd)
         else:
             args.extend(['-p', str(thriftPort)])
+        self.thriftPort = thriftPort
+        self.mcrouterUseThrift = mcrouterUseThrift
 
         if asyncPort is None:
-            self.listenSocketAsyncMc = create_listen_socket()
-            asyncPort = self.listenSocketAsyncMc.getsockname()[1]
-            sock_fd = self.listenSocketAsyncMc.fileno()
+            listenSocketAsyncMc = create_listen_socket()
+            asyncPort = listenSocketAsyncMc.getsockname()[1]
+            sock_fd = listenSocketAsyncMc.fileno()
             args.extend(['-T', str(sock_fd)])
             pass_fds.append(sock_fd)
         else:
             args.extend(['-P', str(asyncPort)])
+        self.asyncPort = asyncPort
+
+        if extra_args:
+            args.extend(extra_args)
 
         MCProcess.__init__(self, args, asyncPort, pass_fds=pass_fds)
 
-        if listen_sock is not None:
-            listen_sock.close()
+        if listenSocketThrift is not None:
+            listenSocketThrift.close()
+        if listenSocketAsyncMc is not None:
+            listenSocketAsyncMc.close()
+
+    def getport(self):
+        return self.thriftPort if self.mcrouterUseThrift else self.asyncPort
 
 
 class Memcached(MCProcess):
