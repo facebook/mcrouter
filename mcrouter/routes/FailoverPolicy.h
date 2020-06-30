@@ -17,10 +17,14 @@
 
 #include "mcrouter/lib/Ch3HashFunc.h"
 #include "mcrouter/lib/HashSelector.h"
+#include "mcrouter/lib/RendezvousHashFunc.h"
+#include "mcrouter/lib/RendezvousHashHelper.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/lib/fbi/cpp/ParsingUtil.h"
+
+#include "mcrouter/routes/RendezvousRouteHelpers.h"
 
 namespace facebook {
 namespace memcache {
@@ -533,6 +537,163 @@ class FailoverDeterministicOrderPolicy {
   bool enableFailureDomains_{false};
   // map of index in children_ to it's failure Domain
   std::unordered_map<uint32_t, uint32_t> failureDomainMap_;
+};
+
+template <typename RouteHandleIf, typename RouterInfo>
+class FailoverRendezvousPolicy {
+ public:
+  static constexpr bool optimizeNoFailoverRouteCase = true;
+  using RouteHandlePtr = std::shared_ptr<RouteHandleIf>;
+
+  FailoverRendezvousPolicy(
+      const std::vector<std::shared_ptr<RouteHandleIf>>& children,
+      const folly::dynamic& json)
+      : children_(children),
+        hashFunc_(
+            getTags(json, children.size() - 1, "FailoverRendezvousPolicy")) {
+    checkLogic(
+        json.isObject(),
+        "Failover: FailoverRendezvousPolicy config is not an object");
+  }
+
+  class ChildProxy {
+   public:
+    ChildProxy(RouteHandlePtr child) : child_(child) {}
+
+    template <class Request>
+    ReplyT<Request> route(const Request& req, FailoverPolicyContext&) {
+      return child_->route(req);
+    }
+
+   private:
+    RouteHandlePtr child_;
+  };
+
+  class Iterator : public boost::iterator_facade<
+                       Iterator,
+                       ChildProxy,
+                       std::forward_iterator_tag,
+                       ChildProxy> {
+   public:
+    // A begin iterator.
+    template <class Request>
+    Iterator(const FailoverRendezvousPolicy& failoverPolicy, Request& req)
+        : policy_(failoverPolicy),
+          iter_(failoverPolicy.hashFunc_.begin(req.key_ref()->routingKey())) {}
+
+    // An end, empty iterator.
+    Iterator(const FailoverRendezvousPolicy& failoverPolicy)
+        : policy_(failoverPolicy),
+          iter_(failoverPolicy.hashFunc_.end()),
+          primaryIndex_(0) {}
+
+    size_t getTrueIndex() const {
+      CHECK(!iter_.empty());
+      // + 1 because element 0 isn't a host, but rather a route pool.
+      return primaryIndex_ < 0 ? 0 : *iter_ + 1;
+    }
+
+    Stats getStats() const {
+      return {0, 0, 0};
+    }
+
+    void setPassive() {}
+
+    void setFailedDomain(uint32_t) {}
+
+   private:
+    void increment() {
+      if (primaryIndex_ < 0) {
+        primaryIndex_ = mcrouter::fiber_local<RouterInfo>::getSelectedIndex();
+        if (primaryIndex_ < 0) {
+          primaryIndex_ = 0;
+        }
+      } else {
+        // Can't increment past end.
+        CHECK(!iter_.empty());
+        ++iter_;
+      }
+
+      if (!iter_.empty() && static_cast<int64_t>(*iter_) == primaryIndex_) {
+        ++iter_;
+      }
+
+      CHECK(iter_.empty() || static_cast<int64_t>(*iter_) != primaryIndex_);
+    }
+
+    bool equal(const Iterator& other) const {
+      if (primaryIndex_ < 0) {
+        return other.primaryIndex_ < 0;
+      } else {
+        return iter_ == other.iter_;
+      }
+    }
+
+    ChildProxy dereference() const {
+      return ChildProxy(policy_.children_[getTrueIndex()]);
+    }
+
+   private:
+    friend class boost::iterator_core_access;
+    const FailoverRendezvousPolicy& policy_;
+    RendezvousHashFunc::Iterator iter_;
+    // Child 0 is not one of the hosts, but rather a RoutePool.  We need to
+    // return that first, before returning actual hosts.  Also, the index of the
+    // primary isn't known when the Iterator is constructed; we need to wait for
+    // the first call to increment() to query it.
+    //
+    // This index is 0-based, i.e. if the primaryIndex_ is 2, we need to never
+    // return 3 from getTrueIndex().
+    int32_t primaryIndex_{-1};
+  };
+
+  template <class Request>
+  Iterator begin(Request& req) {
+    return Iterator(*this, req);
+  }
+
+  template <class Request>
+  Iterator end(Request&) {
+    return Iterator(*this);
+  }
+
+  template <class Request>
+  Iterator cbegin(Request& req) const {
+    return Iterator(*this, req);
+  }
+
+  template <class Request>
+  Iterator cend(Request&) const {
+    return Iterator(*this);
+  }
+
+  uint32_t maxErrorTries() const {
+    return std::numeric_limits<uint32_t>::max();
+  }
+
+  bool excludeError(const carbon::Result) const {
+    return false; // No exclusions from retry counts
+  }
+
+  template <class Request>
+  FailoverPolicyContext context(const Request&) const {
+    return FailoverPolicyContext();
+  }
+
+  // Returns the stat to increment when failover occurs.
+  stat_name_t getFailoverStat() const {
+    return failover_rendezvous_policy_stat;
+  }
+
+  // Returns the stat when all failover destinations are exhausted.
+  stat_name_t getFailoverFailedStat() const {
+    return failover_rendezvous_policy_failed_stat;
+  }
+
+ private:
+  const std::vector<RouteHandlePtr>& children_;
+  folly::dynamic config_;
+  RendezvousHashFunc hashFunc_;
 };
 
 template <typename RouteHandleIf>
