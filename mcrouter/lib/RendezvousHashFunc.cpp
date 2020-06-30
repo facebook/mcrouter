@@ -24,41 +24,23 @@ RendezvousHashFunc::RendezvousHashFunc(
 }
 
 size_t RendezvousHashFunc::operator()(folly::StringPiece key) const {
-  Iterator iter{endpointHashes_, key};
-  return *iter;
-}
-
-RendezvousHashFunc::Iterator::Iterator(
-    const std::vector<uint64_t>& hashes,
-    folly::StringPiece key)
-    : queue_(make_queue(hashes, key)) {}
-
-RendezvousHashFunc::Iterator& RendezvousHashFunc::Iterator::operator++() {
-  if (!queue_.empty()) {
-    queue_.pop();
-  }
-
-  return *this;
-}
-
-std::priority_queue<RendezvousHashFunc::Iterator::ScoreAndIndex>
-RendezvousHashFunc::Iterator::make_queue(
-    const std::vector<uint64_t>& endpointHashes,
-    const folly::StringPiece& key) {
-  std::vector<ScoreAndIndex> scores;
+  uint64_t maxScore = 0;
+  size_t maxScorePos = 0;
 
   const uint64_t keyHash =
       murmur_hash_64A(key.data(), key.size(), kRendezvousExtraHashSeed);
 
-  scores.reserve(endpointHashes.size());
-  for (size_t pos = 0; pos < endpointHashes.size(); ++pos) {
-    const uint64_t score = hash128to64(endpointHashes[pos], keyHash);
-    scores.emplace_back(ScoreAndIndex{score, pos});
+  size_t pos = 0;
+  for (const auto hash : endpointHashes_) {
+    const uint64_t score = hash128to64(hash, keyHash);
+    if (score > maxScore) {
+      maxScore = score;
+      maxScorePos = pos;
+    }
+    ++pos;
   }
 
-  return std::priority_queue<ScoreAndIndex>(
-      std::less<ScoreAndIndex>(), std::move(scores));
+  return maxScorePos;
 }
-
 } // namespace memcache
 } // namespace facebook

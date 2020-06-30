@@ -21,12 +21,14 @@ STUI(time, 0, 0)
 STUI(uptime, 0, 0)
 #undef GROUP
 
+
 /**
  * Standalone mcrouter stats (not applicable to libmcrouter)
  */
 #define GROUP ods_stats | detailed_stats
 STUI(num_client_connections, 0, 1)
 #undef GROUP
+
 
 /**
  * Stats related to connections to servers
@@ -82,6 +84,7 @@ STUI(num_fail_open_state_exited, 0, 1)
 STUI(retrans_closed_connections, 0, 1)
 #undef GROUP
 
+
 /**
  * OutstandingLimitRoute (OLR) queue-related stats, broken down by request type
  * (get-like and update-like).
@@ -110,6 +113,7 @@ STUI(retrans_per_kbyte_sum, 0, 0)
 STUI(retrans_num_total, 0, 0)
 #undef GROUP
 
+
 /**
  * Stats about the process
  */
@@ -126,6 +130,7 @@ STAT(ps_system_time_sec, stat_double, 0, .dbl = 0.0)
 STUI(ps_vsize, 0, 0)
 #undef GROUP
 
+
 /**
  * Stats about fibers
  */
@@ -134,6 +139,7 @@ STUI(fibers_allocated, 0, 0)
 STUI(fibers_pool_size, 0, 0)
 STUI(fibers_stack_high_watermark, 0, 0)
 #undef GROUP
+
 
 /**
  * Stats about routing
@@ -183,8 +189,6 @@ STUIR(failover_least_failures_policy, 0, 1)
 STUIR(failover_least_failures_policy_failed, 0, 1)
 STUIR(failover_deterministic_order_policy, 0, 1)
 STUIR(failover_deterministic_order_policy_failed, 0, 1)
-STUIR(failover_rendezvous_policy, 0, 1)
-STUIR(failover_rendezvous_policy_failed, 0, 1)
 STUIR(custom_policy_attempts, 0, 1)
 STUIR(failover_custom_policy, 0, 1)
 STUIR(failover_custom_policy_failed, 0, 1)
@@ -261,6 +265,7 @@ STUIR(result_deadline_exceeded_error, 0, 1)
 STUIR(result_deadline_exceeded_error_all, 0, 1)
 #undef GROUP
 
+
 /**
  * Stats about RPC (AsyncMcClient)
  */
@@ -315,6 +320,7 @@ STUIR(reply_traffic_after_compression, 0, 1)
 #define GROUP ods_stats | detailed_stats
 STAT(retrans_per_kbyte_avg, stat_double, 0, .dbl = 0.0)
 #undef GROUP
+
 
 /**
  * Stats about configuration

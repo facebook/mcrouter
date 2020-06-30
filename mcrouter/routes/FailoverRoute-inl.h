@@ -206,24 +206,6 @@ makeFailoverRouteWithFailoverErrorSettings(
           newFailoverPolicy,
           std::move(failoverErrors),
           std::forward<Args>(args)...);
-    } else if (parseString(*jPolicyType, "type") == "RendezvousPolicy") {
-      using FailoverPolicyT = FailoverRendezvousPolicy<
-          typename RouterInfo::RouteHandleIf,
-          RouterInfo>;
-      folly::dynamic newFailoverPolicy = *jFailoverPolicy;
-      if (auto jHash = json.get_ptr("tags")) {
-        newFailoverPolicy.insert("tags", *jHash);
-      }
-      return makeFailoverRouteWithPolicyAndFailoverError<
-          RouterInfo,
-          RouteHandle,
-          FailoverPolicyT,
-          FailoverErrorsSettingsT>(
-          json,
-          std::move(children),
-          newFailoverPolicy,
-          std::move(failoverErrors),
-          std::forward<Args>(args)...);
     }
   }
   using FailoverPolicyT =
