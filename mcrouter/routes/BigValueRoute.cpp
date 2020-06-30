@@ -54,9 +54,17 @@ McLeaseGetReply BigValueRoute::doLeaseGetRoute(
     const McLeaseGetRequest& req,
     size_t retriesLeft) const {
   auto initialReply = ch_->route(req);
-  if (!(*initialReply.flags_ref() & MC_MSG_FLAG_BIG_VALUE) ||
-      !isHitResult(*initialReply.result_ref())) {
+  bool isBigValue = ((*initialReply.flags_ref() & MC_MSG_FLAG_BIG_VALUE) != 0);
+  if (!isBigValue) {
     return initialReply;
+  }
+
+  if (!isHitResult(*initialReply.result_ref())) {
+    // if bigValue item, create a new reply with result, lease-token and return
+    // so that we don't send any meta data that may be present in initialReply
+    McLeaseGetReply reply(*initialReply.result_ref());
+    reply.leaseToken_ref() = *initialReply.leaseToken_ref();
+    return reply;
   }
 
   ChunksInfo chunksInfo(coalesceAndGetRange(initialReply.value_ref()));

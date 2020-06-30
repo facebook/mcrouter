@@ -106,9 +106,16 @@ typename std::enable_if<
     ReplyT<Request>>::type
 BigValueRoute::route(const Request& req) const {
   auto initialReply = ch_->route(req);
-  if (!isHitResult(*initialReply.result_ref()) ||
-      !(*initialReply.flags_ref() & MC_MSG_FLAG_BIG_VALUE)) {
+  bool isBigValue = ((*initialReply.flags_ref() & MC_MSG_FLAG_BIG_VALUE) != 0);
+  if (!isBigValue) {
     return initialReply;
+  }
+
+  if (!isHitResult(*initialReply.result_ref())) {
+    // if bigValue item, create a new reply with result and return
+    // so that we don't send any meta data that may be present in initialReply
+    ReplyT<Request> reply(*initialReply.result_ref());
+    return reply;
   }
 
   ChunksInfo chunksInfo(coalesceAndGetRange(initialReply.value_ref()));

@@ -74,3 +74,22 @@ class TestBigvalue(McrouterTestCase):
         reply = mcrouter.leaseGet('key')
         self.assertTrue(reply['token'] > 1)
         self.assertEqual(reply['value'], '')
+
+    def test_bigvalue_leases_delete_stale_value(self):
+        mcrouter = self.get_mcrouter()
+        value = 'a' * self.split_size + 'a'
+
+        # BigValueRoute will split 'value' into two pieces
+        mcrouter.set('key', '1-2-1234', flags=MC_MSG_FLAG_BIG_VALUE)  # metadata
+        mcrouter.set('key:0:1234', value[:self.split_size])  # subpiece 1
+        mcrouter.set('key:1:1234', value[self.split_size:])  # subpiece 2
+
+        # Check that our manual imitation of BigValueRoute worked
+        self.assertEqual(mcrouter.get('key'), value)
+
+        # Ensure a usable lease token is returned when the metadata is present
+        # but value is empty when the item is deleted
+        self.assertTrue(mcrouter.delete('key'))
+        reply = mcrouter.leaseGet('key')
+        self.assertTrue(reply['token'] > 1)
+        self.assertEqual(reply['value'], '')
