@@ -13,7 +13,7 @@
 #include <folly/io/async/EventBase.h>
 
 #include <thrift/lib/cpp2/server/ThriftServer.h>
-#include <thrift/lib/cpp2/transport/rsocket/server/RSRoutingHandler.h>
+
 #include "mcrouter/CarbonRouterClient.h"
 #include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
@@ -463,8 +463,6 @@ bool runServerDual(
     // AsyncMcServer
     thriftServer->setIdleServerTimeout(std::chrono::milliseconds(0));
     thriftServer->setSSLHandshakeTimeout(std::chrono::milliseconds(0));
-    thriftServer->addRoutingHandler(
-        std::make_unique<apache::thrift::RSRoutingHandler>());
 
     initStandaloneSSLDualServer(standaloneOpts, thriftServer);
     thriftServer->watchTicketPathForChanges(
