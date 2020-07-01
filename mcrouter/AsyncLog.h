@@ -48,6 +48,6 @@ class AsyncLog {
    */
   bool openFile();
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

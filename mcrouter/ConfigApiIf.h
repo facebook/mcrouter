@@ -24,6 +24,6 @@ class ConfigApiIf {
 
   virtual ~ConfigApiIf() = default;
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

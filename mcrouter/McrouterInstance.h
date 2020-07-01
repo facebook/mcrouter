@@ -16,6 +16,6 @@ namespace mcrouter {
 
 using McrouterInstance = CarbonRouterInstance<MemcacheRouterInfo>;
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

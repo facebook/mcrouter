@@ -25,6 +25,6 @@ CarbonRouterClientBase::CarbonRouterClientBase(
     counting_sem_init(&outstandingReqsSem_, maxOutstanding_);
   }
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

@@ -19,6 +19,6 @@ class McrouterClient {
   using Pointer = typename CarbonRouterClient<MemcacheRouterInfo>::Pointer;
 };
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

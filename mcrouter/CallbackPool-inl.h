@@ -70,6 +70,6 @@ typename CallbackPool<Args...>::CallbackHandle CallbackPool<Args...>::subscribe(
   return std::unique_ptr<CallbackHandleImpl>(
       new CallbackHandleImpl(data_, std::move(callback)));
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

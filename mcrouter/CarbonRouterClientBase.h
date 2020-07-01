@@ -64,6 +64,6 @@ class CarbonRouterClientBase {
   counting_sem_t outstandingReqsSem_;
 };
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

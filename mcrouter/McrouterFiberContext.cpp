@@ -24,6 +24,6 @@ const char* RequestClass::toString() const {
   }
   return "normal";
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

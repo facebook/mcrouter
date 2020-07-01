@@ -81,6 +81,6 @@ class McrouterLogger {
    */
   void logStartupOptions();
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

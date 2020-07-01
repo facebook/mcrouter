@@ -33,6 +33,6 @@ class RuntimeVarsData {
  private:
   std::unordered_map<std::string, folly::dynamic> configData_;
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

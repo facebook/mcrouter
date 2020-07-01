@@ -65,6 +65,6 @@ class RoutingPrefix {
   void initFromPrefix();
   void initFromPrefixUnsafe();
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

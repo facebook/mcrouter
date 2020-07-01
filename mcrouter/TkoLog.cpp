@@ -30,6 +30,6 @@ std::string TkoLog::eventName() const {
       return "unknown";
   }
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

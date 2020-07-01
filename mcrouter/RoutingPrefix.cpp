@@ -84,6 +84,6 @@ void RoutingPrefix::initFromPrefixUnsafe() {
   cluster_.assign(
       prefix_.data() + splitPos + 1, prefix_.data() + prefix_.size() - 1);
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

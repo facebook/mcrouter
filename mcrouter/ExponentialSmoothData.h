@@ -37,6 +37,6 @@ class ExponentialSmoothData {
  private:
   double currentValue_{std::nan("")};
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

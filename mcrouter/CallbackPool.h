@@ -59,8 +59,8 @@ class CallbackPool {
  private:
   std::shared_ptr<Data> data_;
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 #include "CallbackPool-inl.h"

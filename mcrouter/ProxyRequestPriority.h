@@ -17,6 +17,6 @@ enum class ProxyRequestPriority : uint8_t {
   kNumPriorities = 2,
 };
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

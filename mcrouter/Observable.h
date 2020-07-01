@@ -84,8 +84,8 @@ class Observable {
 
   folly::SharedMutex dataLock_;
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 #include "Observable-inl.h"

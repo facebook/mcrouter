@@ -53,6 +53,6 @@ ProxyConfigBuilder::ProxyConfigBuilder(
 
   configMd5Digest_ = Md5Hash(jsonC);
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

@@ -130,6 +130,6 @@ FileObserverHandle startObservingFile(
   return handle;
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

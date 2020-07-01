@@ -176,8 +176,8 @@ class ProxyBase {
 
   friend class ProxyRequestContext;
 };
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 #include "ProxyBase-inl.h"

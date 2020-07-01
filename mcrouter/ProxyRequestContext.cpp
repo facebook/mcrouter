@@ -68,14 +68,13 @@ ProxyRequestContext::ProxyRequestContext(
     ClientCallback clientCallback,
     ShardSplitCallback shardSplitCallback)
     /* pr.nextRequestId() is not threadsafe */
-    : proxyBase_(pr),
-      recording_(true) {
+    : proxyBase_(pr), recording_(true) {
   new (&recordingState_)
       std::unique_ptr<RecordingState>(std::make_unique<RecordingState>());
   recordingState_->clientCallback = std::move(clientCallback);
   recordingState_->shardSplitCallback = std::move(shardSplitCallback);
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

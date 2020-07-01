@@ -27,6 +27,6 @@ struct awriter_entry_t {
   const awriter_callbacks_t* callbacks;
 };
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

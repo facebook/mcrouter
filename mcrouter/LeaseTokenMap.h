@@ -20,7 +20,7 @@
 
 namespace folly {
 class AsyncTimeout;
-} // folly
+} // namespace folly
 
 namespace facebook {
 namespace memcache {
@@ -147,6 +147,6 @@ class LeaseTokenMap {
   void tokenCleanupTimeout();
 };
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

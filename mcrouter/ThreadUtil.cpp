@@ -28,6 +28,6 @@ void mcrouterSetThisThreadName(
     LOG(WARNING) << "Unable to set thread name to " << name;
   }
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

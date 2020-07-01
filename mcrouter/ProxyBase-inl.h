@@ -42,6 +42,6 @@ ProxyBase::ProxyBase(
   statsContainer_ = std::make_unique<ProxyStatsContainer>(*this);
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

@@ -46,6 +46,6 @@ std::string getClientDebugFifoFullPath(const McrouterOptions& opts) {
 std::string getServerDebugFifoFullPath(const McrouterOptions& opts) {
   return getDebugFifoFullPath(opts, "server");
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

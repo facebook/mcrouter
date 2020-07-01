@@ -97,6 +97,6 @@ class AsyncWriter {
  */
 bool awriter_queue(AsyncWriter* w, awriter_entry_t* e);
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

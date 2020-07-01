@@ -43,7 +43,7 @@ bool getOptionsFromFlavor(
   return true;
 }
 
-} // detail
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace detail
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

@@ -129,6 +129,6 @@ bool FileDataProvider::hasUpdate() {
   }
   return false;
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

@@ -41,6 +41,6 @@ FileObserverHandle startObservingFile(
     std::chrono::milliseconds pollPeriod,
     std::chrono::milliseconds sleepBeforeUpdateMs,
     std::function<void(std::string)> onUpdate);
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

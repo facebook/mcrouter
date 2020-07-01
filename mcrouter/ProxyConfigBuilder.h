@@ -51,6 +51,6 @@ class ProxyConfigBuilder {
   std::unique_ptr<PoolFactory> poolFactory_;
   std::string configMd5Digest_;
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

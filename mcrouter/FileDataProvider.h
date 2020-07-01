@@ -56,6 +56,6 @@ class FileDataProvider {
    */
   void updateInotifyWatch();
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

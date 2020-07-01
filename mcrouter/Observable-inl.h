@@ -63,6 +63,6 @@ template <typename... Args>
 void Observable<Data>::emplace(Args&&... args) {
   set(Data(std::forward<Args>(args)...));
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

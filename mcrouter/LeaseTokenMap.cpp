@@ -31,7 +31,7 @@ std::string leaseTokenTimeoutFunctionName() {
       "carbon-lease-token-timeout-", uniqueId.fetch_add(1));
 }
 
-} // anonymous
+} // namespace
 
 LeaseTokenMap::LeaseTokenMap(
     const std::shared_ptr<folly::FunctionScheduler>& functionScheduler,
@@ -129,6 +129,6 @@ bool LeaseTokenMap::conflicts(uint64_t originalToken) {
   return hasMagic(originalToken);
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

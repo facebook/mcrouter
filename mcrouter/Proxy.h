@@ -40,7 +40,7 @@
 namespace folly {
 struct dynamic;
 class File;
-} // folly
+} // namespace folly
 
 namespace facebook {
 namespace memcache {

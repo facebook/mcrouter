@@ -282,6 +282,6 @@ bool AsyncLog::writeDelete(
   return true;
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

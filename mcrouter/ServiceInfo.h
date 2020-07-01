@@ -45,8 +45,8 @@ class ServiceInfo {
   std::unique_ptr<ServiceInfoImpl> impl_;
 };
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 #include "ServiceInfo-inl.h"

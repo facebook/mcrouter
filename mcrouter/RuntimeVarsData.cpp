@@ -33,6 +33,6 @@ folly::dynamic RuntimeVarsData::getVariableByName(
   }
   return value->second;
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
