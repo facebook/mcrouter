@@ -96,8 +96,10 @@ void CarbonProtocolReader::skip(const FieldType ft) {
       skipKVContainer();
       break;
     }
-    default: { break; }
+    default: {
+      break;
+    }
   }
 }
 
-} // carbon
+} // namespace carbon

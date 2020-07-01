@@ -31,6 +31,6 @@ uint64_t getCpuCycles() noexcept {
 #endif
 }
 
-} // cycles
-} // memcache
-} // facebook
+} // namespace cycles
+} // namespace memcache
+} // namespace facebook

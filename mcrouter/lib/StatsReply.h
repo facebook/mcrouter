@@ -30,5 +30,5 @@ class StatsReply {
  private:
   std::vector<std::pair<std::string, std::string>> stats_;
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

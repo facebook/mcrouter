@@ -342,5 +342,5 @@ class MessageQueue {
 template <class T>
 constexpr int64_t MessageQueue<T>::kWakeupEveryMs;
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

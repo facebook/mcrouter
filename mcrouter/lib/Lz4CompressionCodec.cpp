@@ -97,6 +97,6 @@ std::unique_ptr<folly::IOBuf> Lz4CompressionCodec::uncompress(
   return buffer;
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
 #endif // FOLLY_HAVE_LIBLZ4 && !defined(DISABLE_COMPRESSION)

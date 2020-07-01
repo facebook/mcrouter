@@ -156,5 +156,5 @@ std::unique_ptr<CompressionCodec> createCompressionCodec(
   return nullptr;
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

@@ -170,6 +170,6 @@ bool parse_json_options(
 
   return true;
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

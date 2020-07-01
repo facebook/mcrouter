@@ -103,6 +103,6 @@ std::unique_ptr<folly::IOBuf> ZstdCompressionCodec::uncompress(
   return buffer;
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
 #endif // FOLLY_HAVE_LIBZSTD && !defined(DISABLE_COMPRESSION)

@@ -35,5 +35,5 @@ std::unique_ptr<folly::IOBuf> Lz4ImmutableCompressionCodec::uncompress(
   return codec_.decompress(iov, iovcnt, uncompressedSize);
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

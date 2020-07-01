@@ -152,5 +152,5 @@ void CmdLineClient::sendRequests(
   }
 }
 
-} // tools
-} // carbon
+} // namespace tools
+} // namespace carbon

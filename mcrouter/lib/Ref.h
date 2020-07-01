@@ -142,5 +142,5 @@ class Ref {
 
   explicit Ref(T* ref) noexcept : ref_(ref) {}
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

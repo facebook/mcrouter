@@ -69,4 +69,4 @@ struct FindByKey<K, List<KV1, KVs...>> {
       typename FindByKey<K, List<KVs...>>::type>::type;
 };
 
-} // carbon
+} // namespace carbon

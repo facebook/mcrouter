@@ -14,4 +14,4 @@ namespace detail {
 
 constexpr size_t kDefaultStackSize = 16;
 }
-} // carbon::detail
+} // namespace carbon

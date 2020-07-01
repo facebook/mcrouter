@@ -33,6 +33,6 @@ class AuxiliaryCPUThreadPool {
 using AuxiliaryCPUThreadPoolSingleton =
     folly::Singleton<AuxiliaryCPUThreadPool>;
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

@@ -195,5 +195,5 @@ std::unique_ptr<CompressionCodec> createCompressionCodec(
     FilteringOptions codecFilteringOptions = FilteringOptions(),
     uint32_t codecCompressionLevel = 1);
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

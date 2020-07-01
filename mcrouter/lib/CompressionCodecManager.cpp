@@ -178,5 +178,5 @@ CompressionCodec* CompressionCodecMap::getBest(
 uint32_t CompressionCodecMap::index(uint32_t id) const noexcept {
   return id - firstId_;
 }
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

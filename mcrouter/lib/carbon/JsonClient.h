@@ -139,6 +139,6 @@ class JsonClient {
   void onError(const std::string& msg) const;
 };
 
-} // carbon
+} // namespace carbon
 
 #include "JsonClient-inl.h"

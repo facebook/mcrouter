@@ -174,5 +174,5 @@ class CompressionCodecMap {
 
   friend class CompressionCodecManager;
 };
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

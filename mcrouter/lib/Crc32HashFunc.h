@@ -14,7 +14,7 @@
 
 namespace folly {
 struct dynamic;
-} // folly
+} // namespace folly
 
 namespace facebook {
 namespace memcache {
@@ -39,5 +39,5 @@ class Crc32HashFunc {
  private:
   size_t n_;
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

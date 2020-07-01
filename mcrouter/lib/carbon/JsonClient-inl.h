@@ -25,7 +25,7 @@ bool JsonClient::sendRequest(
     folly::dynamic& replyJson) {
   bool hasErrors = false;
   auto onParsingError = [this, &hasErrors](
-      folly::StringPiece field, folly::StringPiece msg) {
+                            folly::StringPiece field, folly::StringPiece msg) {
     hasErrors = true;
     onError(folly::to<std::string>(field, ": ", msg));
   };
@@ -40,7 +40,7 @@ bool JsonClient::sendRequest(
   facebook::memcache::ReplyT<Request> reply;
   bool replyReceived = false;
   fiberManager_.addTask(
-      [ this, request = std::move(request), &replyReceived, &reply ]() {
+      [this, request = std::move(request), &replyReceived, &reply]() {
         reply = client_.sendSync(
             std::move(request),
             std::chrono::milliseconds(options().serverTimeoutMs));
@@ -55,4 +55,4 @@ bool JsonClient::sendRequest(
   return true;
 }
 
-} // carbon
+} // namespace carbon

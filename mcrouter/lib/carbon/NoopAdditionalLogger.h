@@ -13,9 +13,9 @@ namespace memcache {
 namespace mcrouter {
 class ProxyRequestContext;
 struct RequestLoggerContext;
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 namespace carbon {
 
@@ -36,4 +36,4 @@ class NoopAdditionalLogger {
       const facebook::memcache::mcrouter::RequestLoggerContext&) {}
 };
 
-} // carbon
+} // namespace carbon

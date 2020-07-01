@@ -46,6 +46,6 @@ class Lz4CompressionCodec : public CompressionCodec {
   std::unique_ptr<LZ4_stream_t, Deleter> lz4Stream_;
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
 #endif // FOLLY_HAVE_LIBLZ4 && !defined(DISABLE_COMPRESSION)

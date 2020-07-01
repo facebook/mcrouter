@@ -33,5 +33,5 @@ class Lz4ImmutableCompressionCodec : public CompressionCodec {
   Lz4Immutable codec_;
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

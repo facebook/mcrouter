@@ -36,5 +36,5 @@ inline int64_t unzigzag(const uint64_t i) {
   return (i >> 1) ^ -(i & 1);
 }
 
-} // util
-} // carbon
+} // namespace util
+} // namespace carbon

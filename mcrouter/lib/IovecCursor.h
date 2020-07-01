@@ -137,7 +137,7 @@ class IovecCursor {
   size_t computeTotalLength() const;
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
 
 #include "IovecCursor-inl.h"

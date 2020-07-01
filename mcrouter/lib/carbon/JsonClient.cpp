@@ -67,4 +67,4 @@ void JsonClient::onError(const std::string& msg) const {
   }
 }
 
-} // carbon
+} // namespace carbon

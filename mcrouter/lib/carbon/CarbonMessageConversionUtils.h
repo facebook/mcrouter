@@ -67,6 +67,6 @@ void convertFromFollyDynamic(
     std::function<void(folly::StringPiece fieldName, folly::StringPiece msg)>
         onError = nullptr);
 
-} // carbon
+} // namespace carbon
 
 #include "CarbonMessageConversionUtils-inl.h"

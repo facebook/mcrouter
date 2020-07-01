@@ -60,5 +60,5 @@ void Notifier::maybeUpdatePeriod() noexcept {
   }
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

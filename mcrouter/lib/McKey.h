@@ -55,5 +55,5 @@ constexpr size_t numDigitsBase10(uint64_t n) {
 } // namespace detail
 } // namespace mcrouter
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

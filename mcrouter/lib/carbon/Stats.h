@@ -180,4 +180,4 @@ constexpr std::
     array<folly::StringPiece, Stats<RouterInfo>::RateStats::kNumStats>
         Stats<RouterInfo>::RateStats::kStatNames;
 
-} // carbon
+} // namespace carbon

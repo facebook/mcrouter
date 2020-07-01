@@ -107,5 +107,5 @@ size_t IovecCursor::computeTotalLength() const {
   return computeTotalLength(iov_, iovLength_);
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

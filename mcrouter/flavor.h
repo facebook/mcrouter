@@ -12,7 +12,7 @@
 
 namespace folly {
 struct dynamic;
-} // folly
+} // namespace folly
 
 namespace facebook {
 namespace memcache {
@@ -52,6 +52,6 @@ bool parse_json_options(
     const folly::dynamic& json,
     const std::string& field_name,
     std::unordered_map<std::string, std::string>& opts);
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

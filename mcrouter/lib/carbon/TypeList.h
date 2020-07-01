@@ -45,6 +45,6 @@ struct FindByPairFirst;
 template <int K, class L>
 struct FindByKey;
 
-} // carbon
+} // namespace carbon
 
 #include "TypeList-inl.h"

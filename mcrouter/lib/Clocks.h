@@ -25,6 +25,6 @@ namespace cycles {
  */
 uint64_t getCpuCycles() noexcept;
 
-} // cycles
-} // memcache
-} // facebook
+} // namespace cycles
+} // namespace memcache
+} // namespace facebook

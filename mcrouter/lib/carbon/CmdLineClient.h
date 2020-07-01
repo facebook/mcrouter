@@ -61,7 +61,7 @@ class CmdLineClient {
       const std::string& data);
 };
 
-} // tools
-} // carbon
+} // namespace tools
+} // namespace carbon
 
 #include "CmdLineClient-inl.h"

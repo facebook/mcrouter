@@ -69,5 +69,5 @@ class CacheClientStats {
       lock_;
   CacheClientCounters counters_;
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

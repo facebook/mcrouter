@@ -560,5 +560,5 @@ std::unique_ptr<folly::IOBuf> Lz4Immutable::decompress(
   return destination;
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

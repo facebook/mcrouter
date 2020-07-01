@@ -16,7 +16,7 @@ constexpr size_t kNumCPUThreads = 5;
 
 namespace {
 folly::Singleton<AuxiliaryCPUThreadPool> gAuxiliaryCPUThreadPool;
-} // anonymous
+} // namespace
 
 folly::CPUThreadPoolExecutor& AuxiliaryCPUThreadPool::getThreadPool() {
   folly::call_once(initFlag_, [&] {
@@ -28,6 +28,6 @@ folly::CPUThreadPoolExecutor& AuxiliaryCPUThreadPool::getThreadPool() {
   return *threadPool_;
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

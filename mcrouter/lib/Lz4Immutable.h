@@ -119,5 +119,5 @@ class Lz4Immutable {
   const Lz4ImmutableState state_;
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

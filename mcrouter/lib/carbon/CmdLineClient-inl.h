@@ -21,5 +21,5 @@ void CmdLineClient::sendRequests(int argc, const char** argv) {
   sendRequests(jsonClient, settings.requestName, settings.data);
 }
 
-} // tools
-} // carbon
+} // namespace tools
+} // namespace carbon

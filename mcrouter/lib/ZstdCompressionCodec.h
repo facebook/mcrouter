@@ -47,6 +47,6 @@ class ZstdCompressionCodec : public CompressionCodec {
   UPtr<ZSTD_DDict> zstdDDict_;
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
 #endif // FOLLY_HAVE_LIBZSTD && !defined(DISABLE_COMPRESSION)

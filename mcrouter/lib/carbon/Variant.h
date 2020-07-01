@@ -190,9 +190,9 @@ template <class... Ts>
 struct VariantFromList<List<Ts...>> {
   using type = Variant<Ts...>;
 };
-} // detail
+} // namespace detail
 
 template <class TList>
 using makeVariantFromList = typename detail::VariantFromList<TList>::type;
 
-} // carbon
+} // namespace carbon

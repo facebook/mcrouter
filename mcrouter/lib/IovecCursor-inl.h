@@ -38,5 +38,5 @@ T IovecCursor::read() {
   return val;
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

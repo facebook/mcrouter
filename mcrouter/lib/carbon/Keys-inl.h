@@ -73,4 +73,4 @@ void Keys<Storage>::update() {
   routingKeyHash_ = 0;
 }
 
-} // carbon
+} // namespace carbon
