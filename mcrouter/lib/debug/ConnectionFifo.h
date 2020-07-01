@@ -71,5 +71,5 @@ class ConnectionFifo {
   uint32_t nextPacketId_{0};
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

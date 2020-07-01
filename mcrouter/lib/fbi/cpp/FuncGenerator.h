@@ -112,5 +112,5 @@ FuncGenerator<typename std::remove_reference<Func>::type> makeFuncGenerator(
     size_t n) {
   return {std::forward<Func>(f), n};
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

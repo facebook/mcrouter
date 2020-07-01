@@ -29,5 +29,5 @@ class ImportResolverIf {
 
   virtual ~ImportResolverIf() {}
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

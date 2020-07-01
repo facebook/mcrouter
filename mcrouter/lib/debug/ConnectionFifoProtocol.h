@@ -160,5 +160,5 @@ static_assert(
     "sizeof(PacketHeader) + sizeof(MessageHeader) "
     "must be smaller than PIPE_BUF.");
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

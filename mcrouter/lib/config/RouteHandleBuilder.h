@@ -34,5 +34,5 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeRouteHandleWithInfo(
       R<RouterInfo, RArgs...>>>(std::forward<Args>(args)...);
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

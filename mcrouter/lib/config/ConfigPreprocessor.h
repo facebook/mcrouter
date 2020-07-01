@@ -141,5 +141,5 @@ class ConfigPreprocessor {
 
   void addConst(folly::StringPiece name, folly::dynamic result);
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

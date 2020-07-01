@@ -53,7 +53,7 @@ class DuplicateRoute {
     std::vector<std::function<Reply()>> funcs;
     funcs.reserve(numCopies_);
     for (size_t i = 0; i < numCopies_; ++i) {
-      funcs.push_back([&req, child = child_ ]() { return child->route(req); });
+      funcs.push_back([&req, child = child_]() { return child->route(req); });
     }
     auto taskIt = folly::fibers::addTasks(funcs.begin(), funcs.end());
 
@@ -97,4 +97,4 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeDuplicateRoute(
           std::move(target), numCopies);
 }
 
-} // hellogoodbye
+} // namespace hellogoodbye

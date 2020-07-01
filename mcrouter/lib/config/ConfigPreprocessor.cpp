@@ -24,8 +24,8 @@
 #include "mcrouter/lib/fbi/network.h"
 
 using folly::dynamic;
-using folly::json::stripComments;
 using folly::StringPiece;
+using folly::json::stripComments;
 using std::string;
 using std::vector;
 
@@ -160,7 +160,7 @@ size_t unescapeUntil(StringPiece from, string& to, char c) {
   return string::npos;
 }
 
-} // anonymous
+} // namespace
 
 ///////////////////////////////Macro////////////////////////////////////////////
 
@@ -2112,5 +2112,5 @@ dynamic ConfigPreprocessor::getConfigWithoutMacros(
   return prep.expandMacros(std::move(config), Context(prep));
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

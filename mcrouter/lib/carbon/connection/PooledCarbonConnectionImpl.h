@@ -86,4 +86,4 @@ class PooledCarbonConnectionImpl {
   std::vector<std::unique_ptr<If>> connections_;
   bool splitBatchedRequests_;
 };
-} // carbon
+} // namespace carbon

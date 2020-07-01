@@ -30,4 +30,4 @@ class CarbonConnectionException : public std::runtime_error {
 template <class Request>
 using RequestCb =
     std::function<void(const Request&, facebook::memcache::ReplyT<Request>&&)>;
-} // carbon
+} // namespace carbon

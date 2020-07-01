@@ -127,5 +127,5 @@ bool Fifo::write(const struct iovec* iov, size_t iovcnt) noexcept {
   return true;
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

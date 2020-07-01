@@ -64,7 +64,7 @@ class ThreadInfo {
   std::unordered_set<std::shared_ptr<Client>> clients_;
 };
 
-} // detail
+} // namespace detail
 
 class ExternalCarbonConnectionImpl::Impl {
  public:
@@ -91,7 +91,7 @@ class ExternalCarbonConnectionImpl::Impl {
     }
 
     threadInfo->addTaskRemote(
-        [ clientWeak = client_, &req, f = std::forward<F>(f) ]() mutable {
+        [clientWeak = client_, &req, f = std::forward<F>(f)]() mutable {
           auto cl = clientWeak.lock();
           if (!cl) {
             folly::fibers::runInMainContext([&req,
@@ -104,7 +104,7 @@ class ExternalCarbonConnectionImpl::Impl {
 
           auto reply = cl->sendRequest(req);
           folly::fibers::runInMainContext(
-              [&req, f = std::forward<F>(f), &reply ]() mutable {
+              [&req, f = std::forward<F>(f), &reply]() mutable {
                 f(req, std::move(reply));
               });
         });
@@ -139,40 +139,44 @@ class ExternalCarbonConnectionImpl::Impl {
         break;
       }
 
-      threadInfo->addTaskRemote(
-          [ clientWeak = client_, ctx, i, num, f ]() mutable {
-            auto client = clientWeak.lock();
-            if (!client) {
-              folly::fibers::runInMainContext([&ctx, i, num, &f]() mutable {
-                for (size_t cnt = 0; cnt < num; ++cnt, ++i) {
-                  f((*ctx)[i].get(),
-                    facebook::memcache::ReplyT<Request>(
-                        carbon::Result::UNKNOWN));
-                }
-              });
-              return;
+      threadInfo->addTaskRemote([clientWeak = client_,
+                                 ctx,
+                                 i,
+                                 num,
+                                 f]() mutable {
+        auto client = clientWeak.lock();
+        if (!client) {
+          folly::fibers::runInMainContext([&ctx, i, num, &f]() mutable {
+            for (size_t cnt = 0; cnt < num; ++cnt, ++i) {
+              f((*ctx)[i].get(),
+                facebook::memcache::ReplyT<Request>(carbon::Result::UNKNOWN));
             }
-
-            for (size_t cnt = 0; cnt + 1 < num; ++cnt, ++i) {
-              const Request& req = (*ctx)[i];
-              folly::fibers::addTaskFinally(
-                  [clientWeak, &req] {
-                    if (auto c = clientWeak.lock()) {
-                      return c->sendRequest(req);
-                    }
-                    return facebook::memcache::ReplyT<Request>(
-                        carbon::Result::UNKNOWN);
-                  },
-                  [f, &req](folly::Try<facebook::memcache::ReplyT<Request>>&&
-                                r) mutable { f(req, std::move(r.value())); });
-            }
-
-            // Send last request in a batch on this fiber.
-            const auto& req = (*ctx)[i].get();
-            auto reply = client->sendRequest(req);
-            folly::fibers::runInMainContext(
-                [&req, &f, &reply]() mutable { f(req, std::move(reply)); });
           });
+          return;
+        }
+
+        for (size_t cnt = 0; cnt + 1 < num; ++cnt, ++i) {
+          const Request& req = (*ctx)[i];
+          folly::fibers::addTaskFinally(
+              [clientWeak, &req] {
+                if (auto c = clientWeak.lock()) {
+                  return c->sendRequest(req);
+                }
+                return facebook::memcache::ReplyT<Request>(
+                    carbon::Result::UNKNOWN);
+              },
+              [f, &req](
+                  folly::Try<facebook::memcache::ReplyT<Request>>&& r) mutable {
+                f(req, std::move(r.value()));
+              });
+        }
+
+        // Send last request in a batch on this fiber.
+        const auto& req = (*ctx)[i].get();
+        auto reply = client->sendRequest(req);
+        folly::fibers::runInMainContext(
+            [&req, &f, &reply]() mutable { f(req, std::move(reply)); });
+      });
 
       i += num;
     }
@@ -207,4 +211,4 @@ void ExternalCarbonConnectionImpl::sendRequestMulti(
   }
 }
 
-} // carbon
+} // namespace carbon

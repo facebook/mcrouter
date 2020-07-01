@@ -292,5 +292,5 @@ bool ConnectionFifo::writeData(
   return true;
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

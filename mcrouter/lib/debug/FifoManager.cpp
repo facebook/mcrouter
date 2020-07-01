@@ -105,5 +105,5 @@ void FifoManager::clear() {
   return folly::Singleton<FifoManager>::try_get();
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

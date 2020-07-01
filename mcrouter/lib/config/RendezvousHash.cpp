@@ -153,5 +153,5 @@ uint64_t RendezvousHash::computeHash(folly::StringPiece key) const {
 uint64_t RendezvousHash::computeHash(uint64_t i) const {
   return folly::hash::twang_mix64(i);
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

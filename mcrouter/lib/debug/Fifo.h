@@ -86,5 +86,5 @@ class Fifo {
   friend class FifoManager;
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

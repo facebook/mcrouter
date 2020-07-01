@@ -69,6 +69,6 @@ class ExternalCarbonConnectionImpl {
   class Impl;
   std::unique_ptr<Impl> impl_;
 };
-} // carbon
+} // namespace carbon
 
 #include "ExternalCarbonConnectionImpl-inl.h"

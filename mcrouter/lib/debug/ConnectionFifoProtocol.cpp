@@ -80,5 +80,5 @@ folly::SocketAddress MessageHeader::getPeerAddress() {
   }
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
