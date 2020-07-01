@@ -96,6 +96,6 @@ namespace options {
  */
 std::string substituteTemplates(std::string str);
 
-} // facebook::memcache::options
-}
-} // facebook::memcache
+} // namespace options
+} // namespace memcache
+} // namespace facebook

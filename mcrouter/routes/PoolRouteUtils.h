@@ -103,6 +103,6 @@ std::vector<typename RouterInfo::RouteHandlePtr> wrapPoolDestinations(
   }
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

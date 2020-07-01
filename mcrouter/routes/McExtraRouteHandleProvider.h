@@ -41,8 +41,8 @@ class McExtraRouteHandleProvider
 
   ~McExtraRouteHandleProvider() override {}
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 #include "McExtraRouteHandleProvider-inl.h"

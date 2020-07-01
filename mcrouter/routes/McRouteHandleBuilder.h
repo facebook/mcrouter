@@ -32,6 +32,6 @@ McrouterRouteHandlePtr makeMcrouterRouteHandleWithInfo(Args&&... args) {
       std::forward<Args>(args)...);
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

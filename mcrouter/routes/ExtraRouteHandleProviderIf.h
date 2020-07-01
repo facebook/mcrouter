@@ -45,6 +45,6 @@ class ExtraRouteHandleProviderIf {
 
   virtual ~ExtraRouteHandleProviderIf() {}
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

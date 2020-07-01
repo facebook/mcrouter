@@ -401,6 +401,6 @@ TEST(Lz4ImmutableCompressionCodec, uncompressChained) {
       CompressionCodecType::LZ4Immutable, getAsciiDictionary(), 1);
   testUncompressChained(compressor.get(), *getAsciiReply(), 3);
 }
-}
-}
-} // facebook::memcache::test
+} // namespace test
+} // namespace memcache
+} // namespace facebook

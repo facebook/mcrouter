@@ -35,7 +35,7 @@ typename RouterInfo::RouteHandlePtr makeRandomRoute(
       std::move(rh));
 }
 
-} // detail
+} // namespace detail
 
 template <class RouterInfo>
 typename RouterInfo::RouteHandlePtr makeRandomRoute(
@@ -51,6 +51,6 @@ typename RouterInfo::RouteHandlePtr makeRandomRoute(
   }
   return detail::makeRandomRoute<RouterInfo>(std::move(children));
 }
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

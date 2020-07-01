@@ -37,10 +37,10 @@ folly::TokenBucket tbFromJson(const folly::dynamic& json) {
   return {rate, burst, /* allow `burst` requests at time 0 */ -1e6};
 }
 
-} // anonymous
+} // namespace
 
 FailoverRateLimiter::FailoverRateLimiter(const folly::dynamic& json)
     : tb_(tbFromJson(json)) {}
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

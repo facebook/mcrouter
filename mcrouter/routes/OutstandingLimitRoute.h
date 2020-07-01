@@ -170,6 +170,6 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeOutstandingLimitRoute(
       std::move(normalRoute), maxOutstanding);
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

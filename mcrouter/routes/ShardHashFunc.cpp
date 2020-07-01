@@ -64,6 +64,6 @@ bool ConstShardHashFunc::shardLookup(folly::StringPiece key, size_t* result)
   *result = index;
   return true;
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

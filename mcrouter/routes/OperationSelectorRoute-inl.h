@@ -31,7 +31,7 @@ typename RouterInfo::RouteHandlePtr makeOperationSelectorRoute(
       std::move(operationPolicies), std::move(defaultPolicy));
 }
 
-} // detail
+} // namespace detail
 
 template <class RouterInfo>
 typename RouterInfo::RouteHandlePtr makeOperationSelectorRoute(
@@ -90,6 +90,6 @@ typename RouterInfo::RouteHandlePtr makeOperationSelectorRoute(
   return defaultPolicy;
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

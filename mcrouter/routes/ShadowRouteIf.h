@@ -26,6 +26,6 @@ using ShadowData = std::vector<std::pair<
 
 using McrouterShadowData = ShadowData<McrouterRouterInfo>;
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

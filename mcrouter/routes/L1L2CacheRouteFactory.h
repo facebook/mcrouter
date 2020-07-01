@@ -35,7 +35,7 @@ typename RouterInfo::RouteHandlePtr makeL1L2CacheRoute(
       ncacheUpdatePeriod);
 }
 
-} // detail
+} // namespace detail
 
 template <class RouterInfo>
 typename RouterInfo::RouteHandlePtr makeL1L2CacheRoute(
@@ -75,6 +75,6 @@ typename RouterInfo::RouteHandlePtr makeL1L2CacheRoute(
       ncacheExptime,
       ncacheUpdatePeriod);
 }
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

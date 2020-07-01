@@ -23,6 +23,6 @@ std::string createBinaryData(size_t size);
 // CompressionCodecManager.
 std::unordered_map<uint32_t, CodecConfigPtr> testCodecConfigs();
 
-} // test
-} // memcache
-} // facebook
+} // namespace test
+} // namespace memcache
+} // namespace facebook

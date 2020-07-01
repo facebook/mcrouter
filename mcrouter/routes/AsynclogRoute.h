@@ -69,6 +69,6 @@ typename RouterInfo::RouteHandlePtr makeAsynclogRoute(
       std::move(rh), std::move(asynclogName));
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

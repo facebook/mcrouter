@@ -64,6 +64,6 @@ bool match_pattern_route(folly::StringPiece pattern, folly::StringPiece route) {
   return match_pattern_helper(
       pattern.begin(), pattern.end(), route.begin(), route.end());
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

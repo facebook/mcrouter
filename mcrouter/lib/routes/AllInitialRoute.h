@@ -64,5 +64,5 @@ class AllInitialRoute {
     return std::move(rh[0]);
   }
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

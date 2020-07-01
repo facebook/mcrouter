@@ -11,7 +11,7 @@
 
 namespace folly {
 struct dynamic;
-} // folly
+} // namespace folly
 
 namespace facebook {
 namespace memcache {
@@ -60,6 +60,6 @@ class FailoverRateLimiter {
   folly::TokenBucket tb_;
   size_t totalReqs_{0};
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

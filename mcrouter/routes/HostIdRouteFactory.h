@@ -35,7 +35,7 @@ typename RouterInfo::RouteHandlePtr makeHostIdRoute(
   return std::move(rh[hostIdHash % rh.size()]);
 }
 
-} // detail
+} // namespace detail
 
 template <class RouterInfo>
 typename RouterInfo::RouteHandlePtr makeHostIdRoute(
@@ -57,6 +57,6 @@ typename RouterInfo::RouteHandlePtr makeHostIdRoute(
 
   return detail::makeHostIdRoute<RouterInfo>(std::move(children), salt);
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

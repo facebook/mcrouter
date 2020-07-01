@@ -147,6 +147,6 @@ std::unordered_map<uint32_t, CodecConfigPtr> testCodecConfigs() {
   return codecConfigs;
 }
 
-} // test
-} // memcache
-} // facebook
+} // namespace test
+} // namespace memcache
+} // namespace facebook

@@ -74,6 +74,6 @@ class PrefixSelectorRoute {
     }
   }
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

@@ -43,8 +43,8 @@ std::string createSplitKey(
   return newKey;
 }
 
-} // detail
+} // namespace detail
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

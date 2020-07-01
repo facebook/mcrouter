@@ -55,7 +55,7 @@ typename RouterInfo::RouteHandlePtr makeDevNullRoute() {
   return makeRouteHandleWithInfo<RouterInfo, DevNullRoute>();
 }
 
-} // detail
+} // namespace detail
 
 template <class RouterInfo>
 typename RouterInfo::RouteHandlePtr makeDevNullRoute(
@@ -63,6 +63,6 @@ typename RouterInfo::RouteHandlePtr makeDevNullRoute(
     const folly::dynamic&) {
   return detail::makeDevNullRoute<RouterInfo>();
 }
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

@@ -84,8 +84,8 @@ typename RouterInfo::RouteHandlePtr makeOperationSelectorRoute(
     RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
     const folly::dynamic& json);
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 #include "OperationSelectorRoute-inl.h"

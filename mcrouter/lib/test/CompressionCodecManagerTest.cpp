@@ -335,6 +335,6 @@ TEST(CompressionCodecManager, getBest_serverWithoutCodecs) {
           CodecIdRange{1, 6}, 1234 /* body size */, 0 /* reply type id */));
 }
 
-} // test
-} // memcache
-} // facebook
+} // namespace test
+} // namespace memcache
+} // namespace facebook

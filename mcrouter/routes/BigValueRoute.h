@@ -21,7 +21,7 @@
 
 namespace folly {
 class IOBuf;
-} // folly
+} // namespace folly
 
 namespace facebook {
 namespace memcache {
@@ -141,8 +141,8 @@ class BigValueRoute {
   createChunkKey(folly::StringPiece key, uint32_t index, uint64_t suffix) const;
 };
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 #include "BigValueRoute-inl.h"

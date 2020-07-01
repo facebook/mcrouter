@@ -24,6 +24,6 @@ std::string McImportResolver::import(folly::StringPiece path) {
   }
   return ret;
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

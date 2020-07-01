@@ -19,5 +19,5 @@ using TestRouterInfo = MemcacheRouterInfo;
 template <class Route>
 using TestRouteHandle = MemcacheRouteHandle<Route>;
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

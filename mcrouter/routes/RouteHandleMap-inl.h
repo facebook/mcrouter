@@ -63,7 +63,7 @@ std::shared_ptr<RoutePolicyMap<RouteHandleIf>> makePolicyMap(
   return uniqueVectors[v] = std::make_shared<RoutePolicyMap<RouteHandleIf>>(v);
 }
 
-} // detail
+} // namespace detail
 
 template <class RouteHandleIf>
 RouteHandleMap<RouteHandleIf>::RouteHandleMap(
@@ -259,6 +259,6 @@ RouteHandleMap<RouteHandleIf>::getTargetsForKeyFallback(
   }
   return &emptyV_;
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

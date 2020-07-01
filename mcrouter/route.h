@@ -17,6 +17,6 @@ namespace mcrouter {
  * True if pattern (like "/foo/a*c/") matches a route (like "/foo/abc")
  */
 bool match_pattern_route(folly::StringPiece pattern, folly::StringPiece route);
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

@@ -35,6 +35,6 @@ class McImportResolver : public ImportResolverIf {
  private:
   ConfigApiIf& configApi_;
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

@@ -48,7 +48,7 @@ wrapWithBigValueRoute(
   return std::move(ch);
 }
 
-} // detail
+} // namespace detail
 
 template <class RouterInfo>
 ProxyRoute<RouterInfo>::ProxyRoute(
@@ -84,6 +84,6 @@ ProxyRoute<RouterInfo>::getAllDestinations() const {
   return rh;
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

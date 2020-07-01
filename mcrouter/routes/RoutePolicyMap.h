@@ -68,8 +68,8 @@ class RoutePolicyMap {
    */
   Trie<std::vector<std::shared_ptr<RouteHandleIf>>> ut_;
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 #include "RoutePolicyMap-inl.h"

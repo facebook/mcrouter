@@ -18,6 +18,6 @@ struct BigValueRouteOptions {
   const size_t batchSize;
 };
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

@@ -74,8 +74,8 @@ class RouteHandleMap {
   getTargetsForKeyFallback(folly::StringPiece prefix, folly::StringPiece key)
       const;
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 #include "RouteHandleMap-inl.h"

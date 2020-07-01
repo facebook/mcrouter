@@ -14,7 +14,7 @@
 
 namespace folly {
 struct dynamic;
-} // folly
+} // namespace folly
 
 namespace facebook {
 namespace memcache {
@@ -83,6 +83,6 @@ class RateLimiter {
   folly::Optional<folly::TokenBucket> setsTb_;
   folly::Optional<folly::TokenBucket> deletesTb_;
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

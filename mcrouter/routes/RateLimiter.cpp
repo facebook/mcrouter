@@ -42,7 +42,7 @@ asPositiveDoubleDefault(const dynamic& obj, const string& keyName, double def) {
   return def;
 }
 
-} // anonymous
+} // namespace
 
 RateLimiter::RateLimiter(const folly::dynamic& json) {
   checkLogic(json.isObject(), "RateLimiter settings json is not an object");
@@ -84,6 +84,6 @@ std::string RateLimiter::toDebugStr() const {
   }
   return folly::join('|', pieces);
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

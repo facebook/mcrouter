@@ -35,7 +35,7 @@ typename RouterInfo::RouteHandlePtr makeAllSyncRoute(
       std::move(rh));
 }
 
-} // detail
+} // namespace detail
 
 template <class RouterInfo>
 typename RouterInfo::RouteHandlePtr makeAllSyncRoute(
@@ -51,6 +51,6 @@ typename RouterInfo::RouteHandlePtr makeAllSyncRoute(
   }
   return detail::makeAllSyncRoute<RouterInfo>(std::move(children));
 }
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

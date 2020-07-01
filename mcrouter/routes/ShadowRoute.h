@@ -183,8 +183,8 @@ makeShadowRoutes(
     ProxyBase& proxy,
     ExtraRouteHandleProviderIf<RouterInfo>& extraProvider);
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 #include "ShadowRoute-inl.h"

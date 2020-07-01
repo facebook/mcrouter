@@ -53,6 +53,6 @@ McExtraRouteHandleProvider<RouterInfo>::tryCreate(
   return {};
 }
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

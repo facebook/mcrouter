@@ -47,6 +47,6 @@ typename RouterInfo::RouteHandlePtr makeAllMajorityRoute(
   }
   return createAllMajorityRoute<RouterInfo>(std::move(children));
 }
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

@@ -23,6 +23,6 @@ McrouterRouteHandlePtr makeNullRoute(
 McrouterRouteHandlePtr makeNullRoute() {
   return createNullRoute<McrouterRouteHandleIf>();
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

@@ -37,7 +37,7 @@ typename RouterInfo::RouteHandlePtr makeMigrateRoute(
       TimeProviderFunc());
 }
 
-} // detail
+} // namespace detail
 
 template <class RouterInfo>
 typename RouterInfo::RouteHandlePtr makeMigrateRoute(
@@ -63,6 +63,6 @@ typename RouterInfo::RouteHandlePtr makeMigrateRoute(
       startTimeSec,
       intervalSec);
 }
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

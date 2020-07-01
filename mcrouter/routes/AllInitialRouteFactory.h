@@ -35,7 +35,7 @@ typename RouterInfo::RouteHandlePtr makeAllInitialRoute(
       std::move(rh));
 }
 
-} // detail
+} // namespace detail
 
 template <class RouterInfo>
 typename RouterInfo::RouteHandlePtr makeAllInitialRoute(
@@ -51,6 +51,6 @@ typename RouterInfo::RouteHandlePtr makeAllInitialRoute(
   }
   return detail::makeAllInitialRoute<RouterInfo>(std::move(children));
 }
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
