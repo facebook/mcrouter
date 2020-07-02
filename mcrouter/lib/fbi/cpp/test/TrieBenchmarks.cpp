@@ -51,9 +51,9 @@ class KeyPrefixMap : public folly::StringKeyedUnorderedMap<Value> {
     return result;
   }
 
-  using Base::find;
   using Base::begin;
   using Base::end;
+  using Base::find;
 
  private:
   std::vector<size_t> prefixLength_;
@@ -68,7 +68,10 @@ int x = 0;
 void prepareRand() {
   std::vector<std::string> keys[3] = {
       {
-          "abacaba", "abacabadabacaba", "b123", "qwerty:qwerty:qwerty:123456",
+          "abacaba",
+          "abacabadabacaba",
+          "b123",
+          "qwerty:qwerty:qwerty:123456",
       },
       {
           "AMC", "ayk", "brq", "bxj", "fgn", "fkr", "fm0", "gig", "gtg",

@@ -24,9 +24,12 @@ mc_op_t mc_op_from_string(const char* str) {
 
 const char* mc_req_err_to_string(const mc_req_err_t err) {
   switch (err) {
-    case mc_req_err_valid: return "valid";
-    case mc_req_err_no_key: return "invalid key: missing";
-    case mc_req_err_key_too_long: return "invalid key: too long";
+    case mc_req_err_valid:
+      return "valid";
+    case mc_req_err_no_key:
+      return "invalid key: missing";
+    case mc_req_err_key_too_long:
+      return "invalid key: too long";
     case mc_req_err_space_or_ctrl:
       return "invalid key: space or control character";
   }

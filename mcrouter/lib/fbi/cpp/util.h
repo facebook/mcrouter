@@ -21,7 +21,7 @@ using timeval_t = struct timeval;
 
 namespace folly {
 struct dynamic;
-} // folly
+} // namespace folly
 
 namespace facebook {
 namespace memcache {
@@ -183,7 +183,7 @@ bool appendStringToFile(folly::StringPiece contents, const std::string& path);
  * and then calls 'rename()', which is atomic.
  *
  * @return true on success, false otherwise
-*/
+ */
 bool atomicallyWriteFileToDisk(
     folly::StringPiece contents,
     const std::string& absFilename);
@@ -193,7 +193,7 @@ bool atomicallyWriteFileToDisk(
  * doesn't exist creates it.
  *
  * @return true on success, false otherwise
-*/
+ */
 bool touchFile(const std::string& path);
 
 /**
@@ -259,5 +259,5 @@ bool ensureDirExistsAndWritable(const std::string& path);
  * Makes sure that a file or directory has the desired permissions.
  */
 bool ensureHasPermission(const std::string& path, mode_t mode);
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook
