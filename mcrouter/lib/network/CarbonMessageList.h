@@ -138,5 +138,5 @@ struct TypeFromOp<op, List<KV1, KVs...>> {
 
 template <class T>
 using TNotRateLimited = ListContains<RequestsNotRateLimited, T>;
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

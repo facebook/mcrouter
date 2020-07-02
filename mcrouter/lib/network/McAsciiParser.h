@@ -180,7 +180,7 @@ class McClientAsciiParser : public McAsciiParserBase {
 namespace detail {
 template <class RequestList>
 class CallbackBase;
-} // detail
+} // namespace detail
 
 class McServerAsciiParser : public McAsciiParserBase {
  public:
@@ -250,7 +250,7 @@ class McServerAsciiParser : public McAsciiParserBase {
   using ConsumerFunPtr = void (McServerAsciiParser::*)(folly::IOBuf&);
   ConsumerFunPtr consumer_{nullptr};
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook
 
 #include "McAsciiParser-inl.h"

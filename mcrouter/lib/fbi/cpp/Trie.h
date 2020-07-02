@@ -130,7 +130,7 @@ class Trie {
     return c & 15;
   }
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook
 
 #include "Trie-inl.h"

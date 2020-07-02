@@ -35,5 +35,5 @@ std::string printTimeOffset(const struct timeval& ts, struct timeval& prev);
 std::unique_ptr<boost::regex> buildRegex(
     const std::string& pattern,
     bool ignoreCase = false) noexcept;
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

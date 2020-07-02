@@ -56,5 +56,5 @@ ServerLoad ServerLoad::complement() const noexcept {
   return ServerLoad(kMaxRawLoad - load_);
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

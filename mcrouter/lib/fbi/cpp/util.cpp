@@ -88,7 +88,7 @@ bool writeToFile(
   }
   return written >= 0 && size_t(written) == contents.size();
 }
-} // anonymous
+} // namespace
 
 bool writeStringToFile(folly::StringPiece contents, const std::string& path) {
   return writeToFile(contents, path, O_CREAT | O_WRONLY | O_TRUNC);
@@ -222,5 +222,5 @@ bool ensureHasPermission(const std::string& path, mode_t mode) {
 
   return true;
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

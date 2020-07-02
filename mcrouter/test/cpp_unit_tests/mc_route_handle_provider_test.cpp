@@ -90,7 +90,7 @@ struct TestSetup {
   }
 };
 
-} // anonymous
+} // namespace
 
 TEST(McRouteHandleProviderTest, sanity) {
   auto rh = TestSetup().getRoute(kConstShard);

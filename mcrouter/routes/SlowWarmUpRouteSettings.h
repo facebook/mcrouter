@@ -13,7 +13,7 @@
 
 namespace folly {
 struct dynamic;
-} // folly
+} // namespace folly
 
 namespace facebook {
 namespace memcache {
@@ -67,6 +67,6 @@ class SlowWarmUpRouteSettings {
   // Mininum number of requests to start computing hit rate.
   size_t minRequests_{100};
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

@@ -52,5 +52,5 @@ class ValueFormatter {
     return StyledString(value.str(), format.dataValueColor);
   }
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

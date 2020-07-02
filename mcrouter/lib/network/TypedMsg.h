@@ -21,7 +21,7 @@ struct CallDispatcherImpl;
 
 template <class T, class PairList>
 struct RequestFromReplyTypeImpl;
-} // detail
+} // namespace detail
 
 template <class MessageList>
 struct StaticChecker;
@@ -79,7 +79,7 @@ class CallDispatcher {
  private:
   detail::CallDispatcherImpl<MessageList, Proc, Args...> impl_;
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook
 
 #include "TypedMsg-inl.h"

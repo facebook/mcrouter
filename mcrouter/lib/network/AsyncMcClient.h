@@ -20,7 +20,7 @@
 namespace folly {
 class AsyncSocket;
 class EventBase;
-} // folly
+} // namespace folly
 
 namespace facebook {
 namespace memcache {

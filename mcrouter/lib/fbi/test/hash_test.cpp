@@ -112,7 +112,7 @@ char* make_random_key(char* buffer, size_t maxLength) {
 
   return buffer;
 }
-} // anonymous
+} // namespace
 
 /**
  * This verifies that

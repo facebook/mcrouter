@@ -294,5 +294,5 @@ std::string McClientRequestContextQueue::getFirstAliveRequestInfo() const {
       folly::cEscape<std::string>(
           folly::StringPiece(data.data(), data.size())));
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

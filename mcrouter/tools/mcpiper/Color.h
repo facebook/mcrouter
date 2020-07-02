@@ -32,4 +32,4 @@ enum class Color : uint8_t {
   DARKYELLOW
 };
 }
-} // facebook::memcache
+} // namespace facebook

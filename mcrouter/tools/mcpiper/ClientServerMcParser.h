@@ -21,7 +21,7 @@
 
 namespace folly {
 class IOBuf;
-} // folly
+} // namespace folly
 
 namespace facebook {
 namespace memcache {
@@ -55,7 +55,7 @@ class ExpectNextDispatcher {
   CallDispatcher<RequestList, ExpectNextDispatcher> dispatcher_;
 };
 
-} // detail
+} // namespace detail
 
 template <class Callback, class RequestList>
 class ClientServerMcParser {
@@ -168,7 +168,7 @@ class ClientServerMcParser {
   detail::ExpectNextDispatcher<ClientMcParser<ReplyCallback>, RequestList>
       expectNextDispatcher_;
 };
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
 
 #include "ClientServerMcParser-inl.h"

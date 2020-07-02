@@ -14,7 +14,7 @@
 
 namespace folly {
 class IOBuf;
-} // folly
+} // namespace folly
 
 namespace facebook {
 namespace memcache {
@@ -36,5 +36,5 @@ size_t chunkedDataSetsCnt(size_t length, size_t maxPieceSize);
 std::unique_ptr<folly::IOBuf> chunkData(
     folly::IOBuf data,
     const std::vector<size_t>& pieces);
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

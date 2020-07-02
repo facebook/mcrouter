@@ -36,6 +36,6 @@ static_assert(
 
 } // anonymous namespace
 
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

@@ -72,5 +72,5 @@ class ServerLoad {
   uint32_t load_{0};
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

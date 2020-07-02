@@ -98,5 +98,5 @@ bool McAsciiParserBase::readValue(folly::IOBuf& buffer, folly::IOBuf& to) {
 
   return true;
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

@@ -52,6 +52,6 @@ McrouterRouteHandlePtr makeWarmUpRoute(
       factory.create(json["cold"]),
       std::move(exptime));
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

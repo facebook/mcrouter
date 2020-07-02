@@ -195,5 +195,5 @@ std::vector<std::pair<size_t, size_t>> MessagePrinter::matchAll(
   }
   return result;
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

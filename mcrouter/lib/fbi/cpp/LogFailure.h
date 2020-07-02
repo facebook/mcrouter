@@ -81,7 +81,7 @@ std::pair<std::string, HandlerFunc> logToStdError();
 
 std::pair<std::string, HandlerFunc> throwLogicError();
 
-} // handlers
+} // namespace handlers
 
 namespace detail {
 
@@ -114,7 +114,7 @@ void log(
       folly::format(msgFormat, std::forward<Args>(args)...).str());
 }
 
-} // detail
+} // namespace detail
 
 /**
  * Add new failure handler. Names should be unique.
@@ -157,6 +157,6 @@ void setServiceContext(folly::StringPiece service, std::string context);
 
 #define LOG_FAILURE(...) \
   facebook::memcache::failure::detail::log(__FILE__, __LINE__, __VA_ARGS__)
-}
-}
-} // facebook::memcache::failure
+} // namespace failure
+} // namespace memcache
+} // namespace facebook

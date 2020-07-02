@@ -90,5 +90,5 @@ class MultiOpParent {
 
   void release();
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

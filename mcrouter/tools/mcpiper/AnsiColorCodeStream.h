@@ -43,7 +43,7 @@ class AnsiColorCodeEncoder {
 };
 
 using AnsiColorCodeStream = StyleAwareStream<AnsiColorCodeEncoder>;
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook
 
 #include "mcrouter/tools/mcpiper/AnsiColorCodeStream-inl.h"

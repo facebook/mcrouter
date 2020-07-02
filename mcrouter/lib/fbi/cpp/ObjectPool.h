@@ -238,5 +238,5 @@ class ThreadSafeObjectPool {
   ObjectPool<T, Allocator> objectPool; // Object pool used for allocations
   std::mutex mtx; // Mutex for mutual exclusion
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

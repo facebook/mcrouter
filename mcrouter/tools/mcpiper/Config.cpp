@@ -27,7 +27,7 @@ constexpr const char* MatchingRequest<Reply>::name() {
   return Request::name;
 }
 
-} // detail
+} // namespace detail
 
 std::string getDefaultFifoRoot() {
   return "/var/mcrouter/fifos";
@@ -68,5 +68,5 @@ addCarbonSnifferParser(
       .first;
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

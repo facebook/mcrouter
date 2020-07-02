@@ -55,7 +55,7 @@ static const char* colorCode(Color color) {
   }
 }
 
-} // anonymous
+} // namespace
 
 AnsiColorCodeEncoder::AnsiColorCodeEncoder(std::ostream& out)
     : out_(out), isReset_(true) {}
@@ -99,5 +99,5 @@ void AnsiColorCodeEncoder::reset() {
   out_ << colorCode(Color::DEFAULT);
   isReset_ = true;
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

@@ -66,5 +66,5 @@ void AsciiSerializedReply::addStrings(Arg&& arg, Args&&... args) {
   addString(std::forward<Arg>(arg));
   addStrings(std::forward<Args>(args)...);
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

@@ -139,5 +139,5 @@ class UniqueIntrusiveList {
  private:
   folly::CountedIntrusiveList<T, PtrToMember> list_;
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

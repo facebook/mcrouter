@@ -248,5 +248,5 @@ MockMc::findUnexpired(folly::StringPiece key) {
 void MockMc::flushAll() {
   citems_.clear();
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

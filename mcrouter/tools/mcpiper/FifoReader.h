@@ -25,7 +25,7 @@
 
 namespace folly {
 class EventBase;
-} // folly
+} // namespace folly
 
 namespace facebook {
 namespace memcache {
@@ -140,5 +140,5 @@ class FifoReaderManager {
   std::vector<std::string> getMatchedFiles() const;
   void runScanDirectory();
 };
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

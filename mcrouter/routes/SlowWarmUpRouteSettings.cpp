@@ -83,6 +83,6 @@ SlowWarmUpRouteSettings::SlowWarmUpRouteSettings(const folly::dynamic& json) {
         minReqsName);
   }
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

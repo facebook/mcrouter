@@ -68,5 +68,5 @@ template <class Encoder>
 void StyleAwareStream<Encoder>::flush() const {
   encoder_.flush();
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

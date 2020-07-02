@@ -197,7 +197,7 @@ class MessagePrinter {
       const std::string& key);
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
 
 #include "MessagePrinter-inl.h"

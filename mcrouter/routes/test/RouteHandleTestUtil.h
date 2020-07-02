@@ -53,6 +53,6 @@ inline void mockFiberContext() {
       [&ctx]() { ctx = getTestContext<RouterInfo>(); });
   fiber_local<RouterInfo>::setSharedCtx(std::move(ctx));
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

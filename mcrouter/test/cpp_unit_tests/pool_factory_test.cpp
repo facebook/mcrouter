@@ -56,7 +56,7 @@ class MockConfigApi : public ConfigApiIf {
   size_t getCalls_{0};
 };
 
-} // anonymous
+} // namespace
 
 TEST(PoolFactory, inherit_loop) {
   MockConfigApi api;

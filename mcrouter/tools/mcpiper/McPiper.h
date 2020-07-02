@@ -61,6 +61,6 @@ class McPiper {
   std::atomic<bool> running_{false};
 };
 
-} // mcpiper
-} // memcache
-} // facebook
+} // namespace mcpiper
+} // namespace memcache
+} // namespace facebook

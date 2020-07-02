@@ -27,7 +27,7 @@ struct MatchingRequest {
   static constexpr const char* name();
 };
 
-} // detail
+} // namespace detail
 
 /**
  * Returns the default fifo root.
@@ -68,5 +68,5 @@ addCarbonSnifferParser(
         std::unique_ptr<SnifferParserBase<MessagePrinter>>>& parserMap,
     uint64_t connectionId,
     MessagePrinter& printer);
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

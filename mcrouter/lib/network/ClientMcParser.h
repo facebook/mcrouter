@@ -107,7 +107,7 @@ class ClientMcParser : private McParser::ParserCallback {
 
   RpcStatsContext getReplyStats(const CaretMessageInfo& headerInfo) const;
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook
 
 #include "ClientMcParser-inl.h"

@@ -18,10 +18,10 @@
 FOLLY_INIT_LOGGING_CONFIG(".=WARNING,folly=INFO; default:async=true");
 
 // for backward compatibility with gflags
-namespace gflags {} // gflags
+namespace gflags {} // namespace gflags
 namespace google {
 using namespace gflags;
-} // google
+} // namespace google
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);

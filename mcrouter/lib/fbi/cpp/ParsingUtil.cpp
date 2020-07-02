@@ -52,5 +52,5 @@ folly::StringPiece parseString(
       json.isString(), "{} expected string, found {}", name, json.typeName());
   return json.stringPiece();
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

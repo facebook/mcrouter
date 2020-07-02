@@ -107,5 +107,5 @@ class StyledString {
   std::vector<Color> fg_;
   std::vector<Color> stack_;
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

@@ -227,7 +227,7 @@ class AsciiSerializedReply {
   handleError(carbon::Result result, uint16_t errorCode, std::string&& message);
   void handleUnexpected(carbon::Result result, const char* requestName);
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook
 
 #include "AsciiSerialized-inl.h"

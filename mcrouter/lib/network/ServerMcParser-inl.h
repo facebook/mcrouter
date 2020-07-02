@@ -120,5 +120,5 @@ void ServerMcParser<Callback>::writeToPipe(const Request& req) {
   debugFifo_->startMessage(MessageDirection::Received, Request::typeId);
   debugFifo_->writeData(iov, iovLen);
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

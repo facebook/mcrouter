@@ -245,5 +245,5 @@ class Trie<Value>::iterator_base
   }
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

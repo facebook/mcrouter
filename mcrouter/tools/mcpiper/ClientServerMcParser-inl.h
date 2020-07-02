@@ -21,7 +21,7 @@ namespace detail {
 inline bool isRequestTypeId(uint32_t typeId) {
   return typeId % 2 == 1;
 }
-} // detail
+} // namespace detail
 
 template <class Callback, class RequestList>
 void ClientServerMcParser<Callback, RequestList>::parse(
@@ -63,5 +63,5 @@ void ClientServerMcParser<Callback, RequestList>::parse(
     source += numBytes;
   }
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

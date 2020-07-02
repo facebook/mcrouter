@@ -13,7 +13,7 @@
 
 namespace folly {
 struct dynamic;
-} // folly
+} // namespace folly
 
 namespace facebook {
 namespace memcache {
@@ -57,5 +57,5 @@ folly::StringPiece parseString(
 std::chrono::milliseconds parseTimeout(
     const folly::dynamic& json,
     folly::StringPiece name);
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

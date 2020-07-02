@@ -72,5 +72,5 @@ Color StyledString::fgColorAt(size_t i) const {
 size_t StyledString::size() const {
   return text_.size();
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

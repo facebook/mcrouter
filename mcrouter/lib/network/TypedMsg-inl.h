@@ -68,6 +68,6 @@ struct RequestFromReplyTypeImpl<T, List<P, Ps...>> {
       typename P::First,
       typename RequestFromReplyTypeImpl<T, List<Ps...>>::type>::type;
 };
-}
-}
-} // facebook::memcache::detail
+} // namespace detail
+} // namespace memcache
+} // namespace facebook

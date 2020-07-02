@@ -76,6 +76,6 @@ HostidMock::HostidMock(uint32_t value) {
 void HostidMock::reset() {
   *getHostIdStorage() = getHash();
 }
-}
-}
-} // facebook::memcache::globals
+} // namespace globals
+} // namespace memcache
+} // namespace facebook

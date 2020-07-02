@@ -176,5 +176,5 @@ void SessionTestHarness::flushSavedInputs() {
     }
   }
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

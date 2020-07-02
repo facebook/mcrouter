@@ -115,8 +115,8 @@ static_assert(
         List<A, B, C, D, E, F, G, H>,
         SortT<List<E, B, G, C, D, H, F, A>>>::value,
     "SortT is broken");
-} // type_list_sort_test
-} // detail
+} // namespace type_list_sort_test
+} // namespace detail
 
 /* Expand implementation */
 template <int Start, class MessageList>
@@ -158,6 +158,6 @@ static_assert(
         PairListSecondT<List<Pair<int, double>, Pair<float, char>>>,
         List<double, char>>::value,
     "PairListSecond list is broken");
-}
-}
-} // facebook::memcache::detail
+} // namespace detail
+} // namespace memcache
+} // namespace facebook

@@ -62,5 +62,5 @@ std::unique_ptr<folly::IOBuf> chunkData(
   }
   return buffer;
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

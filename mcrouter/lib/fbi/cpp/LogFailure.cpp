@@ -132,7 +132,7 @@ std::pair<std::string, HandlerFunc> throwLogicError() {
       "throwLogicError", &throwErrorImpl<std::logic_error>);
 }
 
-} // handlers
+} // namespace handlers
 
 const char* const Category::kBadEnvironment = "bad-environment";
 const char* const Category::kInvalidOption = "invalid-option";
@@ -213,7 +213,7 @@ void log(
   }
 }
 
-} // detail
-}
-}
-} // facebook::memcache::failure
+} // namespace detail
+} // namespace failure
+} // namespace memcache
+} // namespace facebook

@@ -66,7 +66,7 @@ class StyleAwareStream {
 
 template <class Encoder>
 StyleAwareStream<Encoder>& endl(StyleAwareStream<Encoder>&);
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook
 
 #include "StyleAwareStream-inl.h"

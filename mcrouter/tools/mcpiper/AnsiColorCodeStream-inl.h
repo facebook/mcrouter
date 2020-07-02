@@ -18,5 +18,5 @@ void AnsiColorCodeEncoder::writePlain(const T& t) {
 
   out_ << t;
 }
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

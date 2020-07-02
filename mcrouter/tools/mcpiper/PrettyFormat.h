@@ -24,5 +24,5 @@ struct PrettyFormat {
   Color matchColor = Color::RED;
   Color msgAttrColor = Color::GREEN;
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook

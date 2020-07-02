@@ -111,5 +111,5 @@ void ConnectionTracker::onShutdown() {
   }
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

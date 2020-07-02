@@ -42,7 +42,7 @@ using List = carbon::List<Xs...>;
 namespace detail {
 template <class... Lists>
 struct ConcatenateListsImpl;
-} // detail
+} // namespace detail
 
 template <class... Lists>
 struct ConcatenateLists {
@@ -76,7 +76,7 @@ using PrependT = typename Prepend<T, L>::type;
 namespace detail {
 template <class MessageList, size_t N, class Enable = void>
 struct SortImpl;
-} // detail
+} // namespace detail
 
 template <class MessageList>
 using Sort = detail::SortImpl<MessageList, 0>;
@@ -93,7 +93,7 @@ using SortT = typename Sort<MessageList>::type;
 namespace detail {
 template <int Start, class MessageList, class Enable = void>
 struct ExpandImpl;
-} // detail
+} // namespace detail
 
 template <class MessageList>
 using Expand = detail::ExpandImpl<0, MessageList>;
@@ -263,12 +263,12 @@ template <template <typename> class F, typename X, typename... Xs>
 struct MapTImpl<F, List<X, Xs...>> {
   using type = PrependT<F<X>, typename MapTImpl<F, List<Xs...>>::type>;
 };
-} // detail
+} // namespace detail
 
 template <template <typename> class F, typename List>
 using MapT = typename detail::MapTImpl<F, List>::type;
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
 
 #include "TypeList-inl.h"
