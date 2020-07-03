@@ -54,6 +54,9 @@ McGetReply L1L2SizeSplitRoute::route(const McGetRequest& req) const {
       }
 
       if (isErrorResult(*l2Reply.result_ref())) {
+        if (isFailoverErrorResult(*l2Reply.result_ref())) {
+          deleteSentinel(req, l1Value);
+        }
         return McGetReply(*l2Reply.result_ref());
       } else {
         deleteSentinel(req, l1Value);
@@ -155,6 +158,9 @@ L1L2SizeSplitRoute::doRoute(const Request& req, size_t retriesLeft) const {
   }
 
   if (isErrorResult(*l2Reply.result_ref())) {
+    if (isFailoverErrorResult(*l2Reply.result_ref())) {
+      deleteSentinel(req, l1Value);
+    }
     return ReplyT<Request>(*l2Reply.result_ref());
   } else if (retriesLeft != 0) {
     deleteSentinel(req, l1Value);

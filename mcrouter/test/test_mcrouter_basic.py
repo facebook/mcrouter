@@ -1080,6 +1080,50 @@ class TestMcrouterBasicL1L2SizeSplit(McrouterTestCase):
         # Do another cas using the same token and check it fails
         self.assertFalse(mcr.cas('key', 'value_modified2', cas))
 
+    def test_l1l2_l1_hit_l2_lookup_fail(self):
+        """
+        Basic functionality test in L1L2Split
+        Verify that L1 sentinel is deleted whenever there is a L1 hit but a L2 lookup failure.
+        """
+        mcr = self.get_mcrouter(self.config)
+
+        # Issue leaseGet with a non-existing key, we should get a valid lease token
+        result = mcr.leaseGet("key1")
+        token = result["token"]
+        self.assertNotEqual(token, None)
+
+        # Issue leaseSet with a very long value, the key should end up split
+        long_value = "foo" * 20
+        result["value"] = long_value
+        self.assertTrue(mcr.leaseSet("key1", result))
+
+        # Verify that sentinel flag is set in L1
+        l1res = self.l1.get("key1", return_all_info=True)
+        self.assertTrue(l1res["flags"] & self.MC_MSG_FLAG_SIZE_SPLIT)
+
+        # Simulate a TKO on L2
+        self.l2.terminate()
+
+        # Subsequent Get with same key should fail. Key should no longer be found in L1
+        self.assertNotEqual(mcr.get("key1"), long_value)
+        self.assertFalse(self.l1.get("key1"))
+
+        # Subsequent attempts to refill should go to L1. Verify lease-get/refill/get works
+        # with no errors
+        result = mcr.leaseGet("key1")
+        token = result["token"]
+        self.assertNotEqual(token, None)
+
+        long_value = "foo" * 20
+        result["value"] = long_value
+        self.assertTrue(mcr.leaseSet("key1", result))
+
+        self.assertEqual(mcr.get("key1"), long_value)
+
+        # Sentinel should not be found in L1
+        l1res = self.l1.get("key1", return_all_info=True)
+        self.assertFalse(l1res["flags"] & self.MC_MSG_FLAG_SIZE_SPLIT)
+
 
 class TestMcrouterPortOverride(McrouterTestCase):
     config = './mcrouter/test/mcrouter_test_portoverride.json'
