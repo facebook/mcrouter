@@ -45,9 +45,10 @@ TEST(runtime_vars_data, register_callback) {
   obj.set(std::make_shared<const RuntimeVarsData>(json));
   int counter = 0;
   {
-    auto handle = obj.subscribeAndCall([&counter](
-        std::shared_ptr<const RuntimeVarsData>,
-        std::shared_ptr<const RuntimeVarsData>) { counter++; });
+    auto handle = obj.subscribeAndCall(
+        [&counter](
+            std::shared_ptr<const RuntimeVarsData>,
+            std::shared_ptr<const RuntimeVarsData>) { counter++; });
     EXPECT_EQ(counter, 1);
     jsonObj["key2"] = "value3";
     json = folly::to<string>(folly::toJson(jsonObj));

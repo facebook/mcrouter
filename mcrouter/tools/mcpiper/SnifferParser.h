@@ -30,7 +30,7 @@ namespace memcache {
 template <class Callback>
 class SnifferParserBase {
  public:
-  explicit SnifferParserBase(Callback& cb) noexcept : callback_(cb){}
+  explicit SnifferParserBase(Callback& cb) noexcept : callback_(cb) {}
   virtual ~SnifferParserBase() = default;
 
   virtual void
@@ -128,7 +128,7 @@ class SnifferParser : public SnifferParserBase<Callback> {
   // The parser itself.
   ClientServerMcParser<SnifferParserBase<Callback>, RequestList> parser_;
 };
-}
-} // facebook::memcache
+} // namespace memcache
+} // namespace facebook
 
 #include "SnifferParser-inl.h"

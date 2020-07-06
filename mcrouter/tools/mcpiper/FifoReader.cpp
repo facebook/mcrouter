@@ -51,8 +51,8 @@ PacketHeader parsePacketHeader(folly::IOBufQueue& bufQueue) {
   PacketHeader header;
   std::memcpy(&header, bytes.data(), sizeof(PacketHeader));
 
-  CHECK(header.packetSize() <= kFifoMaxPacketSize) << "Packet too large: "
-                                                   << header.packetSize();
+  CHECK(header.packetSize() <= kFifoMaxPacketSize)
+      << "Packet too large: " << header.packetSize();
 
   return header;
 }
@@ -224,10 +224,11 @@ std::vector<std::string> FifoReaderManager::getMatchedFiles() const {
           continue;
         }
         auto& path = it->path();
-        if (!filenamePattern_ || boost::regex_search(
-                                     path.filename().string(),
-                                     *filenamePattern_,
-                                     boost::regex_constants::match_default)) {
+        if (!filenamePattern_ ||
+            boost::regex_search(
+                path.filename().string(),
+                *filenamePattern_,
+                boost::regex_constants::match_default)) {
           fifos.emplace_back(path.string());
         }
       }
@@ -268,5 +269,5 @@ void FifoReaderManager::unregisterCallbacks() {
   }
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

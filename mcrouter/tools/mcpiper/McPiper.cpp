@@ -113,7 +113,7 @@ MessagePrinter::Filter getFilter(const Settings& settings) {
   return filter;
 }
 
-} // anonymous
+} // namespace
 
 void McPiper::stop() {
   running_ = false;
@@ -146,14 +146,14 @@ void McPiper::run(Settings settings, std::ostream& targetOut) {
 
   // Callback from fifoManager. Read the data and feed the correct parser.
   auto fifoReaderCallback = [&parserMap, this](
-      uint64_t connectionId,
-      uint64_t packetId,
-      folly::SocketAddress from,
-      folly::SocketAddress to,
-      uint32_t typeId,
-      uint64_t msgStartTime,
-      std::string routerName,
-      folly::ByteRange data) {
+                                uint64_t connectionId,
+                                uint64_t packetId,
+                                folly::SocketAddress from,
+                                folly::SocketAddress to,
+                                uint32_t typeId,
+                                uint64_t msgStartTime,
+                                std::string routerName,
+                                folly::ByteRange data) {
     if (!running_) {
       return;
     }
@@ -191,6 +191,6 @@ void McPiper::run(Settings settings, std::ostream& targetOut) {
   fifoReaderManager_.reset();
 }
 
-} // mcpiper namespace
-} // memcache namespace
-} // facebook namespace
+} // namespace mcpiper
+} // namespace memcache
+} // namespace facebook

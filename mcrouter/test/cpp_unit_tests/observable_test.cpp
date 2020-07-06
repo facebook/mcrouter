@@ -19,7 +19,7 @@ using facebook::memcache::mcrouter::Observable;
 struct NoCopy {
   int x;
 
-  explicit NoCopy(int x_ = 0) : x(x_){}
+  explicit NoCopy(int x_ = 0) : x(x_) {}
   NoCopy(const NoCopy&) = delete;
   NoCopy(NoCopy&&) = default;
 
@@ -63,7 +63,7 @@ TEST(Observable, sanity) {
   int cur = -1;
 
   auto onUpdate = [&step, &prev, &cur](
-      const NoCopy& oldData, const NoCopy& newData) {
+                      const NoCopy& oldData, const NoCopy& newData) {
     EXPECT_EQ(oldData.x, prev);
     EXPECT_EQ(newData.x, cur);
 

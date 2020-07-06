@@ -103,8 +103,7 @@ std::unique_ptr<boost::regex> buildRegex(
     bool ignoreCase) noexcept {
   if (!pattern.empty()) {
     try {
-      return std::make_unique<boost::regex>(
-          pattern, getRegexFlags(ignoreCase));
+      return std::make_unique<boost::regex>(pattern, getRegexFlags(ignoreCase));
     } catch (const std::exception& e) {
       LOG(ERROR) << folly::sformat("Invalid pattern ({}) provided: ", pattern)
                  << e.what();
@@ -114,5 +113,5 @@ std::unique_ptr<boost::regex> buildRegex(
   return nullptr;
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
