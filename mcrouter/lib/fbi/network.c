@@ -11,24 +11,26 @@
 #include <stddef.h>
 
 static fbi_family_info_t family_info[] = {
-  [AF_INET] = {
-    .family = AF_INET,
-    .addrlen = sizeof(struct in_addr),
-    .sockaddrlen = sizeof(struct sockaddr_in),
-    .addroff = offsetof(struct sockaddr_in, sin_addr),
-    .strmaxlen = INET_ADDRSTRLEN,
-  },
-  [AF_INET6] = {
-    .family = AF_INET6,
-    .addrlen = sizeof(struct in6_addr),
-    .sockaddrlen = sizeof(struct sockaddr_in6),
-    .addroff = offsetof(struct sockaddr_in6, sin6_addr),
-    .strmaxlen = INET6_ADDRSTRLEN,
-  },
+    [AF_INET] =
+        {
+            .family = AF_INET,
+            .addrlen = sizeof(struct in_addr),
+            .sockaddrlen = sizeof(struct sockaddr_in),
+            .addroff = offsetof(struct sockaddr_in, sin_addr),
+            .strmaxlen = INET_ADDRSTRLEN,
+        },
+    [AF_INET6] =
+        {
+            .family = AF_INET6,
+            .addrlen = sizeof(struct in6_addr),
+            .sockaddrlen = sizeof(struct sockaddr_in6),
+            .addroff = offsetof(struct sockaddr_in6, sin6_addr),
+            .strmaxlen = INET6_ADDRSTRLEN,
+        },
 };
 
-fbi_family_info_t *get_family_info(sa_family_t family) {
-  fbi_family_info_t *info;
+fbi_family_info_t* get_family_info(sa_family_t family) {
+  fbi_family_info_t* info;
 
   if (family >= sizeof(family_info) / sizeof(family_info[0])) {
     return NULL;
@@ -39,9 +41,11 @@ fbi_family_info_t *get_family_info(sa_family_t family) {
   return info->family ? info : NULL;
 }
 
-bool get_sa_address(const struct sockaddr *sa, const void **addr,
-                    uint16_t *addrlen) {
-  fbi_family_info_t *info;
+bool get_sa_address(
+    const struct sockaddr* sa,
+    const void** addr,
+    uint16_t* addrlen) {
+  fbi_family_info_t* info;
 
   if (!sa) {
     return false;
@@ -58,10 +62,11 @@ bool get_sa_address(const struct sockaddr *sa, const void **addr,
   return true;
 }
 
-bool for_each_localaddr(bool (*cb)(const struct sockaddr *addr, void *ctx),
-                        void *ctx) {
-  struct ifaddrs *addrs;
-  struct ifaddrs *it;
+bool for_each_localaddr(
+    bool (*cb)(const struct sockaddr* addr, void* ctx),
+    void* ctx) {
+  struct ifaddrs* addrs;
+  struct ifaddrs* it;
 
   if (getifaddrs(&addrs) == -1) {
     return false;
