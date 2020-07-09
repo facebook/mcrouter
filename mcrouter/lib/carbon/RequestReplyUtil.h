@@ -33,7 +33,9 @@ namespace detail {
 template <typename T, typename = std::enable_if_t<true>>
 struct HasIsFailover : std::false_type {};
 template <typename T>
-struct HasIsFailover<T, std::void_t<decltype(std::declval<T>().isFailover())>>
+struct HasIsFailover<
+    T,
+    std::void_t<decltype(std::declval<T>().isFailover_ref())>>
     : std::true_type {};
 
 template <typename T, typename = std::enable_if_t<true>>

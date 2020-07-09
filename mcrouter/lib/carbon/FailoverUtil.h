@@ -14,10 +14,12 @@
 namespace carbon {
 namespace detail {
 
-template <class Request, class = bool&>
+template <class Request, typename = std::void_t<>>
 struct HasFailover : public std::false_type {};
 template <class Request>
-struct HasFailover<Request, decltype(std::declval<Request>().failover())>
+struct HasFailover<
+    Request,
+    std::void_t<decltype(std::declval<Request>().failover_ref())>>
     : public std::true_type {};
 
 template <class Request>

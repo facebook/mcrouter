@@ -238,11 +238,13 @@ struct TestHandleImpl {
   }
 };
 
-template <class Request, class = std::string&>
+template <class Request, typename = std::void_t<>>
 struct HasShadowId : public std::false_type {};
 
 template <class Request>
-struct HasShadowId<Request, decltype(std::declval<Request>().shadowId())>
+struct HasShadowId<
+    Request,
+    std::void_t<decltype(std::declval<Request>().shadowId_ref())>>
     : public std::true_type {};
 
 /* Records all the keys we saw */
