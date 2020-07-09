@@ -678,5 +678,413 @@ void TestStdContainers::visitFields(V&& v) const {
     return;
   }
 }
+
+template <class Writer>
+void StructWithEnumUInt64::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, testEnum());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void StructWithEnumUInt64::visitFields(V&& v) {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+}
+
+template <class V>
+void StructWithEnumUInt64::visitFields(V&& v) const {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+}
+
+template <class Writer>
+void StructWithEnumUInt32::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, testEnum());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void StructWithEnumUInt32::visitFields(V&& v) {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+}
+
+template <class V>
+void StructWithEnumUInt32::visitFields(V&& v) const {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+}
+
+template <class Writer>
+void StructWithEnumUInt16::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, testEnum());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void StructWithEnumUInt16::visitFields(V&& v) {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+}
+
+template <class V>
+void StructWithEnumUInt16::visitFields(V&& v) const {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+}
+
+template <class Writer>
+void StructWithEnumUInt8::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, testEnum());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void StructWithEnumUInt8::visitFields(V&& v) {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+}
+
+template <class V>
+void StructWithEnumUInt8::visitFields(V&& v) const {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+}
+
+template <class Writer>
+void StructWithEnumInt64::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, testEnum());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void StructWithEnumInt64::visitFields(V&& v) {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+}
+
+template <class V>
+void StructWithEnumInt64::visitFields(V&& v) const {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+}
+
+template <class Writer>
+void StructWithEnumInt32::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, testEnum());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void StructWithEnumInt32::visitFields(V&& v) {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+}
+
+template <class V>
+void StructWithEnumInt32::visitFields(V&& v) const {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+}
+
+template <class Writer>
+void StructWithEnumInt16::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, testEnum());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void StructWithEnumInt16::visitFields(V&& v) {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+}
+
+template <class V>
+void StructWithEnumInt16::visitFields(V&& v) const {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+}
+
+template <class Writer>
+void StructWithEnumInt8::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, testEnum());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void StructWithEnumInt8::visitFields(V&& v) {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+}
+
+template <class V>
+void StructWithEnumInt8::visitFields(V&& v) const {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+}
+
+template <class Writer>
+void StructWithOptionalEnumUInt64::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, testEnum());
+  writer.writeField(2 /* field id */, testEmptyEnum());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void StructWithOptionalEnumUInt64::visitFields(V&& v) {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+    return;
+  }
+}
+
+template <class V>
+void StructWithOptionalEnumUInt64::visitFields(V&& v) const {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+    return;
+  }
+}
+
+template <class Writer>
+void StructWithOptionalEnumUInt32::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, testEnum());
+  writer.writeField(2 /* field id */, testEmptyEnum());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void StructWithOptionalEnumUInt32::visitFields(V&& v) {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+    return;
+  }
+}
+
+template <class V>
+void StructWithOptionalEnumUInt32::visitFields(V&& v) const {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+    return;
+  }
+}
+
+template <class Writer>
+void StructWithOptionalEnumUInt16::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, testEnum());
+  writer.writeField(2 /* field id */, testEmptyEnum());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void StructWithOptionalEnumUInt16::visitFields(V&& v) {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+    return;
+  }
+}
+
+template <class V>
+void StructWithOptionalEnumUInt16::visitFields(V&& v) const {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+    return;
+  }
+}
+
+template <class Writer>
+void StructWithOptionalEnumUInt8::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, testEnum());
+  writer.writeField(2 /* field id */, testEmptyEnum());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void StructWithOptionalEnumUInt8::visitFields(V&& v) {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+    return;
+  }
+}
+
+template <class V>
+void StructWithOptionalEnumUInt8::visitFields(V&& v) const {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+    return;
+  }
+}
+
+template <class Writer>
+void StructWithOptionalEnumInt64::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, testEnum());
+  writer.writeField(2 /* field id */, testEmptyEnum());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void StructWithOptionalEnumInt64::visitFields(V&& v) {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+    return;
+  }
+}
+
+template <class V>
+void StructWithOptionalEnumInt64::visitFields(V&& v) const {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+    return;
+  }
+}
+
+template <class Writer>
+void StructWithOptionalEnumInt32::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, testEnum());
+  writer.writeField(2 /* field id */, testEmptyEnum());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void StructWithOptionalEnumInt32::visitFields(V&& v) {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+    return;
+  }
+}
+
+template <class V>
+void StructWithOptionalEnumInt32::visitFields(V&& v) const {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+    return;
+  }
+}
+
+template <class Writer>
+void StructWithOptionalEnumInt16::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, testEnum());
+  writer.writeField(2 /* field id */, testEmptyEnum());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void StructWithOptionalEnumInt16::visitFields(V&& v) {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+    return;
+  }
+}
+
+template <class V>
+void StructWithOptionalEnumInt16::visitFields(V&& v) const {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+    return;
+  }
+}
+
+template <class Writer>
+void StructWithOptionalEnumInt8::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, testEnum());
+  writer.writeField(2 /* field id */, testEmptyEnum());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void StructWithOptionalEnumInt8::visitFields(V&& v) {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+    return;
+  }
+}
+
+template <class V>
+void StructWithOptionalEnumInt8::visitFields(V&& v) const {
+  if (!v.visitField(1, "testEnum", this->testEnum())) {
+    return;
+  }
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+    return;
+  }
+}
 } // namespace test
 } // namespace carbon

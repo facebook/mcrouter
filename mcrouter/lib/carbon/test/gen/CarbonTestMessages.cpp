@@ -468,5 +468,533 @@ void TestStdContainers::deserialize(carbon::CarbonProtocolReader& reader) {
   }
   reader.readStructEnd();
 }
+
+std::string enumEnumUInt64ToString(EnumUInt64 val) {
+  switch (val) {
+    case EnumUInt64::AAA:
+      return "AAA";
+    case EnumUInt64::BBB:
+      return "BBB";
+    case EnumUInt64::CCC:
+      return "CCC";
+  }
+  return "<INVALID_OPTION>";
+}
+
+std::string enumEnumUInt32ToString(EnumUInt32 val) {
+  switch (val) {
+    case EnumUInt32::AAA:
+      return "AAA";
+    case EnumUInt32::BBB:
+      return "BBB";
+    case EnumUInt32::CCC:
+      return "CCC";
+  }
+  return "<INVALID_OPTION>";
+}
+
+std::string enumEnumUInt16ToString(EnumUInt16 val) {
+  switch (val) {
+    case EnumUInt16::AAA:
+      return "AAA";
+    case EnumUInt16::BBB:
+      return "BBB";
+    case EnumUInt16::CCC:
+      return "CCC";
+  }
+  return "<INVALID_OPTION>";
+}
+
+std::string enumEnumUInt8ToString(EnumUInt8 val) {
+  switch (val) {
+    case EnumUInt8::AAA:
+      return "AAA";
+    case EnumUInt8::BBB:
+      return "BBB";
+    case EnumUInt8::CCC:
+      return "CCC";
+  }
+  return "<INVALID_OPTION>";
+}
+
+std::string enumEnumInt64ToString(EnumInt64 val) {
+  switch (val) {
+    case EnumInt64::AAA:
+      return "AAA";
+    case EnumInt64::BBB:
+      return "BBB";
+    case EnumInt64::CCC:
+      return "CCC";
+  }
+  return "<INVALID_OPTION>";
+}
+
+std::string enumEnumInt32ToString(EnumInt32 val) {
+  switch (val) {
+    case EnumInt32::AAA:
+      return "AAA";
+    case EnumInt32::BBB:
+      return "BBB";
+    case EnumInt32::CCC:
+      return "CCC";
+  }
+  return "<INVALID_OPTION>";
+}
+
+std::string enumEnumInt16ToString(EnumInt16 val) {
+  switch (val) {
+    case EnumInt16::AAA:
+      return "AAA";
+    case EnumInt16::BBB:
+      return "BBB";
+    case EnumInt16::CCC:
+      return "CCC";
+  }
+  return "<INVALID_OPTION>";
+}
+
+std::string enumEnumInt8ToString(EnumInt8 val) {
+  switch (val) {
+    case EnumInt8::AAA:
+      return "AAA";
+    case EnumInt8::BBB:
+      return "BBB";
+    case EnumInt8::CCC:
+      return "CCC";
+  }
+  return "<INVALID_OPTION>";
+}
+
+void StructWithEnumUInt64::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readField(testEnum(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+void StructWithEnumUInt32::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readField(testEnum(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+void StructWithEnumUInt16::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readField(testEnum(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+void StructWithEnumUInt8::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readField(testEnum(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+void StructWithEnumInt64::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readField(testEnum(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+void StructWithEnumInt32::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readField(testEnum(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+void StructWithEnumInt16::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readField(testEnum(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+void StructWithEnumInt8::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readField(testEnum(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+void StructWithOptionalEnumUInt64::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readField(testEnum(), fieldType);
+        break;
+      }
+      case 2: {
+        reader.readField(testEmptyEnum(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+void StructWithOptionalEnumUInt32::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readField(testEnum(), fieldType);
+        break;
+      }
+      case 2: {
+        reader.readField(testEmptyEnum(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+void StructWithOptionalEnumUInt16::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readField(testEnum(), fieldType);
+        break;
+      }
+      case 2: {
+        reader.readField(testEmptyEnum(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+void StructWithOptionalEnumUInt8::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readField(testEnum(), fieldType);
+        break;
+      }
+      case 2: {
+        reader.readField(testEmptyEnum(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+void StructWithOptionalEnumInt64::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readField(testEnum(), fieldType);
+        break;
+      }
+      case 2: {
+        reader.readField(testEmptyEnum(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+void StructWithOptionalEnumInt32::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readField(testEnum(), fieldType);
+        break;
+      }
+      case 2: {
+        reader.readField(testEmptyEnum(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+void StructWithOptionalEnumInt16::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readField(testEnum(), fieldType);
+        break;
+      }
+      case 2: {
+        reader.readField(testEmptyEnum(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+void StructWithOptionalEnumInt8::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readField(testEnum(), fieldType);
+        break;
+      }
+      case 2: {
+        reader.readField(testEmptyEnum(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
 } // namespace test
 } // namespace carbon

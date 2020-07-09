@@ -1884,6 +1884,1054 @@ class TestStdContainers {
   std::unordered_set<int64_t> valueSet_;
   std::unordered_set<int64_t> vectorSet_;
 };
+
+enum class EnumUInt64 : uint64_t {
+  AAA = 0,
+  BBB = 1,
+  CCC = 2
+};
+
+std::string enumEnumUInt64ToString(EnumUInt64 val);
+
+enum class EnumUInt32 : uint32_t {
+  AAA = 0,
+  BBB = 1,
+  CCC = 2
+};
+
+std::string enumEnumUInt32ToString(EnumUInt32 val);
+
+enum class EnumUInt16 : uint16_t {
+  AAA = 0,
+  BBB = 1,
+  CCC = 2
+};
+
+std::string enumEnumUInt16ToString(EnumUInt16 val);
+
+enum class EnumUInt8 : uint8_t {
+  AAA = 0,
+  BBB = 1,
+  CCC = 2
+};
+
+std::string enumEnumUInt8ToString(EnumUInt8 val);
+
+enum class EnumInt64 : int64_t {
+  AAA = 0,
+  BBB = 1,
+  CCC = 2
+};
+
+std::string enumEnumInt64ToString(EnumInt64 val);
+
+enum class EnumInt32 : int32_t {
+  AAA = 0,
+  BBB = 1,
+  CCC = 2
+};
+
+std::string enumEnumInt32ToString(EnumInt32 val);
+
+enum class EnumInt16 : int16_t {
+  AAA = 0,
+  BBB = 1,
+  CCC = 2
+};
+
+std::string enumEnumInt16ToString(EnumInt16 val);
+
+enum class EnumInt8 : int8_t {
+  AAA = 0,
+  BBB = 1,
+  CCC = 2
+};
+
+std::string enumEnumInt8ToString(EnumInt8 val);
+
+class StructWithEnumUInt64 {
+ public:
+
+  StructWithEnumUInt64() = default;
+  StructWithEnumUInt64(const StructWithEnumUInt64&) = default;
+  StructWithEnumUInt64& operator=(const StructWithEnumUInt64&) = default;
+  StructWithEnumUInt64(StructWithEnumUInt64&&) = default;
+  StructWithEnumUInt64& operator=(StructWithEnumUInt64&&) = default;
+
+  const EnumUInt64& testEnum() const {
+    return testEnum_;
+  }
+  EnumUInt64& testEnum() {
+    return testEnum_;
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<const EnumUInt64&>
+   testEnum_ref() const& {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<EnumUInt64&>
+   testEnum_ref() & {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<EnumUInt64&&>
+   testEnum_ref() && {
+      return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  struct __isset {
+    bool testEnum;
+  } __isset = {};
+
+  EnumUInt64 testEnum_{EnumUInt64::AAA};
+};
+
+class StructWithEnumUInt32 {
+ public:
+
+  StructWithEnumUInt32() = default;
+  StructWithEnumUInt32(const StructWithEnumUInt32&) = default;
+  StructWithEnumUInt32& operator=(const StructWithEnumUInt32&) = default;
+  StructWithEnumUInt32(StructWithEnumUInt32&&) = default;
+  StructWithEnumUInt32& operator=(StructWithEnumUInt32&&) = default;
+
+  const EnumUInt32& testEnum() const {
+    return testEnum_;
+  }
+  EnumUInt32& testEnum() {
+    return testEnum_;
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<const EnumUInt32&>
+   testEnum_ref() const& {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<EnumUInt32&>
+   testEnum_ref() & {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<EnumUInt32&&>
+   testEnum_ref() && {
+      return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  struct __isset {
+    bool testEnum;
+  } __isset = {};
+
+  EnumUInt32 testEnum_{EnumUInt32::AAA};
+};
+
+class StructWithEnumUInt16 {
+ public:
+
+  StructWithEnumUInt16() = default;
+  StructWithEnumUInt16(const StructWithEnumUInt16&) = default;
+  StructWithEnumUInt16& operator=(const StructWithEnumUInt16&) = default;
+  StructWithEnumUInt16(StructWithEnumUInt16&&) = default;
+  StructWithEnumUInt16& operator=(StructWithEnumUInt16&&) = default;
+
+  const EnumUInt16& testEnum() const {
+    return testEnum_;
+  }
+  EnumUInt16& testEnum() {
+    return testEnum_;
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<const EnumUInt16&>
+   testEnum_ref() const& {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<EnumUInt16&>
+   testEnum_ref() & {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<EnumUInt16&&>
+   testEnum_ref() && {
+      return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  struct __isset {
+    bool testEnum;
+  } __isset = {};
+
+  EnumUInt16 testEnum_{EnumUInt16::AAA};
+};
+
+class StructWithEnumUInt8 {
+ public:
+
+  StructWithEnumUInt8() = default;
+  StructWithEnumUInt8(const StructWithEnumUInt8&) = default;
+  StructWithEnumUInt8& operator=(const StructWithEnumUInt8&) = default;
+  StructWithEnumUInt8(StructWithEnumUInt8&&) = default;
+  StructWithEnumUInt8& operator=(StructWithEnumUInt8&&) = default;
+
+  const EnumUInt8& testEnum() const {
+    return testEnum_;
+  }
+  EnumUInt8& testEnum() {
+    return testEnum_;
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<const EnumUInt8&>
+   testEnum_ref() const& {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<EnumUInt8&>
+   testEnum_ref() & {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<EnumUInt8&&>
+   testEnum_ref() && {
+      return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  struct __isset {
+    bool testEnum;
+  } __isset = {};
+
+  EnumUInt8 testEnum_{EnumUInt8::AAA};
+};
+
+class StructWithEnumInt64 {
+ public:
+
+  StructWithEnumInt64() = default;
+  StructWithEnumInt64(const StructWithEnumInt64&) = default;
+  StructWithEnumInt64& operator=(const StructWithEnumInt64&) = default;
+  StructWithEnumInt64(StructWithEnumInt64&&) = default;
+  StructWithEnumInt64& operator=(StructWithEnumInt64&&) = default;
+
+  const EnumInt64& testEnum() const {
+    return testEnum_;
+  }
+  EnumInt64& testEnum() {
+    return testEnum_;
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<const EnumInt64&>
+   testEnum_ref() const& {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<EnumInt64&>
+   testEnum_ref() & {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<EnumInt64&&>
+   testEnum_ref() && {
+      return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  struct __isset {
+    bool testEnum;
+  } __isset = {};
+
+  EnumInt64 testEnum_{EnumInt64::AAA};
+};
+
+class StructWithEnumInt32 {
+ public:
+
+  StructWithEnumInt32() = default;
+  StructWithEnumInt32(const StructWithEnumInt32&) = default;
+  StructWithEnumInt32& operator=(const StructWithEnumInt32&) = default;
+  StructWithEnumInt32(StructWithEnumInt32&&) = default;
+  StructWithEnumInt32& operator=(StructWithEnumInt32&&) = default;
+
+  const EnumInt32& testEnum() const {
+    return testEnum_;
+  }
+  EnumInt32& testEnum() {
+    return testEnum_;
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<const EnumInt32&>
+   testEnum_ref() const& {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<EnumInt32&>
+   testEnum_ref() & {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<EnumInt32&&>
+   testEnum_ref() && {
+      return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  struct __isset {
+    bool testEnum;
+  } __isset = {};
+
+  EnumInt32 testEnum_{EnumInt32::AAA};
+};
+
+class StructWithEnumInt16 {
+ public:
+
+  StructWithEnumInt16() = default;
+  StructWithEnumInt16(const StructWithEnumInt16&) = default;
+  StructWithEnumInt16& operator=(const StructWithEnumInt16&) = default;
+  StructWithEnumInt16(StructWithEnumInt16&&) = default;
+  StructWithEnumInt16& operator=(StructWithEnumInt16&&) = default;
+
+  const EnumInt16& testEnum() const {
+    return testEnum_;
+  }
+  EnumInt16& testEnum() {
+    return testEnum_;
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<const EnumInt16&>
+   testEnum_ref() const& {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<EnumInt16&>
+   testEnum_ref() & {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<EnumInt16&&>
+   testEnum_ref() && {
+      return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  struct __isset {
+    bool testEnum;
+  } __isset = {};
+
+  EnumInt16 testEnum_{EnumInt16::AAA};
+};
+
+class StructWithEnumInt8 {
+ public:
+
+  StructWithEnumInt8() = default;
+  StructWithEnumInt8(const StructWithEnumInt8&) = default;
+  StructWithEnumInt8& operator=(const StructWithEnumInt8&) = default;
+  StructWithEnumInt8(StructWithEnumInt8&&) = default;
+  StructWithEnumInt8& operator=(StructWithEnumInt8&&) = default;
+
+  const EnumInt8& testEnum() const {
+    return testEnum_;
+  }
+  EnumInt8& testEnum() {
+    return testEnum_;
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<const EnumInt8&>
+   testEnum_ref() const& {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<EnumInt8&>
+   testEnum_ref() & {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<EnumInt8&&>
+   testEnum_ref() && {
+      return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  struct __isset {
+    bool testEnum;
+  } __isset = {};
+
+  EnumInt8 testEnum_{EnumInt8::AAA};
+};
+
+class StructWithOptionalEnumUInt64 {
+ public:
+
+  StructWithOptionalEnumUInt64() = default;
+  StructWithOptionalEnumUInt64(const StructWithOptionalEnumUInt64&) = default;
+  StructWithOptionalEnumUInt64& operator=(const StructWithOptionalEnumUInt64&) = default;
+  StructWithOptionalEnumUInt64(StructWithOptionalEnumUInt64&&) = default;
+  StructWithOptionalEnumUInt64& operator=(StructWithOptionalEnumUInt64&&) = default;
+
+  apache::thrift::optional_field_ref<const EnumUInt64&> testEnum() const& {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  apache::thrift::optional_field_ref<EnumUInt64&> testEnum() & {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  apache::thrift::optional_field_ref<EnumUInt64&&> testEnum() && {
+     return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
+  apache::thrift::optional_field_ref<const EnumUInt64&> testEmptyEnum() const& {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  apache::thrift::optional_field_ref<EnumUInt64&> testEmptyEnum() & {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  apache::thrift::optional_field_ref<EnumUInt64&&> testEmptyEnum() && {
+     return {std::move(this->testEmptyEnum_), __isset.testEmptyEnum};
+  }
+  
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<const EnumUInt64&>
+   testEnum_ref() const& {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumUInt64&>
+   testEnum_ref() & {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumUInt64&&>
+   testEnum_ref() && {
+      return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<const EnumUInt64&>
+   testEmptyEnum_ref() const& {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumUInt64&>
+   testEmptyEnum_ref() & {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumUInt64&&>
+   testEmptyEnum_ref() && {
+      return {std::move(this->testEmptyEnum_), __isset.testEmptyEnum};
+  }
+  
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  struct __isset {
+    bool testEnum;
+    bool testEmptyEnum;
+  } __isset = {};
+
+  EnumUInt64 testEnum_{EnumUInt64::AAA};
+  EnumUInt64 testEmptyEnum_{EnumUInt64::AAA};
+};
+
+class StructWithOptionalEnumUInt32 {
+ public:
+
+  StructWithOptionalEnumUInt32() = default;
+  StructWithOptionalEnumUInt32(const StructWithOptionalEnumUInt32&) = default;
+  StructWithOptionalEnumUInt32& operator=(const StructWithOptionalEnumUInt32&) = default;
+  StructWithOptionalEnumUInt32(StructWithOptionalEnumUInt32&&) = default;
+  StructWithOptionalEnumUInt32& operator=(StructWithOptionalEnumUInt32&&) = default;
+
+  apache::thrift::optional_field_ref<const EnumUInt32&> testEnum() const& {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  apache::thrift::optional_field_ref<EnumUInt32&> testEnum() & {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  apache::thrift::optional_field_ref<EnumUInt32&&> testEnum() && {
+     return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
+  apache::thrift::optional_field_ref<const EnumUInt32&> testEmptyEnum() const& {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  apache::thrift::optional_field_ref<EnumUInt32&> testEmptyEnum() & {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  apache::thrift::optional_field_ref<EnumUInt32&&> testEmptyEnum() && {
+     return {std::move(this->testEmptyEnum_), __isset.testEmptyEnum};
+  }
+  
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<const EnumUInt32&>
+   testEnum_ref() const& {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumUInt32&>
+   testEnum_ref() & {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumUInt32&&>
+   testEnum_ref() && {
+      return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<const EnumUInt32&>
+   testEmptyEnum_ref() const& {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumUInt32&>
+   testEmptyEnum_ref() & {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumUInt32&&>
+   testEmptyEnum_ref() && {
+      return {std::move(this->testEmptyEnum_), __isset.testEmptyEnum};
+  }
+  
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  struct __isset {
+    bool testEnum;
+    bool testEmptyEnum;
+  } __isset = {};
+
+  EnumUInt32 testEnum_{EnumUInt32::AAA};
+  EnumUInt32 testEmptyEnum_{EnumUInt32::AAA};
+};
+
+class StructWithOptionalEnumUInt16 {
+ public:
+
+  StructWithOptionalEnumUInt16() = default;
+  StructWithOptionalEnumUInt16(const StructWithOptionalEnumUInt16&) = default;
+  StructWithOptionalEnumUInt16& operator=(const StructWithOptionalEnumUInt16&) = default;
+  StructWithOptionalEnumUInt16(StructWithOptionalEnumUInt16&&) = default;
+  StructWithOptionalEnumUInt16& operator=(StructWithOptionalEnumUInt16&&) = default;
+
+  apache::thrift::optional_field_ref<const EnumUInt16&> testEnum() const& {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  apache::thrift::optional_field_ref<EnumUInt16&> testEnum() & {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  apache::thrift::optional_field_ref<EnumUInt16&&> testEnum() && {
+     return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
+  apache::thrift::optional_field_ref<const EnumUInt16&> testEmptyEnum() const& {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  apache::thrift::optional_field_ref<EnumUInt16&> testEmptyEnum() & {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  apache::thrift::optional_field_ref<EnumUInt16&&> testEmptyEnum() && {
+     return {std::move(this->testEmptyEnum_), __isset.testEmptyEnum};
+  }
+  
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<const EnumUInt16&>
+   testEnum_ref() const& {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumUInt16&>
+   testEnum_ref() & {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumUInt16&&>
+   testEnum_ref() && {
+      return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<const EnumUInt16&>
+   testEmptyEnum_ref() const& {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumUInt16&>
+   testEmptyEnum_ref() & {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumUInt16&&>
+   testEmptyEnum_ref() && {
+      return {std::move(this->testEmptyEnum_), __isset.testEmptyEnum};
+  }
+  
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  struct __isset {
+    bool testEnum;
+    bool testEmptyEnum;
+  } __isset = {};
+
+  EnumUInt16 testEnum_{EnumUInt16::AAA};
+  EnumUInt16 testEmptyEnum_{EnumUInt16::AAA};
+};
+
+class StructWithOptionalEnumUInt8 {
+ public:
+
+  StructWithOptionalEnumUInt8() = default;
+  StructWithOptionalEnumUInt8(const StructWithOptionalEnumUInt8&) = default;
+  StructWithOptionalEnumUInt8& operator=(const StructWithOptionalEnumUInt8&) = default;
+  StructWithOptionalEnumUInt8(StructWithOptionalEnumUInt8&&) = default;
+  StructWithOptionalEnumUInt8& operator=(StructWithOptionalEnumUInt8&&) = default;
+
+  apache::thrift::optional_field_ref<const EnumUInt8&> testEnum() const& {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  apache::thrift::optional_field_ref<EnumUInt8&> testEnum() & {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  apache::thrift::optional_field_ref<EnumUInt8&&> testEnum() && {
+     return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
+  apache::thrift::optional_field_ref<const EnumUInt8&> testEmptyEnum() const& {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  apache::thrift::optional_field_ref<EnumUInt8&> testEmptyEnum() & {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  apache::thrift::optional_field_ref<EnumUInt8&&> testEmptyEnum() && {
+     return {std::move(this->testEmptyEnum_), __isset.testEmptyEnum};
+  }
+  
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<const EnumUInt8&>
+   testEnum_ref() const& {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumUInt8&>
+   testEnum_ref() & {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumUInt8&&>
+   testEnum_ref() && {
+      return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<const EnumUInt8&>
+   testEmptyEnum_ref() const& {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumUInt8&>
+   testEmptyEnum_ref() & {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumUInt8&&>
+   testEmptyEnum_ref() && {
+      return {std::move(this->testEmptyEnum_), __isset.testEmptyEnum};
+  }
+  
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  struct __isset {
+    bool testEnum;
+    bool testEmptyEnum;
+  } __isset = {};
+
+  EnumUInt8 testEnum_{EnumUInt8::AAA};
+  EnumUInt8 testEmptyEnum_{EnumUInt8::AAA};
+};
+
+class StructWithOptionalEnumInt64 {
+ public:
+
+  StructWithOptionalEnumInt64() = default;
+  StructWithOptionalEnumInt64(const StructWithOptionalEnumInt64&) = default;
+  StructWithOptionalEnumInt64& operator=(const StructWithOptionalEnumInt64&) = default;
+  StructWithOptionalEnumInt64(StructWithOptionalEnumInt64&&) = default;
+  StructWithOptionalEnumInt64& operator=(StructWithOptionalEnumInt64&&) = default;
+
+  apache::thrift::optional_field_ref<const EnumInt64&> testEnum() const& {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  apache::thrift::optional_field_ref<EnumInt64&> testEnum() & {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  apache::thrift::optional_field_ref<EnumInt64&&> testEnum() && {
+     return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
+  apache::thrift::optional_field_ref<const EnumInt64&> testEmptyEnum() const& {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  apache::thrift::optional_field_ref<EnumInt64&> testEmptyEnum() & {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  apache::thrift::optional_field_ref<EnumInt64&&> testEmptyEnum() && {
+     return {std::move(this->testEmptyEnum_), __isset.testEmptyEnum};
+  }
+  
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<const EnumInt64&>
+   testEnum_ref() const& {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumInt64&>
+   testEnum_ref() & {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumInt64&&>
+   testEnum_ref() && {
+      return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<const EnumInt64&>
+   testEmptyEnum_ref() const& {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumInt64&>
+   testEmptyEnum_ref() & {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumInt64&&>
+   testEmptyEnum_ref() && {
+      return {std::move(this->testEmptyEnum_), __isset.testEmptyEnum};
+  }
+  
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  struct __isset {
+    bool testEnum;
+    bool testEmptyEnum;
+  } __isset = {};
+
+  EnumInt64 testEnum_{EnumInt64::AAA};
+  EnumInt64 testEmptyEnum_{EnumInt64::AAA};
+};
+
+class StructWithOptionalEnumInt32 {
+ public:
+
+  StructWithOptionalEnumInt32() = default;
+  StructWithOptionalEnumInt32(const StructWithOptionalEnumInt32&) = default;
+  StructWithOptionalEnumInt32& operator=(const StructWithOptionalEnumInt32&) = default;
+  StructWithOptionalEnumInt32(StructWithOptionalEnumInt32&&) = default;
+  StructWithOptionalEnumInt32& operator=(StructWithOptionalEnumInt32&&) = default;
+
+  apache::thrift::optional_field_ref<const EnumInt32&> testEnum() const& {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  apache::thrift::optional_field_ref<EnumInt32&> testEnum() & {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  apache::thrift::optional_field_ref<EnumInt32&&> testEnum() && {
+     return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
+  apache::thrift::optional_field_ref<const EnumInt32&> testEmptyEnum() const& {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  apache::thrift::optional_field_ref<EnumInt32&> testEmptyEnum() & {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  apache::thrift::optional_field_ref<EnumInt32&&> testEmptyEnum() && {
+     return {std::move(this->testEmptyEnum_), __isset.testEmptyEnum};
+  }
+  
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<const EnumInt32&>
+   testEnum_ref() const& {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumInt32&>
+   testEnum_ref() & {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumInt32&&>
+   testEnum_ref() && {
+      return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<const EnumInt32&>
+   testEmptyEnum_ref() const& {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumInt32&>
+   testEmptyEnum_ref() & {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumInt32&&>
+   testEmptyEnum_ref() && {
+      return {std::move(this->testEmptyEnum_), __isset.testEmptyEnum};
+  }
+  
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  struct __isset {
+    bool testEnum;
+    bool testEmptyEnum;
+  } __isset = {};
+
+  EnumInt32 testEnum_{EnumInt32::AAA};
+  EnumInt32 testEmptyEnum_{EnumInt32::AAA};
+};
+
+class StructWithOptionalEnumInt16 {
+ public:
+
+  StructWithOptionalEnumInt16() = default;
+  StructWithOptionalEnumInt16(const StructWithOptionalEnumInt16&) = default;
+  StructWithOptionalEnumInt16& operator=(const StructWithOptionalEnumInt16&) = default;
+  StructWithOptionalEnumInt16(StructWithOptionalEnumInt16&&) = default;
+  StructWithOptionalEnumInt16& operator=(StructWithOptionalEnumInt16&&) = default;
+
+  apache::thrift::optional_field_ref<const EnumInt16&> testEnum() const& {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  apache::thrift::optional_field_ref<EnumInt16&> testEnum() & {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  apache::thrift::optional_field_ref<EnumInt16&&> testEnum() && {
+     return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
+  apache::thrift::optional_field_ref<const EnumInt16&> testEmptyEnum() const& {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  apache::thrift::optional_field_ref<EnumInt16&> testEmptyEnum() & {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  apache::thrift::optional_field_ref<EnumInt16&&> testEmptyEnum() && {
+     return {std::move(this->testEmptyEnum_), __isset.testEmptyEnum};
+  }
+  
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<const EnumInt16&>
+   testEnum_ref() const& {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumInt16&>
+   testEnum_ref() & {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumInt16&&>
+   testEnum_ref() && {
+      return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<const EnumInt16&>
+   testEmptyEnum_ref() const& {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumInt16&>
+   testEmptyEnum_ref() & {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumInt16&&>
+   testEmptyEnum_ref() && {
+      return {std::move(this->testEmptyEnum_), __isset.testEmptyEnum};
+  }
+  
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  struct __isset {
+    bool testEnum;
+    bool testEmptyEnum;
+  } __isset = {};
+
+  EnumInt16 testEnum_{EnumInt16::AAA};
+  EnumInt16 testEmptyEnum_{EnumInt16::AAA};
+};
+
+class StructWithOptionalEnumInt8 {
+ public:
+
+  StructWithOptionalEnumInt8() = default;
+  StructWithOptionalEnumInt8(const StructWithOptionalEnumInt8&) = default;
+  StructWithOptionalEnumInt8& operator=(const StructWithOptionalEnumInt8&) = default;
+  StructWithOptionalEnumInt8(StructWithOptionalEnumInt8&&) = default;
+  StructWithOptionalEnumInt8& operator=(StructWithOptionalEnumInt8&&) = default;
+
+  apache::thrift::optional_field_ref<const EnumInt8&> testEnum() const& {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  apache::thrift::optional_field_ref<EnumInt8&> testEnum() & {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  apache::thrift::optional_field_ref<EnumInt8&&> testEnum() && {
+     return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
+  apache::thrift::optional_field_ref<const EnumInt8&> testEmptyEnum() const& {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  apache::thrift::optional_field_ref<EnumInt8&> testEmptyEnum() & {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  apache::thrift::optional_field_ref<EnumInt8&&> testEmptyEnum() && {
+     return {std::move(this->testEmptyEnum_), __isset.testEmptyEnum};
+  }
+  
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<const EnumInt8&>
+   testEnum_ref() const& {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumInt8&>
+   testEnum_ref() & {
+    return {this->testEnum_, __isset.testEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumInt8&&>
+   testEnum_ref() && {
+      return {std::move(this->testEnum_), __isset.testEnum};
+  }
+  
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<const EnumInt8&>
+   testEmptyEnum_ref() const& {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumInt8&>
+   testEmptyEnum_ref() & {
+    return {this->testEmptyEnum_, __isset.testEmptyEnum};
+  }
+  FOLLY_ERASE ::apache::thrift::optional_field_ref<EnumInt8&&>
+   testEmptyEnum_ref() && {
+      return {std::move(this->testEmptyEnum_), __isset.testEmptyEnum};
+  }
+  
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  struct __isset {
+    bool testEnum;
+    bool testEmptyEnum;
+  } __isset = {};
+
+  EnumInt8 testEnum_{EnumInt8::AAA};
+  EnumInt8 testEmptyEnum_{EnumInt8::AAA};
+};
 } // namespace test
 } // namespace carbon
 

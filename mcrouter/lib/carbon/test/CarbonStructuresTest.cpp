@@ -64,6 +64,88 @@ void checkKeyFilledProperly(const Key& key) {
   EXPECT_TRUE(key.hasHashStop());
 }
 
+template <class T>
+void checkStructWithEnum(
+    const T& a,
+    const T& b,
+    bool equal,
+    const std::string& msg) {
+  if (equal) {
+    EXPECT_EQ(*a.testEnum_ref(), *b.testEnum_ref()) << msg;
+  } else {
+    EXPECT_NE(*a.testEnum_ref(), *b.testEnum_ref()) << msg;
+  }
+}
+
+template <class T>
+void checkStructWithOptionalEnum(
+    const T& a,
+    const T& b,
+    bool equal,
+    const std::string& msg) {
+  if (equal) {
+    EXPECT_EQ(*a.testEnum_ref(), *b.testEnum_ref()) << msg;
+  } else {
+    EXPECT_NE(*a.testEnum_ref(), *b.testEnum_ref()) << msg;
+  }
+  EXPECT_FALSE(
+      a.testEmptyEnum_ref().has_value() | b.testEmptyEnum_ref().has_value())
+      << msg;
+}
+
+template <class T1, class T2>
+void testEnumCompatibility(bool expectCompatible) {
+  T1 struct1;
+  struct1.testEnum() = decltype(struct1.testEnum_ref())::value_type::BBB;
+
+  T2 struct2;
+  struct2.testEnum() = decltype(struct2.testEnum_ref())::value_type::BBB;
+
+  checkStructWithEnum(
+      struct1,
+      serializeAndDeserialize<T2, T1>(struct2),
+      expectCompatible,
+      folly::sformat("{} to {}", typeid(T2).name(), typeid(T1).name()));
+  checkStructWithEnum(
+      struct2,
+      serializeAndDeserialize<T1, T2>(struct1),
+      expectCompatible,
+      folly::sformat("{} to {}", typeid(T1).name(), typeid(T2).name()));
+
+  checkStructWithEnum(
+      struct1,
+      serializeCarbonAndDeserializeCompactCompatibility<T2, T1>(struct2),
+      expectCompatible,
+      folly::sformat(
+          "{} to {}, compact", typeid(T2).name(), typeid(T1).name()));
+  checkStructWithEnum(
+      struct2,
+      serializeCarbonAndDeserializeCompactCompatibility<T1, T2>(struct1),
+      expectCompatible,
+      folly::sformat(
+          "{} to {}, compact", typeid(T1).name(), typeid(T2).name()));
+}
+
+template <class T1, class T2>
+void testOptionalEnumCompatibility(bool expectCompatible) {
+  T1 struct1;
+  struct1.testEnum() = decltype(struct1.testEnum_ref())::value_type::BBB;
+
+  T2 struct2;
+  struct2.testEnum() = decltype(struct2.testEnum_ref())::value_type::BBB;
+
+  checkStructWithOptionalEnum(
+      struct1,
+      serializeAndDeserialize<T2, T1>(struct2),
+      expectCompatible,
+      folly::sformat("{} to {}", typeid(T2).name(), typeid(T1).name()));
+  checkStructWithOptionalEnum(
+      struct2,
+      serializeAndDeserialize<T1, T2>(struct1),
+      expectCompatible,
+      folly::sformat("{} to {}", typeid(T1).name(), typeid(T2).name()));
+}
+
 } // namespace
 
 TEST(CarbonBasic, staticAsserts) {
@@ -1069,4 +1151,49 @@ TEST(CarbonBasic, mixinsFieldRefAPI) {
   EXPECT_EQ(12345, *request.base_ref()->baseInt64Member_ref());
   EXPECT_EQ(12345, *request.baseStruct_ref()->baseInt64Member_ref());
   EXPECT_EQ(12345, *request.baseInt64Member_ref());
+}
+
+TEST(CarbonBasic, enumIntCompatibility) {
+  testEnumCompatibility<
+      carbon::test::StructWithEnumUInt16,
+      carbon::test::StructWithEnumUInt32>(true);
+  testOptionalEnumCompatibility<
+      carbon::test::StructWithOptionalEnumUInt16,
+      carbon::test::StructWithOptionalEnumUInt32>(true);
+
+  testEnumCompatibility<
+      carbon::test::StructWithEnumUInt64,
+      carbon::test::StructWithEnumUInt32>(true);
+  testOptionalEnumCompatibility<
+      carbon::test::StructWithOptionalEnumUInt64,
+      carbon::test::StructWithOptionalEnumUInt32>(true);
+
+  testEnumCompatibility<
+      carbon::test::StructWithEnumInt16,
+      carbon::test::StructWithEnumInt32>(true);
+  testOptionalEnumCompatibility<
+      carbon::test::StructWithOptionalEnumInt16,
+      carbon::test::StructWithOptionalEnumInt32>(true);
+
+  testEnumCompatibility<
+      carbon::test::StructWithEnumInt64,
+      carbon::test::StructWithEnumInt32>(true);
+  testOptionalEnumCompatibility<
+      carbon::test::StructWithOptionalEnumInt64,
+      carbon::test::StructWithOptionalEnumInt32>(true);
+
+  // uint8_t/int8_t are incompatible with uint32_t/int32_t.
+  testEnumCompatibility<
+      carbon::test::StructWithEnumUInt8,
+      carbon::test::StructWithEnumUInt32>(false);
+  testOptionalEnumCompatibility<
+      carbon::test::StructWithOptionalEnumUInt8,
+      carbon::test::StructWithOptionalEnumUInt32>(false);
+
+  testEnumCompatibility<
+      carbon::test::StructWithEnumInt8,
+      carbon::test::StructWithEnumInt32>(false);
+  testOptionalEnumCompatibility<
+      carbon::test::StructWithOptionalEnumInt8,
+      carbon::test::StructWithOptionalEnumInt32>(false);
 }
