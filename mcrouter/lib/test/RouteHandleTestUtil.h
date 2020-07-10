@@ -287,7 +287,7 @@ struct RecordingRoute {
   template <class Request>
   std::enable_if_t<HasShadowId<Request>::value, void> recordShadowId(
       const Request& req) {
-    h_->sawShadowIds.push_back(req.shadowId());
+    h_->sawShadowIds.push_back(*req.shadowId_ref());
   }
   template <class Request>
   std::enable_if_t<!HasShadowId<Request>::value, void> recordShadowId(

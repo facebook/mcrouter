@@ -25,7 +25,7 @@ struct HasFailover<
 template <class Request>
 typename std::enable_if<HasFailover<Request>::value, void>::type
 setRequestFailover(Request& req) {
-  req.failover() = true;
+  *req.failover_ref() = true;
 }
 
 template <class Request>
