@@ -311,9 +311,13 @@ std::shared_ptr<SSLContext> createClientSSLContext(
 #if FOLLY_OPENSSL_HAS_ALPN
   if (mech == SecurityMech::TLS_TO_PLAINTEXT) {
     // Prepend ECDHE-RSA-NULL-SHA to make it obvious from the ClientHello
-    // that we may not be using encryption.
+    // that we may not be using encryption. For this to work, we must set
+    // the context's security level to 0. The default security level
+    // used by OpenSSL prohibits weak ciphers from being sent in the
+    // ClientHello.
     cVec.insert(cVec.begin(), "ECDHE-RSA-NULL-SHA");
     context->setAdvertisedNextProtocols({kMcSecurityTlsToPlaintextProto.str()});
+    SSL_CTX_set_security_level(context->getSSLCtx(), 0);
   }
 #endif
   // note we use setCipherSuites instead of setClientOptions since client
