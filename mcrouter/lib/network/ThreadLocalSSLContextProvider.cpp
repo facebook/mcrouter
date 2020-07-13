@@ -308,7 +308,7 @@ std::shared_ptr<SSLContext> createClientSSLContext(
   auto context = std::make_shared<ClientSSLContext>(ticketCache.get());
   auto ciphers = folly::ssl::SSLCommonOptions::ciphers();
   std::vector<std::string> cVec(ciphers.begin(), ciphers.end());
-#if FOLLY_OPENSSL_IS_110
+#if FOLLY_OPENSSL_HAS_ALPN
   if (mech == SecurityMech::TLS_TO_PLAINTEXT) {
     // Prepend ECDHE-RSA-NULL-SHA to make it obvious from the ClientHello
     // that we may not be using encryption. For this to work, we must set
