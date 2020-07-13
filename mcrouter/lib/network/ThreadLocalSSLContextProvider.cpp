@@ -317,7 +317,9 @@ std::shared_ptr<SSLContext> createClientSSLContext(
     // ClientHello.
     cVec.insert(cVec.begin(), "ECDHE-RSA-NULL-SHA");
     context->setAdvertisedNextProtocols({kMcSecurityTlsToPlaintextProto.str()});
+#if FOLLY_OPENSSL_IS_110
     SSL_CTX_set_security_level(context->getSSLCtx(), 0);
+#endif
   }
 #endif
   // note we use setCipherSuites instead of setClientOptions since client
