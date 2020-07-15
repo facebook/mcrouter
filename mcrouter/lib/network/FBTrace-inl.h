@@ -30,7 +30,7 @@ inline uint64_t traceGetCount() {
   return 0;
 }
 
-inline nullptr_t traceRequestReceived(
+inline std::nullptr_t traceRequestReceived(
     const std::string& traceContext,
     folly::StringPiece requestType) {
   // Do nothing by default.
