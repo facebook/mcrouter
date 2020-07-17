@@ -14,6 +14,7 @@
  */
 
 namespace hellogoodbye {
+namespace thrift {
 
 template <class Writer>
 void HelloRequest::serialize(Writer&& writer) const {
@@ -144,6 +145,7 @@ void GoodbyeReply::visitFields(V&& v) const {
     return;
   }
 }
+} // namespace thrift
 } // namespace hellogoodbye
 
 namespace apache {
@@ -164,7 +166,7 @@ class Cpp2Ops<hellogoodbye::HelloRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -192,7 +194,7 @@ class Cpp2Ops<hellogoodbye::HelloReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -220,7 +222,7 @@ class Cpp2Ops<hellogoodbye::GoodbyeRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -248,7 +250,7 @@ class Cpp2Ops<hellogoodbye::GoodbyeReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {

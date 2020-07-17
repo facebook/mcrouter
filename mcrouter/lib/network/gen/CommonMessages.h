@@ -37,7 +37,7 @@ namespace memcache {
 
 class McVersionReply;
 
-class McVersionRequest : public carbon::RequestCommon {
+class McVersionRequest : public carbon::RequestCommon, public facebook::memcache::thrift::McVersionRequest {
  public:
   using reply_type = McVersionReply;
 
@@ -50,84 +50,17 @@ class McVersionRequest : public carbon::RequestCommon {
   McVersionRequest(McVersionRequest&&) = default;
   McVersionRequest& operator=(McVersionRequest&&) = default;
   explicit McVersionRequest(folly::StringPiece sp) {
-    underlyingThriftStruct_.key = sp;
+    key_ref() = sp;
   }
   explicit McVersionRequest(folly::IOBuf&& carbonKey) {
-    underlyingThriftStruct_.key = std::move(carbonKey);
-  }
-
-  const carbon::Keys<folly::IOBuf>& key() const {
-    return underlyingThriftStruct_.key;
-  }
-  carbon::Keys<folly::IOBuf>& key() {
-    markBufferAsDirty();
-    return underlyingThriftStruct_.key;
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<const carbon::Keys<folly::IOBuf>&>
-   key_ref() const& {
-    return underlyingThriftStruct_.key_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Keys<folly::IOBuf>&>
-   key_ref() & {
-    return underlyingThriftStruct_.key_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Keys<folly::IOBuf>&&>
-   key_ref() && {
-    return std::move(underlyingThriftStruct_).key_ref();
-  }
-  
-  const facebook::memcache::thrift::McVersionRequest& getThriftStruct() const {
-    return underlyingThriftStruct_;
-  }
-  facebook::memcache::thrift::McVersionRequest& getThriftStruct() {
-    markBufferAsDirty();
-    return underlyingThriftStruct_;
-  }
-
-  template <class Writer>
-  void serialize(Writer&& writer) const;
-
-  void deserialize(carbon::CarbonProtocolReader& reader);
-
-  template <class V>
-  void visitFields(V&& v);
-  template <class V>
-  void visitFields(V&& v) const;
-
-  // Methods for Thrift interoperability, note that the methods work with Thrift
-  // protocols and not Carbon protocol.
-  void __clear() {
-    underlyingThriftStruct_.__clear();
-  }
-  template <class Protocol>
-  uint32_t write(Protocol* protocol) const {
-    return underlyingThriftStruct_.write(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSize(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSize(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSizeZC(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSizeZC(protocol);
-  }
- private:
-  template <class Protocol>
-  void readNoXfer(Protocol* protocol) {
-    underlyingThriftStruct_.read(protocol);
+    key_ref() = std::move(carbonKey);
   }
 
   friend class apache::thrift::Cpp2Ops<McVersionRequest>;
 
- private:
-  struct __isset {
-    bool key;
-  } __isset = {};
-
-  facebook::memcache::thrift::McVersionRequest underlyingThriftStruct_;
 };
 
-class McVersionReply : public carbon::ReplyCommon {
+class McVersionReply : public carbon::ReplyCommon, public facebook::memcache::thrift::McVersionReply {
  public:
 
   static constexpr size_t typeId = 26;
@@ -138,141 +71,16 @@ class McVersionReply : public carbon::ReplyCommon {
   McVersionReply(McVersionReply&&) = default;
   McVersionReply& operator=(McVersionReply&&) = default;
   explicit McVersionReply(carbon::Result carbonResult) {
-    underlyingThriftStruct_.result = carbonResult;
-  }
-
-  carbon::Result result() const {
-    return underlyingThriftStruct_.result;
-  }
-  carbon::Result& result() {
-    return underlyingThriftStruct_.result;
-  }
-  const folly::IOBuf& value() const {
-    return underlyingThriftStruct_.value;
-  }
-  folly::IOBuf& value() {
-    return underlyingThriftStruct_.value;
-  }
-  const std::string& message() const {
-    return underlyingThriftStruct_.message;
-  }
-  std::string& message() {
-    return underlyingThriftStruct_.message;
-  }
-  int16_t appSpecificErrorCode() const {
-    return underlyingThriftStruct_.appSpecificErrorCode;
-  }
-  int16_t& appSpecificErrorCode() {
-    return underlyingThriftStruct_.appSpecificErrorCode;
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<const carbon::Result&>
-   result_ref() const& {
-    return underlyingThriftStruct_.result_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Result&>
-   result_ref() & {
-    return underlyingThriftStruct_.result_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Result&&>
-   result_ref() && {
-    return std::move(underlyingThriftStruct_).result_ref();
-  }
-  
-  FOLLY_ERASE ::apache::thrift::field_ref<const folly::IOBuf&>
-   value_ref() const& {
-    return underlyingThriftStruct_.value_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&>
-   value_ref() & {
-    return underlyingThriftStruct_.value_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<folly::IOBuf&&>
-   value_ref() && {
-    return std::move(underlyingThriftStruct_).value_ref();
-  }
-  
-  FOLLY_ERASE ::apache::thrift::field_ref<const std::string&>
-   message_ref() const& {
-    return underlyingThriftStruct_.message_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<std::string&>
-   message_ref() & {
-    return underlyingThriftStruct_.message_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<std::string&&>
-   message_ref() && {
-    return std::move(underlyingThriftStruct_).message_ref();
-  }
-  
-  FOLLY_ERASE ::apache::thrift::field_ref<const int16_t&>
-   appSpecificErrorCode_ref() const& {
-    return underlyingThriftStruct_.appSpecificErrorCode_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<int16_t&>
-   appSpecificErrorCode_ref() & {
-    return underlyingThriftStruct_.appSpecificErrorCode_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<int16_t&&>
-   appSpecificErrorCode_ref() && {
-    return std::move(underlyingThriftStruct_).appSpecificErrorCode_ref();
-  }
-  
-  const facebook::memcache::thrift::McVersionReply& getThriftStruct() const {
-    return underlyingThriftStruct_;
-  }
-  facebook::memcache::thrift::McVersionReply& getThriftStruct() {
-    return underlyingThriftStruct_;
-  }
-
-  template <class Writer>
-  void serialize(Writer&& writer) const;
-
-  void deserialize(carbon::CarbonProtocolReader& reader);
-
-  template <class V>
-  void visitFields(V&& v);
-  template <class V>
-  void visitFields(V&& v) const;
-
-  // Methods for Thrift interoperability, note that the methods work with Thrift
-  // protocols and not Carbon protocol.
-  void __clear() {
-    underlyingThriftStruct_.__clear();
-  }
-  template <class Protocol>
-  uint32_t write(Protocol* protocol) const {
-    return underlyingThriftStruct_.write(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSize(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSize(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSizeZC(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSizeZC(protocol);
-  }
- private:
-  template <class Protocol>
-  void readNoXfer(Protocol* protocol) {
-    underlyingThriftStruct_.read(protocol);
+    result_ref() = carbonResult;
   }
 
   friend class apache::thrift::Cpp2Ops<McVersionReply>;
 
- private:
-  struct __isset {
-    bool result;
-    bool value;
-    bool message;
-    bool appSpecificErrorCode;
-  } __isset = {};
-
-  facebook::memcache::thrift::McVersionReply underlyingThriftStruct_;
 };
 
 class McStatsReply;
 
-class McStatsRequest : public carbon::RequestCommon {
+class McStatsRequest : public carbon::RequestCommon, public facebook::memcache::thrift::McStatsRequest {
  public:
   using reply_type = McStatsReply;
 
@@ -285,84 +93,17 @@ class McStatsRequest : public carbon::RequestCommon {
   McStatsRequest(McStatsRequest&&) = default;
   McStatsRequest& operator=(McStatsRequest&&) = default;
   explicit McStatsRequest(folly::StringPiece sp) {
-    underlyingThriftStruct_.key = sp;
+    key_ref() = sp;
   }
   explicit McStatsRequest(folly::IOBuf&& carbonKey) {
-    underlyingThriftStruct_.key = std::move(carbonKey);
-  }
-
-  const carbon::Keys<folly::IOBuf>& key() const {
-    return underlyingThriftStruct_.key;
-  }
-  carbon::Keys<folly::IOBuf>& key() {
-    markBufferAsDirty();
-    return underlyingThriftStruct_.key;
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<const carbon::Keys<folly::IOBuf>&>
-   key_ref() const& {
-    return underlyingThriftStruct_.key_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Keys<folly::IOBuf>&>
-   key_ref() & {
-    return underlyingThriftStruct_.key_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Keys<folly::IOBuf>&&>
-   key_ref() && {
-    return std::move(underlyingThriftStruct_).key_ref();
-  }
-  
-  const facebook::memcache::thrift::McStatsRequest& getThriftStruct() const {
-    return underlyingThriftStruct_;
-  }
-  facebook::memcache::thrift::McStatsRequest& getThriftStruct() {
-    markBufferAsDirty();
-    return underlyingThriftStruct_;
-  }
-
-  template <class Writer>
-  void serialize(Writer&& writer) const;
-
-  void deserialize(carbon::CarbonProtocolReader& reader);
-
-  template <class V>
-  void visitFields(V&& v);
-  template <class V>
-  void visitFields(V&& v) const;
-
-  // Methods for Thrift interoperability, note that the methods work with Thrift
-  // protocols and not Carbon protocol.
-  void __clear() {
-    underlyingThriftStruct_.__clear();
-  }
-  template <class Protocol>
-  uint32_t write(Protocol* protocol) const {
-    return underlyingThriftStruct_.write(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSize(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSize(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSizeZC(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSizeZC(protocol);
-  }
- private:
-  template <class Protocol>
-  void readNoXfer(Protocol* protocol) {
-    underlyingThriftStruct_.read(protocol);
+    key_ref() = std::move(carbonKey);
   }
 
   friend class apache::thrift::Cpp2Ops<McStatsRequest>;
 
- private:
-  struct __isset {
-    bool key;
-  } __isset = {};
-
-  facebook::memcache::thrift::McStatsRequest underlyingThriftStruct_;
 };
 
-class McStatsReply : public carbon::ReplyCommon {
+class McStatsReply : public carbon::ReplyCommon, public facebook::memcache::thrift::McStatsReply {
  public:
 
   static constexpr size_t typeId = 34;
@@ -373,141 +114,16 @@ class McStatsReply : public carbon::ReplyCommon {
   McStatsReply(McStatsReply&&) = default;
   McStatsReply& operator=(McStatsReply&&) = default;
   explicit McStatsReply(carbon::Result carbonResult) {
-    underlyingThriftStruct_.result = carbonResult;
-  }
-
-  carbon::Result result() const {
-    return underlyingThriftStruct_.result;
-  }
-  carbon::Result& result() {
-    return underlyingThriftStruct_.result;
-  }
-  const std::string& message() const {
-    return underlyingThriftStruct_.message;
-  }
-  std::string& message() {
-    return underlyingThriftStruct_.message;
-  }
-  const std::vector<std::string>& stats() const {
-    return underlyingThriftStruct_.stats;
-  }
-  std::vector<std::string>& stats() {
-    return underlyingThriftStruct_.stats;
-  }
-  int16_t appSpecificErrorCode() const {
-    return underlyingThriftStruct_.appSpecificErrorCode;
-  }
-  int16_t& appSpecificErrorCode() {
-    return underlyingThriftStruct_.appSpecificErrorCode;
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<const carbon::Result&>
-   result_ref() const& {
-    return underlyingThriftStruct_.result_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Result&>
-   result_ref() & {
-    return underlyingThriftStruct_.result_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Result&&>
-   result_ref() && {
-    return std::move(underlyingThriftStruct_).result_ref();
-  }
-  
-  FOLLY_ERASE ::apache::thrift::field_ref<const std::string&>
-   message_ref() const& {
-    return underlyingThriftStruct_.message_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<std::string&>
-   message_ref() & {
-    return underlyingThriftStruct_.message_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<std::string&&>
-   message_ref() && {
-    return std::move(underlyingThriftStruct_).message_ref();
-  }
-  
-  FOLLY_ERASE ::apache::thrift::field_ref<const std::vector<std::string>&>
-   stats_ref() const& {
-    return underlyingThriftStruct_.stats_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<std::vector<std::string>&>
-   stats_ref() & {
-    return underlyingThriftStruct_.stats_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<std::vector<std::string>&&>
-   stats_ref() && {
-    return std::move(underlyingThriftStruct_).stats_ref();
-  }
-  
-  FOLLY_ERASE ::apache::thrift::field_ref<const int16_t&>
-   appSpecificErrorCode_ref() const& {
-    return underlyingThriftStruct_.appSpecificErrorCode_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<int16_t&>
-   appSpecificErrorCode_ref() & {
-    return underlyingThriftStruct_.appSpecificErrorCode_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<int16_t&&>
-   appSpecificErrorCode_ref() && {
-    return std::move(underlyingThriftStruct_).appSpecificErrorCode_ref();
-  }
-  
-  const facebook::memcache::thrift::McStatsReply& getThriftStruct() const {
-    return underlyingThriftStruct_;
-  }
-  facebook::memcache::thrift::McStatsReply& getThriftStruct() {
-    return underlyingThriftStruct_;
-  }
-
-  template <class Writer>
-  void serialize(Writer&& writer) const;
-
-  void deserialize(carbon::CarbonProtocolReader& reader);
-
-  template <class V>
-  void visitFields(V&& v);
-  template <class V>
-  void visitFields(V&& v) const;
-
-  // Methods for Thrift interoperability, note that the methods work with Thrift
-  // protocols and not Carbon protocol.
-  void __clear() {
-    underlyingThriftStruct_.__clear();
-  }
-  template <class Protocol>
-  uint32_t write(Protocol* protocol) const {
-    return underlyingThriftStruct_.write(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSize(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSize(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSizeZC(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSizeZC(protocol);
-  }
- private:
-  template <class Protocol>
-  void readNoXfer(Protocol* protocol) {
-    underlyingThriftStruct_.read(protocol);
+    result_ref() = carbonResult;
   }
 
   friend class apache::thrift::Cpp2Ops<McStatsReply>;
 
- private:
-  struct __isset {
-    bool result;
-    bool message;
-    bool stats;
-    bool appSpecificErrorCode;
-  } __isset = {};
-
-  facebook::memcache::thrift::McStatsReply underlyingThriftStruct_;
 };
 
 class McShutdownReply;
 
-class McShutdownRequest : public carbon::RequestCommon {
+class McShutdownRequest : public carbon::RequestCommon, public facebook::memcache::thrift::McShutdownRequest {
  public:
   using reply_type = McShutdownReply;
 
@@ -520,84 +136,17 @@ class McShutdownRequest : public carbon::RequestCommon {
   McShutdownRequest(McShutdownRequest&&) = default;
   McShutdownRequest& operator=(McShutdownRequest&&) = default;
   explicit McShutdownRequest(folly::StringPiece sp) {
-    underlyingThriftStruct_.key = sp;
+    key_ref() = sp;
   }
   explicit McShutdownRequest(folly::IOBuf&& carbonKey) {
-    underlyingThriftStruct_.key = std::move(carbonKey);
-  }
-
-  const carbon::Keys<folly::IOBuf>& key() const {
-    return underlyingThriftStruct_.key;
-  }
-  carbon::Keys<folly::IOBuf>& key() {
-    markBufferAsDirty();
-    return underlyingThriftStruct_.key;
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<const carbon::Keys<folly::IOBuf>&>
-   key_ref() const& {
-    return underlyingThriftStruct_.key_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Keys<folly::IOBuf>&>
-   key_ref() & {
-    return underlyingThriftStruct_.key_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Keys<folly::IOBuf>&&>
-   key_ref() && {
-    return std::move(underlyingThriftStruct_).key_ref();
-  }
-  
-  const facebook::memcache::thrift::McShutdownRequest& getThriftStruct() const {
-    return underlyingThriftStruct_;
-  }
-  facebook::memcache::thrift::McShutdownRequest& getThriftStruct() {
-    markBufferAsDirty();
-    return underlyingThriftStruct_;
-  }
-
-  template <class Writer>
-  void serialize(Writer&& writer) const;
-
-  void deserialize(carbon::CarbonProtocolReader& reader);
-
-  template <class V>
-  void visitFields(V&& v);
-  template <class V>
-  void visitFields(V&& v) const;
-
-  // Methods for Thrift interoperability, note that the methods work with Thrift
-  // protocols and not Carbon protocol.
-  void __clear() {
-    underlyingThriftStruct_.__clear();
-  }
-  template <class Protocol>
-  uint32_t write(Protocol* protocol) const {
-    return underlyingThriftStruct_.write(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSize(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSize(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSizeZC(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSizeZC(protocol);
-  }
- private:
-  template <class Protocol>
-  void readNoXfer(Protocol* protocol) {
-    underlyingThriftStruct_.read(protocol);
+    key_ref() = std::move(carbonKey);
   }
 
   friend class apache::thrift::Cpp2Ops<McShutdownRequest>;
 
- private:
-  struct __isset {
-    bool key;
-  } __isset = {};
-
-  facebook::memcache::thrift::McShutdownRequest underlyingThriftStruct_;
 };
 
-class McShutdownReply : public carbon::ReplyCommon {
+class McShutdownReply : public carbon::ReplyCommon, public facebook::memcache::thrift::McShutdownReply {
  public:
 
   static constexpr size_t typeId = 36;
@@ -608,121 +157,16 @@ class McShutdownReply : public carbon::ReplyCommon {
   McShutdownReply(McShutdownReply&&) = default;
   McShutdownReply& operator=(McShutdownReply&&) = default;
   explicit McShutdownReply(carbon::Result carbonResult) {
-    underlyingThriftStruct_.result = carbonResult;
-  }
-
-  carbon::Result result() const {
-    return underlyingThriftStruct_.result;
-  }
-  carbon::Result& result() {
-    return underlyingThriftStruct_.result;
-  }
-  const std::string& message() const {
-    return underlyingThriftStruct_.message;
-  }
-  std::string& message() {
-    return underlyingThriftStruct_.message;
-  }
-  int16_t appSpecificErrorCode() const {
-    return underlyingThriftStruct_.appSpecificErrorCode;
-  }
-  int16_t& appSpecificErrorCode() {
-    return underlyingThriftStruct_.appSpecificErrorCode;
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<const carbon::Result&>
-   result_ref() const& {
-    return underlyingThriftStruct_.result_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Result&>
-   result_ref() & {
-    return underlyingThriftStruct_.result_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Result&&>
-   result_ref() && {
-    return std::move(underlyingThriftStruct_).result_ref();
-  }
-  
-  FOLLY_ERASE ::apache::thrift::field_ref<const std::string&>
-   message_ref() const& {
-    return underlyingThriftStruct_.message_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<std::string&>
-   message_ref() & {
-    return underlyingThriftStruct_.message_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<std::string&&>
-   message_ref() && {
-    return std::move(underlyingThriftStruct_).message_ref();
-  }
-  
-  FOLLY_ERASE ::apache::thrift::field_ref<const int16_t&>
-   appSpecificErrorCode_ref() const& {
-    return underlyingThriftStruct_.appSpecificErrorCode_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<int16_t&>
-   appSpecificErrorCode_ref() & {
-    return underlyingThriftStruct_.appSpecificErrorCode_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<int16_t&&>
-   appSpecificErrorCode_ref() && {
-    return std::move(underlyingThriftStruct_).appSpecificErrorCode_ref();
-  }
-  
-  const facebook::memcache::thrift::McShutdownReply& getThriftStruct() const {
-    return underlyingThriftStruct_;
-  }
-  facebook::memcache::thrift::McShutdownReply& getThriftStruct() {
-    return underlyingThriftStruct_;
-  }
-
-  template <class Writer>
-  void serialize(Writer&& writer) const;
-
-  void deserialize(carbon::CarbonProtocolReader& reader);
-
-  template <class V>
-  void visitFields(V&& v);
-  template <class V>
-  void visitFields(V&& v) const;
-
-  // Methods for Thrift interoperability, note that the methods work with Thrift
-  // protocols and not Carbon protocol.
-  void __clear() {
-    underlyingThriftStruct_.__clear();
-  }
-  template <class Protocol>
-  uint32_t write(Protocol* protocol) const {
-    return underlyingThriftStruct_.write(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSize(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSize(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSizeZC(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSizeZC(protocol);
-  }
- private:
-  template <class Protocol>
-  void readNoXfer(Protocol* protocol) {
-    underlyingThriftStruct_.read(protocol);
+    result_ref() = carbonResult;
   }
 
   friend class apache::thrift::Cpp2Ops<McShutdownReply>;
 
- private:
-  struct __isset {
-    bool result;
-    bool message;
-    bool appSpecificErrorCode;
-  } __isset = {};
-
-  facebook::memcache::thrift::McShutdownReply underlyingThriftStruct_;
 };
 
 class McQuitReply;
 
-class McQuitRequest : public carbon::RequestCommon {
+class McQuitRequest : public carbon::RequestCommon, public facebook::memcache::thrift::McQuitRequest {
  public:
   using reply_type = McQuitReply;
 
@@ -735,84 +179,17 @@ class McQuitRequest : public carbon::RequestCommon {
   McQuitRequest(McQuitRequest&&) = default;
   McQuitRequest& operator=(McQuitRequest&&) = default;
   explicit McQuitRequest(folly::StringPiece sp) {
-    underlyingThriftStruct_.key = sp;
+    key_ref() = sp;
   }
   explicit McQuitRequest(folly::IOBuf&& carbonKey) {
-    underlyingThriftStruct_.key = std::move(carbonKey);
-  }
-
-  const carbon::Keys<folly::IOBuf>& key() const {
-    return underlyingThriftStruct_.key;
-  }
-  carbon::Keys<folly::IOBuf>& key() {
-    markBufferAsDirty();
-    return underlyingThriftStruct_.key;
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<const carbon::Keys<folly::IOBuf>&>
-   key_ref() const& {
-    return underlyingThriftStruct_.key_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Keys<folly::IOBuf>&>
-   key_ref() & {
-    return underlyingThriftStruct_.key_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Keys<folly::IOBuf>&&>
-   key_ref() && {
-    return std::move(underlyingThriftStruct_).key_ref();
-  }
-  
-  const facebook::memcache::thrift::McQuitRequest& getThriftStruct() const {
-    return underlyingThriftStruct_;
-  }
-  facebook::memcache::thrift::McQuitRequest& getThriftStruct() {
-    markBufferAsDirty();
-    return underlyingThriftStruct_;
-  }
-
-  template <class Writer>
-  void serialize(Writer&& writer) const;
-
-  void deserialize(carbon::CarbonProtocolReader& reader);
-
-  template <class V>
-  void visitFields(V&& v);
-  template <class V>
-  void visitFields(V&& v) const;
-
-  // Methods for Thrift interoperability, note that the methods work with Thrift
-  // protocols and not Carbon protocol.
-  void __clear() {
-    underlyingThriftStruct_.__clear();
-  }
-  template <class Protocol>
-  uint32_t write(Protocol* protocol) const {
-    return underlyingThriftStruct_.write(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSize(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSize(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSizeZC(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSizeZC(protocol);
-  }
- private:
-  template <class Protocol>
-  void readNoXfer(Protocol* protocol) {
-    underlyingThriftStruct_.read(protocol);
+    key_ref() = std::move(carbonKey);
   }
 
   friend class apache::thrift::Cpp2Ops<McQuitRequest>;
 
- private:
-  struct __isset {
-    bool key;
-  } __isset = {};
-
-  facebook::memcache::thrift::McQuitRequest underlyingThriftStruct_;
 };
 
-class McQuitReply : public carbon::ReplyCommon {
+class McQuitReply : public carbon::ReplyCommon, public facebook::memcache::thrift::McQuitReply {
  public:
 
   static constexpr size_t typeId = 38;
@@ -823,121 +200,16 @@ class McQuitReply : public carbon::ReplyCommon {
   McQuitReply(McQuitReply&&) = default;
   McQuitReply& operator=(McQuitReply&&) = default;
   explicit McQuitReply(carbon::Result carbonResult) {
-    underlyingThriftStruct_.result = carbonResult;
-  }
-
-  carbon::Result result() const {
-    return underlyingThriftStruct_.result;
-  }
-  carbon::Result& result() {
-    return underlyingThriftStruct_.result;
-  }
-  const std::string& message() const {
-    return underlyingThriftStruct_.message;
-  }
-  std::string& message() {
-    return underlyingThriftStruct_.message;
-  }
-  int16_t appSpecificErrorCode() const {
-    return underlyingThriftStruct_.appSpecificErrorCode;
-  }
-  int16_t& appSpecificErrorCode() {
-    return underlyingThriftStruct_.appSpecificErrorCode;
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<const carbon::Result&>
-   result_ref() const& {
-    return underlyingThriftStruct_.result_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Result&>
-   result_ref() & {
-    return underlyingThriftStruct_.result_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Result&&>
-   result_ref() && {
-    return std::move(underlyingThriftStruct_).result_ref();
-  }
-  
-  FOLLY_ERASE ::apache::thrift::field_ref<const std::string&>
-   message_ref() const& {
-    return underlyingThriftStruct_.message_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<std::string&>
-   message_ref() & {
-    return underlyingThriftStruct_.message_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<std::string&&>
-   message_ref() && {
-    return std::move(underlyingThriftStruct_).message_ref();
-  }
-  
-  FOLLY_ERASE ::apache::thrift::field_ref<const int16_t&>
-   appSpecificErrorCode_ref() const& {
-    return underlyingThriftStruct_.appSpecificErrorCode_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<int16_t&>
-   appSpecificErrorCode_ref() & {
-    return underlyingThriftStruct_.appSpecificErrorCode_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<int16_t&&>
-   appSpecificErrorCode_ref() && {
-    return std::move(underlyingThriftStruct_).appSpecificErrorCode_ref();
-  }
-  
-  const facebook::memcache::thrift::McQuitReply& getThriftStruct() const {
-    return underlyingThriftStruct_;
-  }
-  facebook::memcache::thrift::McQuitReply& getThriftStruct() {
-    return underlyingThriftStruct_;
-  }
-
-  template <class Writer>
-  void serialize(Writer&& writer) const;
-
-  void deserialize(carbon::CarbonProtocolReader& reader);
-
-  template <class V>
-  void visitFields(V&& v);
-  template <class V>
-  void visitFields(V&& v) const;
-
-  // Methods for Thrift interoperability, note that the methods work with Thrift
-  // protocols and not Carbon protocol.
-  void __clear() {
-    underlyingThriftStruct_.__clear();
-  }
-  template <class Protocol>
-  uint32_t write(Protocol* protocol) const {
-    return underlyingThriftStruct_.write(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSize(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSize(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSizeZC(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSizeZC(protocol);
-  }
- private:
-  template <class Protocol>
-  void readNoXfer(Protocol* protocol) {
-    underlyingThriftStruct_.read(protocol);
+    result_ref() = carbonResult;
   }
 
   friend class apache::thrift::Cpp2Ops<McQuitReply>;
 
- private:
-  struct __isset {
-    bool result;
-    bool message;
-    bool appSpecificErrorCode;
-  } __isset = {};
-
-  facebook::memcache::thrift::McQuitReply underlyingThriftStruct_;
 };
 
 class McExecReply;
 
-class McExecRequest : public carbon::RequestCommon {
+class McExecRequest : public carbon::RequestCommon, public facebook::memcache::thrift::McExecRequest {
  public:
   using reply_type = McExecReply;
 
@@ -950,84 +222,17 @@ class McExecRequest : public carbon::RequestCommon {
   McExecRequest(McExecRequest&&) = default;
   McExecRequest& operator=(McExecRequest&&) = default;
   explicit McExecRequest(folly::StringPiece sp) {
-    underlyingThriftStruct_.key = sp;
+    key_ref() = sp;
   }
   explicit McExecRequest(folly::IOBuf&& carbonKey) {
-    underlyingThriftStruct_.key = std::move(carbonKey);
-  }
-
-  const carbon::Keys<folly::IOBuf>& key() const {
-    return underlyingThriftStruct_.key;
-  }
-  carbon::Keys<folly::IOBuf>& key() {
-    markBufferAsDirty();
-    return underlyingThriftStruct_.key;
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<const carbon::Keys<folly::IOBuf>&>
-   key_ref() const& {
-    return underlyingThriftStruct_.key_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Keys<folly::IOBuf>&>
-   key_ref() & {
-    return underlyingThriftStruct_.key_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Keys<folly::IOBuf>&&>
-   key_ref() && {
-    return std::move(underlyingThriftStruct_).key_ref();
-  }
-  
-  const facebook::memcache::thrift::McExecRequest& getThriftStruct() const {
-    return underlyingThriftStruct_;
-  }
-  facebook::memcache::thrift::McExecRequest& getThriftStruct() {
-    markBufferAsDirty();
-    return underlyingThriftStruct_;
-  }
-
-  template <class Writer>
-  void serialize(Writer&& writer) const;
-
-  void deserialize(carbon::CarbonProtocolReader& reader);
-
-  template <class V>
-  void visitFields(V&& v);
-  template <class V>
-  void visitFields(V&& v) const;
-
-  // Methods for Thrift interoperability, note that the methods work with Thrift
-  // protocols and not Carbon protocol.
-  void __clear() {
-    underlyingThriftStruct_.__clear();
-  }
-  template <class Protocol>
-  uint32_t write(Protocol* protocol) const {
-    return underlyingThriftStruct_.write(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSize(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSize(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSizeZC(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSizeZC(protocol);
-  }
- private:
-  template <class Protocol>
-  void readNoXfer(Protocol* protocol) {
-    underlyingThriftStruct_.read(protocol);
+    key_ref() = std::move(carbonKey);
   }
 
   friend class apache::thrift::Cpp2Ops<McExecRequest>;
 
- private:
-  struct __isset {
-    bool key;
-  } __isset = {};
-
-  facebook::memcache::thrift::McExecRequest underlyingThriftStruct_;
 };
 
-class McExecReply : public carbon::ReplyCommon {
+class McExecReply : public carbon::ReplyCommon, public facebook::memcache::thrift::McExecReply {
  public:
 
   static constexpr size_t typeId = 40;
@@ -1038,141 +243,16 @@ class McExecReply : public carbon::ReplyCommon {
   McExecReply(McExecReply&&) = default;
   McExecReply& operator=(McExecReply&&) = default;
   explicit McExecReply(carbon::Result carbonResult) {
-    underlyingThriftStruct_.result = carbonResult;
-  }
-
-  carbon::Result result() const {
-    return underlyingThriftStruct_.result;
-  }
-  carbon::Result& result() {
-    return underlyingThriftStruct_.result;
-  }
-  const std::string& response() const {
-    return underlyingThriftStruct_.response;
-  }
-  std::string& response() {
-    return underlyingThriftStruct_.response;
-  }
-  const std::string& message() const {
-    return underlyingThriftStruct_.message;
-  }
-  std::string& message() {
-    return underlyingThriftStruct_.message;
-  }
-  int16_t appSpecificErrorCode() const {
-    return underlyingThriftStruct_.appSpecificErrorCode;
-  }
-  int16_t& appSpecificErrorCode() {
-    return underlyingThriftStruct_.appSpecificErrorCode;
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<const carbon::Result&>
-   result_ref() const& {
-    return underlyingThriftStruct_.result_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Result&>
-   result_ref() & {
-    return underlyingThriftStruct_.result_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Result&&>
-   result_ref() && {
-    return std::move(underlyingThriftStruct_).result_ref();
-  }
-  
-  FOLLY_ERASE ::apache::thrift::field_ref<const std::string&>
-   response_ref() const& {
-    return underlyingThriftStruct_.response_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<std::string&>
-   response_ref() & {
-    return underlyingThriftStruct_.response_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<std::string&&>
-   response_ref() && {
-    return std::move(underlyingThriftStruct_).response_ref();
-  }
-  
-  FOLLY_ERASE ::apache::thrift::field_ref<const std::string&>
-   message_ref() const& {
-    return underlyingThriftStruct_.message_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<std::string&>
-   message_ref() & {
-    return underlyingThriftStruct_.message_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<std::string&&>
-   message_ref() && {
-    return std::move(underlyingThriftStruct_).message_ref();
-  }
-  
-  FOLLY_ERASE ::apache::thrift::field_ref<const int16_t&>
-   appSpecificErrorCode_ref() const& {
-    return underlyingThriftStruct_.appSpecificErrorCode_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<int16_t&>
-   appSpecificErrorCode_ref() & {
-    return underlyingThriftStruct_.appSpecificErrorCode_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<int16_t&&>
-   appSpecificErrorCode_ref() && {
-    return std::move(underlyingThriftStruct_).appSpecificErrorCode_ref();
-  }
-  
-  const facebook::memcache::thrift::McExecReply& getThriftStruct() const {
-    return underlyingThriftStruct_;
-  }
-  facebook::memcache::thrift::McExecReply& getThriftStruct() {
-    return underlyingThriftStruct_;
-  }
-
-  template <class Writer>
-  void serialize(Writer&& writer) const;
-
-  void deserialize(carbon::CarbonProtocolReader& reader);
-
-  template <class V>
-  void visitFields(V&& v);
-  template <class V>
-  void visitFields(V&& v) const;
-
-  // Methods for Thrift interoperability, note that the methods work with Thrift
-  // protocols and not Carbon protocol.
-  void __clear() {
-    underlyingThriftStruct_.__clear();
-  }
-  template <class Protocol>
-  uint32_t write(Protocol* protocol) const {
-    return underlyingThriftStruct_.write(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSize(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSize(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSizeZC(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSizeZC(protocol);
-  }
- private:
-  template <class Protocol>
-  void readNoXfer(Protocol* protocol) {
-    underlyingThriftStruct_.read(protocol);
+    result_ref() = carbonResult;
   }
 
   friend class apache::thrift::Cpp2Ops<McExecReply>;
 
- private:
-  struct __isset {
-    bool result;
-    bool response;
-    bool message;
-    bool appSpecificErrorCode;
-  } __isset = {};
-
-  facebook::memcache::thrift::McExecReply underlyingThriftStruct_;
 };
 
 class GoAwayRequest;
 
-class GoAwayAcknowledgement : public carbon::RequestCommon {
+class GoAwayAcknowledgement : public carbon::RequestCommon, public facebook::memcache::thrift::GoAwayAcknowledgement {
  public:
   using reply_type = GoAwayRequest;
 
@@ -1185,58 +265,11 @@ class GoAwayAcknowledgement : public carbon::RequestCommon {
   GoAwayAcknowledgement(GoAwayAcknowledgement&&) = default;
   GoAwayAcknowledgement& operator=(GoAwayAcknowledgement&&) = default;
 
-  const facebook::memcache::thrift::GoAwayAcknowledgement& getThriftStruct() const {
-    return underlyingThriftStruct_;
-  }
-  facebook::memcache::thrift::GoAwayAcknowledgement& getThriftStruct() {
-    markBufferAsDirty();
-    return underlyingThriftStruct_;
-  }
-
-  template <class Writer>
-  void serialize(Writer&& writer) const;
-
-  void deserialize(carbon::CarbonProtocolReader& reader);
-
-  template <class V>
-  void visitFields(V&& v);
-  template <class V>
-  void visitFields(V&& v) const;
-
-  // Methods for Thrift interoperability, note that the methods work with Thrift
-  // protocols and not Carbon protocol.
-  void __clear() {
-    underlyingThriftStruct_.__clear();
-  }
-  template <class Protocol>
-  uint32_t write(Protocol* protocol) const {
-    return underlyingThriftStruct_.write(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSize(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSize(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSizeZC(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSizeZC(protocol);
-  }
- private:
-  template <class Protocol>
-  void readNoXfer(Protocol* protocol) {
-    underlyingThriftStruct_.read(protocol);
-  }
-
   friend class apache::thrift::Cpp2Ops<GoAwayAcknowledgement>;
 
- private:
-  struct __isset {
-
-  } __isset = {};
-
-  facebook::memcache::thrift::GoAwayAcknowledgement underlyingThriftStruct_;
 };
 
-class GoAwayRequest : public carbon::ReplyCommon {
+class GoAwayRequest : public carbon::ReplyCommon, public facebook::memcache::thrift::GoAwayRequest {
  public:
 
   static constexpr size_t typeId = 42;
@@ -1247,96 +280,11 @@ class GoAwayRequest : public carbon::ReplyCommon {
   GoAwayRequest(GoAwayRequest&&) = default;
   GoAwayRequest& operator=(GoAwayRequest&&) = default;
   explicit GoAwayRequest(carbon::Result carbonResult) {
-    underlyingThriftStruct_.result = carbonResult;
-  }
-
-  carbon::Result result() const {
-    return underlyingThriftStruct_.result;
-  }
-  carbon::Result& result() {
-    return underlyingThriftStruct_.result;
-  }
-  const std::string& reason() const {
-    return underlyingThriftStruct_.reason;
-  }
-  std::string& reason() {
-    return underlyingThriftStruct_.reason;
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<const carbon::Result&>
-   result_ref() const& {
-    return underlyingThriftStruct_.result_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Result&>
-   result_ref() & {
-    return underlyingThriftStruct_.result_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<carbon::Result&&>
-   result_ref() && {
-    return std::move(underlyingThriftStruct_).result_ref();
-  }
-  
-  FOLLY_ERASE ::apache::thrift::field_ref<const std::string&>
-   reason_ref() const& {
-    return underlyingThriftStruct_.reason_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<std::string&>
-   reason_ref() & {
-    return underlyingThriftStruct_.reason_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<std::string&&>
-   reason_ref() && {
-    return std::move(underlyingThriftStruct_).reason_ref();
-  }
-  
-  const facebook::memcache::thrift::GoAwayRequest& getThriftStruct() const {
-    return underlyingThriftStruct_;
-  }
-  facebook::memcache::thrift::GoAwayRequest& getThriftStruct() {
-    return underlyingThriftStruct_;
-  }
-
-  template <class Writer>
-  void serialize(Writer&& writer) const;
-
-  void deserialize(carbon::CarbonProtocolReader& reader);
-
-  template <class V>
-  void visitFields(V&& v);
-  template <class V>
-  void visitFields(V&& v) const;
-
-  // Methods for Thrift interoperability, note that the methods work with Thrift
-  // protocols and not Carbon protocol.
-  void __clear() {
-    underlyingThriftStruct_.__clear();
-  }
-  template <class Protocol>
-  uint32_t write(Protocol* protocol) const {
-    return underlyingThriftStruct_.write(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSize(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSize(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSizeZC(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSizeZC(protocol);
-  }
- private:
-  template <class Protocol>
-  void readNoXfer(Protocol* protocol) {
-    underlyingThriftStruct_.read(protocol);
+    result_ref() = carbonResult;
   }
 
   friend class apache::thrift::Cpp2Ops<GoAwayRequest>;
 
- private:
-  struct __isset {
-    bool result;
-    bool reason;
-  } __isset = {};
-
-  facebook::memcache::thrift::GoAwayRequest underlyingThriftStruct_;
 };
 } // namespace memcache
 } // namespace facebook

@@ -170,9 +170,11 @@ libmcrouter_a_SOURCES = \
   network/CpuController.h \
   network/gen/CommonMessages-inl.h \
   network/gen/CommonMessages.cpp \
+  network/gen/CommonMessagesThrift.cpp \
   network/gen/CommonMessages.h \
   network/gen/MemcacheMessages-inl.h \
   network/gen/MemcacheMessages.cpp \
+  network/gen/MemcacheMessagesThrift.cpp \
   network/gen/MemcacheMessages.h \
   network/gen/gen-cpp2/Common_types.cpp \
   network/gen/gen-cpp2/Common_types.h \

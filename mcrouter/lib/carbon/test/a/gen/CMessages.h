@@ -39,77 +39,7 @@ using Foo = carbon::test_enum::thrift::Foo;
 
 std::string enumFooToString(Foo val);
 
-class StructWithEnumField {
- public:
-
-  StructWithEnumField() = default;
-  StructWithEnumField(const StructWithEnumField&) = default;
-  StructWithEnumField& operator=(const StructWithEnumField&) = default;
-  StructWithEnumField(StructWithEnumField&&) = default;
-  StructWithEnumField& operator=(StructWithEnumField&&) = default;
-
-  FOLLY_ERASE ::apache::thrift::field_ref<const Foo&>
-   test_ref() const& {
-    return underlyingThriftStruct_.test_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<Foo&>
-   test_ref() & {
-    return underlyingThriftStruct_.test_ref();
-  }
-  FOLLY_ERASE ::apache::thrift::field_ref<Foo&&>
-   test_ref() && {
-    return std::move(underlyingThriftStruct_).test_ref();
-  }
-  
-  const carbon::test_enum::thrift::StructWithEnumField& getThriftStruct() const {
-    return underlyingThriftStruct_;
-  }
-  carbon::test_enum::thrift::StructWithEnumField& getThriftStruct() {
-    return underlyingThriftStruct_;
-  }
-
-  template <class Writer>
-  void serialize(Writer&& writer) const;
-
-  void deserialize(carbon::CarbonProtocolReader& reader);
-
-  template <class V>
-  void visitFields(V&& v);
-  template <class V>
-  void visitFields(V&& v) const;
-
-  // Methods for Thrift interoperability, note that the methods work with Thrift
-  // protocols and not Carbon protocol.
-  void __clear() {
-    underlyingThriftStruct_.__clear();
-  }
-  template <class Protocol>
-  uint32_t write(Protocol* protocol) const {
-    return underlyingThriftStruct_.write(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSize(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSize(protocol);
-  }
-  template <class Protocol>
-  uint32_t serializedSizeZC(Protocol* protocol) const {
-    return underlyingThriftStruct_.serializedSizeZC(protocol);
-  }
- private:
-  template <class Protocol>
-  void readNoXfer(Protocol* protocol) {
-    underlyingThriftStruct_.read(protocol);
-  }
-
-  friend class apache::thrift::Cpp2Ops<StructWithEnumField>;
-
- private:
-  struct __isset {
-    bool test;
-  } __isset = {};
-
-  carbon::test_enum::thrift::StructWithEnumField underlyingThriftStruct_;
-};
+using StructWithEnumField = carbon::test_enum::thrift::StructWithEnumField;
 } // namespace test_enum
 } // namespace carbon
 

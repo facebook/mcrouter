@@ -16,6 +16,8 @@ include "mcrouter/lib/carbon/carbon.thrift"
 include "mcrouter/lib/carbon/carbon_result.thrift"
 
 
+cpp_include "<mcrouter/lib/carbon/CarbonProtocolReader.h>"
+
 namespace cpp2 carbon.test_enum.thrift
 
 enum Foo {
@@ -25,5 +27,15 @@ enum Foo {
 
 struct StructWithEnumField {
   1: Foo test
-}
+}(cpp.methods = "
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
 
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+")

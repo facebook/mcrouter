@@ -15,6 +15,7 @@
 
 namespace carbon {
 namespace test {
+namespace thrift {
 
 template <class Writer>
 void DummyThriftRequest::serialize(Writer&& writer) const {
@@ -192,6 +193,7 @@ void DummyThriftReply::visitFields(V&& v) const {
     return;
   }
 }
+} // namespace thrift
 } // namespace test
 } // namespace carbon
 
@@ -213,7 +215,7 @@ class Cpp2Ops<carbon::test::DummyThriftRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -241,7 +243,7 @@ class Cpp2Ops<carbon::test::DummyThriftReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {

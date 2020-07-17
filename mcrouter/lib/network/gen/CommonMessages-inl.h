@@ -15,6 +15,7 @@
 
 namespace facebook {
 namespace memcache {
+namespace thrift {
 
 template <class Writer>
 void McVersionRequest::serialize(Writer&& writer) const {
@@ -369,6 +370,7 @@ void GoAwayRequest::visitFields(V&& v) const {
     return;
   }
 }
+} // namespace thrift
 } // namespace memcache
 } // namespace facebook
 
@@ -390,7 +392,7 @@ class Cpp2Ops<facebook::memcache::McVersionRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -418,7 +420,7 @@ class Cpp2Ops<facebook::memcache::McVersionReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -446,7 +448,7 @@ class Cpp2Ops<facebook::memcache::McStatsRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -474,7 +476,7 @@ class Cpp2Ops<facebook::memcache::McStatsReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -502,7 +504,7 @@ class Cpp2Ops<facebook::memcache::McShutdownRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -530,7 +532,7 @@ class Cpp2Ops<facebook::memcache::McShutdownReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -558,7 +560,7 @@ class Cpp2Ops<facebook::memcache::McQuitRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -586,7 +588,7 @@ class Cpp2Ops<facebook::memcache::McQuitReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -614,7 +616,7 @@ class Cpp2Ops<facebook::memcache::McExecRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -642,7 +644,7 @@ class Cpp2Ops<facebook::memcache::McExecReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -670,7 +672,7 @@ class Cpp2Ops<facebook::memcache::GoAwayAcknowledgement> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -698,7 +700,7 @@ class Cpp2Ops<facebook::memcache::GoAwayRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {

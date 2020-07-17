@@ -375,8 +375,8 @@ TEST(CarbonRouterClient, externalStatsTest) {
       req,
       [&baton, &replyReceived](const McStatsRequest&, McStatsReply&& reply) {
         /* Expect at least one stat */
-        EXPECT_GT(reply.stats().size(), 0);
-        EXPECT_EQ(carbon::Result::OK, reply.result());
+        EXPECT_GT(reply.stats_ref()->size(), 0);
+        EXPECT_EQ(carbon::Result::OK, *reply.result_ref());
         replyReceived = true;
         baton.post();
       });

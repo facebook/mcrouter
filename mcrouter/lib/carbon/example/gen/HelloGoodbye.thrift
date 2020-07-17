@@ -16,6 +16,8 @@ include "mcrouter/lib/carbon/carbon.thrift"
 include "mcrouter/lib/carbon/carbon_result.thrift"
 include "mcrouter/lib/network/gen/Common.thrift"
 
+cpp_include "<mcrouter/lib/carbon/CarbonProtocolReader.h>"
+
 namespace cpp2 hellogoodbye.thrift
 
 struct HelloRequest {
@@ -23,20 +25,68 @@ struct HelloRequest {
   2: i64 (cpp.type = "uint64_t") shardId
   3: i64 (cpp.type = "uint64_t") deadlineMs
   4: string message
-}
+}(cpp.methods = "
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
 
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+",
+cpp.virtual
+)
 struct HelloReply {
   1: carbon_result.Result result
   2: string message
-}
+}(cpp.methods = "
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
 
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+",
+cpp.virtual
+)
 struct GoodbyeRequest {
   1: carbon.IOBufKey key
   2: i64 (cpp.type = "uint64_t") shardId
-}
+}(cpp.methods = "
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
 
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+",
+cpp.virtual
+)
 struct GoodbyeReply {
   1: carbon_result.Result result
   2: string message
-}
+}(cpp.methods = "
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
 
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+",
+cpp.virtual
+)

@@ -15,6 +15,7 @@
 
 namespace facebook {
 namespace memcache {
+namespace thrift {
 
 template <class Writer>
 void McGetRequest::serialize(Writer&& writer) const {
@@ -1530,6 +1531,7 @@ void McGatsReply::visitFields(V&& v) const {
     return;
   }
 }
+} // namespace thrift
 } // namespace memcache
 } // namespace facebook
 
@@ -1551,7 +1553,7 @@ class Cpp2Ops<facebook::memcache::McGetRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -1579,7 +1581,7 @@ class Cpp2Ops<facebook::memcache::McGetReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -1607,7 +1609,7 @@ class Cpp2Ops<facebook::memcache::McSetRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -1635,7 +1637,7 @@ class Cpp2Ops<facebook::memcache::McSetReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -1663,7 +1665,7 @@ class Cpp2Ops<facebook::memcache::McDeleteRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -1691,7 +1693,7 @@ class Cpp2Ops<facebook::memcache::McDeleteReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -1719,7 +1721,7 @@ class Cpp2Ops<facebook::memcache::McLeaseGetRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -1747,7 +1749,7 @@ class Cpp2Ops<facebook::memcache::McLeaseGetReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -1775,7 +1777,7 @@ class Cpp2Ops<facebook::memcache::McLeaseSetRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -1803,7 +1805,7 @@ class Cpp2Ops<facebook::memcache::McLeaseSetReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -1831,7 +1833,7 @@ class Cpp2Ops<facebook::memcache::McAddRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -1859,7 +1861,7 @@ class Cpp2Ops<facebook::memcache::McAddReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -1887,7 +1889,7 @@ class Cpp2Ops<facebook::memcache::McReplaceRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -1915,7 +1917,7 @@ class Cpp2Ops<facebook::memcache::McReplaceReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -1943,7 +1945,7 @@ class Cpp2Ops<facebook::memcache::McGetsRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -1971,7 +1973,7 @@ class Cpp2Ops<facebook::memcache::McGetsReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -1999,7 +2001,7 @@ class Cpp2Ops<facebook::memcache::McCasRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -2027,7 +2029,7 @@ class Cpp2Ops<facebook::memcache::McCasReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -2055,7 +2057,7 @@ class Cpp2Ops<facebook::memcache::McIncrRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -2083,7 +2085,7 @@ class Cpp2Ops<facebook::memcache::McIncrReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -2111,7 +2113,7 @@ class Cpp2Ops<facebook::memcache::McDecrRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -2139,7 +2141,7 @@ class Cpp2Ops<facebook::memcache::McDecrReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -2167,7 +2169,7 @@ class Cpp2Ops<facebook::memcache::McMetagetRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -2195,7 +2197,7 @@ class Cpp2Ops<facebook::memcache::McMetagetReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -2223,7 +2225,7 @@ class Cpp2Ops<facebook::memcache::McAppendRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -2251,7 +2253,7 @@ class Cpp2Ops<facebook::memcache::McAppendReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -2279,7 +2281,7 @@ class Cpp2Ops<facebook::memcache::McPrependRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -2307,7 +2309,7 @@ class Cpp2Ops<facebook::memcache::McPrependReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -2335,7 +2337,7 @@ class Cpp2Ops<facebook::memcache::McTouchRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -2363,7 +2365,7 @@ class Cpp2Ops<facebook::memcache::McTouchReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -2391,7 +2393,7 @@ class Cpp2Ops<facebook::memcache::McFlushReRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -2419,7 +2421,7 @@ class Cpp2Ops<facebook::memcache::McFlushReReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -2447,7 +2449,7 @@ class Cpp2Ops<facebook::memcache::McFlushAllRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -2475,7 +2477,7 @@ class Cpp2Ops<facebook::memcache::McFlushAllReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -2503,7 +2505,7 @@ class Cpp2Ops<facebook::memcache::McGatRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -2531,7 +2533,7 @@ class Cpp2Ops<facebook::memcache::McGatReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -2559,7 +2561,7 @@ class Cpp2Ops<facebook::memcache::McGatsRequest> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {
@@ -2587,7 +2589,7 @@ class Cpp2Ops<facebook::memcache::McGatsReply> {
   }
   template <class Protocol>
   static void read(Protocol* prot, Type* value) {
-    value->readNoXfer(prot);
+    value->read(prot);
   }
   template <class Protocol>
   static uint32_t serializedSize(Protocol* prot, const Type* value) {

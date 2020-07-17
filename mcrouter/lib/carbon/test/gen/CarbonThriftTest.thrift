@@ -16,6 +16,8 @@ include "mcrouter/lib/carbon/carbon.thrift"
 include "mcrouter/lib/carbon/carbon_result.thrift"
 include "mcrouter/lib/network/gen/Common.thrift"
 
+cpp_include "<mcrouter/lib/carbon/CarbonProtocolReader.h>"
+
 namespace cpp2 carbon.test.thrift
 
 struct DummyThriftRequest {
@@ -38,10 +40,34 @@ struct DummyThriftRequest {
   17: optional bool testOptionalKeywordBool
   18: optional string testOptionalKeywordString
   19: optional binary (cpp.type = "folly::IOBuf") testOptionalKeywordIobuf
-}
+}(cpp.methods = "
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
 
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+",
+cpp.virtual
+)
 struct DummyThriftReply {
   1: carbon_result.Result result
   2: string message
-}
+}(cpp.methods = "
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
 
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+",
+cpp.virtual
+)
