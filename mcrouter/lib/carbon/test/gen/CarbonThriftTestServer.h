@@ -26,6 +26,7 @@ namespace detail {
 
 using CarbonThriftTestRequestList = carbon::List<
     DummyThriftRequest,
+    ThriftTestRequest,
     facebook::memcache::McExecRequest,
     facebook::memcache::McQuitRequest,
     facebook::memcache::McShutdownRequest,

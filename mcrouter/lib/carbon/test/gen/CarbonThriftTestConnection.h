@@ -39,10 +39,16 @@ class CarbonThriftTestConnection {
   virtual void sendRequestOne(
       const DummyThriftRequest&,
       carbon::RequestCb<DummyThriftRequest>) = 0;
+  virtual void sendRequestOne(
+      const ThriftTestRequest&,
+      carbon::RequestCb<ThriftTestRequest>) = 0;
 
   virtual void sendRequestMulti(
       std::vector<std::reference_wrapper<const DummyThriftRequest>>&&,
       carbon::RequestCb<DummyThriftRequest>) = 0;
+  virtual void sendRequestMulti(
+      std::vector<std::reference_wrapper<const ThriftTestRequest>>&&,
+      carbon::RequestCb<ThriftTestRequest>) = 0;
 
   virtual facebook::memcache::CacheClientCounters getStatCounters() const noexcept = 0;
   virtual std::unordered_map<std::string, std::string> getConfigOptions() = 0;
@@ -80,10 +86,20 @@ class CarbonThriftTestConnectionImpl : public CarbonThriftTestConnection {
       carbon::RequestCb<DummyThriftRequest> cb) {
     return impl_.sendRequestOne(req, std::move(cb));
   }
+  void sendRequestOne(
+      const ThriftTestRequest& req,
+      carbon::RequestCb<ThriftTestRequest> cb) {
+    return impl_.sendRequestOne(req, std::move(cb));
+  }
 
   void sendRequestMulti(
       std::vector<std::reference_wrapper<const DummyThriftRequest>>&& reqs,
       carbon::RequestCb<DummyThriftRequest> cb) {
+    return impl_.sendRequestMulti(std::move(reqs), std::move(cb));
+  }
+  void sendRequestMulti(
+      std::vector<std::reference_wrapper<const ThriftTestRequest>>&& reqs,
+      carbon::RequestCb<ThriftTestRequest> cb) {
     return impl_.sendRequestMulti(std::move(reqs), std::move(cb));
   }
 

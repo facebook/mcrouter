@@ -17,6 +17,20 @@
 namespace carbon {
 namespace test {
 
+std::string enumMyEnumToString(MyEnum val) {
+  switch (val) {
+    case MyEnum::A:
+      return "A";
+    case MyEnum::B:
+      return "B";
+    case MyEnum::C:
+      return "C";
+  }
+  return "<INVALID_OPTION>";
+}
+
+constexpr const char* const ThriftTestRequest::name;
+
 constexpr const char* const DummyThriftRequest::name;
 
 } // namespace test

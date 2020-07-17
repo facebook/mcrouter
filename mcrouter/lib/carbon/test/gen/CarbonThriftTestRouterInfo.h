@@ -48,7 +48,8 @@ namespace test {
 namespace detail {
 
 using CarbonThriftTestRoutableRequests = carbon::List<
-    DummyThriftRequest>;
+    DummyThriftRequest,
+    ThriftTestRequest>;
 } // namespace detail
 
 struct CarbonThriftTestRouterInfo {

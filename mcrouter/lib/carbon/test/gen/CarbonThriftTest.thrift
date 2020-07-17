@@ -20,6 +20,95 @@ cpp_include "<mcrouter/lib/carbon/CarbonProtocolReader.h>"
 
 namespace cpp2 carbon.test.thrift
 
+enum MyEnum {
+  A = 0,
+  B = 1,
+  C = 2
+} (cpp.enum_type="int32_t")
+
+struct TinyStruct {
+  1: i64 foo
+}(cpp.methods = "
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+")
+struct MyBaseStruct {
+  1: i64 baseInt64Member
+}(cpp.methods = "
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+")
+struct MySimpleStruct {
+  -1: MyBaseStruct myBaseStruct (cpp.mixin)
+  1: i32 int32Member
+  2: string stringMember
+  3: MyEnum enumMember
+  4: list<string> vectorMember
+}(cpp.methods = "
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+")
+struct ThriftTestRequest {
+  -2: TinyStruct tinyStruct (cpp.mixin)
+  -1: MySimpleStruct base (cpp.mixin)
+  1: carbon.IOBufKey key
+  2: bool testBool
+  3: byte testInt8
+}(cpp.methods = "
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+",
+cpp.virtual
+)
+struct ThriftTestReply {
+  1: carbon_result.Result result
+  2: string message
+}(cpp.methods = "
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+",
+cpp.virtual
+)
 struct DummyThriftRequest {
   1: carbon.IOBufKey key
   2: bool testBool

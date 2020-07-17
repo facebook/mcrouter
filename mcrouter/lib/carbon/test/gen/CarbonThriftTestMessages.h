@@ -37,6 +37,59 @@
 namespace carbon {
 namespace test {
 
+using MyEnum = carbon::test::thrift::MyEnum;
+
+std::string enumMyEnumToString(MyEnum val);
+
+using TinyStruct = carbon::test::thrift::TinyStruct;
+
+using MyBaseStruct = carbon::test::thrift::MyBaseStruct;
+
+using MySimpleStruct = carbon::test::thrift::MySimpleStruct;
+
+class ThriftTestReply;
+
+class ThriftTestRequest : public carbon::RequestCommon, public carbon::test::thrift::ThriftTestRequest {
+ public:
+  using reply_type = ThriftTestReply;
+
+  static constexpr size_t typeId = 67;
+  static constexpr const char* name = "test";
+
+  ThriftTestRequest() = default;
+  ThriftTestRequest(const ThriftTestRequest&) = default;
+  ThriftTestRequest& operator=(const ThriftTestRequest&) = default;
+  ThriftTestRequest(ThriftTestRequest&&) = default;
+  ThriftTestRequest& operator=(ThriftTestRequest&&) = default;
+  explicit ThriftTestRequest(folly::StringPiece sp) {
+    key_ref() = sp;
+  }
+  explicit ThriftTestRequest(folly::IOBuf&& carbonKey) {
+    key_ref() = std::move(carbonKey);
+  }
+
+  friend class apache::thrift::Cpp2Ops<ThriftTestRequest>;
+
+};
+
+class ThriftTestReply : public carbon::ReplyCommon, public carbon::test::thrift::ThriftTestReply {
+ public:
+
+  static constexpr size_t typeId = 68;
+
+  ThriftTestReply() = default;
+  ThriftTestReply(const ThriftTestReply&) = default;
+  ThriftTestReply& operator=(const ThriftTestReply&) = default;
+  ThriftTestReply(ThriftTestReply&&) = default;
+  ThriftTestReply& operator=(ThriftTestReply&&) = default;
+  explicit ThriftTestReply(carbon::Result carbonResult) {
+    result_ref() = carbonResult;
+  }
+
+  friend class apache::thrift::Cpp2Ops<ThriftTestReply>;
+
+};
+
 class DummyThriftReply;
 
 class DummyThriftRequest : public carbon::RequestCommon, public carbon::test::thrift::DummyThriftRequest {

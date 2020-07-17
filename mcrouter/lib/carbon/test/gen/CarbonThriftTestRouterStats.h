@@ -23,12 +23,16 @@ namespace carbon {
 namespace test {
 
 struct CarbonThriftTestRouterStatsConfig {
-  static constexpr size_t kNumRequestGroups = 1;
+  static constexpr size_t kNumRequestGroups = 2;
   static constexpr std::array<folly::StringPiece, 1 * kNumRequestGroups>
-      sumStatNames{{folly::StringPiece("cmd_thrift_test_count")}};
+      sumStatNames{{folly::StringPiece("cmd_test_count"),
+                    folly::StringPiece("cmd_thrift_test_count")}};
   static constexpr std::array<folly::StringPiece, 3 * kNumRequestGroups>
-      rateStatNames{{folly::StringPiece("cmd_thrift_test"),
+      rateStatNames{{folly::StringPiece("cmd_test"),
+                     folly::StringPiece("cmd_thrift_test"),
+                     folly::StringPiece("cmd_test_out"),
                      folly::StringPiece("cmd_thrift_test_out"),
+                     folly::StringPiece("cmd_test_out_all"),
                      folly::StringPiece("cmd_thrift_test_out_all")}};
 
   template <class Request>
@@ -38,7 +42,13 @@ struct CarbonThriftTestRouterStatsConfig {
 template <>
 inline constexpr size_t
 CarbonThriftTestRouterStatsConfig::getStatGroup<DummyThriftRequest>() {
-  return 0; // stat group 'thrift_test'
+  return 1; // stat group 'thrift_test'
+}
+
+template <>
+inline constexpr size_t
+CarbonThriftTestRouterStatsConfig::getStatGroup<ThriftTestRequest>() {
+  return 0; // stat group 'test'
 }
 } // namespace test
 } // namespace carbon

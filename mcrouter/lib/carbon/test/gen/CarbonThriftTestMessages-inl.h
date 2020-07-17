@@ -18,6 +18,197 @@ namespace test {
 namespace thrift {
 
 template <class Writer>
+void TinyStruct::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, foo_ref());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void TinyStruct::visitFields(V&& v) {
+  if (!v.visitField(1, "foo", *this->foo_ref())) {
+    return;
+  }
+}
+
+template <class V>
+void TinyStruct::visitFields(V&& v) const {
+  if (!v.visitField(1, "foo", *this->foo_ref())) {
+    return;
+  }
+}
+
+template <class Writer>
+void MyBaseStruct::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, baseInt64Member_ref());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void MyBaseStruct::visitFields(V&& v) {
+  if (!v.visitField(1, "baseInt64Member", *this->baseInt64Member_ref())) {
+    return;
+  }
+}
+
+template <class V>
+void MyBaseStruct::visitFields(V&& v) const {
+  if (!v.visitField(1, "baseInt64Member", *this->baseInt64Member_ref())) {
+    return;
+  }
+}
+
+template <class Writer>
+void MySimpleStruct::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, myBaseStruct_ref());
+  writer.writeField(1 /* field id */, int32Member_ref());
+  writer.writeField(2 /* field id */, stringMember_ref());
+  writer.writeField(3 /* field id */, enumMember_ref());
+  writer.writeField(4 /* field id */, vectorMember_ref());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void MySimpleStruct::visitFields(V&& v) {
+  if (v.enterMixin(1, "MyBaseStruct", myBaseStruct)) {
+    this->myBaseStruct.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
+  if (!v.visitField(1, "int32Member", *this->int32Member_ref())) {
+    return;
+  }
+  if (!v.visitField(2, "stringMember", *this->stringMember_ref())) {
+    return;
+  }
+  if (!v.visitField(3, "enumMember", *this->enumMember_ref())) {
+    return;
+  }
+  if (!v.visitField(4, "vectorMember", *this->vectorMember_ref())) {
+    return;
+  }
+}
+
+template <class V>
+void MySimpleStruct::visitFields(V&& v) const {
+  if (v.enterMixin(1, "MyBaseStruct", myBaseStruct)) {
+    this->myBaseStruct.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
+  if (!v.visitField(1, "int32Member", *this->int32Member_ref())) {
+    return;
+  }
+  if (!v.visitField(2, "stringMember", *this->stringMember_ref())) {
+    return;
+  }
+  if (!v.visitField(3, "enumMember", *this->enumMember_ref())) {
+    return;
+  }
+  if (!v.visitField(4, "vectorMember", *this->vectorMember_ref())) {
+    return;
+  }
+}
+
+template <class Writer>
+void ThriftTestRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(-2 /* field id */, tinyStruct_ref());
+  writer.writeField(-1 /* field id */, base_ref());
+  writer.writeField(1 /* field id */, key_ref());
+  writer.writeField(2 /* field id */, testBool_ref());
+  writer.writeField(3 /* field id */, testInt8_ref());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void ThriftTestRequest::visitFields(V&& v) {
+  if (v.enterMixin(1, "Base", base)) {
+    this->base.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
+  if (v.enterMixin(2, "TinyStruct", tinyStruct)) {
+    this->tinyStruct.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
+  if (!v.visitField(1, "key", *this->key_ref())) {
+    return;
+  }
+  if (!v.visitField(2, "testBool", *this->testBool_ref())) {
+    return;
+  }
+  if (!v.visitField(3, "testInt8", *this->testInt8_ref())) {
+    return;
+  }
+}
+
+template <class V>
+void ThriftTestRequest::visitFields(V&& v) const {
+  if (v.enterMixin(1, "Base", base)) {
+    this->base.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
+  if (v.enterMixin(2, "TinyStruct", tinyStruct)) {
+    this->tinyStruct.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
+  if (!v.visitField(1, "key", *this->key_ref())) {
+    return;
+  }
+  if (!v.visitField(2, "testBool", *this->testBool_ref())) {
+    return;
+  }
+  if (!v.visitField(3, "testInt8", *this->testInt8_ref())) {
+    return;
+  }
+}
+
+template <class Writer>
+void ThriftTestReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result_ref());
+  writer.writeField(2 /* field id */, message_ref());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void ThriftTestReply::visitFields(V&& v) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
+    return;
+  }
+  if (!v.visitField(2, "message", *this->message_ref())) {
+    return;
+  }
+}
+
+template <class V>
+void ThriftTestReply::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", *this->result_ref())) {
+    return;
+  }
+  if (!v.visitField(2, "message", *this->message_ref())) {
+    return;
+  }
+}
+
+template <class Writer>
 void DummyThriftRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
   writer.writeField(1 /* field id */, key_ref());
@@ -199,6 +390,146 @@ void DummyThriftReply::visitFields(V&& v) const {
 
 namespace apache {
 namespace thrift {
+template <>
+class Cpp2Ops<carbon::test::TinyStruct> {
+ public:
+  typedef carbon::test::TinyStruct Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  static void clear(Type* value) {
+    value->__clear();
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::MyBaseStruct> {
+ public:
+  typedef carbon::test::MyBaseStruct Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  static void clear(Type* value) {
+    value->__clear();
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::MySimpleStruct> {
+ public:
+  typedef carbon::test::MySimpleStruct Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  static void clear(Type* value) {
+    value->__clear();
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::ThriftTestRequest> {
+ public:
+  typedef carbon::test::ThriftTestRequest Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  static void clear(Type* value) {
+    value->__clear();
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::ThriftTestReply> {
+ public:
+  typedef carbon::test::ThriftTestReply Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  static void clear(Type* value) {
+    value->__clear();
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
 template <>
 class Cpp2Ops<carbon::test::DummyThriftRequest> {
  public:

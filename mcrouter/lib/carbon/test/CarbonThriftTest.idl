@@ -4,6 +4,41 @@ thrift_namespace carbon.test.thrift;
 
 import "mcrouter/lib/network/Common.idl"
 
+enum MyEnum : int32_t {
+  A = 0,
+  B = 1,
+  C = 2,
+};
+
+struct TinyStruct {
+  1: int64_t foo;
+};
+
+struct MyBaseStruct {
+  1: int64_t baseInt64Member;
+};
+
+struct MySimpleStruct with 1: MyBaseStruct {
+  1: int32_t int32Member;
+  2: std::string stringMember;
+  3: MyEnum enumMember;
+  4: std::vector<std::string> vectorMember;
+};
+
+request ThriftTestRequest with 1: MySimpleStruct as Base, 2: TinyStruct  {
+  id: 2;
+  name: "test";
+  reply: ThriftTestReply;
+  1: carbon::Keys<folly::IOBuf> key;
+  2: bool testBool;
+  3: int8_t testInt8;
+};
+
+reply ThriftTestReply {
+  1: Result result;
+  2: std::string message;
+};
+
 request DummyThriftRequest {
   id: 1;
   name: "thrift_test";
