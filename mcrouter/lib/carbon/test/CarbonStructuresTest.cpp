@@ -28,8 +28,8 @@ using carbon::test::SimpleStruct;
 using carbon::test::TestOptionalUnion;
 using carbon::test::TestReply;
 using carbon::test::TestRequest;
-using carbon::test::ThriftTestRequest;
 using carbon::test::TestRequestStringKey;
+using carbon::test::ThriftTestRequest;
 using carbon::test2::util::SimpleEnum;
 using facebook::memcache::coalesceAndGetRange;
 
@@ -1214,8 +1214,7 @@ TEST(CarbonBasic, mixinsFieldRefAPIThrift) {
 
   req.base_ref()->myBaseStruct_ref()->baseInt64Member_ref() = 12345;
   // Exercise the different ways we can access the mixed-in baseInt64Member
-  EXPECT_EQ(
-      12345, *req.base_ref()->myBaseStruct_ref()->baseInt64Member_ref());
+  EXPECT_EQ(12345, *req.base_ref()->myBaseStruct_ref()->baseInt64Member_ref());
   EXPECT_EQ(12345, *req.base_ref()->baseInt64Member_ref());
   EXPECT_EQ(12345, *req.myBaseStruct_ref()->baseInt64Member_ref());
   EXPECT_EQ(12345, *req.baseInt64Member_ref());
