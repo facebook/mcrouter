@@ -25,8 +25,10 @@ std::vector<folly::StringPiece> getTags(
   checkLogic(jtags->isArray(), "{}: tags is not an array", nameForErrorMessage);
   checkLogic(
       jtags->size() == numRoutes,
-      "{}: number of tags doesn't match number of route handles",
-      nameForErrorMessage);
+      "{}: number of tags {} doesn't match number of route handles {}",
+      nameForErrorMessage,
+      jtags->size(),
+      numRoutes);
 
   endpoints.reserve(jtags->size());
   for (const auto& jtag : *jtags) {
