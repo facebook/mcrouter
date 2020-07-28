@@ -44,7 +44,7 @@ RendezvousHashFunc::Iterator& RendezvousHashFunc::Iterator::operator++() {
 std::priority_queue<RendezvousHashFunc::Iterator::ScoreAndIndex>
 RendezvousHashFunc::Iterator::make_queue(
     const std::vector<uint64_t>& endpointHashes,
-    const folly::StringPiece& key) {
+    const folly::StringPiece key) {
   std::vector<ScoreAndIndex> scores;
 
   const uint64_t keyHash =

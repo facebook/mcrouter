@@ -69,7 +69,7 @@ class RendezvousHashFunc {
 
     static std::priority_queue<ScoreAndIndex> make_queue(
         const std::vector<uint64_t>& endpointHashes,
-        const folly::StringPiece& key);
+        const folly::StringPiece key);
 
     std::priority_queue<ScoreAndIndex> queue_;
   };
