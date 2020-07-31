@@ -100,6 +100,8 @@ void ProxyDestinationMap::resetAllInactive() {
 }
 
 void ProxyDestinationMap::setResetTimer(std::chrono::milliseconds interval) {
+  folly::RequestContextScopeGuard rctxGuard{
+      std::shared_ptr<folly::RequestContext>{}};
   assert(interval.count() > 0);
   inactivityTimeout_ = static_cast<uint32_t>(interval.count());
   resetTimer_ =
