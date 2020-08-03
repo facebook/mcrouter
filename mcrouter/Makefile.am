@@ -230,6 +230,7 @@ mcrouter_LDADD = \
   -lthriftcpp2 \
   -ltransport \
   -lthriftprotocol \
+  -lrpcmetadata \
   -lasync \
   -lconcurrency \
   -lprotocol \
