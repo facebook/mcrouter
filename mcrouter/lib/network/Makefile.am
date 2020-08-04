@@ -15,6 +15,7 @@ mock_mc_server_LDADD = \
 	-lthriftcpp2 \
 	-ltransport \
 	-lthriftprotocol \
+	-lrpcmetadata \
 	-lasync \
 	-lconcurrency \
 	-lprotocol \
@@ -36,6 +37,7 @@ mock_mc_thrift_server_LDADD = \
 	-lthriftcpp2 \
 	-ltransport \
 	-lthriftprotocol \
+	-lrpcmetadata \
 	-lasync \
 	-lconcurrency \
 	-lprotocol \
@@ -57,6 +59,7 @@ mock_mc_server_dual_LDADD = \
 	-lthriftcpp2 \
 	-ltransport \
 	-lthriftprotocol \
+	-lrpcmetadata \
 	-lasync \
 	-lconcurrency \
 	-lprotocol \

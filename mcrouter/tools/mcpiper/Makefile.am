@@ -34,6 +34,7 @@ mcpiper_LDADD = \
 	-lprotocol \
 	-lthriftcpp2 \
 	-lthriftprotocol \
+	-lrpcmetadata \
 	-ltransport \
 	-lthrift-core \
 	-lfizz \

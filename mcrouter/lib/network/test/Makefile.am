@@ -31,6 +31,7 @@ mcrouter_network_test_LDADD = \
   -lprotocol \
   -lthriftcpp2 \
   -lthriftprotocol \
+  -lrpcmetadata \
   -ltransport \
   -lwangle \
   -lfizz \
