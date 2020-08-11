@@ -450,7 +450,7 @@ McRouteHandleProvider<RouterInfo>::createDestinationRoute(
     size_t indexInPool,
     int32_t poolStatIndex,
     bool disableRequestDeadlineCheck,
-    std::shared_ptr<PoolTkoTracker> poolTkoTracker,
+    const std::shared_ptr<PoolTkoTracker>& poolTkoTracker,
     bool keepRoutingPrefix) {
   auto pdstn = proxy_.destinationMap()->template emplace<Transport>(
       std::move(ap), timeout, qosClass, qosPath, poolTkoTracker);

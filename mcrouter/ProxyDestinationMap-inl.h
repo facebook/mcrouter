@@ -26,7 +26,7 @@ std::shared_ptr<ProxyDestination<Transport>> ProxyDestinationMap::emplace(
     std::chrono::milliseconds timeout,
     uint32_t qosClass,
     uint32_t qosPath,
-    std::shared_ptr<PoolTkoTracker> poolTkoTracker) {
+    const std::shared_ptr<PoolTkoTracker>& poolTkoTracker) {
   std::shared_ptr<ProxyDestination<Transport>> destination;
   {
     std::lock_guard<std::mutex> lck(destinationsLock_);

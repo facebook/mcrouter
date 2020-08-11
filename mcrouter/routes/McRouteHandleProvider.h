@@ -118,7 +118,7 @@ class McRouteHandleProvider
       size_t indexInPool,
       int32_t poolStatIndex,
       bool disableRequestDeadlineCheck,
-      std::shared_ptr<PoolTkoTracker> poolTkoTracker,
+      const std::shared_ptr<PoolTkoTracker>& poolTkoTracker,
       bool keepRoutingPrefix);
 
   RouteHandleFactoryMap buildRouteMap();

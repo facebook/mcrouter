@@ -169,7 +169,7 @@ class TkoTracker {
 
   ~TkoTracker();
 
-  void setPoolTracker(std::shared_ptr<PoolTkoTracker> poolTracker) {
+  void setPoolTracker(const std::shared_ptr<PoolTkoTracker>& poolTracker) {
     poolTracker_ = poolTracker;
   }
 
@@ -247,7 +247,7 @@ class TkoTrackerMap {
   void updateTracker(
       ProxyDestinationBase& pdstn,
       const size_t tkoThreshold,
-      std::shared_ptr<PoolTkoTracker> poolTkoTracker);
+      const std::shared_ptr<PoolTkoTracker>& poolTkoTracker);
 
   /**
    * @return  number of servers that recently returned error replies.

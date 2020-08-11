@@ -257,7 +257,7 @@ std::shared_ptr<PoolTkoTracker> TkoTrackerMap::createPoolTkoTracker(
 void TkoTrackerMap::updateTracker(
     ProxyDestinationBase& pdstn,
     const size_t tkoThreshold,
-    std::shared_ptr<PoolTkoTracker> poolTkoTracker) {
+    const std::shared_ptr<PoolTkoTracker>& poolTkoTracker) {
   auto key = pdstn.accessPoint()->toHostPortString();
 
   // This shared pointer has to be destroyed after releasing "mx_".
