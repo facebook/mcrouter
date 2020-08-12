@@ -40,7 +40,27 @@ Keys<Storage>& Keys<Storage>::operator=(Keys<Storage>&& other) noexcept {
 }
 
 template <class Storage>
+size_t Keys<Storage>::getHashStopPosition() {
+  if (hasHashStop_) {
+    return hashStopPosition_;
+  }
+  // Micro-optimization: We use find_first_of as a first pass while looking for
+  // the hash stop because searching for a single character is faster than
+  // looking for a substring. Most keys in practice don't have a hash stop or a
+  // '|' character.
+  size_t pos = keyWithoutRoute_.find_first_of('|');
+  if (pos != std::string::npos) {
+    pos = keyWithoutRoute_.find("|#|", pos);
+  }
+  hasHashStop_ = true;
+  hashStopPosition_ = pos;
+  return pos;
+}
+
+template <class Storage>
 void Keys<Storage>::update() {
+  // set hasHashStop_ to false, so that we calculate the position again
+  hasHashStop_ = false;
   const folly::StringPiece key = fullKey();
   keyWithoutRoute_ = key;
   routingPrefix_.reset(key.begin(), 0);
@@ -59,16 +79,9 @@ void Keys<Storage>::update() {
     }
   }
   routingKey_ = keyWithoutRoute_;
-  // Micro-optimization: We use find_first_of as a first pass while looking for
-  // the hash stop because searching for a single character is faster than
-  // looking for a substring. Most keys in practice don't have a hash stop or a
-  // '|' character.
-  size_t pos = keyWithoutRoute_.find_first_of('|');
+  auto pos = getHashStopPosition();
   if (pos != std::string::npos) {
-    pos = keyWithoutRoute_.find("|#|", pos);
-    if (pos != std::string::npos) {
-      routingKey_.reset(keyWithoutRoute_.begin(), pos);
-    }
+    routingKey_.reset(keyWithoutRoute_.begin(), pos);
   }
   routingKeyHash_ = 0;
 }

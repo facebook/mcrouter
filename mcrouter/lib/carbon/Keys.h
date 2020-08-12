@@ -140,6 +140,8 @@ class Keys {
     return key_;
   }
 
+  size_t getHashStopPosition();
+
   void update();
 
   bool reuseLastHash(size_t size, HashFunctionType typeId) const {
@@ -217,6 +219,8 @@ class Keys {
     HashFunctionType typeId_{HashFunctionType::Unknown};
   };
   mutable HashData lastHash_;
+  bool hasHashStop_{false};
+  size_t hashStopPosition_{0};
 };
 
 } // namespace carbon
