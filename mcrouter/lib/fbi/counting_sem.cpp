@@ -7,6 +7,9 @@
 
 #include "counting_sem.h"
 
+#include <algorithm>
+#include <atomic>
+
 #include <limits.h>
 #include <linux/futex.h>
 #include <stdbool.h>
@@ -23,21 +26,18 @@
 #define fbi_futex_wake(p, n) \
   syscall(SYS_futex, (p), FUTEX_WAKE | FUTEX_PRIVATE_FLAG, (n), NULL, NULL, 0);
 
-#define MIN(a, b) ((a) <= (b) ? (a) : (b))
-#define MAX(a, b) ((a) >= (b) ? (a) : (b))
-
 void counting_sem_init(counting_sem_t* sem, int32_t val) {
-  sem->cnt = MAX(val, 0);
+  sem->cnt.store(std::max(val, 0), std::memory_order_release);
 }
 
 int32_t counting_sem_value(counting_sem_t* sem) {
-  int32_t cnt = ACCESS_ONCE(sem->cnt);
-  return MAX(cnt, 0);
+  int32_t cnt = sem->cnt.load(std::memory_order_acquire);
+  return std::max(cnt, 0);
 }
 
-static int32_t
-counting_sem_lazy_helper(counting_sem_t* sem, int32_t n, bool nonblocking) {
-  int32_t latest, prev, attempt, next;
+template <bool nonblocking>
+static int32_t counting_sem_lazy_helper(counting_sem_t* sem, int32_t n) {
+  int32_t latest, attempt, next;
 
   if (n <= 0) {
     return 0;
@@ -47,12 +47,11 @@ counting_sem_lazy_helper(counting_sem_t* sem, int32_t n, bool nonblocking) {
    * Non-blocking case: semaphore value is positive.
    * Decrement it by at most n and return right away.
    */
-  latest = ACCESS_ONCE(sem->cnt);
+  latest = sem->cnt.load(std::memory_order_acquire);
   while (latest > 0) {
-    prev = latest;
-    attempt = MIN(n, prev);
-    latest = __sync_val_compare_and_swap(&sem->cnt, prev, prev - attempt);
-    if (latest == prev) {
+    attempt = std::min(n, latest);
+    if (sem->cnt.compare_exchange_strong(
+            latest, latest - attempt, std::memory_order_acq_rel)) {
       return attempt;
     }
   }
@@ -74,7 +73,7 @@ counting_sem_lazy_helper(counting_sem_t* sem, int32_t n, bool nonblocking) {
        * posts() and yet another thread waits() so the counter is back to 0.
        */
       if (latest == 0) {
-        latest = __sync_val_compare_and_swap(&sem->cnt, 0, -1);
+        sem->cnt.compare_exchange_strong(latest, -1, std::memory_order_acq_rel);
       }
 
       if (latest <= 0) {
@@ -83,14 +82,13 @@ counting_sem_lazy_helper(counting_sem_t* sem, int32_t n, bool nonblocking) {
          * Wait if it's still a -1.
          */
         fbi_futex_wait(&sem->cnt, -1);
-        latest = ACCESS_ONCE(sem->cnt);
+        latest = sem->cnt.load(std::memory_order_acquire);
       }
     } while (latest <= 0);
 
     /* latest > 0 due to loop above, so attempt is always positive */
-    prev = latest;
-    attempt = MIN(n, prev);
-    next = prev - attempt;
+    attempt = std::min(n, latest);
+    next = latest - attempt;
 
     /*
      * Other threads might already be waiting.
@@ -99,8 +97,8 @@ counting_sem_lazy_helper(counting_sem_t* sem, int32_t n, bool nonblocking) {
     if (next == 0) {
       next = -1;
     }
-    latest = __sync_val_compare_and_swap(&sem->cnt, prev, next);
-  } while (latest != prev);
+  } while (!sem->cnt.compare_exchange_strong(
+      latest, next, std::memory_order_acq_rel));
 
   if (next > 0) {
     /*
@@ -114,29 +112,28 @@ counting_sem_lazy_helper(counting_sem_t* sem, int32_t n, bool nonblocking) {
 }
 
 int32_t counting_sem_lazy_wait(counting_sem_t* sem, int32_t n) {
-  return counting_sem_lazy_helper(sem, n, false);
+  return counting_sem_lazy_helper<false>(sem, n);
 }
 
 int32_t counting_sem_lazy_nonblocking(counting_sem_t* sem, int32_t n) {
-  return counting_sem_lazy_helper(sem, n, true);
+  return counting_sem_lazy_helper<true>(sem, n);
 }
 
 void counting_sem_post(counting_sem_t* sem, int32_t n) {
-  int32_t latest, prev, base, next;
+  int32_t latest, base, next;
 
   if (n <= 0) {
     return;
   }
 
-  latest = ACCESS_ONCE(sem->cnt);
+  latest = sem->cnt.load(std::memory_order_acquire);
   do {
-    prev = latest;
-    base = MAX(prev, 0);
-    next = base + MIN(n, INT32_MAX - base);
-    latest = __sync_val_compare_and_swap(&sem->cnt, prev, next);
-  } while (latest != prev);
+    base = std::max(latest, 0);
+    next = base + std::min(n, INT32_MAX - base);
+  } while (!sem->cnt.compare_exchange_strong(
+      latest, next, std::memory_order_acq_rel));
 
-  if (prev < 0) {
+  if (latest < 0) {
     /* If we went out of the negative state, we need to wake a thread up. */
     fbi_futex_wake(&sem->cnt, 1);
   }

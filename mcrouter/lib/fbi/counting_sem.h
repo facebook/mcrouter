@@ -38,14 +38,15 @@
  * in the uncontented case.
  */
 #include <stdint.h>
+#include <atomic>
 
-typedef struct counting_sem_s {
+struct counting_sem_t {
   /**
    * Semaphore value.
    * -1 means "the value is 0 and there's a thread waiting".
    */
-  int32_t cnt;
-} counting_sem_t;
+  std::atomic<int32_t> cnt{};
+};
 
 /**
  * Initialize the semaphore.
