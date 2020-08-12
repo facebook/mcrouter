@@ -131,5 +131,15 @@ class HasKeyTrait<
     Message,
     std::void_t<decltype(std::declval<std::decay_t<Message>&>().key_ref())>>
     : public std::true_type {};
+
+// toFollyOptional helpers
+template <class T>
+folly::Optional<std::remove_const_t<T>> toFollyOptional(
+    const apache::thrift::optional_field_ref<T&> ref) {
+  if (ref.has_value()) {
+    return folly::Optional<std::remove_const_t<T>>(ref.value());
+  }
+  return folly::none;
+}
 } // namespace memcache
 } // namespace facebook
