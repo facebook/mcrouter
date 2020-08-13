@@ -246,6 +246,32 @@ class CarbonProtocolReader {
     cursor_.clone(buf, readVarint<uint32_t>());
   }
 
+  template <class T>
+  void readRawInto(apache::thrift::optional_field_ref<T&> buf) {
+    readStructBegin();
+    while (true) {
+      const auto pr = readFieldHeader();
+      const auto fieldType = pr.first;
+      const auto fieldId = pr.second;
+
+      if (fieldType == carbon::FieldType::Stop) {
+        break;
+      }
+
+      switch (fieldId) {
+        case 1: {
+          readField(buf, fieldType);
+          break;
+        }
+        default: {
+          skip(fieldType);
+          break;
+        }
+      }
+    }
+    readStructEnd();
+  }
+
   void readStructBegin() {
     nestedStructFieldIds_.push_back(lastFieldId_);
     lastFieldId_ = 0;
