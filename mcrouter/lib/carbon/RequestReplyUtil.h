@@ -97,7 +97,7 @@ getMessage(const Reply&) {
 template <typename Reply>
 typename std::enable_if_t<detail::HasIsFailover<Reply>::value>
 setIsFailoverIfPresent(Reply& reply, bool isFailover) {
-  reply.isFailover() = isFailover;
+  *reply.isFailover_ref() = isFailover;
 }
 template <typename Reply>
 typename std::enable_if_t<!detail::HasIsFailover<Reply>::value>
