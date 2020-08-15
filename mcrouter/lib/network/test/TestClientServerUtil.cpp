@@ -19,6 +19,7 @@
 #include <folly/fibers/EventBaseLoopController.h>
 #include <folly/fibers/FiberManager.h>
 #include <folly/io/async/EventBase.h>
+#include <folly/synchronization/LifoSem.h>
 #include <wangle/ssl/TLSTicketKeySeeds.h>
 
 #include "mcrouter/lib/IOBufUtil.h"
@@ -190,10 +191,13 @@ void TestServer::run(std::function<void(AsyncMcServerWorker&)> init) {
       };
       server_->setTicketKeySeeds(std::move(seeds));
     }
+
+    folly::LifoSem initSem;
     server_->spawn(
-        [this, init](
+        [this, init, &initSem](
             size_t, folly::EventBase& evb, AsyncMcServerWorker& worker) {
           init(worker);
+          initSem.post();
           worker.setOnConnectionAccepted([this](McServerSession& session) {
             ++acceptedConns_;
             if (onConnectionAcceptedAdditionalCb_) {
@@ -204,10 +208,9 @@ void TestServer::run(std::function<void(AsyncMcServerWorker&)> init) {
           evb.loop();
         });
 
-    // allow server some time to startup
-    /* sleep override */
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
+    for (size_t i = 0; i < opts_.numThreads; i++) {
+      initSem.wait();
+    }
     startupLock.post();
 
     shutdownLock_.wait();
