@@ -1,4 +1,5 @@
 # Mcrouter [![Build Status](https://travis-ci.org/facebook/mcrouter.svg?branch=master)](https://travis-ci.org/facebook/mcrouter)
+[![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/facebook/mcrouter/blob/master/LICENSE)
 
 Mcrouter (pronounced mc router) is a memcached protocol router for scaling [memcached](http://memcached.org/)
 deployments. It's a core component of cache
