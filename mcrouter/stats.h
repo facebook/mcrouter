@@ -92,6 +92,23 @@ struct stat_t {
     double dbl;
     void* pointer;
   } data;
+
+  stat_t() = default;
+
+  stat_t(const stat_t& from)
+      : name(from.name),
+        group(from.group),
+        type(from.type),
+        aggregate(from.aggregate) {
+    // It doesn't matter which field we take (as long as it's a maximum width
+    // field), we just want to copy these bytes atomically.
+    data.uint64 =
+        folly::make_atomic_ref(const_cast<uint64_t&>(from.data.uint64))
+            .load(std::memory_order_relaxed);
+  }
+
+  // No particular reason to disable, but just unnecessary.
+  stat_t& operator=(const stat_t& from) = delete;
 };
 
 void init_stats(stat_t* stats);
