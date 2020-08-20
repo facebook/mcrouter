@@ -98,26 +98,13 @@ void SimpleUnion::visitFields(V&& v) const {
 
 template <class V>
 void SimpleUnion::foreachMember(V&& v) {
-  if (!v.template visitUnionMember<1, int64_t>("umember1", *this)) {
+  if (!v.template visitUnionMember<int64_t>("umember1", [this]() -> int64_t& {return this->emplace<1>();})) {
     return;
   }
-  if (!v.template visitUnionMember<2, bool>("umember2", *this)) {
+  if (!v.template visitUnionMember<bool>("umember2", [this]() -> bool& {return this->emplace<2>();})) {
     return;
   }
-  if (!v.template visitUnionMember<3, std::string>("umember3", *this)) {
-    return;
-  }
-}
-
-template <class V>
-void SimpleUnion::foreachMember(V&& v) const {
-  if (!v.template visitUnionMember<1, int64_t>("umember1", *this)) {
-    return;
-  }
-  if (!v.template visitUnionMember<2, bool>("umember2", *this)) {
-    return;
-  }
-  if (!v.template visitUnionMember<3, std::string>("umember3", *this)) {
+  if (!v.template visitUnionMember<std::string>("umember3", [this]() -> std::string& {return this->emplace<3>();})) {
     return;
   }
 }

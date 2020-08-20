@@ -148,6 +148,25 @@ void testOptionalEnumCompatibility(bool expectCompatible) {
       folly::sformat("{} to {}", typeid(T1).name(), typeid(T2).name()));
 }
 
+template <class Type>
+class TestUnionBuilder {
+ public:
+  explicit TestUnionBuilder(const folly::StringPiece name, Type val)
+      : fieldName_(name), fieldVal_(val) {}
+
+  template <class T, class F>
+  bool visitUnionMember(folly::StringPiece fieldName, F&& emplaceFn) {
+    if (fieldName == fieldName_) {
+      auto& itemRef = emplaceFn();
+      itemRef = fieldVal_;
+    }
+    return true;
+  }
+
+ private:
+  folly::StringPiece fieldName_;
+  Type fieldVal_;
+};
 } // namespace
 
 TEST(CarbonBasic, staticAsserts) {
@@ -603,6 +622,14 @@ TEST(CarbonTest, OptionalUnionSerialization) {
   inOpt = serializeAndDeserialize(testOpt);
   ASSERT_EQ(TestOptionalUnion::ValueType::UMEMBER3, inOpt.which());
   EXPECT_EQ(testOpt.umember3().has_value(), inOpt.umember3().has_value());
+}
+
+TEST(CarbonTest, ForeachMemberTest) {
+  carbon::test::TestUnion testUnion;
+  TestUnionBuilder testUnionBuilder("a", 1);
+  testUnion.foreachMember(testUnionBuilder);
+  ASSERT_EQ(carbon::test::TestUnion::ValueType::A, testUnion.which());
+  EXPECT_EQ(1, testUnion.a());
 }
 
 TEST(CarbonTest, OptionalBoolSerializationBytesWritten) {
@@ -1219,6 +1246,14 @@ TEST(CarbonBasic, mixinsFieldRefAPIThrift) {
   EXPECT_EQ(12345, *req.base_ref()->baseInt64Member_ref());
   EXPECT_EQ(12345, *req.myBaseStruct_ref()->baseInt64Member_ref());
   EXPECT_EQ(12345, *req.baseInt64Member_ref());
+}
+
+TEST(CarbonTest, ForeachMemberTestThrift) {
+  carbon::test::thrift::TestUnionThrift testUnion;
+  TestUnionBuilder testUnionBuilder("a", 1);
+  testUnion.foreachMember(testUnionBuilder);
+  ASSERT_EQ(carbon::test::TestUnionThrift::Type::a, testUnion.getType());
+  EXPECT_EQ(1, testUnion.get_a());
 }
 
 TEST(CarbonTest, checkKeyHashPosition) {

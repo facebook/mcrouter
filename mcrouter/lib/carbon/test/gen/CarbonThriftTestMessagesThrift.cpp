@@ -20,6 +20,39 @@ namespace carbon {
 namespace test {
 namespace thrift {
 
+void TestUnionThrift::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readRawInto(set_a());
+        break;
+      }
+      case 2: {
+        reader.readRawInto(set_b());
+        break;
+      }
+      case 3: {
+        reader.readRawInto(set_c());
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
 void TinyStruct::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructBegin();
   while (true) {

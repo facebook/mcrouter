@@ -513,26 +513,83 @@ void TestOptionalUnion::visitFields(V&& v) const {
 
 template <class V>
 void TestOptionalUnion::foreachMember(V&& v) {
-  if (!v.template visitUnionMember<1, folly::Optional<int64_t>>("umember1", *this)) {
+  if (!v.template visitUnionMember<folly::Optional<int64_t>>("umember1", [this]() -> folly::Optional<int64_t>& {return this->emplace<1>();})) {
     return;
   }
-  if (!v.template visitUnionMember<2, folly::Optional<bool>>("umember2", *this)) {
+  if (!v.template visitUnionMember<folly::Optional<bool>>("umember2", [this]() -> folly::Optional<bool>& {return this->emplace<2>();})) {
     return;
   }
-  if (!v.template visitUnionMember<3, folly::Optional<std::string>>("umember3", *this)) {
+  if (!v.template visitUnionMember<folly::Optional<std::string>>("umember3", [this]() -> folly::Optional<std::string>& {return this->emplace<3>();})) {
     return;
   }
 }
 
+template <class Writer>
+void TestUnion::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  switch (_which_) {
+    case 1: {
+      writer.writeFieldAlways(1 /* field id */, a());
+      break;
+    }
+    case 2: {
+      writer.writeFieldAlways(2 /* field id */, b());
+      break;
+    }
+    case 3: {
+      writer.writeFieldAlways(3 /* field id */, c());
+      break;
+    }
+    default:
+      break;
+  }
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
 template <class V>
-void TestOptionalUnion::foreachMember(V&& v) const {
-  if (!v.template visitUnionMember<1, folly::Optional<int64_t>>("umember1", *this)) {
+void TestUnion::visitFields(V&& v) {
+  switch (_which_) {
+    case 1:
+      v.visitField(1, "a", a());
+      break;
+    case 2:
+      v.visitField(2, "b", b());
+      break;
+    case 3:
+      v.visitField(3, "c", c());
+      break;
+    default:
+      break;
+  }
+}
+
+template <class V>
+void TestUnion::visitFields(V&& v) const {
+  switch (_which_) {
+    case 1:
+      v.visitField(1, "a", a());
+      break;
+    case 2:
+      v.visitField(2, "b", b());
+      break;
+    case 3:
+      v.visitField(3, "c", c());
+      break;
+    default:
+      break;
+  }
+}
+
+template <class V>
+void TestUnion::foreachMember(V&& v) {
+  if (!v.template visitUnionMember<uint64_t>("a", [this]() -> uint64_t& {return this->emplace<1>();})) {
     return;
   }
-  if (!v.template visitUnionMember<2, folly::Optional<bool>>("umember2", *this)) {
+  if (!v.template visitUnionMember<uint32_t>("b", [this]() -> uint32_t& {return this->emplace<2>();})) {
     return;
   }
-  if (!v.template visitUnionMember<3, folly::Optional<std::string>>("umember3", *this)) {
+  if (!v.template visitUnionMember<uint16_t>("c", [this]() -> uint16_t& {return this->emplace<3>();})) {
     return;
   }
 }

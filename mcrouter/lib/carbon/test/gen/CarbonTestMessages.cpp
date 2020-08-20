@@ -363,6 +363,39 @@ void TestOptionalUnion::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
+void TestUnion::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readRawInto(emplace<1>());
+        break;
+      }
+      case 2: {
+        reader.readRawInto(emplace<2>());
+        break;
+      }
+      case 3: {
+        reader.readRawInto(emplace<3>());
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
 void TestF14Containers::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructBegin();
   while (true) {

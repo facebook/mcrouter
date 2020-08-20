@@ -1497,6 +1497,140 @@ class TestOptionalUnion {
   uint32_t _which_{0};
 };
 
+class TestUnion {
+ private:
+  using _IdTypeMap = carbon::List<
+      facebook::memcache::KV<1, uint64_t>,
+      facebook::memcache::KV<2, uint32_t>,
+      facebook::memcache::KV<3, uint16_t>>;
+
+ public:
+  enum class ValueType : uint32_t {
+    EMPTY = 0,
+    A = 1,
+    B = 2,
+    C = 3
+  };
+
+  TestUnion() = default;
+  TestUnion(const TestUnion&) = default;
+  TestUnion& operator=(const TestUnion&) = default;
+  TestUnion(TestUnion&&) = default;
+  TestUnion& operator=(TestUnion&&) = default;
+
+  ValueType which() const {
+    return static_cast<ValueType>(_which_);
+  }
+
+  uint64_t& a() {
+    if (_which_ == 0) {
+      return emplace<1>();
+    }
+    if (_which_ != 1) {
+      throw std::runtime_error("a is not set in union TestUnion.");
+    }
+    return _carbon_variant.get<uint64_t>();
+  }
+  uint64_t a() const {
+    if (_which_ != 1) {
+      throw std::runtime_error("a is not set in union TestUnion.");
+    }
+    return _carbon_variant.get<uint64_t>();
+  }
+  uint32_t& b() {
+    if (_which_ == 0) {
+      return emplace<2>();
+    }
+    if (_which_ != 2) {
+      throw std::runtime_error("b is not set in union TestUnion.");
+    }
+    return _carbon_variant.get<uint32_t>();
+  }
+  uint32_t b() const {
+    if (_which_ != 2) {
+      throw std::runtime_error("b is not set in union TestUnion.");
+    }
+    return _carbon_variant.get<uint32_t>();
+  }
+  uint16_t& c() {
+    if (_which_ == 0) {
+      return emplace<3>();
+    }
+    if (_which_ != 3) {
+      throw std::runtime_error("c is not set in union TestUnion.");
+    }
+    return _carbon_variant.get<uint16_t>();
+  }
+  uint16_t c() const {
+    if (_which_ != 3) {
+      throw std::runtime_error("c is not set in union TestUnion.");
+    }
+    return _carbon_variant.get<uint16_t>();
+  }
+
+  template <
+      uint32_t id,
+      class C = typename carbon::FindByKey<id, _IdTypeMap>::type>
+  C& get() {
+    if (id != _which_) {
+      throw std::runtime_error("Type id is not set in union TestUnion.");
+    }
+    return _carbon_variant.get<C>();
+  }
+
+  template <
+      uint32_t id,
+      class C = typename carbon::FindByKey<id, _IdTypeMap>::type>
+  const C& get() const {
+    if (id != _which_) {
+      throw std::runtime_error("Type id is not set in union TestUnion.");
+    }
+    return _carbon_variant.get<C>();
+  }
+
+  /* Note: Emplace invalidates all previous accessor references.
+   * Please exercise caution.
+   */
+  template <
+      uint32_t id,
+      class... Args,
+      class C = typename carbon::FindByKey<id, _IdTypeMap>::type>
+  C& emplace(Args&&... args) {
+    _which_ = id;
+    return _carbon_variant.emplace<C>(std::forward<Args>(args)...);
+  }
+
+  template <
+      ValueType id,
+      class... Args,
+      class C = typename carbon::
+          FindByKey<static_cast<uint32_t>(id), _IdTypeMap>::type>
+  C& emplace(Args&&... args) {
+    _which_ = static_cast<uint32_t>(id);
+    return _carbon_variant.emplace<C>(std::forward<Args>(args)...);
+  }
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+  template <class V>
+  void foreachMember(V&& v);
+  template <class V>
+  void foreachMember(V&& v) const;
+
+ private:
+  carbon::Variant<
+      uint64_t,
+      uint32_t,
+      uint16_t> _carbon_variant;
+  uint32_t _which_{0};
+};
+
 class TestF14Containers {
  public:
 

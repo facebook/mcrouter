@@ -26,6 +26,28 @@ enum MyEnum {
   C = 2
 } (cpp.enum_type="int32_t")
 
+union TestUnionThrift {
+  1: i64 (cpp.type = "uint64_t") a
+  2: i32 (cpp.type = "uint32_t") b
+  3: i16 (cpp.type = "uint16_t") c
+}(cpp.methods = "
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+ public:
+  template <class V>
+  void foreachMember(V&& v);
+
+  template <class V>
+  void foreachMember(V&& v) const;
+")
 struct TinyStruct {
   1: i64 foo
 }(cpp.methods = "

@@ -296,11 +296,10 @@ class FromDynamicVisitor {
     return true;
   }
 
-  template <size_t id, class T, class U>
-  bool visitUnionMember(folly::StringPiece fieldName, U& u) {
+  template <class T, class F>
+  bool visitUnionMember(folly::StringPiece fieldName, F&& emplaceFn) {
     if (auto jsonPtr = json_.get_ptr(fieldName)) {
-      auto& ref = u.template emplace<id>();
-      fromDynamic(fieldName, *jsonPtr, ref);
+      fromDynamic(fieldName, *jsonPtr, emplaceFn());
     }
     return true;
   }

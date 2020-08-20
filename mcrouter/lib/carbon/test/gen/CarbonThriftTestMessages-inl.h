@@ -18,6 +18,76 @@ namespace test {
 namespace thrift {
 
 template <class Writer>
+void TestUnionThrift::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  switch (getType()) {
+    case 1: {
+      writer.writeFieldAlways(1 /* field id */, *a_ref());
+      break;
+    }
+    case 2: {
+      writer.writeFieldAlways(2 /* field id */, *b_ref());
+      break;
+    }
+    case 3: {
+      writer.writeFieldAlways(3 /* field id */, *c_ref());
+      break;
+    }
+    default:
+      break;
+  }
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void TestUnionThrift::visitFields(V&& v) {
+  switch (getType()) {
+    case 1:
+      v.visitField(1, "a", *a_ref());
+      break;
+    case 2:
+      v.visitField(2, "b", *b_ref());
+      break;
+    case 3:
+      v.visitField(3, "c", *c_ref());
+      break;
+    default:
+      break;
+  }
+}
+
+template <class V>
+void TestUnionThrift::visitFields(V&& v) const {
+  switch (getType()) {
+    case 1:
+      v.visitField(1, "a", *a_ref());
+      break;
+    case 2:
+      v.visitField(2, "b", *b_ref());
+      break;
+    case 3:
+      v.visitField(3, "c", *c_ref());
+      break;
+    default:
+      break;
+  }
+}
+
+template <class V>
+void TestUnionThrift::foreachMember(V&& v) {
+  if (!v.template visitUnionMember<uint64_t>("a", [this]() -> uint64_t& {return this->a_ref().emplace();})) {
+    return;
+  }
+  if (!v.template visitUnionMember<uint32_t>("b", [this]() -> uint32_t& {return this->b_ref().emplace();})) {
+    return;
+  }
+  if (!v.template visitUnionMember<uint16_t>("c", [this]() -> uint16_t& {return this->c_ref().emplace();})) {
+    return;
+  }
+}
+
+template <class Writer>
 void TinyStruct::serialize(Writer&& writer) const {
   writer.writeStructBegin();
   writer.writeField(1 /* field id */, foo_ref());
@@ -390,6 +460,34 @@ void DummyThriftReply::visitFields(V&& v) const {
 
 namespace apache {
 namespace thrift {
+template <>
+class Cpp2Ops<carbon::test::TestUnionThrift> {
+ public:
+  typedef carbon::test::TestUnionThrift Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  static void clear(Type* value) {
+    value->__clear();
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
 template <>
 class Cpp2Ops<carbon::test::TinyStruct> {
  public:

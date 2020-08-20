@@ -10,6 +10,12 @@ enum MyEnum : int32_t {
   C = 2,
 };
 
+union TestUnionThrift {
+  1: uint64_t a;
+  2: uint32_t b;
+  3: uint16_t c;
+};
+
 struct TinyStruct {
   1: int64_t foo;
 };

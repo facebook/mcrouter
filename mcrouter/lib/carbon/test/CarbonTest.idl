@@ -87,6 +87,12 @@ union TestOptionalUnion {
   3: folly::Optional<std::string> umember3;
 };
 
+union TestUnion {
+  1: uint64_t a;
+  2: uint32_t b;
+  3: uint16_t c;
+};
+
 struct TestF14Containers {
   1: folly::F14FastMap<std::string, int64_t> fastMap;
   2: folly::F14NodeMap<std::string, int64_t> nodeMap;

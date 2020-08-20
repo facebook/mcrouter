@@ -41,6 +41,8 @@ using MyEnum = carbon::test::thrift::MyEnum;
 
 std::string enumMyEnumToString(MyEnum val);
 
+using TestUnionThrift = carbon::test::thrift::TestUnionThrift;
+
 using TinyStruct = carbon::test::thrift::TinyStruct;
 
 using MyBaseStruct = carbon::test::thrift::MyBaseStruct;
