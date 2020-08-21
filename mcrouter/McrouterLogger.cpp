@@ -221,10 +221,10 @@ void McrouterLogger::log() {
       requestStats.setDefault(k, 0) += proxyRequestStats[k];
     }
   }
-  /* Add standalone stats */
+  /* Add standalone stats (does not filter zeroes) */
   {
     const auto externalRequestStats =
-        router_.externalStatsHandler().dumpStats(true /* filterZeroes */);
+        router_.externalStatsHandler().dumpStats(false /* filterZeroes */);
     requestStats.update_missing(externalRequestStats);
   }
 
