@@ -78,8 +78,7 @@ class ThriftHandler : virtual public hellogoodbye::thrift::HelloGoodbyeSvIf {
       LOG(ERROR) << "Cannot get context.";
     }
     hellogoodbye::HelloReply reply(carbon::Result::OK);
-    decltype(callback)::element_type::resultInThread(
-        std::move(callback), std::move(reply));
+    callback->result(std::move(reply));
   }
 
   void async_eb_goodbye(
@@ -89,16 +88,14 @@ class ThriftHandler : virtual public hellogoodbye::thrift::HelloGoodbyeSvIf {
     LOG(INFO) << "Good bye! Thrift server " << reinterpret_cast<uintptr_t>(this)
               << " got key " << request.key_ref()->fullKey().str();
     hellogoodbye::GoodbyeReply reply(carbon::Result::OK);
-    decltype(callback)::element_type::resultInThread(
-        std::move(callback), std::move(reply));
+    callback->result(std::move(reply));
   }
 
   void async_eb_mcVersion(
       std::unique_ptr<apache::thrift::HandlerCallback<
           facebook::memcache::McVersionReply>> callback,
       const facebook::memcache::McVersionRequest& /* request */) override {
-    decltype(callback)::element_type::resultInThread(
-        std::move(callback), McVersionReply(carbon::Result::OK));
+    callback->result(McVersionReply(carbon::Result::OK));
   }
 };
 

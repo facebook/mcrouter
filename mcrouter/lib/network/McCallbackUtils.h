@@ -25,8 +25,8 @@ class McThriftCallback {
       McThriftCallback<Reply>&& ctx,
       Reply&& reply,
       bool /* flush */ = false) {
-    decltype(ctx.underlying_)::element_type::resultInThread(
-        std::move(ctx.underlying_), std::move(reply));
+    ctx.underlying_->result(std::move(reply));
+    ctx.underlying_.reset();
   }
 
   folly::Optional<std::string> getPeerSocketAddressStr() {

@@ -28,8 +28,8 @@ class MockMcThriftServerHandler
         : callback_(std::move(callback)) {}
 
     static void reply(ThriftContext&& ctx, Reply&& reply) {
-      decltype(ctx.callback_)::element_type::resultInThread(
-          std::move(ctx.callback_), std::move(reply));
+      ctx.callback_->result(std::move(reply));
+      ctx.callback_.reset();
     }
 
    private:
