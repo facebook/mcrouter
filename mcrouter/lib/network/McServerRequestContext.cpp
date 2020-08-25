@@ -126,5 +126,9 @@ void markContextAsTraced(McServerRequestContext& ctx) {
   ctx.markAsTraced();
 }
 
+void* McServerRequestContext::getConnectionUserData() {
+  return session_->userContext();
+}
+
 } // namespace memcache
 } // namespace facebook

@@ -70,6 +70,8 @@ class McServerRequestContext {
 
   void markAsTraced();
 
+  void* getConnectionUserData();
+
  private:
   McServerSession* session_;
 
