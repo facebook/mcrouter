@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <cmath>
 
 namespace facebook {
@@ -16,26 +17,37 @@ namespace mcrouter {
 template <size_t WindowSize>
 class ExponentialSmoothData {
  public:
+  ExponentialSmoothData() = default;
+  ExponentialSmoothData(const ExponentialSmoothData& other) {
+    currentValue_.store(
+        other.currentValue_.load(std::memory_order_relaxed),
+        std::memory_order_relaxed);
+  }
+
   static_assert(WindowSize > 0, "WindowSize should be > 0");
 
   void insertSample(double sample) {
-    if (hasValue()) {
-      currentValue_ = (sample + (WindowSize - 1) * currentValue_) / WindowSize;
+    auto value = currentValue_.load(std::memory_order_relaxed);
+    if (!std::isnan(value)) {
+      currentValue_.store(
+          (sample + (WindowSize - 1) * value) / WindowSize,
+          std::memory_order_relaxed);
     } else {
-      currentValue_ = sample;
+      currentValue_.store(sample, std::memory_order_relaxed);
     }
   }
 
   double value() const {
-    return hasValue() ? currentValue_ : 0.0;
+    auto value = currentValue_.load(std::memory_order_relaxed);
+    return !std::isnan(value) ? value : 0.0;
   }
 
   bool hasValue() const {
-    return !std::isnan(currentValue_);
+    return !std::isnan(currentValue_.load(std::memory_order_relaxed));
   }
 
  private:
-  double currentValue_{std::nan("")};
+  std::atomic<double> currentValue_{std::nan("")};
 };
 } // namespace mcrouter
 } // namespace memcache
