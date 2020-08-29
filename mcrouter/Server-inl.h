@@ -317,7 +317,7 @@ void setupRouter(
     const McrouterStandaloneOptions& standaloneOpts,
     CarbonRouterInstance<RouterInfo>* router,
     StandalonePreRunCb preRunCb) {
-  router->addStartupOpts(standaloneOpts.toDict());
+  router->setStartupOpts(standaloneOpts.toDict());
 
   if (standaloneOpts.enable_server_compression &&
       !mcrouterOpts.enable_compression) {

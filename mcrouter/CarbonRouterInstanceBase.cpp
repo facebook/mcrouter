@@ -121,9 +121,11 @@ void CarbonRouterInstanceBase::setUpCompressionDictionaries(
       std::make_unique<const CompressionCodecManager>(std::move(codecConfigs));
 }
 
-void CarbonRouterInstanceBase::addStartupOpts(
+void CarbonRouterInstanceBase::setStartupOpts(
     std::unordered_map<std::string, std::string> additionalOpts) {
+  DCHECK(!startupOptsInitialized_.load(std::memory_order_acquire));
   additionalStartupOpts_.insert(additionalOpts.begin(), additionalOpts.end());
+  startupOptsInitialized_.store(true, std::memory_order_release);
 }
 
 std::unordered_map<std::string, std::string>
@@ -131,7 +133,9 @@ CarbonRouterInstanceBase::getStartupOpts() const {
   constexpr size_t kMaxOptionValueLength = 256;
 
   auto result = opts_.toDict();
-  result.insert(additionalStartupOpts_.begin(), additionalStartupOpts_.end());
+  if (startupOptsInitialized_.load(std::memory_order_acquire)) {
+    result.insert(additionalStartupOpts_.begin(), additionalStartupOpts_.end());
+  }
   result.emplace("version", MCROUTER_PACKAGE_STRING);
   for (auto& it : result) {
     it.second = shorten(it.second, kMaxOptionValueLength);

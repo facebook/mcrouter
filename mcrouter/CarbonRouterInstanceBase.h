@@ -145,7 +145,7 @@ class CarbonRouterInstanceBase {
   folly::ReadMostlySharedPtr<AsyncWriter> asyncWriter();
 
   std::unordered_map<std::string, std::string> getStartupOpts() const;
-  void addStartupOpts(
+  void setStartupOpts(
       std::unordered_map<std::string, std::string> additionalOpts);
 
   uint64_t startTime() const {
@@ -261,6 +261,7 @@ class CarbonRouterInstanceBase {
   folly::once_flag shadowLeaseTokenMapInitFlag_;
 
   std::unordered_map<std::string, std::string> additionalStartupOpts_;
+  std::atomic<bool> startupOptsInitialized_{false};
 
   std::mutex nextProxyMutex_;
   size_t nextProxy_{0};
