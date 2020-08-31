@@ -31,13 +31,13 @@ mcpiper_SOURCES = \
 
 mcpiper_LDADD = \
 	$(top_srcdir)/lib/libmcrouter.a \
-	-lprotocol \
 	-lthriftcpp2 \
+	-ltransport \
 	-lthriftprotocol \
 	-lrpcmetadata \
 	-lasync \
 	-lconcurrency \
-	-ltransport \
+	-lprotocol \
 	-lthrift-core \
 	-lfizz \
 	-lfmt \
