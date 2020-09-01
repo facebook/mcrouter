@@ -89,8 +89,18 @@ class FailoverInOrderPolicy {
     }
     auto jMaxTries = json.get_ptr("max_tries");
     if (jMaxTries) {
-      maxTries_ = static_cast<size_t>(
-          parseInt(*jMaxTries, "max_tries", 1, children_.size()));
+      maxTries_ = static_cast<uint32_t>(
+          parseInt(*jMaxTries, "max_tries", 1, UINT32_MAX));
+      if (maxTries_ > children_.size()) {
+        LOG_FAILURE(
+            "mcrouter",
+            failure::Category::kInvalidConfig,
+            "MaxTries ({}) exceeds number of children ({}), "
+            "setting it to number of children",
+            maxTries_,
+            children_.size());
+        maxTries_ = children_.size();
+      }
     }
     auto jExcludeErrors = json.get_ptr("exclude_errors");
     if (jExcludeErrors) {
@@ -225,21 +235,36 @@ class FailoverDeterministicOrderPolicy {
     checkLogic(
         jMaxTries != nullptr,
         "Failover: DeterministicOrderPolicy must specify 'max_tries' field");
-    maxTries_ = static_cast<size_t>(
-        parseInt(*jMaxTries, "max_tries", 1, children_.size()));
+    maxTries_ =
+        static_cast<uint32_t>(parseInt(*jMaxTries, "max_tries", 1, UINT32_MAX));
+    if (maxTries_ > children_.size()) {
+      LOG_FAILURE(
+          "mcrouter",
+          failure::Category::kInvalidConfig,
+          "MaxTries ({}) exceeds number of children ({}), "
+          "setting it to number of children",
+          maxTries_,
+          children_.size());
+      maxTries_ = children_.size();
+    }
 
     auto jMaxErrorTries = json.get_ptr("max_error_tries");
     checkLogic(
         jMaxErrorTries != nullptr,
         "Failover: DeterministicOrderPolicy must specify"
         " 'max_error_tries' field");
-    maxErrorTries_ = static_cast<size_t>(
-        parseInt(*jMaxErrorTries, "max_error_tries", 1, maxTries_));
-
-    checkLogic(
-        maxErrorTries_ <= maxTries_,
-        "Failover: DeterministicOrderPolicy 'max_error_tries' must be <= "
-        "'max_tries'");
+    maxErrorTries_ = static_cast<uint32_t>(
+        parseInt(*jMaxErrorTries, "max_error_tries", 1, UINT32_MAX));
+    if (maxErrorTries_ > maxTries_) {
+      LOG_FAILURE(
+          "mcrouter",
+          failure::Category::kInvalidConfig,
+          "MaxErrorTries ({}) exceeds MaxTries ({}), "
+          "setting it to number of children",
+          maxErrorTries_,
+          maxTries_);
+      maxErrorTries_ = maxTries_;
+    }
 
     auto jExcludeErrors = json.get_ptr("exclude_errors");
     if (jExcludeErrors) {
@@ -710,8 +735,18 @@ class FailoverLeastFailuresPolicy {
     checkLogic(
         jMaxTries != nullptr,
         "Failover: LeastFailuresPolicy must specify 'max_tries' field");
-    maxTries_ = static_cast<size_t>(
-        parseInt(*jMaxTries, "max_tries", 1, children_.size()));
+    maxTries_ =
+        static_cast<uint32_t>(parseInt(*jMaxTries, "max_tries", 1, UINT32_MAX));
+    if (maxTries_ > children_.size()) {
+      LOG_FAILURE(
+          "mcrouter",
+          failure::Category::kInvalidConfig,
+          "MaxTries ({}) exceeds number of children ({}), "
+          "setting it to number of children",
+          maxTries_,
+          children_.size());
+      maxTries_ = children_.size();
+    }
   }
 
   class ChildProxy {

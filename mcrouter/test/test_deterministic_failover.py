@@ -12,7 +12,7 @@ import time
 
 
 class TestDeterministicFailoverNoFailure(McrouterTestCase):
-    config = './mcrouter/test/test_deterministic_failover.json'
+    config = './mcrouter/test/test_deterministic_failover_big_retries.json'
     null_route_config = './mcrouter/test/test_nullroute.json'
     mcrouter_server_extra_args = []
     extra_args = [
