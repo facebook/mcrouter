@@ -11,6 +11,7 @@
 #include <folly/dynamic.h>
 
 #include "mcrouter/lib/HashFunctionType.h"
+#include "mcrouter/lib/RendezvousHashHelper.h"
 
 namespace facebook {
 namespace memcache {
@@ -33,6 +34,25 @@ class WeightedRendezvousHashFunc {
       const folly::dynamic& json);
 
   size_t operator()(folly::StringPiece key) const;
+
+  class Iterator : public RendezvousIterator {
+   public:
+    Iterator(
+        const std::vector<uint64_t>& hashes,
+        const std::vector<double>& endpointWeights,
+        const folly::StringPiece key);
+
+    // An end / empty iterator.
+    Iterator() {}
+  };
+
+  Iterator begin(folly::StringPiece key) const {
+    return Iterator(endpointHashes_, endpointWeights_, key);
+  }
+
+  Iterator end() const {
+    return Iterator();
+  }
 
   static const char* type() {
     return "WeightedRendezvous";

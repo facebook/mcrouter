@@ -8,6 +8,11 @@
 #pragma once
 
 #include <inttypes.h>
+#include <queue>
+#include <vector>
+
+#include <folly/GLog.h>
+#include <folly/Range.h>
 
 namespace facebook {
 namespace memcache {
@@ -39,6 +44,48 @@ inline double convertInt64ToDouble01(const uint64_t value) {
   constexpr double fiftyThreeZeros = ((uint64_t)1) << 53;
   return (value & fiftyThreeOnes) / fiftyThreeZeros;
 }
+
+class RendezvousIterator {
+ public:
+  struct ScoreAndIndex {
+    ScoreAndIndex(double scoreIn, size_t indexIn)
+        : score{scoreIn}, index{indexIn} {}
+
+    bool operator<(const ScoreAndIndex& other) const {
+      return score < other.score ||
+          (score == other.score && index < other.index);
+    }
+
+    double score;
+    size_t index;
+  };
+
+  explicit RendezvousIterator(
+      std::vector<RendezvousIterator::ScoreAndIndex> scores);
+
+  // An end / empty iterator.
+  RendezvousIterator() {}
+
+  RendezvousIterator& operator++();
+
+  bool operator==(const RendezvousIterator& other) const {
+    return queue_.size() == other.queue_.size();
+  }
+
+  size_t operator*() const {
+    CHECK(!queue_.empty());
+    return queue_.top().index;
+  }
+
+  bool empty() const {
+    return queue_.empty();
+  }
+
+  static uint64_t keyHash(folly::StringPiece key);
+
+ private:
+  std::priority_queue<ScoreAndIndex> queue_;
+};
 
 } // namespace memcache
 } // namespace facebook

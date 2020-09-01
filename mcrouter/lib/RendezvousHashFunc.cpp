@@ -5,16 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "RendezvousHashFunc.h"
+#include "mcrouter/lib/RendezvousHashFunc.h"
 
-#include "mcrouter/lib/RendezvousHashHelper.h"
 #include "mcrouter/lib/fbi/hash.h"
+
+#include <cmath>
 
 namespace facebook {
 namespace memcache {
 
 RendezvousHashFunc::RendezvousHashFunc(
-    const std::vector<folly::StringPiece>& endpoints) {
+    const std::vector<folly::StringPiece>& endpoints,
+    const folly::dynamic& /* json */) {
   endpointHashes_.reserve(endpoints.size());
   for (const auto ap : endpoints) {
     const uint64_t hash =
@@ -23,41 +25,27 @@ RendezvousHashFunc::RendezvousHashFunc(
   }
 }
 
-size_t RendezvousHashFunc::operator()(folly::StringPiece key) const {
-  Iterator iter{endpointHashes_, key};
-  return *iter;
-}
+namespace {
 
-RendezvousHashFunc::Iterator::Iterator(
-    const std::vector<uint64_t>& hashes,
-    folly::StringPiece key)
-    : queue_(make_queue(hashes, key)) {}
-
-RendezvousHashFunc::Iterator& RendezvousHashFunc::Iterator::operator++() {
-  if (!queue_.empty()) {
-    queue_.pop();
-  }
-
-  return *this;
-}
-
-std::priority_queue<RendezvousHashFunc::Iterator::ScoreAndIndex>
-RendezvousHashFunc::Iterator::make_queue(
+std::vector<RendezvousIterator::ScoreAndIndex> get_scores(
     const std::vector<uint64_t>& endpointHashes,
-    const folly::StringPiece key) {
-  std::vector<ScoreAndIndex> scores;
+    folly::StringPiece key) {
+  std::vector<RendezvousIterator::ScoreAndIndex> scores;
 
-  const uint64_t keyHash =
-      murmur_hash_64A(key.data(), key.size(), kRendezvousExtraHashSeed);
+  const uint64_t keyHash = RendezvousIterator::keyHash(key);
 
   scores.reserve(endpointHashes.size());
   for (size_t pos = 0; pos < endpointHashes.size(); ++pos) {
     const uint64_t score = hash128to64(endpointHashes[pos], keyHash);
-    scores.emplace_back(ScoreAndIndex{score, pos});
+    scores.emplace_back(score, pos);
   }
 
-  return std::priority_queue<ScoreAndIndex>(
-      std::less<ScoreAndIndex>(), std::move(scores));
+  return scores;
+}
+} // namespace
+
+RendezvousIterator RendezvousHashFunc::begin(folly::StringPiece key) const {
+  return RendezvousIterator(get_scores(endpointHashes_, key));
 }
 
 } // namespace memcache

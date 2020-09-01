@@ -96,7 +96,7 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> createHashRoute(
       return createHashRoute<RouterInfo, RendezvousHashFunc>(
           std::move(rh),
           std::move(salt),
-          RendezvousHashFunc(std::move(endpoints)));
+          RendezvousHashFunc(std::move(endpoints), json));
     } else {
       return createHashRoute<RouterInfo, WeightedRendezvousHashFunc>(
           std::move(rh),

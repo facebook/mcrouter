@@ -19,7 +19,7 @@ using namespace facebook::memcache;
 namespace {
 RendezvousHashFunc genRendezvousHashFunc(int n) {
   auto combined = test::genEndpoints(n);
-  return RendezvousHashFunc(combined.second);
+  return RendezvousHashFunc(combined.second, folly::dynamic());
 }
 
 } // namespace
@@ -78,14 +78,14 @@ TEST(RendezvousHashFunc, rendezvous_rehash) {
   auto combined = test::genEndpoints(n);
   const auto& endpoints = combined.second;
 
-  RendezvousHashFunc rendezvous(endpoints);
+  RendezvousHashFunc rendezvous(endpoints, folly::dynamic());
 
   // Number of rehashes if we remove one element
   auto removeCompare = [&](std::vector<folly::StringPiece>& newEndpoints,
                            std::vector<folly::StringPiece>::iterator it) {
     newEndpoints.erase(it);
 
-    RendezvousHashFunc newRendezvous(newEndpoints);
+    RendezvousHashFunc newRendezvous(newEndpoints, folly::dynamic());
 
     int numDiff = 0;
     for (size_t i = 0; i < 10000; ++i) {

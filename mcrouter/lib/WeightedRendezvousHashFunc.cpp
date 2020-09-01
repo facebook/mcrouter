@@ -67,5 +67,36 @@ size_t WeightedRendezvousHashFunc::operator()(folly::StringPiece key) const {
 
   return maxScorePos;
 }
+
+namespace {
+std::vector<RendezvousIterator::ScoreAndIndex> get_scores(
+    const std::vector<uint64_t>& endpointHashes,
+    const std::vector<double>& endpointWeights,
+    const folly::StringPiece key) {
+  std::vector<RendezvousIterator::ScoreAndIndex> scores;
+
+  const uint64_t keyHash = RendezvousIterator::keyHash(key);
+
+  scores.reserve(endpointHashes.size());
+  for (size_t pos = 0; pos < endpointHashes.size(); ++pos) {
+    const uint64_t scoreInt = hash128to64(endpointHashes[pos], keyHash);
+    const double scoreDouble = convertInt64ToDouble01(scoreInt);
+
+    // Borrow from https://en.wikipedia.org/wiki/Rendezvous_hashing.
+    double score = endpointWeights[pos] * (1.0 / (-std::log(scoreDouble)));
+
+    scores.emplace_back(score, pos);
+  }
+
+  return scores;
+}
+} // namespace
+
+WeightedRendezvousHashFunc::Iterator::Iterator(
+    const std::vector<uint64_t>& hashes,
+    const std::vector<double>& endpointWeights,
+    const folly::StringPiece key)
+    : RendezvousIterator(get_scores(hashes, endpointWeights, key)) {}
+
 } // namespace memcache
 } // namespace facebook

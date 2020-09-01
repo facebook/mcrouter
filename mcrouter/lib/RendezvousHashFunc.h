@@ -13,8 +13,10 @@
 #include <glog/logging.h>
 
 #include <folly/Range.h>
+#include <folly/dynamic.h>
 
 #include "mcrouter/lib/HashFunctionType.h"
+#include "mcrouter/lib/RendezvousHashHelper.h"
 
 namespace facebook {
 namespace memcache {
@@ -31,55 +33,18 @@ class RendezvousHashFunc {
   /**
    * @param endpoints  A list of backend servers
    */
-  explicit RendezvousHashFunc(const std::vector<folly::StringPiece>& endpoints);
+  RendezvousHashFunc(
+      const std::vector<folly::StringPiece>& endpoints,
+      const folly::dynamic& json);
 
-  size_t operator()(folly::StringPiece key) const;
-
-  class Iterator {
-   public:
-    Iterator(const std::vector<uint64_t>& hashes, folly::StringPiece key);
-    // An end / empty iterator.
-    Iterator() {}
-
-    Iterator& operator++();
-
-    bool operator==(const Iterator& other) const {
-      return queue_.size() == other.queue_.size();
-    }
-
-    size_t operator*() const {
-      CHECK(!queue_.empty());
-      return queue_.top().index;
-    }
-
-    bool empty() const {
-      return queue_.empty();
-    }
-
-   private:
-    struct ScoreAndIndex {
-      bool operator<(const ScoreAndIndex& other) const {
-        return score < other.score ||
-            (score == other.score && index < other.index);
-      }
-
-      uint64_t score;
-      size_t index;
-    };
-
-    static std::priority_queue<ScoreAndIndex> make_queue(
-        const std::vector<uint64_t>& endpointHashes,
-        const folly::StringPiece key);
-
-    std::priority_queue<ScoreAndIndex> queue_;
-  };
-
-  Iterator begin(folly::StringPiece key) const {
-    return Iterator(endpointHashes_, key);
+  size_t operator()(folly::StringPiece key) const {
+    return *begin(key);
   }
 
-  Iterator end() const {
-    return Iterator();
+  RendezvousIterator begin(folly::StringPiece key) const;
+
+  RendezvousIterator end() const {
+    return RendezvousIterator();
   }
 
   static const char* type() {

@@ -564,7 +564,7 @@ class FailoverDeterministicOrderPolicy {
   std::unordered_map<uint32_t, uint32_t> failureDomainMap_;
 };
 
-template <typename RouteHandleIf, typename RouterInfo>
+template <typename RouteHandleIf, typename RouterInfo, typename HashFunc>
 class FailoverRendezvousPolicy {
  public:
   static constexpr bool optimizeNoFailoverRouteCase = true;
@@ -575,7 +575,8 @@ class FailoverRendezvousPolicy {
       const folly::dynamic& json)
       : children_(children),
         hashFunc_(
-            getTags(json, children.size() - 1, "FailoverRendezvousPolicy")) {
+            getTags(json, children.size() - 1, "FailoverRendezvousPolicy"),
+            json) {
     checkLogic(
         json.isObject(),
         "Failover: FailoverRendezvousPolicy config is not an object");
@@ -661,7 +662,7 @@ class FailoverRendezvousPolicy {
    private:
     friend class boost::iterator_core_access;
     const FailoverRendezvousPolicy& policy_;
-    RendezvousHashFunc::Iterator iter_;
+    RendezvousIterator iter_;
     // Child 0 is not one of the hosts, but rather a RoutePool.  We need to
     // return that first, before returning actual hosts.  Also, the index of the
     // primary isn't known when the Iterator is constructed; we need to wait for
@@ -718,7 +719,7 @@ class FailoverRendezvousPolicy {
  private:
   const std::vector<RouteHandlePtr>& children_;
   folly::dynamic config_;
-  RendezvousHashFunc hashFunc_;
+  HashFunc hashFunc_;
 };
 
 template <typename RouteHandleIf>
