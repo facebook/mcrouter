@@ -31,6 +31,7 @@ union TestUnionThrift {
   2: i32 (cpp.type = "uint32_t") b
   3: i16 (cpp.type = "uint16_t") c
 }(cpp.methods = "
+ public:
   template <class V>
   void visitFields(V&& v);
   template <class V>
@@ -41,7 +42,6 @@ union TestUnionThrift {
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
- public:
   template <class V>
   void foreachMember(V&& v);
 

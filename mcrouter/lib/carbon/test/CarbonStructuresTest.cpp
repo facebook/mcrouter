@@ -1249,11 +1249,12 @@ TEST(CarbonBasic, mixinsFieldRefAPIThrift) {
 }
 
 TEST(CarbonTest, ForeachMemberTestThrift) {
-  carbon::test::thrift::TestUnionThrift testUnion;
+  carbon::test::TestUnionThrift testUnion;
   TestUnionBuilder testUnionBuilder("a", 1);
   testUnion.foreachMember(testUnionBuilder);
   ASSERT_EQ(carbon::test::TestUnionThrift::Type::a, testUnion.getType());
   EXPECT_EQ(1, testUnion.get_a());
+  EXPECT_TRUE(carbon::IsCarbonStruct<carbon::test::TestUnionThrift>::value);
 }
 
 TEST(CarbonTest, checkKeyHashPosition) {
