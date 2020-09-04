@@ -55,7 +55,6 @@ template <class RouterInfo>
 class fiber_local {
  private:
   enum FeatureFlag : size_t {
-    FAILOVER_TAG,
     FAILOVER_DISABLED,
     THRIFT_SERVER_LOAD_ENABLED,
     NUM_FLAGS
@@ -68,6 +67,7 @@ class fiber_local {
     RequestClass requestClass;
     int32_t selectedIndex{-1};
     int64_t networkTransportTimeUs{0};
+    uint32_t failoverCount{0};
     std::bitset<NUM_FLAGS> featureFlags;
   };
 
@@ -167,19 +167,19 @@ class fiber_local {
   }
 
   /**
-   * Update failover tag for current fiber (thread, if we're not on fiber)
+   * Increment failover count for current fiber (thread, if we're not on fiber)
+   * and return the new value
    */
-  static void setFailoverTag(bool value) {
-    folly::fibers::local<McrouterFiberContext>().featureFlags.set(
-        FeatureFlag::FAILOVER_TAG, value);
+  static uint32_t incFailoverCount() {
+    folly::fibers::local<McrouterFiberContext>().failoverCount += 1;
+    return folly::fibers::local<McrouterFiberContext>().failoverCount;
   }
 
   /**
-   * Get failover tag of current fiber (thread, if we're not on fiber)
+   * Get failover count of current fiber (thread, if we're not on fiber)
    */
-  static bool getFailoverTag() {
-    return folly::fibers::local<McrouterFiberContext>().featureFlags.test(
-        FeatureFlag::FAILOVER_TAG);
+  static uint32_t getFailoverCount() {
+    return folly::fibers::local<McrouterFiberContext>().failoverCount;
   }
 
   /**

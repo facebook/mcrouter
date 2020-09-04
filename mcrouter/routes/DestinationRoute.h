@@ -250,9 +250,9 @@ class DestinationRoute {
       }
     }
 
-    // Copy the request if failoverTag is set or if the total destination
-    // timeout is less the remaining time to deadline
-    if (fiber_local<RouterInfo>::getFailoverTag() ||
+    // Copy the request if failover count is greater than zero or if the
+    // total destination timeout is less the remaining time to deadline
+    if (fiber_local<RouterInfo>::getFailoverCount() > 0 ||
         totalDestTimeout < remainingDeadlineTime) {
       if (!newReq) {
         newReq.emplace(req);
@@ -262,8 +262,10 @@ class DestinationRoute {
         proxy->stats().increment(request_deadline_num_copy_stat);
         setRequestDeadline(*newReq, totalDestTimeout);
       }
-      if (fiber_local<RouterInfo>::getFailoverTag()) {
+      if (fiber_local<RouterInfo>::getFailoverCount() > 0) {
         carbon::detail::setRequestFailover(*newReq);
+        incFailoverHopCount(
+            *newReq, fiber_local<RouterInfo>::getFailoverCount());
       }
     }
 

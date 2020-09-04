@@ -13,6 +13,7 @@
 
 #include "mcrouter/CarbonRouterInstanceBase.h"
 #include "mcrouter/LeaseTokenMap.h"
+#include "mcrouter/McReqUtil.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyRequestContextTyped.h"
 #include "mcrouter/config.h"
@@ -205,6 +206,9 @@ class FailoverRoute {
     auto policyCtx = failoverPolicy_.context(req);
     auto iter = failoverPolicy_.begin(req);
     auto normalReply = iter->route(req, policyCtx);
+    if (failoverTagging_) {
+      setFailoverHopCount(normalReply, getFailoverHopCount(req));
+    }
     if (isErrorResult(*normalReply.result_ref())) {
       if (!isTkoOrHardTkoResult(*normalReply.result_ref())) {
         proxy.stats().increment(failover_policy_result_error_stat);
@@ -267,28 +271,32 @@ class FailoverRoute {
                                                    &policyCtx,
                                                    &childIndex,
                                                    &conditionalFailover]() {
-      fiber_local<RouterInfo>::setFailoverTag(failoverTagging_);
       fiber_local<RouterInfo>::addRequestClass(RequestClass::kFailover);
-      auto doFailover =
-          [this, &req, &proxy, &normalReply, &policyCtx](auto& child) {
-            auto failoverReply = child->route(req, policyCtx);
-            FailoverContext failoverContext(
-                child.getTrueIndex(),
-                targets_.size() - 1,
-                req,
-                normalReply,
-                failoverReply);
-            logFailover(proxy, failoverContext);
-            carbon::setIsFailoverIfPresent(failoverReply, true);
-            if (isErrorResult(*failoverReply.result_ref())) {
-              if (!isTkoOrHardTkoResult(*failoverReply.result_ref())) {
-                proxy.stats().increment(failover_policy_result_error_stat);
-              } else {
-                proxy.stats().increment(failover_policy_tko_error_stat);
-              }
-            }
-            return failoverReply;
-          };
+      auto doFailover = [this, &req, &proxy, &normalReply, &policyCtx](
+                            auto& child) {
+        uint32_t cnt =
+            failoverTagging_ ? fiber_local<RouterInfo>::incFailoverCount() : 0;
+        auto failoverReply = child->route(req, policyCtx);
+        if (failoverTagging_) {
+          setFailoverHopCount(failoverReply, getFailoverHopCount(req) + cnt);
+        }
+        FailoverContext failoverContext(
+            child.getTrueIndex(),
+            targets_.size() - 1,
+            req,
+            normalReply,
+            failoverReply);
+        logFailover(proxy, failoverContext);
+        carbon::setIsFailoverIfPresent(failoverReply, true);
+        if (isErrorResult(*failoverReply.result_ref())) {
+          if (!isTkoOrHardTkoResult(*failoverReply.result_ref())) {
+            proxy.stats().increment(failover_policy_result_error_stat);
+          } else {
+            proxy.stats().increment(failover_policy_tko_error_stat);
+          }
+        }
+        return failoverReply;
+      };
 
       auto cur = iter;
       // set the index of the child that generated the reply.

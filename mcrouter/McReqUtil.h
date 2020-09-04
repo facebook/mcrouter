@@ -8,6 +8,7 @@
 #pragma once
 
 #include "mcrouter/config.h"
+#include "mcrouter/lib/Operation.h"
 
 // Request deadline related helper functions
 template <typename T, typename = std::void_t<>>
@@ -24,6 +25,59 @@ constexpr auto hasNonConstDeadlineMs<
     T,
     std::void_t<decltype(std::declval<std::decay_t<T>&>().deadlineMs_ref())>> =
     true;
+
+template <typename T, typename = std::void_t<>>
+constexpr auto hasConstFailoverHopCount = false;
+template <typename T>
+constexpr auto hasConstFailoverHopCount<
+    T,
+    std::void_t<decltype(std::declval<const T&>().failoverHopCount_ref())>> =
+    true;
+
+template <typename T, typename = std::void_t<>>
+constexpr auto hasNonConstFailoverHopCount = false;
+template <typename T>
+constexpr auto hasNonConstFailoverHopCount<
+    T,
+    std::void_t<decltype(
+        std::declval<std::decay_t<T>&>().failoverHopCount_ref())>> = true;
+
+/**
+ * incFailoverHopCount - If the Request has failoverHopCount field in it,
+ *                       increment it by count
+ */
+template <class Request>
+void incFailoverHopCount(Request& req, uint32_t count = 1) {
+  if constexpr (hasNonConstFailoverHopCount<Request>) {
+    req.failoverHopCount_ref() = *req.failoverHopCount_ref() + count;
+  }
+}
+
+/**
+ * getFailoverHopCount - If the Request has failoverHopCount field in it,
+ *                       return the value, otherwise, returns 0.
+ */
+template <class T>
+uint32_t getFailoverHopCount(T& req) {
+  if constexpr (hasConstFailoverHopCount<T>) {
+    return *req.failoverHopCount_ref();
+  }
+  return 0;
+}
+
+/**
+ * setFailoverHopCount - If the Reply has failoverHopCount field in it,
+ *                       set it's value to failoverHopCnt only if it is more
+ *                       than the existing value in the reply
+ */
+template <class T>
+void setFailoverHopCount(T& reply, uint32_t failoverHopCnt) {
+  if constexpr (hasNonConstFailoverHopCount<T>) {
+    if (failoverHopCnt > *reply.failoverHopCount_ref()) {
+      reply.failoverHopCount_ref() = failoverHopCnt;
+    }
+  }
+}
 
 /**
  * setRequestDeadline - sets request deadline time to current time + deadlineMs
