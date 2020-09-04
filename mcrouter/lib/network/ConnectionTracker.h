@@ -95,6 +95,8 @@ class ConnectionTracker : public McServerSession::StateCallback {
   void onCloseStart(McServerSession& session) final;
   void onCloseFinish(McServerSession& session, bool onAcceptedCalled) final;
   void onShutdown() final;
+
+  int64_t numCalls_{0};
 };
 } // namespace memcache
 } // namespace facebook

@@ -57,10 +57,9 @@ bool ConnectionTracker::writesPending() const {
 }
 
 void ConnectionTracker::touch(McServerSession& session) {
-  static uint64_t numCalls = 0;
   // Find the connection and bring it to the front of the LRU.
   // Do it only once in 16 requests because it's still expensive.
-  if (((numCalls++) & 15) || !session.isLinked()) {
+  if (((numCalls_++) & 15) || !session.isLinked()) {
     return;
   }
   sessions_.erase(sessions_.iterator_to(session));
