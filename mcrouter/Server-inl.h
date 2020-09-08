@@ -30,8 +30,6 @@
 #include "mcrouter/lib/network/Qos.h"
 #include "mcrouter/standalone_options.h"
 
-DECLARE_bool(dynamic_iothreadpoolexecutor);
-
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
@@ -337,9 +335,9 @@ bool runServerDual(
   using RequestHandlerType = RequestHandler<ServerOnRequest<RouterInfo>>;
   try {
     // Create thread pool for both AsyncMcServer and ThriftServer
-    FLAGS_dynamic_iothreadpoolexecutor = false;
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool =
-        std::make_shared<folly::IOThreadPoolExecutor>(mcrouterOpts.num_proxies);
+        std::make_shared<folly::IOThreadPoolExecutor>(
+            mcrouterOpts.num_proxies, mcrouterOpts.num_proxies);
 
     // Run observer and extract event bases
     auto executorObserver = std::make_shared<ExecutorObserver>();
