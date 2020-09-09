@@ -7,6 +7,7 @@ m4_define([mcrouter_version_suffix], m4_esyscmd_s([sed 's/^[0-9]*:[0-9]*//' VERS
 m4_define([mcrouter_version], m4_translit(mcrouter_version_str, [:], [.]))
 m4_append([mcrouter_version], [.0])
 m4_append([mcrouter_version], [mcrouter_version_suffix])
+m4_define([mcpiper_version], [1.0])
 AC_INIT([mcrouter], [mcrouter_version], mcrouter@fb.com)
 
 AC_ARG_VAR([FBTHRIFT_BIN], [Path to FBThrift compiler])
@@ -20,6 +21,7 @@ AC_SUBST([FBTHRIFT])
 
 
 AC_DEFINE_UNQUOTED([MCROUTER_PACKAGE_STRING], ["AC_PACKAGE_VERSION AC_PACKAGE_NAME"], [Full name and version of this package, with version coming first for libmemcached compatibility])
+AC_DEFINE_UNQUOTED([MCPIPER_PACKAGE_STRING], ["mcpiper mcpiper_version"], [Full name and version of the mcpiper tool])
 
 AC_CONFIG_SRCDIR([CarbonRouterInstance.h])
 AC_CONFIG_HEADERS([config.h:config.hin])
