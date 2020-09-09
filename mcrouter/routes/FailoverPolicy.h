@@ -275,6 +275,11 @@ class FailoverDeterministicOrderPolicy {
       enableFailureDomains_ = jEnableFailureDomains->getBool();
     }
 
+    if (auto jIgnore_normal_reply_index =
+            json.get_ptr("ignore_normal_reply_index")) {
+      ignore_normal_reply_index_ = jIgnore_normal_reply_index->getBool();
+    }
+
     funcType_ = Ch3HashFunc::type();
     if (auto jHash = json.get_ptr("hash")) {
       if (auto jhashFunc = jHash->get_ptr("hash_func")) {
@@ -400,13 +405,16 @@ class FailoverDeterministicOrderPolicy {
       // to get out of skipping all the destinations due to this pathological
       // case
       constexpr uint32_t failureDomainThreshold = (3 * maxAttempts) / 4;
-      if (index_ == 0) {
-        int32_t normal_reply_index =
-            mcrouter::fiber_local<RouterInfo>::getSelectedIndex();
-        if (normal_reply_index >= 0) {
-          // Skip the destination selected by normal route by adding the
-          // index of the normal route destination to usedIndexes.
-          usedIndexes_.set(normal_reply_index + 1);
+      // Use normal_reply_index only if ignore flag is false
+      if (!policy_.ignore_normal_reply_index_) {
+        if (index_ == 0) {
+          int32_t normal_reply_index =
+              mcrouter::fiber_local<RouterInfo>::getSelectedIndex();
+          if (normal_reply_index >= 0) {
+            // Skip the destination selected by normal route by adding the
+            // index of the normal route destination to usedIndexes.
+            usedIndexes_.set(normal_reply_index + 1);
+          }
         }
       }
       bool failedDomain = false;
@@ -560,6 +568,7 @@ class FailoverDeterministicOrderPolicy {
   std::string funcType_;
   uint32_t salt_{1};
   bool enableFailureDomains_{false};
+  bool ignore_normal_reply_index_{false};
   // map of index in children_ to it's failure Domain
   std::unordered_map<uint32_t, uint32_t> failureDomainMap_;
 };
