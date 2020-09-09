@@ -9,6 +9,7 @@
 
 #include <memory>
 
+#include "mcrouter/mcrouter_config.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/lib/network/gen/MemcacheServer.h"
 #include "mcrouter/tools/mcpiper/MessagePrinter.h"
@@ -30,7 +31,7 @@ constexpr const char* MatchingRequest<Reply>::name() {
 } // namespace detail
 
 std::string getDefaultFifoRoot() {
-  return "/var/mcrouter/fifos";
+  return DEBUG_FIFO_ROOT_DEFAULT;
 }
 
 std::unique_ptr<ValueFormatter> createValueFormatter() {
