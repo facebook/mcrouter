@@ -8,11 +8,13 @@
 #pragma once
 
 #include <bitset>
+#include <map>
 #include <memory>
 #include <utility>
 
 #include <folly/Range.h>
 #include <folly/ScopeGuard.h>
+#include <folly/container/F14Map.h>
 #include <folly/fibers/FiberManager.h>
 
 #include "mcrouter/lib/network/ServerLoad.h"
@@ -51,6 +53,9 @@ class RequestClass {
   uint32_t mask_{0};
 };
 
+using ExtraDataMap = folly::F14FastMap<std::string, std::string>;
+using ExtraDataCallbackT = std::function<ExtraDataMap()>;
+
 template <class RouterInfo>
 class fiber_local {
  private:
@@ -69,6 +74,7 @@ class fiber_local {
     int64_t networkTransportTimeUs{0};
     uint32_t failoverCount{0};
     std::bitset<NUM_FLAGS> featureFlags;
+    std::vector<ExtraDataCallbackT> extraDataCallbacks;
   };
 
  public:
@@ -239,6 +245,34 @@ class fiber_local {
   static bool getThriftServerLoadEnabled() {
     return folly::fibers::local<McrouterFiberContext>().featureFlags.test(
         FeatureFlag::THRIFT_SERVER_LOAD_ENABLED);
+  }
+
+  /**
+   * Add callback function to compute extra data for logging.
+   * @return The index of new added callback function.
+   */
+  static size_t addExtraDataCallbacks(ExtraDataCallbackT&& callback) {
+    auto& callbacks =
+        folly::fibers::local<McrouterFiberContext>().extraDataCallbacks;
+    callbacks.push_back(std::move(callback));
+    return callbacks.size() - 1;
+  }
+
+  /**
+   * Update callback function to compute extra data for logging on position idx.
+   */
+  static void updateExtraDataCallbacks(
+      size_t idx,
+      ExtraDataCallbackT&& callback) {
+    folly::fibers::local<McrouterFiberContext>().extraDataCallbacks[idx] =
+        std::move(callback);
+  }
+
+  /**
+   * Return all callback functions to compute extra data for logging.
+   */
+  static const std::vector<ExtraDataCallbackT>& getExtraDataCallbacks() {
+    return folly::fibers::local<McrouterFiberContext>().extraDataCallbacks;
   }
 };
 

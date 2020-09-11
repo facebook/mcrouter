@@ -89,7 +89,8 @@ class ErrorRoute {
             now,
             -1,
             rpcContext,
-            fiber_local<RouterInfo>::getNetworkTransportTimeUs());
+            fiber_local<RouterInfo>::getNetworkTransportTimeUs(),
+            fiber_local<RouterInfo>::getExtraDataCallbacks());
       }
     }
     return reply;

@@ -38,7 +38,8 @@ struct RequestLoggerContext {
       const int64_t endTimeUs_,
       const carbon::Result replyResult_,
       const RpcStatsContext rpcStatsContext_,
-      const int64_t networkTransportTimeUs_)
+      const int64_t networkTransportTimeUs_,
+      const std::vector<ExtraDataCallbackT>& extraDataCallbacks_)
       : strippedRoutingPrefix(strippedRoutingPrefix_),
         requestClass(requestClass_),
         poolName(poolName_),
@@ -47,7 +48,8 @@ struct RequestLoggerContext {
         endTimeUs(endTimeUs_),
         replyResult(replyResult_),
         rpcStatsContext(rpcStatsContext_),
-        networkTransportTimeUs(networkTransportTimeUs_) {}
+        networkTransportTimeUs(networkTransportTimeUs_),
+        extraDataCallbacks(extraDataCallbacks_) {}
 
   RequestLoggerContext(const RequestLoggerContext&) = delete;
   RequestLoggerContext& operator=(const RequestLoggerContext&) = delete;
@@ -61,6 +63,7 @@ struct RequestLoggerContext {
   const carbon::Result replyResult;
   const RpcStatsContext rpcStatsContext;
   const int64_t networkTransportTimeUs;
+  const std::vector<ExtraDataCallbackT>& extraDataCallbacks;
 };
 
 } // namespace mcrouter

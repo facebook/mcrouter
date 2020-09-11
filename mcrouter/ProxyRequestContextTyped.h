@@ -127,7 +127,8 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
         /* endTimeUs */ 0,
         carbon::Result::UNKNOWN,
         rpcStatsContext,
-        /* networkTransportTimeUs */ 0);
+        /* networkTransportTimeUs */ 0,
+        {});
     assert(additionalLogger_.hasValue());
     additionalLogger_->logBeforeRequestSent(request, loggerContext);
   }
@@ -147,7 +148,8 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
       const int64_t endTimeUs,
       const int32_t poolStatIndex,
       const RpcStatsContext rpcStatsContext,
-      const int64_t networkTransportTimeUs) {
+      const int64_t networkTransportTimeUs,
+      const std::vector<ExtraDataCallbackT>& extraDataCallbacks) {
     if (recording()) {
       return;
     }
@@ -165,7 +167,8 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
         endTimeUs,
         *reply.result_ref(),
         rpcStatsContext,
-        networkTransportTimeUs);
+        networkTransportTimeUs,
+        extraDataCallbacks);
     assert(logger_.hasValue());
     logger_->template log<Request>(loggerContext);
     assert(additionalLogger_.hasValue());
