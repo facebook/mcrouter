@@ -36,6 +36,7 @@ libmcroutercore_a_SOURCES = \
   ConfigApi.cpp \
   ConfigApi.h \
   ConfigApiIf.h \
+  ExecutorObserver.h \
   ExponentialSmoothData.h \
   FileDataProvider.cpp \
   FileDataProvider.h \

@@ -16,6 +16,7 @@
 
 #include "mcrouter/CarbonRouterClient.h"
 #include "mcrouter/CarbonRouterInstance.h"
+#include "mcrouter/ExecutorObserver.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/OptionsUtil.h"
 #include "mcrouter/Proxy.h"
@@ -287,26 +288,6 @@ class ShutdownSignalHandler : public folly::AsyncSignalHandler {
   std::shared_ptr<apache::thrift::ThriftServer> thriftServer_;
   std::shared_ptr<AsyncMcServer> asyncMcServer_;
   std::shared_ptr<std::atomic<bool>> shutdownStarted_;
-};
-
-class ExecutorObserver : public folly::ThreadPoolExecutor::Observer {
- public:
-  void threadStarted(
-      folly::ThreadPoolExecutor::ThreadHandle* threadHandle) override {
-    CHECK(!initializationComplete_);
-    evbs_.wlock()->push_back(
-        folly::IOThreadPoolExecutor::getEventBase(threadHandle));
-  }
-  void threadStopped(folly::ThreadPoolExecutor::ThreadHandle*) override {}
-
-  std::vector<folly::EventBase*> extractEvbs() {
-    CHECK(!std::exchange(initializationComplete_, true));
-    return evbs_.exchange({});
-  }
-
- private:
-  bool initializationComplete_{false};
-  folly::Synchronized<std::vector<folly::EventBase*>> evbs_;
 };
 
 template <class RouterInfo>
