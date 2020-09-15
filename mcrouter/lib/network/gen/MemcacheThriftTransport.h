@@ -72,9 +72,9 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
             rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
             rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
             rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-        }
-        if (rpcStatsContext && needServerLoad) {
-          extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            if (needServerLoad) {
+                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            }
         }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
@@ -112,9 +112,9 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
             rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
             rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
             rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-        }
-        if (rpcStatsContext && needServerLoad) {
-          extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            if (needServerLoad) {
+                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            }
         }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
@@ -152,9 +152,9 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
             rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
             rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
             rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-        }
-        if (rpcStatsContext && needServerLoad) {
-          extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            if (needServerLoad) {
+                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            }
         }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
@@ -192,9 +192,9 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
             rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
             rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
             rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-        }
-        if (rpcStatsContext && needServerLoad) {
-          extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            if (needServerLoad) {
+                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            }
         }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
@@ -232,9 +232,9 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
             rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
             rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
             rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-        }
-        if (rpcStatsContext && needServerLoad) {
-          extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            if (needServerLoad) {
+                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            }
         }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
@@ -272,9 +272,9 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
             rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
             rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
             rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-        }
-        if (rpcStatsContext && needServerLoad) {
-          extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            if (needServerLoad) {
+                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            }
         }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
@@ -312,9 +312,9 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
             rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
             rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
             rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-        }
-        if (rpcStatsContext && needServerLoad) {
-          extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            if (needServerLoad) {
+                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            }
         }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
@@ -352,9 +352,9 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
             rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
             rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
             rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-        }
-        if (rpcStatsContext && needServerLoad) {
-          extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            if (needServerLoad) {
+                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            }
         }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
@@ -392,9 +392,9 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
             rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
             rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
             rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-        }
-        if (rpcStatsContext && needServerLoad) {
-          extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            if (needServerLoad) {
+                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            }
         }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
@@ -432,9 +432,9 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
             rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
             rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
             rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-        }
-        if (rpcStatsContext && needServerLoad) {
-          extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            if (needServerLoad) {
+                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            }
         }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
@@ -472,9 +472,9 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
             rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
             rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
             rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-        }
-        if (rpcStatsContext && needServerLoad) {
-          extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            if (needServerLoad) {
+                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            }
         }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
@@ -512,9 +512,9 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
             rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
             rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
             rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-        }
-        if (rpcStatsContext && needServerLoad) {
-          extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            if (needServerLoad) {
+                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            }
         }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
@@ -552,9 +552,9 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
             rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
             rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
             rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-        }
-        if (rpcStatsContext && needServerLoad) {
-          extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            if (needServerLoad) {
+                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            }
         }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
@@ -592,9 +592,9 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
             rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
             rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
             rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-        }
-        if (rpcStatsContext && needServerLoad) {
-          extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            if (needServerLoad) {
+                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            }
         }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
@@ -632,9 +632,9 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
             rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
             rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
             rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-        }
-        if (rpcStatsContext && needServerLoad) {
-          extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            if (needServerLoad) {
+                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            }
         }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
@@ -672,9 +672,9 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
             rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
             rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
             rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-        }
-        if (rpcStatsContext && needServerLoad) {
-          extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            if (needServerLoad) {
+                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            }
         }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
@@ -712,9 +712,9 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
             rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
             rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
             rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-        }
-        if (rpcStatsContext && needServerLoad) {
-          extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            if (needServerLoad) {
+                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            }
         }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
@@ -752,9 +752,9 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
             rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
             rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
             rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-        }
-        if (rpcStatsContext && needServerLoad) {
-          extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            if (needServerLoad) {
+                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            }
         }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
@@ -792,9 +792,9 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
             rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
             rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
             rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-        }
-        if (rpcStatsContext && needServerLoad) {
-          extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            if (needServerLoad) {
+                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            }
         }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
@@ -832,9 +832,9 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
             rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
             rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
             rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-        }
-        if (rpcStatsContext && needServerLoad) {
-          extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            if (needServerLoad) {
+                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+            }
         }
 #ifndef LIBMC_FBTRACE_DISABLE
         traceResponse(request, reply);
