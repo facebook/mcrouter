@@ -157,8 +157,11 @@ struct TestHandleImpl {
 
   std::vector<folly::fibers::Promise<void>> promises_;
 
+  std::string sawLogs;
+
   folly::Optional<std::function<carbon::Result(std::string reqKey)>>
       resultGenerator_;
+  folly::Optional<std::function<std::string()>> logCapturer;
 
   explicit TestHandleImpl(GetRouteTestData td)
       : rh(makeRouteHandle<RouteHandleIf, RecordingRoute>(
@@ -235,6 +238,10 @@ struct TestHandleImpl {
 
   void resetResultGenerator() {
     resultGenerator_ = folly::none;
+  }
+
+  void enableLogCapture(std::function<std::string()> fun) {
+    logCapturer = std::move(fun);
   }
 };
 
@@ -323,6 +330,10 @@ struct RecordingRoute {
 
     if (h_->isPaused) {
       h_->wait();
+    }
+
+    if (h_->logCapturer) {
+      h_->sawLogs = (*h_->logCapturer)();
     }
 
     h_->saw_keys.push_back(req.key_ref()->fullKey().str());
