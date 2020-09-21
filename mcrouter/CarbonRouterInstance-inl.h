@@ -245,7 +245,9 @@ CarbonRouterInstance<RouterInfo>::spinUp(
     if (configResult.hasValue()) {
       configApi_->subscribeToTrackedSources();
     } else {
-      configFailures_++;
+      configFailures_.store(
+          configFailures_.load(std::memory_order_relaxed) + 1,
+          std::memory_order_relaxed);
       configApi_->abandonTrackedSources();
 
       // If we successfully created ConfigBuilder from normal config, but
@@ -268,9 +270,9 @@ CarbonRouterInstance<RouterInfo>::spinUp(
     }
   }
 
-  configuredFromDisk_ = configuringFromDisk;
+  configuredFromDisk_.store(configuringFromDisk, std::memory_order_relaxed);
 
-  startTime_ = time(nullptr);
+  startTime_.store(time(nullptr), std::memory_order_relaxed);
 
   spawnAuxiliaryThreads();
 
@@ -335,7 +337,7 @@ void CarbonRouterInstance<RouterInfo>::subscribeToConfigUpdate() {
       }
     }
     if (success) {
-      configuredFromDisk_ = false;
+      configuredFromDisk_.store(false, std::memory_order_relaxed);
       onReconfigureSuccess_.notify();
     } else {
       LOG(ERROR) << "Error while reconfiguring mcrouter after config change";
@@ -423,7 +425,9 @@ bool CarbonRouterInstance<RouterInfo>::reconfigure(
   auto result = configure(builder);
 
   if (result.hasError()) {
-    configFailures_++;
+    configFailures_.store(
+        configFailures_.load(std::memory_order_relaxed) + 1,
+        std::memory_order_relaxed);
     configApi_->abandonTrackedSources();
   } else {
     configApi_->subscribeToTrackedSources();
@@ -468,7 +472,7 @@ CarbonRouterInstance<RouterInfo>::createConfigBuilder() {
   VLOG_IF(0, !opts_.constantly_reload_configs) << "creating config builder";
   /* mark config attempt before, so that
      successful config is always >= last config attempt. */
-  lastConfigAttempt_ = time(nullptr);
+  lastConfigAttempt_.store(time(nullptr), std::memory_order_relaxed);
   configApi_->trackConfigSources();
   std::string config;
   std::string path;
@@ -492,7 +496,9 @@ CarbonRouterInstance<RouterInfo>::createConfigBuilder() {
       failure::Category::kBadEnvironment,
       "Can not read config from {}",
       path);
-  configFailures_++;
+  configFailures_.store(
+      configFailures_.load(std::memory_order_relaxed) + 1,
+      std::memory_order_relaxed);
   configApi_->abandonTrackedSources();
   return folly::makeUnexpected(std::move(error));
 }

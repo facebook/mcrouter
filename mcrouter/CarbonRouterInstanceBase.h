@@ -149,19 +149,19 @@ class CarbonRouterInstanceBase {
       std::unordered_map<std::string, std::string> additionalOpts);
 
   uint64_t startTime() const {
-    return startTime_;
+    return startTime_.load(std::memory_order_relaxed);
   }
 
   time_t lastConfigAttempt() const {
-    return lastConfigAttempt_;
+    return lastConfigAttempt_.load(std::memory_order_relaxed);
   }
 
   size_t configFailures() const {
-    return configFailures_;
+    return configFailures_.load(std::memory_order_relaxed);
   }
 
   bool configuredFromDisk() const {
-    return configuredFromDisk_;
+    return configuredFromDisk_.load(std::memory_order_relaxed);
   }
 
   bool isRxmitReconnectionDisabled() const {
@@ -226,10 +226,10 @@ class CarbonRouterInstanceBase {
   SvcIdentAuthCallbackFunc svcIdentAuthCallback_;
 
   // These next four fields are used for stats
-  uint64_t startTime_{0};
-  time_t lastConfigAttempt_{0};
-  size_t configFailures_{0};
-  bool configuredFromDisk_{false};
+  std::atomic<uint64_t> startTime_{0};
+  std::atomic<time_t> lastConfigAttempt_{0};
+  std::atomic<size_t> configFailures_{0};
+  std::atomic<bool> configuredFromDisk_{false};
 
   // Stores whether we should reconnect after hitting rxmit threshold
   std::atomic<bool> disableRxmitReconnection_{false};
