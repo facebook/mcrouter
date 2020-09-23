@@ -41,7 +41,8 @@ TEST(FileObserver, sanity) {
       scheduler,
       std::chrono::milliseconds(100),
       std::chrono::milliseconds(500),
-      [&counter, &cv](std::string) {
+      [&counter, &mut, &cv](std::string) {
+        std::lock_guard<std::mutex> lock(mut);
         counter++;
         cv.notify_all();
       });
