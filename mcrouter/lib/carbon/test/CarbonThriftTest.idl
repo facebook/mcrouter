@@ -79,4 +79,5 @@ reply DummyThriftReply {
 service {
   enable_shutdown: true;
   gen_client_tool: false;
+  thrift_tm_thread: true;
 };
