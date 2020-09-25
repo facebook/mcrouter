@@ -9,6 +9,7 @@
 
 #include <folly/Conv.h>
 #include <folly/IPAddress.h>
+#include <folly/IPAddressException.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"
 
@@ -78,12 +79,12 @@ AccessPoint::AccessPoint(
       compressed_(compressed),
       unixDomainSocket_(unixDomainSocket),
       failureDomain_(failureDomain) {
-  if (folly::IPAddress::validate(host)) {
+  try {
     folly::IPAddress ip(host);
     host_ = ip.toFullyQualified();
     hash_ = folly::hash_value(ip);
     isV6_ = ip.isV6();
-  } else {
+  } catch (const folly::IPAddressFormatException&) {
     // host is not an IP address (e.g. 'localhost')
     host_ = host.str();
     isV6_ = false;
