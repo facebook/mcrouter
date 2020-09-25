@@ -47,6 +47,8 @@ MemcacheRequestAclCheckerCallback getMemcacheServerRequestAclCheckCallback(
   return {};
 }
 
+void refreshMemcacheServerRequestAclChecker() {}
+
 } // namespace mcrouter
 } // namespace memcache
 } // namespace facebook

@@ -51,6 +51,8 @@ using MemcacheRequestAclCheckerCallback = std::function<
 MemcacheRequestAclCheckerCallback getMemcacheServerRequestAclCheckCallback(
     ExternalStatsHandler& statsHandler);
 
+void refreshMemcacheServerRequestAclChecker();
+
 } // namespace mcrouter
 } // namespace memcache
 } // namespace facebook
