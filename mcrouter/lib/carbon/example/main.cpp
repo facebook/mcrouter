@@ -321,6 +321,7 @@ FOLLY_MAYBE_UNUSED void testCarbonThriftServer() {
   routerOpts.asynclog_disable = true;
   routerOpts.probe_delay_initial_ms = 1;
   routerOpts.probe_delay_max_ms = 10;
+  routerOpts.enable_compression = true;
   routerOpts.config_str = R"(
   {
     "pools": {

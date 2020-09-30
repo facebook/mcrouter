@@ -292,6 +292,7 @@ void ProxyDestination<Transport>::initializeTransport() {
   if (accessPoint()->compressed()) {
     if (auto codecManager = proxy().router().getCodecManager()) {
       options.compressionCodecMap = codecManager->getCodecMap();
+      options.thriftCompression = true;
     }
   }
 

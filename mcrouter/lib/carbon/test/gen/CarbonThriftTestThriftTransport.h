@@ -179,10 +179,16 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
   carbon::test::thrift::CarbonThriftTestAsyncClient* getThriftClient() {
     if (UNLIKELY(!thriftClient_)) {
       thriftClient_ = createThriftClient<carbon::test::thrift::CarbonThriftTestAsyncClient>();
-      if (flushList_) {
+      if (flushList_ || connectionOptions_.thriftCompression) {
         auto* channel = static_cast<apache::thrift::RocketClientChannel*>(
             thriftClient_->getChannel());
-        channel->setFlushList(flushList_);
+        if (flushList_) {
+          channel->setFlushList(flushList_);
+        }
+        if (connectionOptions_.thriftCompression) {
+          channel->setNegotiatedCompressionAlgorithm(
+              apache::thrift::CompressionAlgorithm::ZSTD);
+        }
       }
     }
     return thriftClient_.get();

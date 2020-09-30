@@ -144,6 +144,11 @@ struct ConnectionOptions {
   const CompressionCodecMap* compressionCodecMap{nullptr};
 
   /**
+   * True to enable thrift compression.
+   */
+  bool thriftCompression{false};
+
+  /**
    * The payload format.
    */
   PayloadFormat payloadFormat{PayloadFormat::Carbon};

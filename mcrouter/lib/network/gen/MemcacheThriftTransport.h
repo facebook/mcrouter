@@ -859,10 +859,16 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
   thrift::MemcacheAsyncClient* getThriftClient() {
     if (UNLIKELY(!thriftClient_)) {
       thriftClient_ = createThriftClient<thrift::MemcacheAsyncClient>();
-      if (flushList_) {
+      if (flushList_ || connectionOptions_.thriftCompression) {
         auto* channel = static_cast<apache::thrift::RocketClientChannel*>(
             thriftClient_->getChannel());
-        channel->setFlushList(flushList_);
+        if (flushList_) {
+          channel->setFlushList(flushList_);
+        }
+        if (connectionOptions_.thriftCompression) {
+          channel->setNegotiatedCompressionAlgorithm(
+              apache::thrift::CompressionAlgorithm::ZSTD);
+        }
       }
     }
     return thriftClient_.get();
