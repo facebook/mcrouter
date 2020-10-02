@@ -151,7 +151,7 @@ createSocketCommon(
         sslSocket->setSessionKey(serviceId);
         auto session = clientCtx->getCache().getSSLSession(serviceId);
         if (session) {
-          sslSocket->setSSLSession(session.release(), true);
+          sslSocket->setRawSSLSession(std::move(session));
         }
       }
     }
