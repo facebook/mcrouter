@@ -23,6 +23,7 @@ void HelloRequest::serialize(Writer&& writer) const {
   writer.writeField(2 /* field id */, shardId_ref());
   writer.writeField(3 /* field id */, deadlineMs_ref());
   writer.writeField(4 /* field id */, message_ref());
+  writer.writeField(5 /* field id */, priority_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
@@ -41,6 +42,9 @@ void HelloRequest::visitFields(V&& v) {
   if (!v.visitField(4, "message", *this->message_ref())) {
     return;
   }
+  if (!v.visitField(5, "priority", *this->priority_ref())) {
+    return;
+  }
 }
 
 template <class V>
@@ -55,6 +59,9 @@ void HelloRequest::visitFields(V&& v) const {
     return;
   }
   if (!v.visitField(4, "message", *this->message_ref())) {
+    return;
+  }
+  if (!v.visitField(5, "priority", *this->priority_ref())) {
     return;
   }
 }

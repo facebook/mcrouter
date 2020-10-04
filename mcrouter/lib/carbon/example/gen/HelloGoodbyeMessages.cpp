@@ -16,6 +16,18 @@
 
 namespace hellogoodbye {
 
+std::string enumEnumUInt32ToString(EnumUInt32 val) {
+  switch (val) {
+    case EnumUInt32::HIGH:
+      return "HIGH";
+    case EnumUInt32::URGENT:
+      return "URGENT";
+    case EnumUInt32::YESTERDAY:
+      return "YESTERDAY";
+  }
+  return "<INVALID_OPTION>";
+}
+
 constexpr const char* const HelloRequest::name;
 
 constexpr const char* const GoodbyeRequest::name;

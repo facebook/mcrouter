@@ -20,11 +20,18 @@ cpp_include "<mcrouter/lib/carbon/CarbonProtocolReader.h>"
 
 namespace cpp2 hellogoodbye.thrift
 
+enum EnumUInt32 {
+  HIGH = 0,
+  URGENT = 1,
+  YESTERDAY = 2
+} (cpp.enum_type="uint32_t")
+
 struct HelloRequest {
   1: carbon.IOBufKey key
   2: i64 (cpp.type = "uint64_t") shardId
   3: i64 (cpp.type = "uint64_t") deadlineMs
   4: string message
+  5: EnumUInt32 priority
 }(cpp.methods = "
   template <class V>
   void visitFields(V&& v);

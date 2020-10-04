@@ -74,6 +74,10 @@ class ThriftHandler : virtual public hellogoodbye::thrift::HelloGoodbyeSvIf {
       if (it != headers.end()) {
         LOG(INFO) << "Got message " << it->second << " from thrift header.";
       }
+      it = headers.find("priority");
+      if (it != headers.end()) {
+        LOG(INFO) << "Got priority " << it->second << " from thrift header.";
+      }
     } else {
       LOG(ERROR) << "Cannot get context.";
     }
@@ -168,6 +172,8 @@ void sendHelloRequestSync(
   HelloRequest req(std::move(key));
   req.shardId_ref() = 1;
   req.message_ref() = "test";
+  req.priority_ref() = EnumUInt32::YESTERDAY;
+  ;
   folly::fibers::Baton baton;
 
   client->send(req, [&baton](const HelloRequest&, HelloReply&& reply) {

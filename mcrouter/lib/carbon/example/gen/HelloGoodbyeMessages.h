@@ -36,6 +36,10 @@
 
 namespace hellogoodbye {
 
+using EnumUInt32 = hellogoodbye::thrift::EnumUInt32;
+
+std::string enumEnumUInt32ToString(EnumUInt32 val);
+
 class HelloReply;
 
 class HelloRequest : public carbon::RequestCommon, public hellogoodbye::thrift::HelloRequest {
