@@ -136,6 +136,14 @@ TEST(CarbonMessageConversionUtils, toFollyDynamic_Complex) {
   std::sort(fastset.begin(), fastset.end());
   dynamic.at("testF14FastSet") = fastset;
 
+  auto nodeset = dynamic.at("testF14NodeSet");
+  std::sort(nodeset.begin(), nodeset.end());
+  dynamic.at("testF14NodeSet") = nodeset;
+
+  auto valueset = dynamic.at("testF14ValueSet");
+  std::sort(valueset.begin(), valueset.end());
+  dynamic.at("testF14ValueSet") = valueset;
+
   EXPECT_EQ(expected, dynamic);
 }
 
