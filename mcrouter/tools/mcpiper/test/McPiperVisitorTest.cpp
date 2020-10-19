@@ -22,7 +22,7 @@ namespace {
 void testBasic(bool scriptMode) {
   McLeaseSetReply msg(carbon::Result::FOUND);
   msg.appSpecificErrorCode_ref() = 17;
-  *msg.message_ref() = "A message";
+  msg.message_ref() = "A message";
 
   McPiperVisitor v(scriptMode);
   msg.visitFields(v);

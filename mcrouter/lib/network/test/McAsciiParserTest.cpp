@@ -221,7 +221,7 @@ McMetagetReply createMetagetHitReply(
       msg.ipv_ref() = 4;
     }
   }
-  *msg.result_ref() = carbon::Result::FOUND;
+  msg.result_ref() = carbon::Result::FOUND;
   if (host != "unknown") {
     msg.ipAddress_ref() = host;
   }

@@ -76,7 +76,7 @@ TEST(routeHandleTest, nullIncr) {
 TEST(routeHandleTest, nullAppend) {
   TestRouteHandle<NullRoute<TestRouteHandleIf>> rh;
   McAppendRequest req("key");
-  *req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
+  req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
   auto reply = rh.route(std::move(req));
   EXPECT_EQ(carbon::Result::NOTSTORED, *reply.result_ref());
 }
@@ -84,7 +84,7 @@ TEST(routeHandleTest, nullAppend) {
 TEST(routeHandleTest, nullPrepend) {
   TestRouteHandle<NullRoute<TestRouteHandleIf>> rh;
   McPrependRequest req("key");
-  *req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
+  req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
   auto reply = rh.route(std::move(req));
   EXPECT_EQ(carbon::Result::NOTSTORED, *reply.result_ref());
 }
