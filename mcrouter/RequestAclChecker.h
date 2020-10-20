@@ -9,6 +9,7 @@
 
 #include "mcrouter/ExternalStatsHandler.h"
 #include "mcrouter/StandaloneConfig.h"
+#include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/carbon/Result.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 
