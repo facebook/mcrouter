@@ -15,15 +15,18 @@
 #include <folly/fibers/FiberManager.h>
 #include <folly/io/async/EventBase.h>
 
+#include <folly/executors/IOThreadPoolExecutor.h>
+#include <folly/executors/ThreadPoolExecutor.h>
+
 #include "mcrouter/AsyncWriter.h"
 #include "mcrouter/CarbonRouterInstanceBase.h"
+#include "mcrouter/ExecutorObserver.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/McrouterLogger.h"
 #include "mcrouter/McrouterManager.h"
 #include "mcrouter/Proxy.h"
 #include "mcrouter/ProxyConfig.h"
 #include "mcrouter/ProxyConfigBuilder.h"
-#include "mcrouter/ProxyThread.h"
 #include "mcrouter/RuntimeVarsData.h"
 #include "mcrouter/ServiceInfo.h"
 #include "mcrouter/ThreadUtil.h"
@@ -184,6 +187,27 @@ CarbonRouterInstance<RouterInfo>::createSameThreadClient(
 
 template <class RouterInfo>
 folly::Expected<folly::Unit, std::string>
+CarbonRouterInstance<RouterInfo>::setupProxy(
+    const std::vector<folly::EventBase*>& evbs) {
+  VLOG(2) << "Proxy setup";
+  for (size_t i = 0; i < opts_.num_proxies; i++) {
+    CHECK(evbs[i] != nullptr);
+    proxyEvbs_.push_back(std::make_unique<folly::VirtualEventBase>(*evbs[i]));
+
+    try {
+      proxies_.emplace_back(
+          Proxy<RouterInfo>::createProxy(*this, *proxyEvbs_[i], i));
+    } catch (...) {
+      return folly::makeUnexpected(folly::sformat(
+          "Failed to create proxy: {}",
+          folly::exceptionStr(std::current_exception())));
+    }
+  }
+  return folly::Unit();
+}
+
+template <class RouterInfo>
+folly::Expected<folly::Unit, std::string>
 CarbonRouterInstance<RouterInfo>::spinUp(
     const std::vector<folly::EventBase*>& evbs) {
   CHECK(evbs.empty() || evbs.size() == opts_.num_proxies);
@@ -213,32 +237,43 @@ CarbonRouterInstance<RouterInfo>::spinUp(
       }
     }
 
-    VLOG(2) << "spinning up proxy threads";
-    for (size_t i = 0; i < opts_.num_proxies; i++) {
-      if (evbs.empty()) {
-        try {
-          proxyThreads_.emplace_back(std::make_unique<ProxyThread>(*this, i));
-        } catch (...) {
-          return folly::makeUnexpected(folly::sformat(
-              "Failed to start proxy thread: {}",
-              folly::exceptionStr(std::current_exception())));
-        }
-        proxyEvbs_.push_back(std::make_unique<folly::VirtualEventBase>(
-            proxyThreads_.back()->getEventBase()));
-      } else {
-        CHECK(evbs[i] != nullptr);
-        proxyEvbs_.push_back(
-            std::make_unique<folly::VirtualEventBase>(*evbs[i]));
-      }
-
+    const std::vector<folly::EventBase*>* evbsPtr = &evbs;
+    std::vector<folly::EventBase*> threadPoolEvbs;
+    // Create an IOThreadPooLExecutor if there are no evbs configured
+    if (evbs.empty()) {
+      // Create IOThreadPoolExecutor
       try {
-        proxies_.emplace_back(
-            Proxy<RouterInfo>::createProxy(*this, *proxyEvbs_[i], i));
+        proxyThreads_ = std::make_shared<folly::IOThreadPoolExecutor>(
+            opts_.num_proxies /* max */,
+            opts_.num_proxies /* min */,
+            std::make_shared<folly::NamedThreadFactory>(
+                folly::to<std::string>("mcrpxy-", opts_.router_name)));
+        embeddedMode_ = true;
+
       } catch (...) {
         return folly::makeUnexpected(folly::sformat(
-            "Failed to create proxy: {}",
+            "Failed to create IOThreadPoolExecutor {}",
             folly::exceptionStr(std::current_exception())));
       }
+
+      auto executorObserver = std::make_shared<ExecutorObserver>();
+      proxyThreads_->addObserver(executorObserver);
+      threadPoolEvbs = executorObserver->extractEvbs();
+      if (threadPoolEvbs.size() != opts_.num_proxies) {
+        return folly::makeUnexpected(folly::sformat(
+            "Failed to extract evbs from IOThreadPoolExecutor sz={} proxies={} {}",
+            threadPoolEvbs.size(),
+            opts_.num_proxies,
+            folly::exceptionStr(std::current_exception())));
+      }
+      proxyThreads_->removeObserver(executorObserver);
+      evbsPtr = &threadPoolEvbs;
+    }
+
+    auto proxyResult = setupProxy(*evbsPtr);
+    if (proxyResult.hasError()) {
+      return folly::makeUnexpected(
+          folly::sformat("Failed to create proxy: {}"));
     }
 
     auto configResult = configure(builder.value());
@@ -306,9 +341,10 @@ void CarbonRouterInstance<RouterInfo>::shutdownImpl() noexcept {
   joinAuxiliaryThreads();
   // Join all proxy threads
   proxyEvbs_.clear();
-  for (auto& pt : proxyThreads_) {
-    pt->stopAndJoin();
+  if (proxyThreads_ && embeddedMode_) {
+    proxyThreads_->join();
   }
+  proxyThreads_.reset();
 }
 
 template <class RouterInfo>

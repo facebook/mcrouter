@@ -98,8 +98,6 @@ libmcroutercore_a_SOURCES = \
   ProxyRequestPriority.h \
   ProxyStats.cpp \
   ProxyStats.h \
-  ProxyThread-inl.h \
-  ProxyThread.h \
   route.cpp \
   route.h \
   routes/AllAsyncRouteFactory.h \

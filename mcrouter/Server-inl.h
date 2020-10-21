@@ -20,7 +20,6 @@
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/OptionsUtil.h"
 #include "mcrouter/Proxy.h"
-#include "mcrouter/ProxyThread.h"
 #include "mcrouter/ServerOnRequest.h"
 #include "mcrouter/StandaloneConfig.h"
 #include "mcrouter/ThriftAcceptor.h"

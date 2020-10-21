@@ -16,6 +16,7 @@
 #include <vector>
 
 #include <folly/Range.h>
+#include <folly/executors/IOThreadPoolExecutor.h>
 
 #include "mcrouter/CallbackPool.h"
 #include "mcrouter/CarbonRouterClient.h"
@@ -171,13 +172,11 @@ class CarbonRouterInstance
    */
   std::vector<Proxy<RouterInfo>*> proxies_;
   std::vector<std::unique_ptr<folly::VirtualEventBase>> proxyEvbs_;
+  std::shared_ptr<folly::IOThreadPoolExecutor> proxyThreads_;
 
-  /**
-   * This will contain opts.num_proxies elements in Embedded mode (mcrouter
-   * owns proxy threads).
-   * In case of Standalone/sync mode, this vector is empty.
-   */
-  std::vector<std::unique_ptr<ProxyThread>> proxyThreads_;
+  // Indicates if evbs/IOThreadPoolExecutor has been created by McRouter or
+  // passed as an argument in construction.
+  bool embeddedMode_{false};
 
   /**
    * The only reason this is a separate function is due to legacy accessor
@@ -192,6 +191,9 @@ class CarbonRouterInstance
   ~CarbonRouterInstance() override;
 
   folly::Expected<folly::Unit, std::string> spinUp(
+      const std::vector<folly::EventBase*>& evbs);
+
+  folly::Expected<folly::Unit, std::string> setupProxy(
       const std::vector<folly::EventBase*>& evbs);
 
   void spawnAuxiliaryThreads();
