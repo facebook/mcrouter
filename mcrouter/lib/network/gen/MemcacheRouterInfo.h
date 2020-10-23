@@ -31,6 +31,13 @@ namespace folly {
 struct dynamic;
 class VirtualEventBase;
 } // namespace folly
+namespace facebook {
+namespace memcache {
+namespace thrift {
+class MemcacheAsyncClient;
+} // namespace thrift
+} // namespace memcache
+} // namespace facebook
 
 namespace facebook {
 namespace memcache {
@@ -81,6 +88,7 @@ using MemcacheRoutableRequests = carbon::List<
 struct MemcacheRouterInfo {
   using RouteHandleIf = MemcacheRouteHandleIf;
   using RouteHandlePtr = std::shared_ptr<RouteHandleIf>;
+  using RouterHandleAsyncClient = thrift::MemcacheAsyncClient;
 
   static constexpr const char* name = "Memcache";
 

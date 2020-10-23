@@ -30,6 +30,11 @@ namespace folly {
 struct dynamic;
 class VirtualEventBase;
 } // namespace folly
+namespace hellogoodbye {
+namespace thrift {
+class HelloGoodbyeAsyncClient;
+} // namespace thrift
+} // namespace hellogoodbye
 
 namespace facebook {
 namespace memcache {
@@ -54,6 +59,7 @@ using HelloGoodbyeRoutableRequests = carbon::List<
 struct HelloGoodbyeRouterInfo {
   using RouteHandleIf = HelloGoodbyeRouteHandleIf;
   using RouteHandlePtr = std::shared_ptr<RouteHandleIf>;
+  using RouterHandleAsyncClient = thrift::HelloGoodbyeAsyncClient;
 
   static constexpr const char* name = "HelloGoodbye";
 

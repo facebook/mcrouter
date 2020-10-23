@@ -30,6 +30,13 @@ namespace folly {
 struct dynamic;
 class VirtualEventBase;
 } // namespace folly
+namespace carbon {
+namespace test {
+namespace thrift {
+class CarbonThriftTestAsyncClient;
+} // namespace thrift
+} // namespace test
+} // namespace carbon
 
 namespace facebook {
 namespace memcache {
@@ -55,6 +62,7 @@ using CarbonThriftTestRoutableRequests = carbon::List<
 struct CarbonThriftTestRouterInfo {
   using RouteHandleIf = CarbonThriftTestRouteHandleIf;
   using RouteHandlePtr = std::shared_ptr<RouteHandleIf>;
+  using RouterHandleAsyncClient = thrift::CarbonThriftTestAsyncClient;
 
   static constexpr const char* name = "CarbonThriftTest";
 
