@@ -17,6 +17,7 @@
 
 #include "mcrouter/CarbonRouterClient.h"
 #include "mcrouter/CarbonRouterInstance.h"
+#include "mcrouter/ExecutorObserver.h"
 #include "mcrouter/McReqUtil.h"
 #include "mcrouter/Proxy.h"
 #include "mcrouter/config.h"
@@ -38,6 +39,7 @@ using facebook::memcache::MemcacheRouterInfo;
 using facebook::memcache::mcrouter::CarbonRouterClient;
 using facebook::memcache::mcrouter::CarbonRouterInstance;
 using facebook::memcache::mcrouter::defaultTestOptions;
+using facebook::memcache::mcrouter::ExecutorObserver;
 
 /**
  * This test provides an example of how to use the CarbonRouterClient API.
@@ -66,15 +68,11 @@ TEST(CarbonRouterClient, basicUsageSameThreadClient) {
   // request-handling proxies, stats logging, and more.
   // Using createSameThreadClient() makes most sense in situations where the
   // user controls their own EventBases, as below.
-  std::vector<folly::EventBase*> evbs;
-  std::vector<std::thread> threads;
-  for (size_t i = 0; i < opts.num_proxies; ++i) {
-    auto evb = std::make_unique<folly::EventBase>();
-    evbs.push_back(evb.get());
-    threads.emplace_back([evb = std::move(evb)]() { evb->loopForever(); });
-  }
+  std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool =
+      std::make_shared<folly::IOThreadPoolExecutor>(
+          opts.num_proxies, opts.num_proxies);
   auto router = CarbonRouterInstance<MemcacheRouterInfo>::init(
-      "basicUsageSameThreadClient", opts, evbs);
+      "basicUsageSameThreadClient", opts, ioThreadPool);
 
   // When using createSameThreadClient(), users must ensure that client->send()
   // is only ever called on the same thread as the associated Proxy.
@@ -93,6 +91,12 @@ TEST(CarbonRouterClient, basicUsageSameThreadClient) {
   // Explicitly control which proxy should handle requests from this client.
   // Currently, this is necessary when using createSameThreadClient() with more
   // than one thread.
+  // Run observer and extract event bases
+  auto executorObserver = std::make_shared<ExecutorObserver>();
+  ioThreadPool->addObserver(executorObserver);
+  auto evbs = executorObserver->extractEvbs();
+  ioThreadPool->removeObserver(executorObserver);
+
   auto& eventBase = *evbs.front();
   client->setProxyIndex(0);
 
@@ -116,12 +120,7 @@ TEST(CarbonRouterClient, basicUsageSameThreadClient) {
   // gracefully. This ensures graceful destruction of the static
   // CarbonRouterInstance instance.
   router->shutdown();
-  for (auto evb : evbs) {
-    evb->terminateLoopSoon();
-  }
-  for (auto& t : threads) {
-    t.join();
-  }
+  ioThreadPool.reset();
   EXPECT_TRUE(replyReceived);
 }
 
@@ -134,6 +133,47 @@ TEST(CarbonRouterClient, basicUsageRemoteThreadClient) {
 
   auto router = CarbonRouterInstance<MemcacheRouterInfo>::init(
       "basicUsageRemoteThreadClient", opts);
+
+  // Create client that can safely send requests through a Proxy on another
+  // thread
+  auto client = router->createClient(
+      0 /* max_outstanding_requests */,
+      false /* max_outstanding_requests_error */);
+
+  // Note, as in the previous test, that req is kept alive through the end of
+  // the callback provided to client->send() below.
+  // Also note that we are careful not to modify req while the proxy (in this
+  // case, on another thread) may be processing it.
+  const McGetRequest req("key");
+  bool replyReceived = false;
+  folly::fibers::Baton baton;
+
+  client->send(
+      req, [&baton, &replyReceived](const McGetRequest&, McGetReply&& reply) {
+        EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+        replyReceived = true;
+        baton.post();
+      });
+
+  // Ensure proxies have a chance to send all outstanding requests. Note the
+  // extra synchronization required when using a remote-thread client.
+  baton.wait();
+  router->shutdown();
+  EXPECT_TRUE(replyReceived);
+}
+
+TEST(CarbonRouterClient, basicUsageRemoteThreadClientThreadPool) {
+  // This test is a lot like the previous one, except this test demonstrates
+  // the use of a client that can safely send a request through a Proxy
+  // on another thread.  Much of the code is the exact same as before.
+  auto opts = defaultTestOptions();
+  opts.config_str = R"({ "route": "NullRoute" })";
+
+  auto ioThreadPool =
+      std::make_shared<folly::IOThreadPoolExecutor>(opts.num_proxies);
+
+  auto router = CarbonRouterInstance<MemcacheRouterInfo>::init(
+      "basicUsageRemoteThreadClient", opts, ioThreadPool);
 
   // Create client that can safely send requests through a Proxy on another
   // thread

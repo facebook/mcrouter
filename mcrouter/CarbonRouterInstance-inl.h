@@ -12,6 +12,8 @@
 #include <folly/DynamicConverter.h>
 #include <folly/MapUtil.h>
 #include <folly/Singleton.h>
+#include <folly/Synchronized.h>
+#include <folly/executors/IOThreadPoolExecutor.h>
 #include <folly/fibers/FiberManager.h>
 #include <folly/io/async/EventBase.h>
 
@@ -46,10 +48,23 @@ template <class RouterInfo>
 /* static  */ CarbonRouterInstance<RouterInfo>*
 CarbonRouterInstance<RouterInfo>::init(
     folly::StringPiece persistenceId,
-    const McrouterOptions& options,
-    const std::vector<folly::EventBase*>& evbs) {
+    const McrouterOptions& options) {
   if (auto manager = detail::McrouterManager::getSingletonInstance()) {
-    return manager->mcrouterGetCreate<RouterInfo>(persistenceId, options, evbs);
+    return manager->mcrouterGetCreate<RouterInfo>(persistenceId, options);
+  }
+
+  return nullptr;
+}
+
+template <class RouterInfo>
+/* static  */ CarbonRouterInstance<RouterInfo>*
+CarbonRouterInstance<RouterInfo>::init(
+    folly::StringPiece persistenceId,
+    const McrouterOptions& options,
+    std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool) {
+  if (auto manager = detail::McrouterManager::getSingletonInstance()) {
+    return manager->mcrouterGetCreate<RouterInfo>(
+        persistenceId, options, ioThreadPool);
   }
 
   return nullptr;
@@ -74,7 +89,7 @@ bool CarbonRouterInstance<RouterInfo>::hasInstance(
 template <class RouterInfo>
 CarbonRouterInstance<RouterInfo>* CarbonRouterInstance<RouterInfo>::createRaw(
     McrouterOptions input_options,
-    const std::vector<folly::EventBase*>& evbs) {
+    std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool) {
   extraValidateOptions(input_options);
 
   if (!detail::isValidRouterName(input_options.service_name) ||
@@ -111,7 +126,9 @@ CarbonRouterInstance<RouterInfo>* CarbonRouterInstance<RouterInfo>::createRaw(
     auto jsonStr = folly::json::serialize(dict, jsonOpts);
     failure::setServiceContext(routerName(router->opts()), std::move(jsonStr));
 
-    result = router->spinUp(evbs);
+    router->setIOThreadPool(std::move(ioThreadPool));
+
+    result = router->spinUp();
     if (result.hasValue()) {
       return router;
     }
@@ -128,22 +145,6 @@ CarbonRouterInstance<RouterInfo>* CarbonRouterInstance<RouterInfo>::createRaw(
       router->opts().service_name,
       result.error());
 
-  // Proxy destruction depends on EventBase loop running. Ensure that all user
-  // EventBases have their loops running and if not - loop them ourselves.
-  std::vector<std::pair<folly::EventBase*, std::thread>> tmpThreads;
-  for (auto evbPtr : evbs) {
-    if (evbPtr->isRunning()) {
-      continue;
-    }
-    tmpThreads.emplace_back(
-        evbPtr, std::thread([evbPtr] { evbPtr->loopForever(); }));
-  }
-  delete router;
-  for (auto& tmpThread : tmpThreads) {
-    tmpThread.first->terminateLoopSoon();
-    tmpThread.second.join();
-  }
-
   throw std::runtime_error(std::move(result.error()));
 }
 
@@ -151,10 +152,10 @@ template <class RouterInfo>
 std::shared_ptr<CarbonRouterInstance<RouterInfo>>
 CarbonRouterInstance<RouterInfo>::create(
     McrouterOptions input_options,
-    const std::vector<folly::EventBase*>& evbs) {
+    std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool) {
   return folly::fibers::runInMainContext([&]() mutable {
     return std::shared_ptr<CarbonRouterInstance<RouterInfo>>(
-        createRaw(std::move(input_options), evbs),
+        createRaw(std::move(input_options), std::move(ioThreadPool)),
         /* Custom deleter since ~CarbonRouterInstance() is private */
         [](CarbonRouterInstance<RouterInfo>* inst) { delete inst; });
   });
@@ -208,10 +209,7 @@ CarbonRouterInstance<RouterInfo>::setupProxy(
 
 template <class RouterInfo>
 folly::Expected<folly::Unit, std::string>
-CarbonRouterInstance<RouterInfo>::spinUp(
-    const std::vector<folly::EventBase*>& evbs) {
-  CHECK(evbs.empty() || evbs.size() == opts_.num_proxies);
-
+CarbonRouterInstance<RouterInfo>::spinUp() {
   // Must init compression before creating proxies.
   if (opts_.enable_compression) {
     initCompression(*this);
@@ -237,10 +235,8 @@ CarbonRouterInstance<RouterInfo>::spinUp(
       }
     }
 
-    const std::vector<folly::EventBase*>* evbsPtr = &evbs;
-    std::vector<folly::EventBase*> threadPoolEvbs;
     // Create an IOThreadPooLExecutor if there are no evbs configured
-    if (evbs.empty()) {
+    if (!proxyThreads_) {
       // Create IOThreadPoolExecutor
       try {
         proxyThreads_ = std::make_shared<folly::IOThreadPoolExecutor>(
@@ -255,22 +251,22 @@ CarbonRouterInstance<RouterInfo>::spinUp(
             "Failed to create IOThreadPoolExecutor {}",
             folly::exceptionStr(std::current_exception())));
       }
-
-      auto executorObserver = std::make_shared<ExecutorObserver>();
-      proxyThreads_->addObserver(executorObserver);
-      threadPoolEvbs = executorObserver->extractEvbs();
-      if (threadPoolEvbs.size() != opts_.num_proxies) {
-        return folly::makeUnexpected(folly::sformat(
-            "Failed to extract evbs from IOThreadPoolExecutor sz={} proxies={} {}",
-            threadPoolEvbs.size(),
-            opts_.num_proxies,
-            folly::exceptionStr(std::current_exception())));
-      }
-      proxyThreads_->removeObserver(executorObserver);
-      evbsPtr = &threadPoolEvbs;
     }
 
-    auto proxyResult = setupProxy(*evbsPtr);
+    auto executorObserver = std::make_shared<ExecutorObserver>();
+    proxyThreads_->addObserver(executorObserver);
+    std::vector<folly::EventBase*> threadPoolEvbs =
+        executorObserver->extractEvbs();
+    if (threadPoolEvbs.size() != opts_.num_proxies) {
+      return folly::makeUnexpected(folly::sformat(
+          "IOThreadPoolExecutor size does not match num_proxies sz={} proxies={} {}",
+          threadPoolEvbs.size(),
+          opts_.num_proxies,
+          folly::exceptionStr(std::current_exception())));
+    }
+    proxyThreads_->removeObserver(executorObserver);
+
+    auto proxyResult = setupProxy(threadPoolEvbs);
     if (proxyResult.hasError()) {
       return folly::makeUnexpected(
           folly::sformat("Failed to create proxy: {}"));

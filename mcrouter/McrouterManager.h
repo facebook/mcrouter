@@ -10,6 +10,7 @@
 #include <mutex>
 
 #include <folly/Range.h>
+#include <folly/executors/IOThreadPoolExecutor.h>
 #include <folly/io/async/EventBase.h>
 #include <memory>
 
@@ -33,7 +34,7 @@ class McrouterManager {
   CarbonRouterInstance<RouterInfo>* mcrouterGetCreate(
       folly::StringPiece persistenceId,
       const McrouterOptions& options,
-      const std::vector<folly::EventBase*>& evbs) {
+      std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool = nullptr) {
     std::shared_ptr<CarbonRouterInstanceBase> mcrouterBase;
 
     {
@@ -48,7 +49,8 @@ class McrouterManager {
       }
       if (!mcrouterBase) {
         std::shared_ptr<CarbonRouterInstance<RouterInfo>> mcrouter =
-            CarbonRouterInstance<RouterInfo>::create(options.clone(), evbs);
+            CarbonRouterInstance<RouterInfo>::create(
+                options.clone(), std::move(ioThreadPool));
         if (mcrouter) {
           std::lock_guard<std::mutex> lg(mutex_);
           mcrouters_[persistenceId.str()] = mcrouter;

@@ -50,21 +50,36 @@ class CarbonRouterInstance
   /**
    * @return  If an instance with the given persistenceId already exists,
    *   returns a pointer to it. Options are ignored in this case.
+   *   Otherwise, internally create an IOThreadPoolExecutor in no-resize mode,
+   *   spin up a new instance and returns the pointer to it. May
+   *   return nullptr if the McRouterManager singleton is unavailable, perhaps
+   *   due to misconfiguration.
+   * @param persistenceId String uniquely identifying this instance
+   * @param options McrouterOptions to use when creating instance
+   * @throw runtime_error  If no valid instance can be constructed from
+   *   the provided options.
+   */
+  static CarbonRouterInstance<RouterInfo>* init(
+      folly::StringPiece persistenceId,
+      const McrouterOptions& options);
+
+  /**
+   * @return  If an instance with the given persistenceId already exists,
+   *   returns a pointer to it. Options are ignored in this case.
    *   Otherwise spins up a new instance and returns the pointer to it. May
    *   return nullptr if the McRouterManager singleton is unavailable, perhaps
    *   due to misconfiguration.
-   * @param evbs  Must be either empty or contain options.num_proxies
-   *   event bases.  If empty, mcrouter will spawn its own proxy threads.
-   *   Otherwise, proxies will run on the provided event bases
-   *   (auxiliary threads will still be spawned).
+   * @param persistenceId String uniquely identifying this instance
+   * @param options McrouterOptions to use when creating instance
+   * @param ioThreadPool  IOThreadPoolExecutor for the proxies. This must be
+   *   created in no-resize mode.
    * @throw runtime_error  If no valid instance can be constructed from
    *   the provided options.
    */
   static CarbonRouterInstance<RouterInfo>* init(
       folly::StringPiece persistenceId,
       const McrouterOptions& options,
-      const std::vector<folly::EventBase*>& evbs =
-          std::vector<folly::EventBase*>());
+      std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool);
 
   /**
    * If an instance with the given persistenceId already exists,
@@ -91,7 +106,7 @@ class CarbonRouterInstance
    */
   static std::shared_ptr<CarbonRouterInstance<RouterInfo>> create(
       McrouterOptions input_options,
-      const std::vector<folly::EventBase*>& evbs = {});
+      std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool = nullptr);
 
   /**
    * Destroys ALL active instances for ALL RouterInfos.
@@ -141,6 +156,11 @@ class CarbonRouterInstance
     return RouterInfo::name;
   }
 
+  void setIOThreadPool(
+      std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool) {
+    proxyThreads_ = std::move(ioThreadPool);
+  }
+
   CarbonRouterInstance(const CarbonRouterInstance&) = delete;
   CarbonRouterInstance& operator=(const CarbonRouterInstance&) = delete;
   CarbonRouterInstance(CarbonRouterInstance&&) noexcept = delete;
@@ -184,14 +204,13 @@ class CarbonRouterInstance
    */
   static CarbonRouterInstance<RouterInfo>* createRaw(
       McrouterOptions input_options,
-      const std::vector<folly::EventBase*>& evbs);
+      std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool = nullptr);
 
   explicit CarbonRouterInstance(McrouterOptions input_options);
 
   ~CarbonRouterInstance() override;
 
-  folly::Expected<folly::Unit, std::string> spinUp(
-      const std::vector<folly::EventBase*>& evbs);
+  folly::Expected<folly::Unit, std::string> spinUp();
 
   folly::Expected<folly::Unit, std::string> setupProxy(
       const std::vector<folly::EventBase*>& evbs);
@@ -222,9 +241,8 @@ class CarbonRouterInstance
   class LegacyPrivateAccessor {
    public:
     static CarbonRouterInstance<RouterInfo>* createRaw(
-        const McrouterOptions& opts,
-        const std::vector<folly::EventBase*>& evbs) {
-      return CarbonRouterInstance<RouterInfo>::createRaw(opts.clone(), evbs);
+        const McrouterOptions& opts) {
+      return CarbonRouterInstance<RouterInfo>::createRaw(opts.clone());
     }
 
     static void destroy(CarbonRouterInstance<RouterInfo>* mcrouter) {

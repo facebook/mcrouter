@@ -327,10 +327,9 @@ bool runServerDual(
     ioThreadPool->removeObserver(executorObserver);
 
     // Create AsyncMcServer instance
-    AsyncMcServer::Options opts =
-        detail::createAsyncMcServerOptions(mcrouterOpts, standaloneOpts, &evbs);
     std::shared_ptr<AsyncMcServer> asyncMcServer =
-        std::make_shared<AsyncMcServer>(opts);
+        std::make_shared<AsyncMcServer>(detail::createAsyncMcServerOptions(
+            mcrouterOpts, standaloneOpts, &evbs));
 
     // Create CarbonRouterInstance
     CarbonRouterInstance<RouterInfo>* router;
@@ -339,7 +338,7 @@ bool runServerDual(
           CarbonRouterInstance<RouterInfo>::init("standalone", mcrouterOpts);
     } else {
       router = CarbonRouterInstance<RouterInfo>::init(
-          "standalone", mcrouterOpts, evbs);
+          "standalone", mcrouterOpts, ioThreadPool);
     }
     if (router == nullptr) {
       LOG(ERROR) << "CRITICAL: Failed to initialize mcrouter!";
@@ -515,8 +514,22 @@ bool runServer(
 
   try {
     LOG(INFO) << "Spawning AsyncMcServer";
+    // Create thread pool for both AsyncMcServer and CarbonRouterInstance
+    std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool =
+        std::make_shared<folly::IOThreadPoolExecutor>(
+            mcrouterOpts.num_proxies, mcrouterOpts.num_proxies);
 
-    AsyncMcServer server(opts);
+    // Run observer and extract event bases
+    auto executorObserver = std::make_shared<ExecutorObserver>();
+    ioThreadPool->addObserver(executorObserver);
+    auto evbs = executorObserver->extractEvbs();
+    CHECK_EQ(evbs.size(), mcrouterOpts.num_proxies);
+    ioThreadPool->removeObserver(executorObserver);
+
+    // Create AsyncMcServer instance
+    AsyncMcServer server(detail::createAsyncMcServerOptions(
+        mcrouterOpts, standaloneOpts, &evbs));
+
     server.installShutdownHandler({SIGINT, SIGTERM});
 
     CarbonRouterInstance<RouterInfo>* router = nullptr;
@@ -541,7 +554,7 @@ bool runServer(
           CarbonRouterInstance<RouterInfo>::init("standalone", mcrouterOpts);
     } else {
       router = CarbonRouterInstance<RouterInfo>::init(
-          "standalone", mcrouterOpts, server.eventBases());
+          "standalone", mcrouterOpts, ioThreadPool);
     }
     if (router == nullptr) {
       LOG(ERROR) << "CRITICAL: Failed to initialize mcrouter!";
