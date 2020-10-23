@@ -835,6 +835,13 @@ MCROUTER_OPTION_TOGGLE(
     no_short,
     "Disable shard split route. Ignore shard_splits field in routing config.")
 
+MCROUTER_OPTION_TOGGLE(
+    enable_service_router,
+    false,
+    "enable-service-router",
+    no_short,
+    "Enable service router for pool level routing.")
+
 #ifdef ADDITIONAL_OPTIONS_FILE
 #include ADDITIONAL_OPTIONS_FILE
 #endif

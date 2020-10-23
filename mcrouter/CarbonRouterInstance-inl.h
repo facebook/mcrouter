@@ -31,6 +31,7 @@
 #include "mcrouter/ProxyConfigBuilder.h"
 #include "mcrouter/RuntimeVarsData.h"
 #include "mcrouter/ServiceInfo.h"
+#include "mcrouter/TargetHooks.h"
 #include "mcrouter/ThreadUtil.h"
 #include "mcrouter/stats.h"
 
@@ -265,6 +266,11 @@ CarbonRouterInstance<RouterInfo>::spinUp() {
           folly::exceptionStr(std::current_exception())));
     }
     proxyThreads_->removeObserver(executorObserver);
+
+    if (opts_.enable_service_router && proxyThreads_ != nullptr &&
+        mcrouter::gSRInitHook) {
+      setMetadata(mcrouter::gSRInitHook(proxyThreads_));
+    }
 
     auto proxyResult = setupProxy(threadPoolEvbs);
     if (proxyResult.hasError()) {

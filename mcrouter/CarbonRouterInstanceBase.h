@@ -207,6 +207,15 @@ class CarbonRouterInstanceBase {
    */
   virtual folly::StringPiece routerInfoName() const = 0;
 
+  template <class T>
+  auto getMetadata() {
+    return std::static_pointer_cast<T>(metadata_);
+  }
+
+  void setMetadata(std::shared_ptr<void> metadata) {
+    metadata_ = std::move(metadata);
+  }
+
  protected:
   /**
    * Register this instance for periodic stats updates.
@@ -276,6 +285,11 @@ class CarbonRouterInstanceBase {
 
   // Aggregates stats for all associated proxies. Should be called periodically.
   void updateStats();
+
+  /**
+   * Opaque metadata used by SRRoute, to avoid circular dependency
+   */
+  std::shared_ptr<void> metadata_;
 };
 
 } // namespace mcrouter

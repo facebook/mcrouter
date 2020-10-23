@@ -194,8 +194,10 @@ class CarbonRouterInstance
   std::vector<std::unique_ptr<folly::VirtualEventBase>> proxyEvbs_;
   std::shared_ptr<folly::IOThreadPoolExecutor> proxyThreads_;
 
-  // Indicates if evbs/IOThreadPoolExecutor has been created by McRouter or
-  // passed as an argument in construction.
+  /**
+   * Indicates if evbs/IOThreadPoolExecutor has been created by McRouter or
+   * passed as an argument in construction.
+   */
   bool embeddedMode_{false};
 
   /**
