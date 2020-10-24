@@ -14,6 +14,7 @@
 #include <folly/Range.h>
 #include <folly/hash/SpookyHashV2.h>
 #include <folly/io/IOBuf.h>
+#include <thrift/lib/cpp2/Thrift.h>
 
 #include "mcrouter/lib/HashFunctionType.h"
 
@@ -44,6 +45,8 @@ inline folly::IOBuf makeKey<folly::IOBuf>(folly::StringPiece sp) {
 template <class Storage>
 class Keys {
  public:
+  FBTHRIFT_CPP_DEFINE_MEMBER_INDIRECTION_FN(rawUnsafe());
+
   constexpr Keys() = default;
 
   explicit Keys(Storage&& key) noexcept : key_(std::move(key)) {
