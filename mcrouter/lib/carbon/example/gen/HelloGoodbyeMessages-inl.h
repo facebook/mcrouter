@@ -164,9 +164,6 @@ class Cpp2Ops<hellogoodbye::HelloRequest> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -191,9 +188,6 @@ class Cpp2Ops<hellogoodbye::HelloReply> {
   typedef hellogoodbye::HelloReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
@@ -220,9 +214,6 @@ class Cpp2Ops<hellogoodbye::GoodbyeRequest> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -247,9 +238,6 @@ class Cpp2Ops<hellogoodbye::GoodbyeReply> {
   typedef hellogoodbye::GoodbyeReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {

@@ -51,9 +51,6 @@ class Cpp2Ops<carbon::test_enum::StructWithEnumField> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);

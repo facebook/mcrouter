@@ -1544,9 +1544,6 @@ class Cpp2Ops<facebook::memcache::McGetRequest> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -1571,9 +1568,6 @@ class Cpp2Ops<facebook::memcache::McGetReply> {
   typedef facebook::memcache::McGetReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
@@ -1600,9 +1594,6 @@ class Cpp2Ops<facebook::memcache::McSetRequest> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -1627,9 +1618,6 @@ class Cpp2Ops<facebook::memcache::McSetReply> {
   typedef facebook::memcache::McSetReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
@@ -1656,9 +1644,6 @@ class Cpp2Ops<facebook::memcache::McDeleteRequest> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -1683,9 +1668,6 @@ class Cpp2Ops<facebook::memcache::McDeleteReply> {
   typedef facebook::memcache::McDeleteReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
@@ -1712,9 +1694,6 @@ class Cpp2Ops<facebook::memcache::McLeaseGetRequest> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -1739,9 +1718,6 @@ class Cpp2Ops<facebook::memcache::McLeaseGetReply> {
   typedef facebook::memcache::McLeaseGetReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
@@ -1768,9 +1744,6 @@ class Cpp2Ops<facebook::memcache::McLeaseSetRequest> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -1795,9 +1768,6 @@ class Cpp2Ops<facebook::memcache::McLeaseSetReply> {
   typedef facebook::memcache::McLeaseSetReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
@@ -1824,9 +1794,6 @@ class Cpp2Ops<facebook::memcache::McAddRequest> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -1851,9 +1818,6 @@ class Cpp2Ops<facebook::memcache::McAddReply> {
   typedef facebook::memcache::McAddReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
@@ -1880,9 +1844,6 @@ class Cpp2Ops<facebook::memcache::McReplaceRequest> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -1907,9 +1868,6 @@ class Cpp2Ops<facebook::memcache::McReplaceReply> {
   typedef facebook::memcache::McReplaceReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
@@ -1936,9 +1894,6 @@ class Cpp2Ops<facebook::memcache::McGetsRequest> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -1963,9 +1918,6 @@ class Cpp2Ops<facebook::memcache::McGetsReply> {
   typedef facebook::memcache::McGetsReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
@@ -1992,9 +1944,6 @@ class Cpp2Ops<facebook::memcache::McCasRequest> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -2019,9 +1968,6 @@ class Cpp2Ops<facebook::memcache::McCasReply> {
   typedef facebook::memcache::McCasReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
@@ -2048,9 +1994,6 @@ class Cpp2Ops<facebook::memcache::McIncrRequest> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -2075,9 +2018,6 @@ class Cpp2Ops<facebook::memcache::McIncrReply> {
   typedef facebook::memcache::McIncrReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
@@ -2104,9 +2044,6 @@ class Cpp2Ops<facebook::memcache::McDecrRequest> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -2131,9 +2068,6 @@ class Cpp2Ops<facebook::memcache::McDecrReply> {
   typedef facebook::memcache::McDecrReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
@@ -2160,9 +2094,6 @@ class Cpp2Ops<facebook::memcache::McMetagetRequest> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -2187,9 +2118,6 @@ class Cpp2Ops<facebook::memcache::McMetagetReply> {
   typedef facebook::memcache::McMetagetReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
@@ -2216,9 +2144,6 @@ class Cpp2Ops<facebook::memcache::McAppendRequest> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -2243,9 +2168,6 @@ class Cpp2Ops<facebook::memcache::McAppendReply> {
   typedef facebook::memcache::McAppendReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
@@ -2272,9 +2194,6 @@ class Cpp2Ops<facebook::memcache::McPrependRequest> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -2299,9 +2218,6 @@ class Cpp2Ops<facebook::memcache::McPrependReply> {
   typedef facebook::memcache::McPrependReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
@@ -2328,9 +2244,6 @@ class Cpp2Ops<facebook::memcache::McTouchRequest> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -2355,9 +2268,6 @@ class Cpp2Ops<facebook::memcache::McTouchReply> {
   typedef facebook::memcache::McTouchReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
@@ -2384,9 +2294,6 @@ class Cpp2Ops<facebook::memcache::McFlushReRequest> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -2411,9 +2318,6 @@ class Cpp2Ops<facebook::memcache::McFlushReReply> {
   typedef facebook::memcache::McFlushReReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
@@ -2440,9 +2344,6 @@ class Cpp2Ops<facebook::memcache::McFlushAllRequest> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -2467,9 +2368,6 @@ class Cpp2Ops<facebook::memcache::McFlushAllReply> {
   typedef facebook::memcache::McFlushAllReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
@@ -2496,9 +2394,6 @@ class Cpp2Ops<facebook::memcache::McGatRequest> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -2523,9 +2418,6 @@ class Cpp2Ops<facebook::memcache::McGatReply> {
   typedef facebook::memcache::McGatReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
@@ -2552,9 +2444,6 @@ class Cpp2Ops<facebook::memcache::McGatsRequest> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -2579,9 +2468,6 @@ class Cpp2Ops<facebook::memcache::McGatsReply> {
   typedef facebook::memcache::McGatsReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {

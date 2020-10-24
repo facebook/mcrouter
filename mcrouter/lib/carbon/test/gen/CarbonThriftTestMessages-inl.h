@@ -467,9 +467,6 @@ class Cpp2Ops<carbon::test::TestUnionThrift> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -494,9 +491,6 @@ class Cpp2Ops<carbon::test::TinyStruct> {
   typedef carbon::test::TinyStruct Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
@@ -523,9 +517,6 @@ class Cpp2Ops<carbon::test::MyBaseStruct> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -550,9 +541,6 @@ class Cpp2Ops<carbon::test::MySimpleStruct> {
   typedef carbon::test::MySimpleStruct Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
@@ -579,9 +567,6 @@ class Cpp2Ops<carbon::test::ThriftTestRequest> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -606,9 +591,6 @@ class Cpp2Ops<carbon::test::ThriftTestReply> {
   typedef carbon::test::ThriftTestReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
@@ -635,9 +617,6 @@ class Cpp2Ops<carbon::test::DummyThriftRequest> {
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }
-  static void clear(Type* value) {
-    value->__clear();
-  }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
     return value->write(prot);
@@ -662,9 +641,6 @@ class Cpp2Ops<carbon::test::DummyThriftReply> {
   typedef carbon::test::DummyThriftReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
-  }
-  static void clear(Type* value) {
-    value->__clear();
   }
   template <class Protocol>
   static uint32_t write(Protocol* prot, const Type* value) {
