@@ -162,33 +162,6 @@ inline void startServerShutdown(
   }
 }
 
-template <class RouterInfo, template <class> class RequestHandler>
-void serverLoop(
-    CarbonRouterInstance<RouterInfo>& router,
-    size_t threadId,
-    folly::EventBase& evb,
-    AsyncMcServerWorker& worker,
-    const McrouterStandaloneOptions& standaloneOpts,
-    std::function<void(McServerSession&)>& aclChecker) {
-  auto routerClient = standaloneOpts.remote_thread
-      ? router.createClient(0 /* maximum_outstanding_requests */)
-      : router.createSameThreadClient(0 /* maximum_outstanding_requests */);
-  detail::serverInit<RouterInfo, RequestHandler>(
-      router,
-      threadId,
-      evb,
-      worker,
-      standaloneOpts,
-      aclChecker,
-      routerClient.get());
-  /* TODO(libevent): the only reason this is not simply evb.loop() is
-     because we need to call asox stuff on every loop iteration.
-     We can clean this up once we convert everything to EventBase */
-  while (worker.isAlive() || worker.writesPending()) {
-    evb.loopOnce();
-  }
-}
-
 inline AsyncMcServer::Options createAsyncMcServerOptions(
     const McrouterOptions& mcrouterOpts,
     const McrouterStandaloneOptions& standaloneOpts,
@@ -526,29 +499,14 @@ bool runServer(
     CHECK_EQ(evbs.size(), mcrouterOpts.num_proxies);
     ioThreadPool->removeObserver(executorObserver);
 
-    // Create AsyncMcServer instance
-    AsyncMcServer server(detail::createAsyncMcServerOptions(
-        mcrouterOpts, standaloneOpts, &evbs));
+    // Get EVB of main thread
+    auto localEvb = ioThreadPool->getEventBaseManager()->getEventBase();
 
-    server.installShutdownHandler({SIGINT, SIGTERM});
+    std::shared_ptr<AsyncMcServer> asyncMcServer =
+        std::make_shared<AsyncMcServer>(detail::createAsyncMcServerOptions(
+            mcrouterOpts, standaloneOpts, &evbs));
 
     CarbonRouterInstance<RouterInfo>* router = nullptr;
-
-    SCOPE_EXIT {
-      if (router) {
-        router->shutdown();
-      }
-      server.join();
-
-      LOG(INFO) << "Shutting down";
-
-      freeAllRouters();
-
-      if (!opts.unixDomainSockPath.empty()) {
-        std::remove(opts.unixDomainSockPath.c_str());
-      }
-    };
-
     if (standaloneOpts.remote_thread) {
       router =
           CarbonRouterInstance<RouterInfo>::init("standalone", mcrouterOpts);
@@ -563,19 +521,59 @@ bool runServer(
 
     setupRouter<RouterInfo>(mcrouterOpts, standaloneOpts, router, preRunCb);
 
-    auto aclChecker = detail::getAclChecker(mcrouterOpts, standaloneOpts);
-    folly::Baton<> shutdownBaton;
-    server.spawn(
-        [router, &standaloneOpts, &aclChecker](
-            size_t threadId,
-            folly::EventBase& evb,
-            AsyncMcServerWorker& worker) {
-          detail::serverLoop<RouterInfo, RequestHandler>(
-              *router, threadId, evb, worker, standaloneOpts, aclChecker);
-        },
-        [&shutdownBaton]() { shutdownBaton.post(); });
+    auto shutdownStarted = std::make_shared<std::atomic<bool>>(false);
+    ShutdownSignalHandler<RouterInfo> shutdownHandler(
+        localEvb, nullptr, asyncMcServer, shutdownStarted);
+    shutdownHandler.registerSignalHandler(SIGTERM);
+    shutdownHandler.registerSignalHandler(SIGINT);
 
-    shutdownBaton.wait();
+    // Create CarbonRouterClients for each worker thread
+    std::vector<typename CarbonRouterClient<RouterInfo>::Pointer>
+        carbonRouterClients;
+    for (size_t i = 0; i < mcrouterOpts.num_proxies; i++) {
+      // Create CarbonRouterClients
+      auto routerClient = standaloneOpts.remote_thread
+          ? router->createClient(0 /* maximum_outstanding_requests */)
+          : router->createSameThreadClient(
+                0 /* maximum_outstanding_requests */);
+      carbonRouterClients.push_back(std::move(routerClient));
+    }
+    CHECK_EQ(carbonRouterClients.size(), mcrouterOpts.num_proxies);
+
+    auto aclChecker = detail::getAclChecker(mcrouterOpts, standaloneOpts);
+    asyncMcServer->startOnVirtualEB(
+        [&router,
+         &carbonRouterClients,
+         &standaloneOpts,
+         aclChecker = aclChecker](
+            size_t threadId,
+            folly::VirtualEventBase& vevb,
+            AsyncMcServerWorker& worker) mutable {
+          detail::serverInit<RouterInfo, RequestHandler>(
+              *router,
+              threadId,
+              vevb.getEventBase(),
+              worker,
+              standaloneOpts,
+              aclChecker,
+              carbonRouterClients[threadId].get());
+        },
+        [evb = localEvb, &asyncMcServer, &shutdownStarted] {
+          evb->runInEventBaseThread([&]() {
+            detail::startServerShutdown<RouterInfo>(
+                nullptr, asyncMcServer, shutdownStarted);
+          });
+          evb->terminateLoopSoon();
+        });
+    localEvb->loopForever();
+    LOG(INFO) << "Started shutdown of CarbonRouterInstance";
+    router->shutdown();
+    freeAllRouters();
+    ioThreadPool.reset();
+    if (!opts.unixDomainSockPath.empty()) {
+      std::remove(opts.unixDomainSockPath.c_str());
+    }
+    LOG(INFO) << "Completed shutdown";
   } catch (const std::exception& e) {
     LOG(ERROR) << e.what();
     return false;
