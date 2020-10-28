@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <ostream>
 #include <type_traits>
 
 #include <folly/Optional.h>
@@ -249,6 +250,23 @@ inline size_t getTypeIdByName(folly::StringPiece /* name */, List<>) {
 template <class T, class... Ts>
 inline size_t getTypeIdByName(folly::StringPiece name, List<T, Ts...>) {
   return name == T::name ? T::typeId : getTypeIdByName(name, List<Ts...>());
+}
+
+/**
+ * Helpers to print out all know type names.
+ */
+template <class TypeList>
+inline std::ostream& insertTypeIds(std::ostream&, TypeList);
+
+template <>
+inline std::ostream& insertTypeIds(std::ostream& str, List<>) {
+  return str;
+}
+
+template <class T, class... Ts>
+inline std::ostream& insertTypeIds(std::ostream& str, List<T, Ts...>) {
+  str << ' ' << T::name;
+  return insertTypeIds(str, List<Ts...>());
 }
 
 template <class TypeList>

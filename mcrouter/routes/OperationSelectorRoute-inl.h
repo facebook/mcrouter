@@ -8,6 +8,7 @@
 #pragma once
 
 #include <map>
+#include <sstream>
 
 #include <folly/dynamic.h>
 
@@ -78,7 +79,15 @@ typename RouterInfo::RouteHandlePtr makeOperationSelectorRoute(
     for (const auto& it : orderedPolicies) {
       auto id = carbon::getTypeIdByName(
           it.first.data(), typename RouterInfo::RoutableRequests());
-      checkLogic(id != 0, "Unknown operation: {}", it.first);
+      checkLogic(
+          id != 0,
+          "Unknown operation: {}, valid operations: {}",
+          it.first,
+          []() -> std::string {
+            std::stringstream str;
+            insertTypeIds(str, typename RouterInfo::RoutableRequests());
+            return str.str();
+          }());
 
       operationPolicies.set(id, factory.create(*it.second));
     }
