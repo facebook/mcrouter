@@ -164,14 +164,6 @@ apache::thrift::RocketClientChannel::Ptr ThriftTransportBase::createChannel() {
 #endif
 }
 
-apache::thrift::RpcOptions ThriftTransportBase::getRpcOptions(
-    std::chrono::milliseconds timeout) {
-  apache::thrift::RpcOptions rpcOptions;
-  rpcOptions.setTimeout(timeout);
-  rpcOptions.setClientOnlyTimeouts(true);
-  return rpcOptions;
-}
-
 void ThriftTransportBase::connectSuccess() noexcept {
   auto transport = channel_->getTransport();
   assert(
@@ -227,7 +219,7 @@ void ThriftTransportBase::channelClosed() {
 }
 
 #ifndef LIBMC_FBTRACE_DISABLE
-void ThriftTransportBase::traceRequest(
+void ThriftTransportUtil::traceRequest(
     const carbon::MessageCommon& request,
     apache::thrift::RpcOptions& rpcOptions) {
   if (UNLIKELY(!request.traceContext().empty())) {
@@ -236,7 +228,7 @@ void ThriftTransportBase::traceRequest(
   }
 }
 
-void ThriftTransportBase::traceRequestImpl(
+void ThriftTransportUtil::traceRequestImpl(
     const carbon::MessageCommon& request,
     apache::thrift::RpcOptions& rpcOptions) {
   auto artilleryTraceIDs =
@@ -249,7 +241,7 @@ void ThriftTransportBase::traceRequestImpl(
           facebook::contextprop::ArtilleryTraceIDs>(artilleryTraceIDs));
 }
 
-void ThriftTransportBase::traceResponseImpl(
+void ThriftTransportUtil::traceResponseImpl(
     carbon::MessageCommon& response,
     const std::map<std::string, std::string>& responseHeaders) {
   auto artilleryTraceIDs = contextprop::SerDeHelper::decodeAndDeserialize<
@@ -264,6 +256,14 @@ void ThriftTransportBase::traceResponseImpl(
   }
 }
 #endif
+
+apache::thrift::RpcOptions ThriftTransportUtil::getRpcOptions(
+    std::chrono::milliseconds timeout) {
+  apache::thrift::RpcOptions rpcOptions;
+  rpcOptions.setTimeout(timeout);
+  rpcOptions.setClientOnlyTimeouts(true);
+  return rpcOptions;
+}
 
 } // namespace memcache
 } // namespace facebook

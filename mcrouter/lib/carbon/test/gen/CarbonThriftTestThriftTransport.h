@@ -30,7 +30,106 @@ namespace facebook {
 namespace memcache {
 
 template <>
-class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftTransportBase {
+class ThriftTransportMethods<carbon::test::CarbonThriftTestRouterInfo> : public ThriftTransportUtil {
+ public:
+  ThriftTransportMethods() = default;
+  virtual ~ThriftTransportMethods() override = default;
+
+void sendSyncHelper(
+    typename carbon::test::CarbonThriftTestRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const carbon::test::DummyThriftRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    folly::Try<apache::thrift::RpcResponseComplete<carbon::test::DummyThriftReply>>& reply,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<carbon::test::CarbonThriftTestRouterInfo>::getThriftServerLoadEnabled();
+  if (needServerLoad) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  reply = thriftClient->sync_complete_thrift_test(
+      rpcOptions, request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcSizeStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (needServerLoad) {
+        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+}
+
+void sendSyncHelper(
+    typename carbon::test::CarbonThriftTestRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const carbon::test::ThriftTestRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    folly::Try<apache::thrift::RpcResponseComplete<carbon::test::ThriftTestReply>>& reply,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<carbon::test::CarbonThriftTestRouterInfo>::getThriftServerLoadEnabled();
+  if (needServerLoad) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  reply = thriftClient->sync_complete_test(
+      rpcOptions, request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcSizeStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (needServerLoad) {
+        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+}
+
+void sendSyncHelper(
+    typename carbon::test::CarbonThriftTestRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const McVersionRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>>& reply,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<carbon::test::CarbonThriftTestRouterInfo>::getThriftServerLoadEnabled();
+  if (needServerLoad) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  reply = thriftClient->sync_complete_mcVersion(
+      rpcOptions, request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcSizeStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (needServerLoad) {
+        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+}
+
+};
+
+template <>
+class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftTransportMethods<carbon::test::CarbonThriftTestRouterInfo>,
+                                       public ThriftTransportBase {
  public:
   ThriftTransport(folly::EventBase& eventBase, ConnectionOptions options)
       : ThriftTransportBase(eventBase, std::move(options)) {}
@@ -57,28 +156,7 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
       folly::Try<apache::thrift::RpcResponseComplete<carbon::test::DummyThriftReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        bool needServerLoad = mcrouter::fiber_local<carbon::test::CarbonThriftTestRouterInfo>::getThriftServerLoadEnabled();
-        if (needServerLoad) {
-          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
-        }
-
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceRequest(request, rpcOptions);
-#endif
-        reply = thriftClient->sync_complete_thrift_test(
-            rpcOptions, request);
-        if (rpcStatsContext && reply.hasValue()) {
-            auto& stats = reply->responseContext.rpcSizeStats;
-            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
-            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
-            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-            if (needServerLoad) {
-                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
-            }
-        }
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceResponse(request, reply);
-#endif
+        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -97,28 +175,7 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
       folly::Try<apache::thrift::RpcResponseComplete<carbon::test::ThriftTestReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        bool needServerLoad = mcrouter::fiber_local<carbon::test::CarbonThriftTestRouterInfo>::getThriftServerLoadEnabled();
-        if (needServerLoad) {
-          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
-        }
-
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceRequest(request, rpcOptions);
-#endif
-        reply = thriftClient->sync_complete_test(
-            rpcOptions, request);
-        if (rpcStatsContext && reply.hasValue()) {
-            auto& stats = reply->responseContext.rpcSizeStats;
-            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
-            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
-            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-            if (needServerLoad) {
-                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
-            }
-        }
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceResponse(request, reply);
-#endif
+        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -137,28 +194,7 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
       folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        bool needServerLoad = mcrouter::fiber_local<carbon::test::CarbonThriftTestRouterInfo>::getThriftServerLoadEnabled();
-        if (needServerLoad) {
-          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
-        }
-
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceRequest(request, rpcOptions);
-#endif
-        reply = thriftClient->sync_complete_mcVersion(
-            rpcOptions, request);
-        if (rpcStatsContext && reply.hasValue()) {
-            auto& stats = reply->responseContext.rpcSizeStats;
-            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
-            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
-            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-            if (needServerLoad) {
-                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
-            }
-        }
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceResponse(request, reply);
-#endif
+        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -172,9 +208,6 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
  private:
   std::unique_ptr<carbon::test::thrift::CarbonThriftTestAsyncClient> thriftClient_;
   FlushList* flushList_{nullptr};
-
-  static inline const std::string kLoadHeader = "load";
-  static inline const std::string kDefaultLoadCounter = "default";
 
   carbon::test::thrift::CarbonThriftTestAsyncClient* getThriftClient() {
     if (UNLIKELY(!thriftClient_)) {
@@ -204,19 +237,6 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
       }
       thriftClient_.reset();
     }
-  }
-  bool extractServerLoad(
-      const std::map<std::string, std::string>& headers,
-      ServerLoad& serverLoad) {
-    auto it = headers.find(kLoadHeader);
-    if (it != headers.end()) {
-      try {
-        serverLoad = ServerLoad(folly::to<int32_t>(it->second));
-        return true;
-      } catch (std::exception const&) {
-      }
-    }
-    return false;
   }
 };
 

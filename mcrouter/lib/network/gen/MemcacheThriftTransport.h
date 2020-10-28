@@ -30,7 +30,616 @@ namespace facebook {
 namespace memcache {
 
 template <>
-class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
+class ThriftTransportMethods<MemcacheRouterInfo> : public ThriftTransportUtil {
+ public:
+  ThriftTransportMethods() = default;
+  virtual ~ThriftTransportMethods() override = default;
+
+void sendSyncHelper(
+    typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const McAddRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    folly::Try<apache::thrift::RpcResponseComplete<McAddReply>>& reply,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
+  if (needServerLoad) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  reply = thriftClient->sync_complete_mcAdd(
+      rpcOptions, request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcSizeStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (needServerLoad) {
+        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+}
+
+void sendSyncHelper(
+    typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const McAppendRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    folly::Try<apache::thrift::RpcResponseComplete<McAppendReply>>& reply,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
+  if (needServerLoad) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  reply = thriftClient->sync_complete_mcAppend(
+      rpcOptions, request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcSizeStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (needServerLoad) {
+        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+}
+
+void sendSyncHelper(
+    typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const McCasRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    folly::Try<apache::thrift::RpcResponseComplete<McCasReply>>& reply,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
+  if (needServerLoad) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  reply = thriftClient->sync_complete_mcCas(
+      rpcOptions, request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcSizeStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (needServerLoad) {
+        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+}
+
+void sendSyncHelper(
+    typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const McDecrRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    folly::Try<apache::thrift::RpcResponseComplete<McDecrReply>>& reply,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
+  if (needServerLoad) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  reply = thriftClient->sync_complete_mcDecr(
+      rpcOptions, request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcSizeStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (needServerLoad) {
+        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+}
+
+void sendSyncHelper(
+    typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const McDeleteRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    folly::Try<apache::thrift::RpcResponseComplete<McDeleteReply>>& reply,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
+  if (needServerLoad) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  reply = thriftClient->sync_complete_mcDelete(
+      rpcOptions, request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcSizeStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (needServerLoad) {
+        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+}
+
+void sendSyncHelper(
+    typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const McFlushAllRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    folly::Try<apache::thrift::RpcResponseComplete<McFlushAllReply>>& reply,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
+  if (needServerLoad) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  reply = thriftClient->sync_complete_mcFlushAll(
+      rpcOptions, request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcSizeStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (needServerLoad) {
+        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+}
+
+void sendSyncHelper(
+    typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const McFlushReRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    folly::Try<apache::thrift::RpcResponseComplete<McFlushReReply>>& reply,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
+  if (needServerLoad) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  reply = thriftClient->sync_complete_mcFlushRe(
+      rpcOptions, request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcSizeStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (needServerLoad) {
+        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+}
+
+void sendSyncHelper(
+    typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const McGatRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    folly::Try<apache::thrift::RpcResponseComplete<McGatReply>>& reply,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
+  if (needServerLoad) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  reply = thriftClient->sync_complete_mcGat(
+      rpcOptions, request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcSizeStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (needServerLoad) {
+        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+}
+
+void sendSyncHelper(
+    typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const McGatsRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    folly::Try<apache::thrift::RpcResponseComplete<McGatsReply>>& reply,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
+  if (needServerLoad) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  reply = thriftClient->sync_complete_mcGats(
+      rpcOptions, request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcSizeStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (needServerLoad) {
+        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+}
+
+void sendSyncHelper(
+    typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const McGetRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    folly::Try<apache::thrift::RpcResponseComplete<McGetReply>>& reply,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
+  if (needServerLoad) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  reply = thriftClient->sync_complete_mcGet(
+      rpcOptions, request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcSizeStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (needServerLoad) {
+        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+}
+
+void sendSyncHelper(
+    typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const McGetsRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    folly::Try<apache::thrift::RpcResponseComplete<McGetsReply>>& reply,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
+  if (needServerLoad) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  reply = thriftClient->sync_complete_mcGets(
+      rpcOptions, request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcSizeStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (needServerLoad) {
+        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+}
+
+void sendSyncHelper(
+    typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const McIncrRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    folly::Try<apache::thrift::RpcResponseComplete<McIncrReply>>& reply,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
+  if (needServerLoad) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  reply = thriftClient->sync_complete_mcIncr(
+      rpcOptions, request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcSizeStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (needServerLoad) {
+        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+}
+
+void sendSyncHelper(
+    typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const McLeaseGetRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    folly::Try<apache::thrift::RpcResponseComplete<McLeaseGetReply>>& reply,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
+  if (needServerLoad) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  reply = thriftClient->sync_complete_mcLeaseGet(
+      rpcOptions, request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcSizeStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (needServerLoad) {
+        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+}
+
+void sendSyncHelper(
+    typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const McLeaseSetRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    folly::Try<apache::thrift::RpcResponseComplete<McLeaseSetReply>>& reply,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
+  if (needServerLoad) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  reply = thriftClient->sync_complete_mcLeaseSet(
+      rpcOptions, request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcSizeStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (needServerLoad) {
+        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+}
+
+void sendSyncHelper(
+    typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const McMetagetRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    folly::Try<apache::thrift::RpcResponseComplete<McMetagetReply>>& reply,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
+  if (needServerLoad) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  reply = thriftClient->sync_complete_mcMetaget(
+      rpcOptions, request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcSizeStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (needServerLoad) {
+        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+}
+
+void sendSyncHelper(
+    typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const McPrependRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    folly::Try<apache::thrift::RpcResponseComplete<McPrependReply>>& reply,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
+  if (needServerLoad) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  reply = thriftClient->sync_complete_mcPrepend(
+      rpcOptions, request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcSizeStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (needServerLoad) {
+        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+}
+
+void sendSyncHelper(
+    typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const McReplaceRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    folly::Try<apache::thrift::RpcResponseComplete<McReplaceReply>>& reply,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
+  if (needServerLoad) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  reply = thriftClient->sync_complete_mcReplace(
+      rpcOptions, request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcSizeStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (needServerLoad) {
+        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+}
+
+void sendSyncHelper(
+    typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const McSetRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    folly::Try<apache::thrift::RpcResponseComplete<McSetReply>>& reply,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
+  if (needServerLoad) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  reply = thriftClient->sync_complete_mcSet(
+      rpcOptions, request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcSizeStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (needServerLoad) {
+        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+}
+
+void sendSyncHelper(
+    typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const McTouchRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    folly::Try<apache::thrift::RpcResponseComplete<McTouchReply>>& reply,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
+  if (needServerLoad) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  reply = thriftClient->sync_complete_mcTouch(
+      rpcOptions, request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcSizeStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (needServerLoad) {
+        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+}
+
+void sendSyncHelper(
+    typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const McVersionRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>>& reply,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
+  if (needServerLoad) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  reply = thriftClient->sync_complete_mcVersion(
+      rpcOptions, request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcSizeStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (needServerLoad) {
+        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+}
+
+};
+
+template <>
+class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<MemcacheRouterInfo>,
+                                       public ThriftTransportBase {
  public:
   ThriftTransport(folly::EventBase& eventBase, ConnectionOptions options)
       : ThriftTransportBase(eventBase, std::move(options)) {}
@@ -57,28 +666,7 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McAddReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
-        if (needServerLoad) {
-          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
-        }
-
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceRequest(request, rpcOptions);
-#endif
-        reply = thriftClient->sync_complete_mcAdd(
-            rpcOptions, request);
-        if (rpcStatsContext && reply.hasValue()) {
-            auto& stats = reply->responseContext.rpcSizeStats;
-            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
-            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
-            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-            if (needServerLoad) {
-                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
-            }
-        }
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceResponse(request, reply);
-#endif
+        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -97,28 +685,7 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McAppendReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
-        if (needServerLoad) {
-          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
-        }
-
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceRequest(request, rpcOptions);
-#endif
-        reply = thriftClient->sync_complete_mcAppend(
-            rpcOptions, request);
-        if (rpcStatsContext && reply.hasValue()) {
-            auto& stats = reply->responseContext.rpcSizeStats;
-            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
-            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
-            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-            if (needServerLoad) {
-                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
-            }
-        }
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceResponse(request, reply);
-#endif
+        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -137,28 +704,7 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McCasReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
-        if (needServerLoad) {
-          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
-        }
-
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceRequest(request, rpcOptions);
-#endif
-        reply = thriftClient->sync_complete_mcCas(
-            rpcOptions, request);
-        if (rpcStatsContext && reply.hasValue()) {
-            auto& stats = reply->responseContext.rpcSizeStats;
-            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
-            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
-            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-            if (needServerLoad) {
-                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
-            }
-        }
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceResponse(request, reply);
-#endif
+        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -177,28 +723,7 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McDecrReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
-        if (needServerLoad) {
-          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
-        }
-
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceRequest(request, rpcOptions);
-#endif
-        reply = thriftClient->sync_complete_mcDecr(
-            rpcOptions, request);
-        if (rpcStatsContext && reply.hasValue()) {
-            auto& stats = reply->responseContext.rpcSizeStats;
-            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
-            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
-            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-            if (needServerLoad) {
-                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
-            }
-        }
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceResponse(request, reply);
-#endif
+        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -217,28 +742,7 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McDeleteReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
-        if (needServerLoad) {
-          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
-        }
-
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceRequest(request, rpcOptions);
-#endif
-        reply = thriftClient->sync_complete_mcDelete(
-            rpcOptions, request);
-        if (rpcStatsContext && reply.hasValue()) {
-            auto& stats = reply->responseContext.rpcSizeStats;
-            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
-            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
-            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-            if (needServerLoad) {
-                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
-            }
-        }
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceResponse(request, reply);
-#endif
+        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -257,28 +761,7 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McFlushAllReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
-        if (needServerLoad) {
-          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
-        }
-
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceRequest(request, rpcOptions);
-#endif
-        reply = thriftClient->sync_complete_mcFlushAll(
-            rpcOptions, request);
-        if (rpcStatsContext && reply.hasValue()) {
-            auto& stats = reply->responseContext.rpcSizeStats;
-            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
-            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
-            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-            if (needServerLoad) {
-                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
-            }
-        }
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceResponse(request, reply);
-#endif
+        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -297,28 +780,7 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McFlushReReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
-        if (needServerLoad) {
-          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
-        }
-
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceRequest(request, rpcOptions);
-#endif
-        reply = thriftClient->sync_complete_mcFlushRe(
-            rpcOptions, request);
-        if (rpcStatsContext && reply.hasValue()) {
-            auto& stats = reply->responseContext.rpcSizeStats;
-            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
-            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
-            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-            if (needServerLoad) {
-                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
-            }
-        }
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceResponse(request, reply);
-#endif
+        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -337,28 +799,7 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McGatReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
-        if (needServerLoad) {
-          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
-        }
-
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceRequest(request, rpcOptions);
-#endif
-        reply = thriftClient->sync_complete_mcGat(
-            rpcOptions, request);
-        if (rpcStatsContext && reply.hasValue()) {
-            auto& stats = reply->responseContext.rpcSizeStats;
-            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
-            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
-            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-            if (needServerLoad) {
-                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
-            }
-        }
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceResponse(request, reply);
-#endif
+        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -377,28 +818,7 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McGatsReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
-        if (needServerLoad) {
-          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
-        }
-
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceRequest(request, rpcOptions);
-#endif
-        reply = thriftClient->sync_complete_mcGats(
-            rpcOptions, request);
-        if (rpcStatsContext && reply.hasValue()) {
-            auto& stats = reply->responseContext.rpcSizeStats;
-            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
-            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
-            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-            if (needServerLoad) {
-                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
-            }
-        }
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceResponse(request, reply);
-#endif
+        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -417,28 +837,7 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McGetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
-        if (needServerLoad) {
-          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
-        }
-
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceRequest(request, rpcOptions);
-#endif
-        reply = thriftClient->sync_complete_mcGet(
-            rpcOptions, request);
-        if (rpcStatsContext && reply.hasValue()) {
-            auto& stats = reply->responseContext.rpcSizeStats;
-            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
-            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
-            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-            if (needServerLoad) {
-                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
-            }
-        }
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceResponse(request, reply);
-#endif
+        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -457,28 +856,7 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McGetsReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
-        if (needServerLoad) {
-          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
-        }
-
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceRequest(request, rpcOptions);
-#endif
-        reply = thriftClient->sync_complete_mcGets(
-            rpcOptions, request);
-        if (rpcStatsContext && reply.hasValue()) {
-            auto& stats = reply->responseContext.rpcSizeStats;
-            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
-            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
-            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-            if (needServerLoad) {
-                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
-            }
-        }
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceResponse(request, reply);
-#endif
+        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -497,28 +875,7 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McIncrReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
-        if (needServerLoad) {
-          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
-        }
-
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceRequest(request, rpcOptions);
-#endif
-        reply = thriftClient->sync_complete_mcIncr(
-            rpcOptions, request);
-        if (rpcStatsContext && reply.hasValue()) {
-            auto& stats = reply->responseContext.rpcSizeStats;
-            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
-            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
-            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-            if (needServerLoad) {
-                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
-            }
-        }
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceResponse(request, reply);
-#endif
+        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -537,28 +894,7 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McLeaseGetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
-        if (needServerLoad) {
-          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
-        }
-
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceRequest(request, rpcOptions);
-#endif
-        reply = thriftClient->sync_complete_mcLeaseGet(
-            rpcOptions, request);
-        if (rpcStatsContext && reply.hasValue()) {
-            auto& stats = reply->responseContext.rpcSizeStats;
-            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
-            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
-            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-            if (needServerLoad) {
-                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
-            }
-        }
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceResponse(request, reply);
-#endif
+        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -577,28 +913,7 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McLeaseSetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
-        if (needServerLoad) {
-          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
-        }
-
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceRequest(request, rpcOptions);
-#endif
-        reply = thriftClient->sync_complete_mcLeaseSet(
-            rpcOptions, request);
-        if (rpcStatsContext && reply.hasValue()) {
-            auto& stats = reply->responseContext.rpcSizeStats;
-            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
-            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
-            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-            if (needServerLoad) {
-                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
-            }
-        }
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceResponse(request, reply);
-#endif
+        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -617,28 +932,7 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McMetagetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
-        if (needServerLoad) {
-          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
-        }
-
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceRequest(request, rpcOptions);
-#endif
-        reply = thriftClient->sync_complete_mcMetaget(
-            rpcOptions, request);
-        if (rpcStatsContext && reply.hasValue()) {
-            auto& stats = reply->responseContext.rpcSizeStats;
-            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
-            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
-            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-            if (needServerLoad) {
-                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
-            }
-        }
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceResponse(request, reply);
-#endif
+        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -657,28 +951,7 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McPrependReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
-        if (needServerLoad) {
-          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
-        }
-
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceRequest(request, rpcOptions);
-#endif
-        reply = thriftClient->sync_complete_mcPrepend(
-            rpcOptions, request);
-        if (rpcStatsContext && reply.hasValue()) {
-            auto& stats = reply->responseContext.rpcSizeStats;
-            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
-            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
-            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-            if (needServerLoad) {
-                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
-            }
-        }
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceResponse(request, reply);
-#endif
+        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -697,28 +970,7 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McReplaceReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
-        if (needServerLoad) {
-          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
-        }
-
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceRequest(request, rpcOptions);
-#endif
-        reply = thriftClient->sync_complete_mcReplace(
-            rpcOptions, request);
-        if (rpcStatsContext && reply.hasValue()) {
-            auto& stats = reply->responseContext.rpcSizeStats;
-            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
-            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
-            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-            if (needServerLoad) {
-                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
-            }
-        }
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceResponse(request, reply);
-#endif
+        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -737,28 +989,7 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McSetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
-        if (needServerLoad) {
-          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
-        }
-
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceRequest(request, rpcOptions);
-#endif
-        reply = thriftClient->sync_complete_mcSet(
-            rpcOptions, request);
-        if (rpcStatsContext && reply.hasValue()) {
-            auto& stats = reply->responseContext.rpcSizeStats;
-            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
-            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
-            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-            if (needServerLoad) {
-                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
-            }
-        }
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceResponse(request, reply);
-#endif
+        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -777,28 +1008,7 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McTouchReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
-        if (needServerLoad) {
-          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
-        }
-
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceRequest(request, rpcOptions);
-#endif
-        reply = thriftClient->sync_complete_mcTouch(
-            rpcOptions, request);
-        if (rpcStatsContext && reply.hasValue()) {
-            auto& stats = reply->responseContext.rpcSizeStats;
-            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
-            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
-            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-            if (needServerLoad) {
-                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
-            }
-        }
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceResponse(request, reply);
-#endif
+        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -817,28 +1027,7 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
-        if (needServerLoad) {
-          rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
-        }
-
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceRequest(request, rpcOptions);
-#endif
-        reply = thriftClient->sync_complete_mcVersion(
-            rpcOptions, request);
-        if (rpcStatsContext && reply.hasValue()) {
-            auto& stats = reply->responseContext.rpcSizeStats;
-            rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
-            rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
-            rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-            if (needServerLoad) {
-                extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
-            }
-        }
-#ifndef LIBMC_FBTRACE_DISABLE
-        traceResponse(request, reply);
-#endif
+        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
       } else {
         reply.emplaceException(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
@@ -852,9 +1041,6 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
  private:
   std::unique_ptr<thrift::MemcacheAsyncClient> thriftClient_;
   FlushList* flushList_{nullptr};
-
-  static inline const std::string kLoadHeader = "load";
-  static inline const std::string kDefaultLoadCounter = "default";
 
   thrift::MemcacheAsyncClient* getThriftClient() {
     if (UNLIKELY(!thriftClient_)) {
@@ -884,19 +1070,6 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportBase {
       }
       thriftClient_.reset();
     }
-  }
-  bool extractServerLoad(
-      const std::map<std::string, std::string>& headers,
-      ServerLoad& serverLoad) {
-    auto it = headers.find(kLoadHeader);
-    if (it != headers.end()) {
-      try {
-        serverLoad = ServerLoad(folly::to<int32_t>(it->second));
-        return true;
-      } catch (std::exception const&) {
-      }
-    }
-    return false;
   }
 };
 

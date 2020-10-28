@@ -88,7 +88,7 @@ using MemcacheRoutableRequests = carbon::List<
 struct MemcacheRouterInfo {
   using RouteHandleIf = MemcacheRouteHandleIf;
   using RouteHandlePtr = std::shared_ptr<RouteHandleIf>;
-  using RouterHandleAsyncClient = thrift::MemcacheAsyncClient;
+  using RouteHandleAsyncClient = thrift::MemcacheAsyncClient;
 
   static constexpr const char* name = "Memcache";
 

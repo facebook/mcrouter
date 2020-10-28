@@ -62,7 +62,7 @@ using CarbonThriftTestRoutableRequests = carbon::List<
 struct CarbonThriftTestRouterInfo {
   using RouteHandleIf = CarbonThriftTestRouteHandleIf;
   using RouteHandlePtr = std::shared_ptr<RouteHandleIf>;
-  using RouterHandleAsyncClient = thrift::CarbonThriftTestAsyncClient;
+  using RouteHandleAsyncClient = thrift::CarbonThriftTestAsyncClient;
 
   static constexpr const char* name = "CarbonThriftTest";
 

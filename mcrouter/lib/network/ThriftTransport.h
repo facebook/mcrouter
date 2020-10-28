@@ -72,17 +72,6 @@ class ThriftTransportBase : public Transport,
 
   double getRetransmitsPerKb() override final;
 
-#ifndef LIBMC_FBTRACE_DISABLE
-  void traceRequest(
-      const carbon::MessageCommon& request,
-      apache::thrift::RpcOptions& opts);
-
-  template <class Response>
-  void traceResponse(
-      const carbon::MessageCommon& request,
-      folly::Try<apache::thrift::RpcResponseComplete<Response>>& response);
-#endif
-
  protected:
   folly::EventBase& eventBase_;
   const ConnectionOptions connectionOptions_;
@@ -103,9 +92,6 @@ class ThriftTransportBase : public Transport,
 
   template <class ThriftClient>
   std::unique_ptr<ThriftClient> createThriftClient();
-
-  static apache::thrift::RpcOptions getRpcOptions(
-      std::chrono::milliseconds timeout);
 
   /**
    * Resets the client pointer.
@@ -136,16 +122,6 @@ class ThriftTransportBase : public Transport,
    * in case of error.
    */
   folly::AsyncTransportWrapper::UniquePtr getConnectingSocket();
-
-#ifndef LIBMC_FBTRACE_DISABLE
-  void FOLLY_NOINLINE traceRequestImpl(
-      const carbon::MessageCommon& request,
-      apache::thrift::RpcOptions& opts);
-
-  void FOLLY_NOINLINE traceResponseImpl(
-      carbon::MessageCommon& response,
-      const std::map<std::string, std::string>& responseHeaders);
-#endif
 };
 
 template <class RouterInfo>
@@ -167,6 +143,61 @@ class ThriftTransport : public ThriftTransportBase {
   void resetClient() override final {}
 
   void setFlushList(FlushList* /* flushList */) override final {}
+};
+
+class ThriftTransportUtil {
+ public:
+  static inline const std::string kLoadHeader = "load";
+  static inline const std::string kDefaultLoadCounter = "default";
+
+  ThriftTransportUtil() = default;
+  virtual ~ThriftTransportUtil() = default;
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  void traceRequest(
+      const carbon::MessageCommon& request,
+      apache::thrift::RpcOptions& opts);
+
+  template <class Response>
+  void traceResponse(
+      const carbon::MessageCommon& request,
+      folly::Try<apache::thrift::RpcResponseComplete<Response>>& response);
+#endif
+
+  static apache::thrift::RpcOptions getRpcOptions(
+      std::chrono::milliseconds timeout);
+
+  bool extractServerLoad(
+      const std::map<std::string, std::string>& headers,
+      ServerLoad& serverLoad) {
+    auto it = headers.find(kLoadHeader);
+    if (it != headers.end()) {
+      try {
+        serverLoad = ServerLoad(folly::to<int32_t>(it->second));
+        return true;
+      } catch (std::exception const&) {
+      }
+    }
+    return false;
+  }
+
+ private:
+#ifndef LIBMC_FBTRACE_DISABLE
+  void FOLLY_NOINLINE traceRequestImpl(
+      const carbon::MessageCommon& request,
+      apache::thrift::RpcOptions& opts);
+
+  void FOLLY_NOINLINE traceResponseImpl(
+      carbon::MessageCommon& response,
+      const std::map<std::string, std::string>& responseHeaders);
+#endif
+};
+
+template <class RouterInfo>
+class ThriftTransportMethods : public ThriftTransportUtil {
+ public:
+  ThriftTransportMethods() = default;
+  virtual ~ThriftTransportMethods() override = default;
 };
 
 } // namespace memcache

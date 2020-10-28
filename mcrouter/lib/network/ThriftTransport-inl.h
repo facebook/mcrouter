@@ -84,7 +84,7 @@ auto ThriftTransportBase::sendSyncImpl(F&& sendFunc) {
 
 #ifndef LIBMC_FBTRACE_DISABLE
 template <class Response>
-void ThriftTransportBase::traceResponse(
+void ThriftTransportUtil::traceResponse(
     const carbon::MessageCommon& request,
     folly::Try<apache::thrift::RpcResponseComplete<Response>>& reply) {
   if (UNLIKELY(

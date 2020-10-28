@@ -59,7 +59,7 @@ using HelloGoodbyeRoutableRequests = carbon::List<
 struct HelloGoodbyeRouterInfo {
   using RouteHandleIf = HelloGoodbyeRouteHandleIf;
   using RouteHandlePtr = std::shared_ptr<RouteHandleIf>;
-  using RouterHandleAsyncClient = thrift::HelloGoodbyeAsyncClient;
+  using RouteHandleAsyncClient = thrift::HelloGoodbyeAsyncClient;
 
   static constexpr const char* name = "HelloGoodbye";
 
