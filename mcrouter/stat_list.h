@@ -149,6 +149,10 @@ STAT(asynclog_duration_us, stat_double, 0, .dbl = 0.0)
 STUI(proxy_reqs_processing, 0, 1)
 // Proxy requests queued up and not routed yet
 STUI(proxy_reqs_waiting, 0, 1)
+// At least one MPMC queue between clients and proxy is full
+STUI(proxy_queue_full, 0, 1)
+// All MPMC queues between clients and proxies are full
+STUI(proxy_queues_all_full, 0, 1)
 STAT(client_queue_notify_period, stat_double, 0, .dbl = 0.0)
 #undef GROUP
 #define GROUP ods_stats | detailed_stats

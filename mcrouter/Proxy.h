@@ -135,6 +135,8 @@ class Proxy : public ProxyBase {
     requestStats().advanceBin();
   }
 
+  bool messageQueueFull() const noexcept override;
+
  private:
   // If true, processing new requests is not safe.
   bool beingDestroyed_{false};

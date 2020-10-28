@@ -553,6 +553,18 @@ void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
         stats,
         asynclog_duration_us_stat,
         pr->stats().asyncLogDurationUs().value());
+    stat_set(
+        stats,
+        proxy_queue_full_stat,
+        std::max(
+            stat_get_uint64(stats, proxy_queue_full_stat),
+            static_cast<uint64_t>(pr->messageQueueFull() ? 1 : 0)));
+    stat_set(
+        stats,
+        proxy_queues_all_full_stat,
+        std::min(
+            i ? stat_get_uint64(stats, proxy_queue_full_stat) : 0,
+            static_cast<uint64_t>(pr->messageQueueFull() ? 1 : 0)));
   }
 
   if (router.opts().num_proxies > 0) {

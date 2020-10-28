@@ -417,6 +417,11 @@ Proxy<RouterInfo>::rateLimited(ProxyRequestPriority priority, const Request&)
   return true;
 }
 
+template <class RouterInfo>
+bool Proxy<RouterInfo>::messageQueueFull() const noexcept {
+  return messageQueue_->isFull();
+}
+
 } // namespace mcrouter
 } // namespace memcache
 } // namespace facebook

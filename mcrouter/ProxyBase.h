@@ -120,6 +120,8 @@ class ProxyBase {
     return isProxyThread_;
   }
 
+  virtual bool messageQueueFull() const noexcept = 0;
+
  private:
   CarbonRouterInstanceBase& router_;
   const size_t id_{0};

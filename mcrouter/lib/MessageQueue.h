@@ -287,6 +287,10 @@ class MessageQueue {
     }
   }
 
+  bool isFull() const noexcept {
+    return queue_.isFull();
+  }
+
  private:
   static constexpr int64_t kWakeupEveryMs = 2;
   folly::MPMCQueue<T> queue_;
