@@ -80,7 +80,7 @@ std::shared_ptr<fizz::server::FizzServerContext> createFizzServerContext(
     bool preferOcbCipher,
     wangle::TLSTicketKeySeeds* ticketKeySeeds) {
   initSSL();
-  auto certMgr = std::make_unique<fizz::server::CertManager>();
+  auto certMgr = std::make_shared<fizz::server::CertManager>();
   try {
     auto selfCert =
         fizz::CertUtils::makeSelfCert(certData.str(), keyData.str());
@@ -102,7 +102,7 @@ std::shared_ptr<fizz::server::FizzServerContext> createFizzServerContext(
   ctx->setSupportedPskModes(
       {fizz::PskKeyExchangeMode::psk_ke, fizz::PskKeyExchangeMode::psk_dhe_ke});
   ctx->setVersionFallbackEnabled(true);
-  ctx->setCertManager(std::move(certMgr));
+  ctx->setCertManager(certMgr);
   if (!pemCaPath.empty()) {
     auto verifier = fizz::DefaultCertificateVerifier::createFromCAFile(
         fizz::VerificationContext::Server, pemCaPath.str());
@@ -136,7 +136,8 @@ std::shared_ptr<fizz::server::FizzServerContext> createFizzServerContext(
     for (const auto& secret : ticketKeySeeds->newSeeds) {
       ticketSecrets.push_back(folly::StringPiece(secret));
     }
-    auto cipher = std::make_shared<fizz::server::AES128TicketCipher>();
+    auto cipher = std::make_shared<fizz::server::AES128TicketCipher>(
+        ctx->getFactoryPtr(), std::move(certMgr));
     cipher->setTicketSecrets(std::move(ticketSecrets));
     fizz::server::TicketPolicy policy;
     policy.setTicketValidity(std::chrono::seconds(kSessionLifeTime));
