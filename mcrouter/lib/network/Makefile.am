@@ -18,7 +18,6 @@ mock_mc_server_LDADD = \
 	-lrpcmetadata \
 	-lasync \
 	-lconcurrency \
-	-lprotocol \
 	-lthrift-core \
 	-lfmt \
 	-lfizz \
@@ -40,7 +39,6 @@ mock_mc_thrift_server_LDADD = \
 	-lrpcmetadata \
 	-lasync \
 	-lconcurrency \
-	-lprotocol \
 	-lthrift-core \
 	-lfmt \
 	-lfizz \
@@ -62,7 +60,6 @@ mock_mc_server_dual_LDADD = \
 	-lrpcmetadata \
 	-lasync \
 	-lconcurrency \
-	-lprotocol \
 	-lthrift-core \
 	-lfmt \
 	-lfizz \

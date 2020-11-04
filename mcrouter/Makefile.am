@@ -233,7 +233,6 @@ mcrouter_LDADD = \
   -lrpcmetadata \
   -lasync \
   -lconcurrency \
-  -lprotocol \
   -lthrift-core \
 	-lfmt \
   -lwangle \

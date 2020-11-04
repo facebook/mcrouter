@@ -37,7 +37,6 @@ mcpiper_LDADD = \
 	-lrpcmetadata \
 	-lasync \
 	-lconcurrency \
-	-lprotocol \
 	-lthrift-core \
 	-lfizz \
 	-lfmt \
