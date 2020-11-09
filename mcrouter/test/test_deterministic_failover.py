@@ -215,3 +215,32 @@ class TestDeterministicFailoverAllSleepServersFailureDomains(McrouterTestCase):
             self.assertEqual(int(stats["failover_num_failed_domain_collisions"]),
                     expected_values[i][3])
             self.assertEqual(int(stats["failover_all_failed_count"]), i + 1)
+
+
+class TestDeterministicFailoverSmallerFailoverPool(McrouterTestCase):
+    config = './mcrouter/test/test_deterministic_failover5.json'
+    null_route_config = './mcrouter/test/test_nullroute.json'
+    mcrouter_server_extra_args = []
+    extra_args = [
+        '--timeouts-until-tko=1',
+        '--disable-miss-on-get-errors',
+        '--num-proxies=1']
+
+    def setUp(self):
+        self.mc = []
+        # configure SleepServer for all servers
+        for _i in range(11):
+            self.mc.append(SleepServer())
+            self.add_server(self.mc[_i])
+
+        self.mcrouter = self.add_mcrouter(
+            self.config,
+            extra_args=self.extra_args)
+
+    def test_deterministic_failover(self):
+        for i in range(0, 10):
+            key = 'key_{}_abc_{}'.format(i, 11 * i)
+            self.mcrouter.get(key)
+            time.sleep(1)
+            stats = self.mcrouter.stats('all')
+            self.assertEqual(int(stats["failover_num_failed_domain_collisions"]),0)
