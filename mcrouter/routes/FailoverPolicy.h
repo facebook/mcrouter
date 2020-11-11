@@ -406,15 +406,19 @@ class FailoverDeterministicOrderPolicy {
       // case
       constexpr uint32_t failureDomainThreshold = (3 * maxAttempts) / 4;
       // Use normal_reply_index only if ignore flag is false
-      if (!policy_.ignore_normal_reply_index_) {
-        if (index_ == 0) {
-          int32_t normal_reply_index =
-              mcrouter::fiber_local<RouterInfo>::getSelectedIndex();
-          if (normal_reply_index >= 0) {
-            // Skip the destination selected by normal route by adding the
-            // index of the normal route destination to usedIndexes.
-            usedIndexes_.set(normal_reply_index + 1);
-          }
+      if (!policy_.ignore_normal_reply_index_ && index_ == 0) {
+        size_t normal_reply_index =
+            mcrouter::fiber_local<RouterInfo>::getSelectedIndex();
+        // Skip the destination selected by normal route by adding the
+        // index of the normal route destination to usedIndexes.
+        if ((normal_reply_index + 1) < usedIndexes_.size()) {
+          usedIndexes_.set(normal_reply_index + 1);
+        } else {
+          LOG_FAILURE(
+              "mcrouter",
+              failure::Category::kInvalidConfig,
+              "Normal Route and Failover route pool sizes seem to be different."
+              " ignore_normal_reply_index config flag should be used.");
         }
       }
       bool failedDomain = false;
