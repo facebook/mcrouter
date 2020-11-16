@@ -92,6 +92,11 @@ HelloGoodbyeRouterInfo::buildRouteMap() {
   return map;
 }
 
+/* static */ HelloGoodbyeRouterInfo::RouteHandleFactoryMapWithProxy
+HelloGoodbyeRouterInfo::buildRouteMapWithProxy() {
+  return RouteHandleFactoryMapWithProxy();
+}
+
 /* static */
 std::unique_ptr<ExtraRouteHandleProviderIf<HelloGoodbyeRouterInfo>>
 HelloGoodbyeRouterInfo::buildExtraProvider() {

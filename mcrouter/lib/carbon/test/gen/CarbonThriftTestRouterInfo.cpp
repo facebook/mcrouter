@@ -88,6 +88,11 @@ CarbonThriftTestRouterInfo::buildRouteMap() {
   return map;
 }
 
+/* static */ CarbonThriftTestRouterInfo::RouteHandleFactoryMapWithProxy
+CarbonThriftTestRouterInfo::buildRouteMapWithProxy() {
+  return RouteHandleFactoryMapWithProxy();
+}
+
 /* static */
 std::unique_ptr<ExtraRouteHandleProviderIf<CarbonThriftTestRouterInfo>>
 CarbonThriftTestRouterInfo::buildExtraProvider() {

@@ -38,6 +38,7 @@ class RouteHandleFactory;
 namespace mcrouter {
 template <class RouterInfo>
 class ExtraRouteHandleProviderIf;
+class ProxyBase;
 } // namespace mcrouter
 } // namespace memcache
 } // namespace facebook
@@ -73,7 +74,16 @@ struct CarbonTestRouterInfo {
           const folly::dynamic&)>,
       folly::Hash>;
 
+  using RouteHandleFactoryMapWithProxy = std::unordered_map<
+      folly::StringPiece,
+      std::function<RouteHandlePtr(
+          facebook::memcache::RouteHandleFactory<RouteHandleIf>&,
+          const folly::dynamic&,
+          facebook::memcache::mcrouter::ProxyBase&)>,
+      folly::Hash>;
+
   static RouteHandleFactoryMap buildRouteMap();
+  static RouteHandleFactoryMapWithProxy buildRouteMapWithProxy();
 
   static std::unique_ptr<facebook::memcache::mcrouter::
                              ExtraRouteHandleProviderIf<CarbonTestRouterInfo>>

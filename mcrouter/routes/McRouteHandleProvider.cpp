@@ -169,6 +169,13 @@ McRouteHandleProvider<MemcacheRouterInfo>::buildRouteMap() {
   return map;
 }
 
+template <>
+typename McRouteHandleProvider<
+    MemcacheRouterInfo>::RouteHandleFactoryMapWithProxy
+McRouteHandleProvider<MemcacheRouterInfo>::buildRouteMapWithProxy() {
+  return RouteHandleFactoryMapWithProxy();
+}
+
 } // namespace mcrouter
 } // namespace memcache
 } // namespace facebook

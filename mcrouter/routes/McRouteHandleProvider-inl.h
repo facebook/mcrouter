@@ -59,7 +59,8 @@ McRouteHandleProvider<RouterInfo>::McRouteHandleProvider(
     : proxy_(proxy),
       poolFactory_(poolFactory),
       extraProvider_(buildExtraProvider()),
-      routeMap_(buildCheckedRouteMap()) {}
+      routeMap_(buildCheckedRouteMap()),
+      routeMapWithProxy_(buildCheckedRouteMapWithProxy()) {}
 
 template <class RouterInfo>
 McRouteHandleProvider<RouterInfo>::~McRouteHandleProvider() {
@@ -566,6 +567,12 @@ McRouteHandleProvider<RouterInfo>::buildRouteMap() {
 }
 
 template <class RouterInfo>
+typename McRouteHandleProvider<RouterInfo>::RouteHandleFactoryMapWithProxy
+McRouteHandleProvider<RouterInfo>::buildRouteMapWithProxy() {
+  return RouterInfo::buildRouteMapWithProxy();
+}
+
+template <class RouterInfo>
 typename McRouteHandleProvider<RouterInfo>::RouteHandleFactoryMap
 McRouteHandleProvider<RouterInfo>::buildCheckedRouteMap() {
   typename McRouteHandleProvider<RouterInfo>::RouteHandleFactoryMap
@@ -591,10 +598,42 @@ McRouteHandleProvider<RouterInfo>::buildCheckedRouteMap() {
   return checkedRouteMap;
 }
 
+template <class RouterInfo>
+typename McRouteHandleProvider<RouterInfo>::RouteHandleFactoryMapWithProxy
+McRouteHandleProvider<RouterInfo>::buildCheckedRouteMapWithProxy() {
+  typename McRouteHandleProvider<RouterInfo>::RouteHandleFactoryMapWithProxy
+      checkedRouteMapWithProxy;
+
+  // Wrap all factory functions with a nullptr check. Note that there are still
+  // other code paths that could lead to a nullptr being returned from a
+  // route handle factory function, e.g., in makeShadow() and makeFailover()
+  // extra provider functions. So those code paths must be checked by other
+  // means.
+  for (auto it : buildRouteMapWithProxy()) {
+    checkedRouteMapWithProxy.emplace(
+        it.first,
+        [factoryFunc = std::move(it.second), rhName = it.first](
+            RouteHandleFactory<RouteHandleIf>& factory,
+            const folly::dynamic& json,
+            ProxyBase& proxy) {
+          auto rh = factoryFunc(factory, json, proxy);
+          checkLogic(rh != nullptr, "make{} returned nullptr", rhName);
+          return rh;
+        });
+  }
+
+  return checkedRouteMapWithProxy;
+}
+
 // TODO(@aap): Remove this override as soon as all route handles are migrated
 template <>
 typename McRouteHandleProvider<MemcacheRouterInfo>::RouteHandleFactoryMap
 McRouteHandleProvider<MemcacheRouterInfo>::buildRouteMap();
+
+template <>
+typename McRouteHandleProvider<
+    MemcacheRouterInfo>::RouteHandleFactoryMapWithProxy
+McRouteHandleProvider<MemcacheRouterInfo>::buildRouteMapWithProxy();
 
 template <class RouterInfo>
 std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>>
@@ -656,6 +695,12 @@ McRouteHandleProvider<RouterInfo>::create(
   auto it = routeMap_.find(type);
   if (it != routeMap_.end()) {
     return {it->second(factory, json)};
+  }
+
+  // Route handles that take ProxyBase as an argument
+  auto itr = routeMapWithProxy_.find(type);
+  if (itr != routeMapWithProxy_.end()) {
+    return {itr->second(factory, json, proxy_)};
   }
 
   /* returns empty vector if type is unknown */
