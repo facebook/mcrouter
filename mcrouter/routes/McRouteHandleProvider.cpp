@@ -51,6 +51,7 @@ namespace memcache {
 namespace mcrouter {
 
 using McRouteHandleFactory = RouteHandleFactory<McrouterRouteHandleIf>;
+using MemcacheRouterInfo = facebook::memcache::MemcacheRouterInfo;
 
 /**
  * This implementation is only for test purposes. Typically the users of
@@ -97,6 +98,17 @@ template <>
 std::unique_ptr<ExtraRouteHandleProviderIf<MemcacheRouterInfo>>
 McRouteHandleProvider<MemcacheRouterInfo>::buildExtraProvider() {
   return std::make_unique<McExtraRouteHandleProvider<MemcacheRouterInfo>>();
+}
+
+template <>
+std::shared_ptr<MemcacheRouterInfo::RouteHandleIf>
+McRouteHandleProvider<MemcacheRouterInfo>::createSRRoute(
+    RouteHandleFactory<MemcacheRouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json) {
+  if (makeSRRoute) {
+    return makeSRRoute(factory, json, proxy_);
+  }
+  throwLogic("SRRoute is not implemented for this router");
 }
 
 template <>
@@ -148,6 +160,10 @@ McRouteHandleProvider<MemcacheRouterInfo>::buildRouteMap() {
        }},
       {"RoutingGroupRoute", &makeRoutingGroupRoute<MemcacheRouterInfo>},
       {"StagingRoute", &makeStagingRoute},
+      {"SRRoute",
+       [this](McRouteHandleFactory& factory, const folly::dynamic& json) {
+         return createSRRoute(factory, json);
+       }},
       {"WarmUpRoute", &makeWarmUpRoute},
   };
   return map;

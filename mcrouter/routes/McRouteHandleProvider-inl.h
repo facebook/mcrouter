@@ -468,6 +468,14 @@ McRouteHandleProvider<RouterInfo>::createDestinationRoute(
 
 template <class RouterInfo>
 std::shared_ptr<typename RouterInfo::RouteHandleIf>
+McRouteHandleProvider<RouterInfo>::createSRRoute(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& /* unused */,
+    const folly::dynamic& /* unused */) {
+  throwLogic("SRRoute is not implemented for this router");
+}
+
+template <class RouterInfo>
+std::shared_ptr<typename RouterInfo::RouteHandleIf>
 McRouteHandleProvider<RouterInfo>::makePoolRoute(
     RouteHandleFactory<RouteHandleIf>& factory,
     const folly::dynamic& json) {

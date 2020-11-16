@@ -17,6 +17,7 @@
 #include <folly/json.h>
 
 #include "mcrouter/PoolFactory.h"
+#include "mcrouter/ProxyBase.h"
 #include "mcrouter/TkoTracker.h"
 #include "mcrouter/lib/config/RouteHandleProviderIf.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
@@ -28,6 +29,11 @@ struct dynamic;
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
+
+FOLLY_ATTR_WEAK MemcacheRouterInfo::RouteHandlePtr makeSRRoute(
+    RouteHandleFactory<MemcacheRouterInfo::RouteHandleIf>&,
+    const folly::dynamic& json,
+    ProxyBase& proxy);
 
 template <class RouteHandleIf>
 class ExtraRouteHandleProviderIf;
@@ -100,6 +106,10 @@ class McRouteHandleProvider
       const PoolFactory::PoolJson& json);
 
   RouteHandlePtr makePoolRoute(
+      RouteHandleFactory<RouteHandleIf>& factory,
+      const folly::dynamic& json);
+
+  RouteHandlePtr createSRRoute(
       RouteHandleFactory<RouteHandleIf>& factory,
       const folly::dynamic& json);
 
