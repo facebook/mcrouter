@@ -14,7 +14,6 @@
 
 #include <glog/logging.h>
 
-#include <artillery/artillery2/api/cpp/instrumentation/mcrouter/MCRouterCarbonShim.h>
 #include <folly/Conv.h>
 #include <folly/fibers/EventBaseLoopController.h>
 #include <folly/fibers/FiberManager.h>
@@ -339,7 +338,8 @@ void TestClient::sendGet(
     McGetRequest req(key);
     std::string traceId;
     if (req.key_ref()->fullKey() == "trace_id") {
-      traceId = facebook::tracing::intsToString({12345, 67890});
+      // Encoding of {12345, 67890}
+      traceId = "AAAAAAAADA5AAAAAAAAQky";
       req.setTraceContext(traceId);
     }
 
