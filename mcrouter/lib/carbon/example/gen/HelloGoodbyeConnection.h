@@ -111,5 +111,5 @@ using HelloGoodbyePooledConnection =
 using HelloGoodbyeInternalConnection =
     HelloGoodbyeConnectionImpl<carbon::InternalCarbonConnectionImpl<HelloGoodbyeConnection>>;
 using HelloGoodbyeExternalConnection =
-    HelloGoodbyeConnectionImpl<carbon::ExternalCarbonConnectionImpl>;
+    HelloGoodbyeConnectionImpl<carbon::ExternalCarbonConnectionImpl<HelloGoodbyeRouterInfo>>;
 } // namespace hellogoodbye

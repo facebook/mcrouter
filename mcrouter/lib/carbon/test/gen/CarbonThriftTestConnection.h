@@ -112,6 +112,6 @@ using CarbonThriftTestPooledConnection =
 using CarbonThriftTestInternalConnection =
     CarbonThriftTestConnectionImpl<carbon::InternalCarbonConnectionImpl<CarbonThriftTestConnection>>;
 using CarbonThriftTestExternalConnection =
-    CarbonThriftTestConnectionImpl<carbon::ExternalCarbonConnectionImpl>;
+    CarbonThriftTestConnectionImpl<carbon::ExternalCarbonConnectionImpl<CarbonThriftTestRouterInfo>>;
 } // namespace test
 } // namespace carbon

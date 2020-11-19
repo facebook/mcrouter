@@ -34,7 +34,7 @@ namespace detail {
 
 Client::Client(
     facebook::memcache::ConnectionOptions connectionOptions,
-    ExternalCarbonConnectionImpl::Options options)
+    ExternalCarbonConnectionImplOptions options)
     : connectionOptions_(connectionOptions),
       options_(options),
       client_(
@@ -94,7 +94,7 @@ ThreadInfo::ThreadInfo()
 
 std::weak_ptr<Client> ThreadInfo::createClient(
     facebook::memcache::ConnectionOptions connectionOptions,
-    ExternalCarbonConnectionImpl::Options options) {
+    ExternalCarbonConnectionImplOptions options) {
   return folly::fibers::await(
       [&](folly::fibers::Promise<std::weak_ptr<Client>> p) {
         fiberManager_.addTaskRemote([this,
@@ -139,7 +139,7 @@ class ThreadPool : public std::enable_shared_from_this<ThreadPool> {
   std::pair<std::weak_ptr<detail::Client>, std::weak_ptr<detail::ThreadInfo>>
   createClient(
       facebook::memcache::ConnectionOptions connectionOptions,
-      ExternalCarbonConnectionImpl::Options options) {
+      ExternalCarbonConnectionImplOptions options) {
     auto& threadInfo = [&]() -> detail::ThreadInfo& {
       std::lock_guard<std::mutex> lck(mutex_);
       // Select a thread in round robin fashion.
@@ -174,9 +174,9 @@ folly::Singleton<ThreadPool> threadPool;
 
 } // anonymous namespace
 
-ExternalCarbonConnectionImpl::Impl::Impl(
+Impl::Impl(
     facebook::memcache::ConnectionOptions connectionOptions,
-    ExternalCarbonConnectionImpl::Options options) {
+    ExternalCarbonConnectionImplOptions options) {
   auto pool = threadPool.try_get();
 
   auto info = pool->createClient(connectionOptions, options);
@@ -184,13 +184,13 @@ ExternalCarbonConnectionImpl::Impl::Impl(
   threadInfo_ = info.second;
 }
 
-ExternalCarbonConnectionImpl::Impl::~Impl() {
+Impl::~Impl() {
   if (auto threadInfo = threadInfo_.lock()) {
     threadInfo->releaseClient(client_);
   }
 }
 
-bool ExternalCarbonConnectionImpl::Impl::healthCheck() {
+bool Impl::healthCheck() {
   folly::fibers::Baton baton;
   bool ret = false;
 
@@ -215,21 +215,5 @@ bool ExternalCarbonConnectionImpl::Impl::healthCheck() {
 
   baton.wait();
   return ret;
-}
-
-ExternalCarbonConnectionImpl::ExternalCarbonConnectionImpl(
-    facebook::memcache::ConnectionOptions connectionOptions,
-    Options options)
-    : connectionOptions_(std::move(connectionOptions)),
-      options_(std::move(options)),
-      impl_(std::make_unique<Impl>(connectionOptions_, options_)) {}
-
-bool ExternalCarbonConnectionImpl::healthCheck() {
-  try {
-    return impl_->healthCheck();
-  } catch (const CarbonConnectionRecreateException&) {
-    impl_ = std::make_unique<Impl>(connectionOptions_, options_);
-    return impl_->healthCheck();
-  }
 }
 } // namespace carbon

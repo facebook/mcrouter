@@ -16,7 +16,7 @@ class Client {
  public:
   Client(
       facebook::memcache::ConnectionOptions connectionOptions,
-      ExternalCarbonConnectionImpl::Options options);
+      ExternalCarbonConnectionImplOptions options);
 
   ~Client();
 
@@ -36,7 +36,7 @@ class Client {
 
  private:
   const facebook::memcache::ConnectionOptions connectionOptions_;
-  const ExternalCarbonConnectionImpl::Options options_;
+  const ExternalCarbonConnectionImplOptions options_;
   facebook::memcache::AsyncMcClient client_;
   counting_sem_t outstandingReqsSem_;
 };
@@ -47,7 +47,7 @@ class ThreadInfo {
 
   std::weak_ptr<Client> createClient(
       facebook::memcache::ConnectionOptions connectionOptions,
-      ExternalCarbonConnectionImpl::Options options);
+      ExternalCarbonConnectionImplOptions options);
 
   void releaseClient(std::weak_ptr<Client> clientWeak);
 
@@ -66,11 +66,11 @@ class ThreadInfo {
 
 } // namespace detail
 
-class ExternalCarbonConnectionImpl::Impl {
+class Impl {
  public:
   Impl(
       facebook::memcache::ConnectionOptions connectionOptions,
-      ExternalCarbonConnectionImpl::Options options);
+      ExternalCarbonConnectionImplOptions options);
   ~Impl();
   bool healthCheck();
 
@@ -187,8 +187,9 @@ class ExternalCarbonConnectionImpl::Impl {
   std::weak_ptr<detail::Client> client_;
 };
 
+template <class RouterInfo>
 template <class Request>
-void ExternalCarbonConnectionImpl::sendRequestOne(
+void ExternalCarbonConnectionImpl<RouterInfo>::sendRequestOne(
     const Request& req,
     RequestCb<Request> cb) {
   try {
@@ -199,8 +200,9 @@ void ExternalCarbonConnectionImpl::sendRequestOne(
   }
 }
 
+template <class RouterInfo>
 template <class Request>
-void ExternalCarbonConnectionImpl::sendRequestMulti(
+void ExternalCarbonConnectionImpl<RouterInfo>::sendRequestMulti(
     std::vector<std::reference_wrapper<const Request>>&& reqs,
     RequestCb<Request> cb) {
   try {
@@ -208,6 +210,24 @@ void ExternalCarbonConnectionImpl::sendRequestMulti(
   } catch (const CarbonConnectionRecreateException&) {
     impl_ = std::make_unique<Impl>(connectionOptions_, options_);
     return impl_->sendRequestMulti(std::move(reqs), std::move(cb));
+  }
+}
+
+template <class RouterInfo>
+ExternalCarbonConnectionImpl<RouterInfo>::ExternalCarbonConnectionImpl(
+    facebook::memcache::ConnectionOptions connectionOptions,
+    ExternalCarbonConnectionImplOptions options)
+    : connectionOptions_(std::move(connectionOptions)),
+      options_(std::move(options)),
+      impl_(std::make_unique<Impl>(connectionOptions_, options_)) {}
+
+template <class RouterInfo>
+bool ExternalCarbonConnectionImpl<RouterInfo>::healthCheck() {
+  try {
+    return impl_->healthCheck();
+  } catch (const CarbonConnectionRecreateException&) {
+    impl_ = std::make_unique<Impl>(connectionOptions_, options_);
+    return impl_->healthCheck();
   }
 }
 

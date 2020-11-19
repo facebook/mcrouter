@@ -384,6 +384,6 @@ using MemcachePooledConnection =
 using MemcacheInternalConnection =
     MemcacheConnectionImpl<carbon::InternalCarbonConnectionImpl<MemcacheConnection>>;
 using MemcacheExternalConnection =
-    MemcacheConnectionImpl<carbon::ExternalCarbonConnectionImpl>;
+    MemcacheConnectionImpl<carbon::ExternalCarbonConnectionImpl<MemcacheRouterInfo>>;
 } // namespace memcache
 } // namespace facebook

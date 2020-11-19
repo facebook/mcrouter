@@ -144,6 +144,6 @@ using CarbonTestPooledConnection =
 using CarbonTestInternalConnection =
     CarbonTestConnectionImpl<carbon::InternalCarbonConnectionImpl<CarbonTestConnection>>;
 using CarbonTestExternalConnection =
-    CarbonTestConnectionImpl<carbon::ExternalCarbonConnectionImpl>;
+    CarbonTestConnectionImpl<carbon::ExternalCarbonConnectionImpl<CarbonTestRouterInfo>>;
 } // namespace test
 } // namespace carbon

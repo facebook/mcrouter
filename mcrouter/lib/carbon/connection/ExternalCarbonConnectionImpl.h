@@ -19,19 +19,21 @@
 
 namespace carbon {
 
+class Impl;
+
+struct ExternalCarbonConnectionImplOptions {
+  size_t maxOutstanding{0};
+  bool maxOutstandingError{false};
+  uint16_t portOverride{0};
+};
+
+template <class RouterInfo>
 class ExternalCarbonConnectionImpl {
  public:
-  struct Options {
-    Options() {}
-
-    size_t maxOutstanding{0};
-    bool maxOutstandingError{false};
-    uint16_t portOverride{0};
-  };
-
   explicit ExternalCarbonConnectionImpl(
       facebook::memcache::ConnectionOptions connectionOptions,
-      Options options = Options());
+      ExternalCarbonConnectionImplOptions options =
+          ExternalCarbonConnectionImplOptions());
 
   ~ExternalCarbonConnectionImpl() = default;
 
@@ -64,9 +66,8 @@ class ExternalCarbonConnectionImpl {
 
  private:
   facebook::memcache::ConnectionOptions connectionOptions_;
-  Options options_;
+  ExternalCarbonConnectionImplOptions options_;
 
-  class Impl;
   std::unique_ptr<Impl> impl_;
 };
 } // namespace carbon
