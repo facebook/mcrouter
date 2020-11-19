@@ -56,8 +56,9 @@ void sendSyncHelper(
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad) {
-        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      if (needServerLoad && reply->responseContext.serverLoad) {
+        rpcStatsContext->serverLoad = ServerLoad(
+            static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
   }
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -86,8 +87,9 @@ void sendSyncHelper(
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad) {
-        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      if (needServerLoad && reply->responseContext.serverLoad) {
+        rpcStatsContext->serverLoad = ServerLoad(
+            static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
   }
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -116,8 +118,9 @@ void sendSyncHelper(
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad) {
-        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      if (needServerLoad && reply->responseContext.serverLoad) {
+        rpcStatsContext->serverLoad = ServerLoad(
+            static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
   }
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -146,8 +149,9 @@ void sendSyncHelper(
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad) {
-        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      if (needServerLoad && reply->responseContext.serverLoad) {
+        rpcStatsContext->serverLoad = ServerLoad(
+            static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
   }
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -176,8 +180,9 @@ void sendSyncHelper(
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad) {
-        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      if (needServerLoad && reply->responseContext.serverLoad) {
+        rpcStatsContext->serverLoad = ServerLoad(
+            static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
   }
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -206,8 +211,9 @@ void sendSyncHelper(
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad) {
-        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      if (needServerLoad && reply->responseContext.serverLoad) {
+        rpcStatsContext->serverLoad = ServerLoad(
+            static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
   }
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -236,8 +242,9 @@ void sendSyncHelper(
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad) {
-        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      if (needServerLoad && reply->responseContext.serverLoad) {
+        rpcStatsContext->serverLoad = ServerLoad(
+            static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
   }
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -266,8 +273,9 @@ void sendSyncHelper(
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad) {
-        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      if (needServerLoad && reply->responseContext.serverLoad) {
+        rpcStatsContext->serverLoad = ServerLoad(
+            static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
   }
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -296,8 +304,9 @@ void sendSyncHelper(
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad) {
-        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      if (needServerLoad && reply->responseContext.serverLoad) {
+        rpcStatsContext->serverLoad = ServerLoad(
+            static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
   }
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -326,8 +335,9 @@ void sendSyncHelper(
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad) {
-        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      if (needServerLoad && reply->responseContext.serverLoad) {
+        rpcStatsContext->serverLoad = ServerLoad(
+            static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
   }
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -356,8 +366,9 @@ void sendSyncHelper(
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad) {
-        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      if (needServerLoad && reply->responseContext.serverLoad) {
+        rpcStatsContext->serverLoad = ServerLoad(
+            static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
   }
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -386,8 +397,9 @@ void sendSyncHelper(
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad) {
-        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      if (needServerLoad && reply->responseContext.serverLoad) {
+        rpcStatsContext->serverLoad = ServerLoad(
+            static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
   }
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -416,8 +428,9 @@ void sendSyncHelper(
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad) {
-        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      if (needServerLoad && reply->responseContext.serverLoad) {
+        rpcStatsContext->serverLoad = ServerLoad(
+            static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
   }
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -446,8 +459,9 @@ void sendSyncHelper(
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad) {
-        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      if (needServerLoad && reply->responseContext.serverLoad) {
+        rpcStatsContext->serverLoad = ServerLoad(
+            static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
   }
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -476,8 +490,9 @@ void sendSyncHelper(
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad) {
-        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      if (needServerLoad && reply->responseContext.serverLoad) {
+        rpcStatsContext->serverLoad = ServerLoad(
+            static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
   }
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -506,8 +521,9 @@ void sendSyncHelper(
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad) {
-        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      if (needServerLoad && reply->responseContext.serverLoad) {
+        rpcStatsContext->serverLoad = ServerLoad(
+            static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
   }
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -536,8 +552,9 @@ void sendSyncHelper(
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad) {
-        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      if (needServerLoad && reply->responseContext.serverLoad) {
+        rpcStatsContext->serverLoad = ServerLoad(
+            static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
   }
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -566,8 +583,9 @@ void sendSyncHelper(
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad) {
-        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      if (needServerLoad && reply->responseContext.serverLoad) {
+        rpcStatsContext->serverLoad = ServerLoad(
+            static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
   }
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -596,8 +614,9 @@ void sendSyncHelper(
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad) {
-        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      if (needServerLoad && reply->responseContext.serverLoad) {
+        rpcStatsContext->serverLoad = ServerLoad(
+            static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
   }
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -626,8 +645,9 @@ void sendSyncHelper(
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad) {
-        extractServerLoad(reply->responseContext.headers, rpcStatsContext->serverLoad);
+      if (needServerLoad && reply->responseContext.serverLoad) {
+        rpcStatsContext->serverLoad = ServerLoad(
+            static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
   }
 #ifndef LIBMC_FBTRACE_DISABLE

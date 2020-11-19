@@ -167,20 +167,6 @@ class ThriftTransportUtil {
   static apache::thrift::RpcOptions getRpcOptions(
       std::chrono::milliseconds timeout);
 
-  bool extractServerLoad(
-      const std::map<std::string, std::string>& headers,
-      ServerLoad& serverLoad) {
-    auto it = headers.find(kLoadHeader);
-    if (it != headers.end()) {
-      try {
-        serverLoad = ServerLoad(folly::to<int32_t>(it->second));
-        return true;
-      } catch (std::exception const&) {
-      }
-    }
-    return false;
-  }
-
  private:
 #ifndef LIBMC_FBTRACE_DISABLE
   void FOLLY_NOINLINE traceRequestImpl(
