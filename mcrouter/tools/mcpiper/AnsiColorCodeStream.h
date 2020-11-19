@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <ostream>
 #include "mcrouter/tools/mcpiper/StyleAwareStream.h"
 
 namespace facebook {
