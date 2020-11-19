@@ -71,6 +71,9 @@ class IsCarbonUnion {
   static constexpr decltype(&C::which, std::true_type()) check(int);
 
   template <class C>
+  static constexpr decltype(&C::getType, std::true_type()) check(int);
+
+  template <class C>
   static constexpr std::false_type check(...);
 
  public:
