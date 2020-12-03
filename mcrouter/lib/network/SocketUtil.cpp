@@ -243,6 +243,11 @@ folly::SocketOptionMap createSocketOptions(
     const ConnectionOptions& connectionOptions) {
   folly::SocketOptionMap options;
 
+  if (connectionOptions.accessPoint->isUnixDomainSocket()) {
+    // TCP socket options are not supported by a Unix domain socket transport.
+    return options;
+  }
+
   createTCPKeepAliveOptions(
       options,
       connectionOptions.tcpKeepAliveCount,
