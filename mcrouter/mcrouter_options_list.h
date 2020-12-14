@@ -341,7 +341,7 @@ MCROUTER_OPTION_TOGGLE(
 MCROUTER_OPTION_TOGGLE(
     ssl_service_identity_authorization_enforce,
     false,
-    "ssl-service-identity-authorization-log",
+    "ssl-service-identity-authorization-enforce",
     no_short,
     "The configured service identity of the client is compared against the "
     "service identity of the server in the peer certificate. Fail to "
