@@ -530,17 +530,20 @@ TEST_F(EagerShardSelectionRouteTest, customJsonmRoute) {
         } else if (iterations == 2) {
           EXPECT_EQ(
               "host|pool=pool1|id=0|"
-              "ap=localhost:12345:caret:plain:notcompressed|timeout=1000ms",
+              "ap=localhost:12345:caret:plain:notcompressed|timeout=1000ms"
+              "|keep_routing_prefix=false",
               r.routeName());
         } else if (iterations == 3) {
           EXPECT_EQ(
               "host|pool=pool1|id=1|"
-              "ap=localhost:12325:caret:plain:notcompressed|timeout=1000ms",
+              "ap=localhost:12325:caret:plain:notcompressed|timeout=1000ms"
+              "|keep_routing_prefix=false",
               r.routeName());
         } else if (iterations == 4) {
           EXPECT_EQ(
               "host|pool=pool2|id=0|"
-              "ap=localhost:12302:caret:plain:notcompressed|timeout=1000ms",
+              "ap=localhost:12302:caret:plain:notcompressed|timeout=1000ms"
+              "|keep_routing_prefix=false",
               r.routeName());
         }
       }};
@@ -611,34 +614,40 @@ TEST_F(EagerShardSelectionRouteTest, customJsonmRoute_twice) {
         } else if (iterations == 2) {
           EXPECT_EQ(
               "host|pool=pool1|id=0|"
-              "ap=localhost:12345:caret:plain:notcompressed|timeout=1000ms",
+              "ap=localhost:12345:caret:plain:notcompressed|timeout=1000ms"
+              "|keep_routing_prefix=false",
               r.routeName());
         } else if (iterations == 3) {
           EXPECT_EQ(
               "host|pool=pool1|id=1|"
-              "ap=localhost:12325:caret:plain:notcompressed|timeout=1000ms",
+              "ap=localhost:12325:caret:plain:notcompressed|timeout=1000ms"
+              "|keep_routing_prefix=false",
               r.routeName());
         } else if (iterations == 4) {
           EXPECT_EQ(
               "host|pool=pool2|id=0|"
-              "ap=localhost:12302:caret:plain:notcompressed|timeout=1000ms",
+              "ap=localhost:12302:caret:plain:notcompressed|timeout=1000ms"
+              "|keep_routing_prefix=false",
               r.routeName());
         } else if (iterations == 5) {
           EXPECT_EQ("null", r.routeName());
         } else if (iterations == 6) {
           EXPECT_EQ(
               "host|pool=pool1|id=0|"
-              "ap=localhost:12345:caret:plain:notcompressed|timeout=1000ms",
+              "ap=localhost:12345:caret:plain:notcompressed|timeout=1000ms"
+              "|keep_routing_prefix=false",
               r.routeName());
         } else if (iterations == 7) {
           EXPECT_EQ(
               "host|pool=pool1|id=1|"
-              "ap=localhost:12325:caret:plain:notcompressed|timeout=1000ms",
+              "ap=localhost:12325:caret:plain:notcompressed|timeout=1000ms"
+              "|keep_routing_prefix=false",
               r.routeName());
         } else if (iterations == 8) {
           EXPECT_EQ(
               "host|pool=pool2|id=0|"
-              "ap=localhost:12302:caret:plain:notcompressed|timeout=1000ms",
+              "ap=localhost:12302:caret:plain:notcompressed|timeout=1000ms"
+              "|keep_routing_prefix=false",
               r.routeName());
         }
       }};

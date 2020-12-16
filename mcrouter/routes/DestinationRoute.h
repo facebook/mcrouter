@@ -54,11 +54,12 @@ class DestinationRoute {
  public:
   std::string routeName() const {
     return folly::sformat(
-        "host|pool={}|id={}|ap={}|timeout={}ms",
+        "host|pool={}|id={}|ap={}|timeout={}ms|keep_routing_prefix={}",
         poolName_,
         indexInPool_,
         destination_->accessPoint()->toString(),
-        timeout_.count());
+        timeout_.count(),
+        keepRoutingPrefix_);
   }
 
   /**
