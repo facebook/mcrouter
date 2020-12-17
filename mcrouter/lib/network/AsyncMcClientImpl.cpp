@@ -478,8 +478,10 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
   if (isAsyncSSLSocketMech(mech) && authorizationCallbacks_.onAuthorize &&
       !authorizationCallbacks_.onAuthorize(*socket_, connectionOptions_)) {
     if (connectionOptions_.securityOpts.sslAuthorizationEnforce) {
-      // Enforcement is enabled, close the connection.
-      closeNow();
+      // Enforcement is enabled, fail all requests and close connection.
+      isAborting_ = true;
+      processShutdown("Authorization failure");
+      isAborting_ = false;
       return;
     }
   }

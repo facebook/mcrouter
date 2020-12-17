@@ -80,8 +80,10 @@ static bool ValidateNumRequestsPerClient(const char* flagname, int32_t value) {
 }
 
 DEFINE_string(flavor, "web", "Flavor to use in CarbonRouterInstance");
+DEFINE_string(routing_config_override, "", "Override flavor routing config");
 DEFINE_int32(num_proxies, 2, "Number of mcrouter proxy threads to create");
 DEFINE_int32(num_clients, 10, "Number of clients to create");
+DEFINE_int32(num_client_threads, 1, "Number of client threads to create");
 DEFINE_int32(num_req_per_client, 10, "Number of requests per client to send");
 DEFINE_bool(
     thread_affinity,
@@ -92,6 +94,10 @@ DEFINE_bool(
     ssl_service_identity_authorization_log,
     false,
     "Enables/disables client authorization logging");
+DEFINE_bool(
+    ssl_service_identity_authorization_enforce,
+    false,
+    "Enables/disables client authorization enforcement");
 DEFINE_validator(num_proxies, &ValidateNumProxies);
 DEFINE_validator(num_clients, &ValidateNumClients);
 DEFINE_validator(num_req_per_client, &ValidateNumRequestsPerClient);
@@ -116,6 +122,16 @@ int main(int argc, char** argv) {
   } else {
     flavorOverrides.emplace("ssl_service_identity_authorization_log", "false");
   }
+  if (FLAGS_ssl_service_identity_authorization_enforce) {
+    flavorOverrides.emplace(
+        "ssl_service_identity_authorization_enforce", "true");
+  } else {
+    flavorOverrides.emplace(
+        "ssl_service_identity_authorization_enforce", "false");
+  }
+  if (!FLAGS_routing_config_override.empty()) {
+    flavorOverrides.emplace("config", "file:" + FLAGS_routing_config_override);
+  }
 
   std::shared_ptr<CarbonRouterInstance<MemcacheRouterInfo>> router;
   try {
@@ -137,21 +153,29 @@ int main(int argc, char** argv) {
   };
 
   XLOGF(INFO, "Creating {} CarbonRouterClient", FLAGS_num_clients);
-  // Create CarbonRouterClient's
-  std::vector<Pointer> clients;
-  for (int i = 0; i < FLAGS_num_clients; ++i) {
-    clients.push_back(
-        router->createClient(0 /* max_outstanding_requests */, false));
+  std::vector<std::thread> threads;
+  for (int t = 0; t < FLAGS_num_client_threads; ++t) {
+    threads.push_back(std::thread([&]() {
+      std::vector<Pointer> clients;
+      for (int i = 0; i < FLAGS_num_clients; ++i) {
+        clients.push_back(
+            router->createClient(0 /* max_outstanding_requests */, false));
+      }
+      for (int i = 0; i < FLAGS_num_clients; ++i) {
+        XLOGF(
+            INFO,
+            "Sending {} requests to CarbonRouterClient {}",
+            FLAGS_num_req_per_client,
+            i);
+        for (int j = 0; j < FLAGS_num_req_per_client; ++j) {
+          sendGetRequest(clients[i].get(), folly::sformat("key:{}{}", i, j));
+        }
+      }
+    }));
   }
-  for (int i = 0; i < FLAGS_num_clients; ++i) {
-    XLOGF(
-        INFO,
-        "Sending {} requests to CarbonRouterClient {}",
-        FLAGS_num_req_per_client,
-        i);
-    for (int j = 0; j < FLAGS_num_req_per_client; ++j) {
-      sendGetRequest(clients[i].get(), folly::sformat("key:{}{}", i, j));
-    }
+
+  for (auto& thread : threads) {
+    thread.join();
   }
 
   for (int i = 0; i < FLAGS_num_proxies; ++i) {
@@ -160,16 +184,18 @@ int main(int argc, char** argv) {
         "Total Connections proxy_{}: {}",
         i,
         router->getProxyBase(i)->stats().getValue(num_servers_up_stat));
-  }
-  if (FLAGS_ssl_service_identity_authorization_log) {
-    for (int i = 0; i < FLAGS_num_proxies; ++i) {
-      XLOGF(
-          INFO,
-          "Authorization Failures proxy_{}: {}",
-          i,
-          router->getProxyBase(i)->stats().getValue(
-              num_authorization_failures_stat));
-    }
+    XLOGF(
+        INFO,
+        "Authorization Successes proxy_{}: {}",
+        i,
+        router->getProxyBase(i)->stats().getValue(
+            num_authorization_successes_stat));
+    XLOGF(
+        INFO,
+        "Authorization Failures proxy_{}: {}",
+        i,
+        router->getProxyBase(i)->stats().getValue(
+            num_authorization_failures_stat));
   }
   return 0;
 }
