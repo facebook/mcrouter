@@ -422,6 +422,10 @@ class CarbonProtocolWriterImpl {
     appender_.insert(buf);
   }
 
+  void writeBinaryFieldLength(const uint32_t length) {
+    writeVarint(length);
+  }
+
   void writeFixedSize(const folly::ByteRange& range) {
     appender_.push(range.data(), range.size());
   }
