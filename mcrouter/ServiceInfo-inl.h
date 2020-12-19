@@ -84,7 +84,17 @@ class RouteHandlesCommandDispatcher {
           tree.append(std::string(level, ' ') + rh.routeName() + '\n');
           ++level;
         },
-        [&level]() { --level; });
+        [&level]() { --level; },
+        nullptr,
+        [&tree, &level](
+            const SRHosts& srHosts, const RequestClass& /* unused */) {
+          tree.append(
+              std::string(level + 1, ' ') +
+              "host: " + folly::to<std::string>(srHosts.front().getIp()) +
+              " port:" + folly::to<std::string>(srHosts.front().getPort()) +
+              '\n');
+          return true;
+        });
     if (!key.empty() && key[0] == '{' && key[key.size() - 1] == '}') {
       carbon::convertFromFollyDynamic(folly::parseJson(key), request);
     } else {

@@ -217,6 +217,10 @@ class CarbonRouterInstanceBase {
   }
 
  protected:
+  void resetMetadata() {
+    metadata_.reset();
+  }
+
   /**
    * Register this instance for periodic stats updates.
    */

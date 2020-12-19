@@ -9,8 +9,10 @@
 
 #include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/ForEachPossibleClient.h"
+#include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyRequestContextTyped.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/mcrouter_sr_deps.h"
 
 namespace facebook {
 namespace memcache {
@@ -208,6 +210,14 @@ CarbonRouterClient<RouterInfo>::findAffinitizedProxyIdx(
         if (!poolContext.isShadow) {
           hash = ap.getHash();
           // if it's not a shadow and got the hash, we should stop the traversal
+          return true;
+        }
+        return false;
+      },
+      [&hash](const SRHosts& srHosts, const RequestClass& requestClass) {
+        if (!requestClass.is(RequestClass::kShadow) &&
+            srHosts.front().getTwTaskId().has_value()) {
+          hash = srHosts.front().getTwTaskId().value();
           return true;
         }
         return false;

@@ -12,8 +12,10 @@
 #include <memory>
 #include <vector>
 
+#include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/lib/PoolContext.h"
 #include "mcrouter/lib/network/AccessPoint.h"
+#include "mcrouter/mcrouter_sr_deps.h"
 
 namespace facebook {
 namespace memcache {
@@ -53,16 +55,21 @@ class RouteHandleTraverser {
   using AccessPointFunc =
       std::function<bool(const AccessPoint&, const PoolContext&)>;
 
+  using RequestClass = mcrouter::RequestClass;
+  using SRHostsFunc = std::function<bool(const SRHosts&, const RequestClass&)>;
+
   /**
    * Creates a route handle traverser.
    */
   explicit RouteHandleTraverser(
       StartFunc start = nullptr,
       EndFunc end = nullptr,
-      AccessPointFunc accessPointFn = nullptr)
+      AccessPointFunc accessPointFn = nullptr,
+      SRHostsFunc srHostsFn = nullptr)
       : start_(std::move(start)),
         end_(std::move(end)),
-        accessPointFn_(std::move(accessPointFn)) {}
+        accessPointFn_(std::move(accessPointFn)),
+        srHostsFn_(std::move(srHostsFn)) {}
 
   template <class Request>
   bool operator()(const RouteHandleIf& r, const Request& req) const {
@@ -84,6 +91,18 @@ class RouteHandleTraverser {
     bool stopTraversal = false;
     if (accessPointFn_) {
       stopTraversal = accessPointFn_(accessPoint, poolContext);
+    }
+    return stopTraversal;
+  }
+
+  template <class Request>
+  bool operator()(
+      const SRHosts& srHosts,
+      const RequestClass& requestClass,
+      const Request&) const {
+    bool stopTraversal = false;
+    if (srHostsFn_ && !srHosts.empty()) {
+      stopTraversal = srHostsFn_(srHosts, requestClass);
     }
     return stopTraversal;
   }
@@ -134,6 +153,7 @@ class RouteHandleTraverser {
   StartFunc start_;
   EndFunc end_;
   AccessPointFunc accessPointFn_;
+  SRHostsFunc srHostsFn_;
   Options options_;
 
  public:

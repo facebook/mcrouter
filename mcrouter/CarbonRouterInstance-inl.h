@@ -267,15 +267,13 @@ CarbonRouterInstance<RouterInfo>::spinUp() {
     }
     proxyThreads_->removeObserver(executorObserver);
 
-    if (opts_.enable_service_router && proxyThreads_ != nullptr &&
-        mcrouter::gSRInitHook) {
+    if (opts_.enable_service_router && mcrouter::gSRInitHook) {
       setMetadata(mcrouter::gSRInitHook(proxyThreads_));
     }
 
     auto proxyResult = setupProxy(threadPoolEvbs);
     if (proxyResult.hasError()) {
-      return folly::makeUnexpected(
-          folly::sformat("Failed to create proxy: {}"));
+      return folly::makeUnexpected(std::string("Failed to create proxy"));
     }
 
     auto configResult = configure(builder.value());
@@ -341,8 +339,8 @@ CarbonRouterInstance<RouterInfo>::CarbonRouterInstance(
 template <class RouterInfo>
 void CarbonRouterInstance<RouterInfo>::shutdownImpl() noexcept {
   joinAuxiliaryThreads();
-  // Join all proxy threads
   proxyEvbs_.clear();
+  resetMetadata();
   if (proxyThreads_ && embeddedMode_) {
     proxyThreads_->join();
   }
