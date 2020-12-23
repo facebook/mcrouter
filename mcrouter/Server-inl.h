@@ -286,11 +286,14 @@ bool runServerDual(
     const McrouterStandaloneOptions& standaloneOpts,
     StandalonePreRunCb preRunCb) {
   using RequestHandlerType = RequestHandler<ServerOnRequest<RouterInfo>>;
+  std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool;
+  CarbonRouterInstance<RouterInfo>* router;
+  std::shared_ptr<AsyncMcServer> asyncMcServer;
+  std::shared_ptr<apache::thrift::ThriftServer> thriftServer;
   try {
     // Create thread pool for both AsyncMcServer and ThriftServer
-    std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool =
-        std::make_shared<folly::IOThreadPoolExecutor>(
-            mcrouterOpts.num_proxies, mcrouterOpts.num_proxies);
+    ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(
+        mcrouterOpts.num_proxies, mcrouterOpts.num_proxies);
 
     // Run observer and extract event bases
     auto executorObserver = std::make_shared<ExecutorObserver>();
@@ -300,12 +303,11 @@ bool runServerDual(
     ioThreadPool->removeObserver(executorObserver);
 
     // Create AsyncMcServer instance
-    std::shared_ptr<AsyncMcServer> asyncMcServer =
+    asyncMcServer =
         std::make_shared<AsyncMcServer>(detail::createAsyncMcServerOptions(
             mcrouterOpts, standaloneOpts, &evbs));
 
     // Create CarbonRouterInstance
-    CarbonRouterInstance<RouterInfo>* router;
     if (standaloneOpts.remote_thread) {
       router =
           CarbonRouterInstance<RouterInfo>::init("standalone", mcrouterOpts);
@@ -354,8 +356,7 @@ bool runServerDual(
 
     // Thrift server setup
     apache::thrift::server::observerFactory_.reset();
-    std::shared_ptr<apache::thrift::ThriftServer> thriftServer =
-        std::make_shared<apache::thrift::ThriftServer>();
+    thriftServer = std::make_shared<apache::thrift::ThriftServer>();
     thriftServer->setIOThreadPool(ioThreadPool);
     thriftServer->setNumCPUWorkerThreads(1);
 
@@ -472,7 +473,7 @@ bool runServerDual(
     LOG(INFO) << "Completed shutdown";
   } catch (const std::exception& e) {
     LOG(ERROR) << "Error creating dual mode AsyncMcServer: " << e.what();
-    return false;
+    exit(EXIT_FAILURE);
   }
   return true;
 }
