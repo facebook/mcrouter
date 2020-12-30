@@ -16,6 +16,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import ssl
 
 from mcrouter.test.config import McrouterGlobals
 
@@ -128,7 +129,8 @@ class MCProcess(ProcessBase):
             base_dir=None,
             max_retries=None,
             junk_fill=False,
-            pass_fds=()):
+            pass_fds=(),
+            use_ssl=False):
         self.fd = None
         if cmd is not None and '-s' in cmd:
             if os.path.exists(addr):
@@ -156,6 +158,7 @@ class MCProcess(ProcessBase):
         self.deletes = 0
         self.others = 0
         self.socket = None
+        self.use_ssl = use_ssl
         self.fd = None
 
     def _sendall(self, s):
@@ -182,7 +185,17 @@ class MCProcess(ProcessBase):
         return None
 
     def connect(self):
-        self.socket = socket.socket(self.addr_family, socket.SOCK_STREAM)
+        plain_socket = socket.socket(self.addr_family, socket.SOCK_STREAM)
+        if self.use_ssl:
+            context = ssl.create_default_context()
+            # This is for testing, therefore:
+            # - We don't need to verify hostname
+            # - We are using a self-signed cert
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+            self.socket = context.wrap_socket(plain_socket)
+        else:
+            self.socket = plain_socket
         self.socket.connect(self.addr)
         self.fd = self.socket.makefile(mode="rb")
 
