@@ -6,7 +6,7 @@
 
 # we assume the generate_key-inl.sh is in the same dir as this script
 ROOT=$(dirname "$0")
-. "$ROOT/generate_key-inl.sh"
+. "$ROOT/generate_keys-inl.sh"
 
 generateCert test Asox 127.0.0.1 ::1
 generateCert broken Asox 0.0.0.0 ::0
