@@ -30,11 +30,11 @@ class TestAsyncFilesAttr(McrouterTestCase):
         file_config_sources = os.path.join(
             stats_dir, self.stat_prefix + 'config_sources_info')
 
-        self.assertTrue(self.wait_for_file(file_stat, retries=14),
+        self.assertTrue(self.wait_for_file(file_stat, retries=10, interval=1),
                         "{} doesn't exist".format(file_stat))
-        self.assertTrue(self.wait_for_file(file_startup_options, retries=14),
+        self.assertTrue(self.wait_for_file(file_startup_options, retries=10, interval=1),
                         "{} doesn't exist".format(file_startup_options))
-        self.assertTrue(self.wait_for_file(file_config_sources, retries=14),
+        self.assertTrue(self.wait_for_file(file_config_sources, retries=10, interval=1),
                         "{} doesn't exist".format(file_config_sources))
 
         return (file_stat, file_startup_options, file_config_sources)

@@ -35,8 +35,7 @@ class McrouterTestCase(unittest.TestCase):
             time.sleep(interval)
 
     @classmethod
-    def wait_noempty_dir(cls, root, *, retries=0, interval=0.25):
-        interval = interval if interval > 0 else 0.25
+    def wait_noempty_dir(cls, root, *, retries=0, interval=1):
         while True:
             file_count = 0
             for _, _, files in os.walk(root):

@@ -17,7 +17,7 @@ class TestAsyncFiles(McrouterTestCase):
     config = './mcrouter/test/mcrouter_test_basic_1_1_1.json'
     extra_args = ['--stats-logging-interval', '100', '--use-asynclog-version2']
 
-    def check_stats(self, stats_dir, retries=5, sleep_interval=1):
+    def check_stats(self, stats_dir, retries=20, sleep_interval=1):
         file_stat = os.path.join(stats_dir, self.stat_prefix + 'stats')
         file_startup_options = os.path.join(
             stats_dir, self.stat_prefix + 'startup_options')
