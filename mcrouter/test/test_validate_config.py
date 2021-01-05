@@ -30,10 +30,10 @@ class TestValidateConfig(unittest.TestCase):
             '--validate-config',
         ] + self.extra_args)
         proc = Popen(cmd)
-        for _i in range(50):
+        for _i in range(10):
             if proc.poll() is not None:
                 break
-            time.sleep(0.1)
+            time.sleep(1)
 
         ret = proc.returncode
 
