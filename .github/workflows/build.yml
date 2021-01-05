@@ -1,0 +1,24 @@
+name: Build Workflow
+
+on:
+  push:
+    branches:
+      - master
+      - github_action
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Build dependencies
+        run: |
+          ./mcrouter/scripts/install_ubuntu_18.04.sh "$(pwd)"/mcrouter-install deps
+      - name: Build mcrouter
+        run: |
+          mkdir -p "$(pwd)"/mcrouter-install/install
+          ./mcrouter/scripts/install_ubuntu_18.04.sh "$(pwd)"/mcrouter-install mcrouter
