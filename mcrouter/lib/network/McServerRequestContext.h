@@ -162,7 +162,13 @@ class McServerRequestContext {
 void markContextAsTraced(McServerRequestContext& ctx);
 
 static_assert(
+#if defined(__i386__)
+    sizeof(McServerRequestContext) == 20,
+#elif defined(__ARM_ARCH) && !defined(__aarch64__)
+    sizeof(McServerRequestContext) == 24,
+#else
     sizeof(McServerRequestContext) == 32,
+#endif
     "Think twice before adding more fields to McServerRequestContext,"
     " doing so WILL have perf implications");
 
