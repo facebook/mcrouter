@@ -95,12 +95,12 @@ class TestWarmup2(McrouterTestCase):
         key_after_set_time = int(time.time())
 
         self.assertIn(int(self.mcrouter.metaget(k)['exptime']),
-                range(key_set_time + 100, key_after_set_time + 101))
+                range(key_set_time + 100, key_after_set_time + 105))
         self.assertTrue(self.mc_warm.delete(k))
         self.assertEqual(len(self.mcrouter.metaget(k)), 0)
         self.assertTrue(self.mc_cold.set(k, v, exptime=100))
         self.assertIn(int(self.mcrouter.metaget(k)['exptime']),
-                range(key_set_time + 100, key_after_set_time + 101))
+                range(key_set_time + 100, key_after_set_time + 105))
 
 
 class TestWarmup2AppendPrependTouch(TestWarmup2):
