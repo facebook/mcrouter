@@ -137,11 +137,12 @@ class TestMcrouterBasic(TestMcrouterBasicBase):
 
     def test_double_bind(self):
         mcr1 = self.get_mcrouter()
-        time.sleep(1)
         mcr2 = Mcrouter(self.null_route_config, port=mcr1.port)
-
-        time.sleep(4)
         self.assertTrue(mcr1.is_alive())
+        retries = 20
+        while mcr2.is_alive() and retries > 0:
+            retries = retries - 1
+            time.sleep(1)
         self.assertFalse(mcr2.is_alive())
 
     def test_set_exptime(self):
