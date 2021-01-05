@@ -361,6 +361,14 @@ class MockMcOnRequest {
     }
   }
 
+  template <class Context>
+  void onRequest(Context&& ctx, McVersionRequest&& /*req*/) {
+    McVersionReply reply(carbon::Result::OK);
+    reply.value_ref() =
+        folly::IOBuf(folly::IOBuf::COPY_BUFFER, "TestServer-1.0");
+    Context::reply(std::forward<Context>(ctx), std::move(reply));
+  }
+
   template <class Context, class Unsupported>
   void onRequest(Context&& ctx, Unsupported&&) {
     const std::string errorMessage = folly::sformat(

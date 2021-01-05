@@ -8,61 +8,46 @@
 #include "ExternalCarbonConnectionImpl.h"
 
 #include <memory>
-#include <mutex>
 #include <thread>
-#include <utility>
 
 #include <gflags/gflags.h>
 
-#include <folly/ScopeGuard.h>
 #include <folly/Singleton.h>
 #include <folly/fibers/EventBaseLoopController.h>
-#include <folly/fibers/FiberManager.h>
 #include <folly/io/async/EventBaseManager.h>
-#include <folly/synchronization/Baton.h>
 #include <folly/system/ThreadName.h>
 
-#include "mcrouter/lib/McResUtil.h"
+namespace carbon {
+namespace detail {
 
 DEFINE_int32(
     cacheclient_external_connection_threads,
     4,
     "Thread count for ExternalCarbonConnectionImpl");
 
-namespace carbon {
-namespace detail {
-
-Client::Client(
-    facebook::memcache::ConnectionOptions connectionOptions,
-    ExternalCarbonConnectionImplOptions options)
-    : connectionOptions_(connectionOptions),
-      options_(options),
-      client_(
-          folly::EventBaseManager::get()->getEventBase()->getVirtualEventBase(),
-          connectionOptions_) {
-  if (options_.maxOutstanding > 0) {
-    counting_sem_init(&outstandingReqsSem_, options_.maxOutstanding);
+ClientBase::ClientBase(
+    facebook::memcache::ConnectionOptions connOpts,
+    ExternalCarbonConnectionImplOptions opts)
+    : connectionOptions(std::move(connOpts)), options(opts) {
+  if (options.maxOutstanding > 0) {
+    counting_sem_init(&outstandingReqsSem, options.maxOutstanding);
   }
 }
 
-Client::~Client() {
-  closeNow();
+void ClientBase::closeNow() {
+  getClient().closeNow();
 }
 
-size_t Client::limitRequests(size_t requestsCount) {
-  if (options_.maxOutstanding == 0) {
+size_t ClientBase::limitRequests(size_t requestsCount) {
+  if (options.maxOutstanding == 0) {
     return requestsCount;
   }
 
-  if (options_.maxOutstandingError) {
-    return counting_sem_lazy_nonblocking(&outstandingReqsSem_, requestsCount);
+  if (options.maxOutstandingError) {
+    return counting_sem_lazy_nonblocking(&outstandingReqsSem, requestsCount);
   } else {
-    return counting_sem_lazy_wait(&outstandingReqsSem_, requestsCount);
+    return counting_sem_lazy_wait(&outstandingReqsSem, requestsCount);
   }
-}
-
-void Client::closeNow() {
-  client_.closeNow();
 }
 
 ThreadInfo::ThreadInfo()
@@ -92,32 +77,6 @@ ThreadInfo::ThreadInfo()
   baton.wait();
 }
 
-std::weak_ptr<Client> ThreadInfo::createClient(
-    facebook::memcache::ConnectionOptions connectionOptions,
-    ExternalCarbonConnectionImplOptions options) {
-  return folly::fibers::await(
-      [&](folly::fibers::Promise<std::weak_ptr<Client>> p) {
-        fiberManager_.addTaskRemote([this,
-                                     promise = std::move(p),
-                                     connectionOptions =
-                                         std::move(connectionOptions),
-                                     options]() mutable {
-          auto client = std::make_shared<Client>(connectionOptions, options);
-          clients_.insert(client);
-          promise.setValue(client);
-        });
-      });
-}
-
-void ThreadInfo::releaseClient(std::weak_ptr<Client> clientWeak) {
-  fiberManager_.addTaskRemote([this, clientWeak] {
-    if (auto client = clientWeak.lock()) {
-      clients_.erase(client);
-      client->closeNow();
-    }
-  });
-}
-
 ThreadInfo::~ThreadInfo() {
   fiberManager_.addTaskRemote([] {
     folly::EventBaseManager::get()->getEventBase()->terminateLoopSoon();
@@ -125,95 +84,18 @@ ThreadInfo::~ThreadInfo() {
   thread_.join();
 }
 
-} // namespace detail
-
 namespace {
-
-// Pool of threads, each of them has its own EventBase and FiberManager.
-class ThreadPool : public std::enable_shared_from_this<ThreadPool> {
- public:
-  ThreadPool() {
-    threads_.reserve(FLAGS_cacheclient_external_connection_threads);
-  }
-
-  std::pair<std::weak_ptr<detail::Client>, std::weak_ptr<detail::ThreadInfo>>
-  createClient(
-      facebook::memcache::ConnectionOptions connectionOptions,
-      ExternalCarbonConnectionImplOptions options) {
-    auto& threadInfo = [&]() -> detail::ThreadInfo& {
-      std::lock_guard<std::mutex> lck(mutex_);
-      // Select a thread in round robin fashion.
-      size_t threadId =
-          (nextThreadId_++) % FLAGS_cacheclient_external_connection_threads;
-
-      // If it's not running yet, then we need to start it.
-      if (threads_.size() <= threadId) {
-        threads_.emplace_back(std::make_unique<detail::ThreadInfo>());
-      }
-      return *threads_[threadId];
-    }();
-
-    std::weak_ptr<detail::Client> clientPtr =
-        threadInfo.createClient(connectionOptions, options);
-
-    std::shared_ptr<detail::ThreadInfo> threadInfoShared(
-        shared_from_this(), &threadInfo);
-
-    return std::make_pair(
-        std::move(clientPtr),
-        std::weak_ptr<detail::ThreadInfo>(std::move(threadInfoShared)));
-  }
-
- private:
-  std::mutex mutex_;
-  size_t nextThreadId_{0};
-  std::vector<std::unique_ptr<detail::ThreadInfo>> threads_;
-};
-
-folly::Singleton<ThreadPool> threadPool;
-
+struct SingletonTag {};
 } // anonymous namespace
+folly::Singleton<ThreadPool, SingletonTag> threadPool{};
 
-Impl::Impl(
-    facebook::memcache::ConnectionOptions connectionOptions,
-    ExternalCarbonConnectionImplOptions options) {
-  auto pool = threadPool.try_get();
-
-  auto info = pool->createClient(connectionOptions, options);
-  client_ = info.first;
-  threadInfo_ = info.second;
+int ThreadPool::getThreadNum() {
+  return FLAGS_cacheclient_external_connection_threads;
 }
 
-Impl::~Impl() {
-  if (auto threadInfo = threadInfo_.lock()) {
-    threadInfo->releaseClient(client_);
-  }
+/*static*/ std::shared_ptr<ThreadPool> ThreadPool::getInstance() {
+  return threadPool.try_get();
 }
 
-bool Impl::healthCheck() {
-  folly::fibers::Baton baton;
-  bool ret = false;
-
-  auto clientWeak = client_;
-  auto threadInfo = threadInfo_.lock();
-  if (!threadInfo) {
-    throw CarbonConnectionRecreateException(
-        "Singleton<ThreadPool> was destroyed!");
-  }
-
-  threadInfo->addTaskRemote([clientWeak, &baton, &ret]() {
-    auto client = clientWeak.lock();
-    if (!client) {
-      baton.post();
-      return;
-    }
-
-    auto reply = client->sendRequest(facebook::memcache::McVersionRequest());
-    ret = !facebook::memcache::isErrorResult(*reply.result_ref());
-    baton.post();
-  });
-
-  baton.wait();
-  return ret;
-}
+} // namespace detail
 } // namespace carbon

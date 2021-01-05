@@ -16,9 +16,11 @@
 #include "mcrouter/lib/carbon/connection/CarbonConnectionUtil.h"
 #include "mcrouter/lib/fbi/counting_sem.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
+#include "mcrouter/lib/network/ThriftTransport.h"
 
 namespace carbon {
 
+template <class Transport>
 class Impl;
 
 struct ExternalCarbonConnectionImplOptions {
@@ -65,10 +67,14 @@ class ExternalCarbonConnectionImpl {
   }
 
  private:
+  void makeImpl();
+
   facebook::memcache::ConnectionOptions connectionOptions_;
   ExternalCarbonConnectionImplOptions options_;
 
-  std::unique_ptr<Impl> impl_;
+  std::unique_ptr<Impl<facebook::memcache::AsyncMcClient>> carbonImpl_;
+  std::unique_ptr<Impl<facebook::memcache::ThriftTransport<RouterInfo>>>
+      thriftImpl_;
 };
 } // namespace carbon
 

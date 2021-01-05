@@ -7,49 +7,107 @@
 
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <utility>
+
+#include <folly/ScopeGuard.h>
+#include <folly/fibers/FiberManager.h>
+#include <folly/synchronization/Baton.h>
+
+#include "mcrouter/lib/McResUtil.h"
+#include "mcrouter/lib/network/Transport.h"
 
 namespace carbon {
 namespace detail {
 
-class Client {
- public:
-  Client(
-      facebook::memcache::ConnectionOptions connectionOptions,
-      ExternalCarbonConnectionImplOptions options);
+DECLARE_int32(cacheclient_external_connection_threads);
 
-  ~Client();
+class ClientBase {
+ public:
+  ClientBase(
+      facebook::memcache::ConnectionOptions connOpts,
+      ExternalCarbonConnectionImplOptions opts);
+
+  virtual ~ClientBase() {}
+
+  void closeNow();
 
   size_t limitRequests(size_t requestsCount);
+
+  virtual facebook::memcache::Transport& getClient() = 0;
+
+ protected:
+  const facebook::memcache::ConnectionOptions connectionOptions;
+  const ExternalCarbonConnectionImplOptions options;
+  counting_sem_t outstandingReqsSem;
+};
+
+template <class Transport>
+class Client : public ClientBase {
+ public:
+  Client(
+      facebook::memcache::ConnectionOptions connOpts,
+      ExternalCarbonConnectionImplOptions opts)
+      : ClientBase(std::move(connOpts), std::move(opts)),
+        client_(
+            folly::EventBaseManager::get()
+                ->getEventBase()
+                ->getVirtualEventBase(),
+            connectionOptions) {}
+
+  virtual ~Client() override {
+    closeNow();
+  }
 
   template <class Request>
   facebook::memcache::ReplyT<Request> sendRequest(const Request& request) {
     SCOPE_EXIT {
       // New requests are scheduled as remote tasks, so we won't create
       // fibers for them, until this fiber is complete anyway.
-      counting_sem_post(&outstandingReqsSem_, 1);
+      counting_sem_post(&outstandingReqsSem, 1);
     };
-    return client_.sendSync(request, connectionOptions_.writeTimeout);
+    return client_.sendSync(request, connectionOptions.writeTimeout);
   }
 
-  void closeNow();
+  facebook::memcache::Transport& getClient() override {
+    return client_;
+  }
 
  private:
-  const facebook::memcache::ConnectionOptions connectionOptions_;
-  const ExternalCarbonConnectionImplOptions options_;
-  facebook::memcache::AsyncMcClient client_;
-  counting_sem_t outstandingReqsSem_;
+  Transport client_;
 };
 
 class ThreadInfo {
  public:
   ThreadInfo();
 
-  std::weak_ptr<Client> createClient(
+  template <class Transport>
+  std::weak_ptr<Client<Transport>> createClient(
       facebook::memcache::ConnectionOptions connectionOptions,
-      ExternalCarbonConnectionImplOptions options);
+      ExternalCarbonConnectionImplOptions options) {
+    return folly::fibers::await(
+        [&](folly::fibers::Promise<std::weak_ptr<Client<Transport>>> p) {
+          fiberManager_.addTaskRemote([this,
+                                       promise = std::move(p),
+                                       connectionOptions =
+                                           std::move(connectionOptions),
+                                       options]() mutable {
+            auto client =
+                std::make_shared<Client<Transport>>(connectionOptions, options);
+            clients_.insert(client);
+            promise.setValue(client);
+          });
+        });
+  }
 
-  void releaseClient(std::weak_ptr<Client> clientWeak);
+  void releaseClient(std::weak_ptr<ClientBase> clientWeak) {
+    fiberManager_.addTaskRemote([this, clientWeak] {
+      if (auto client = clientWeak.lock()) {
+        clients_.erase(client);
+        client->closeNow();
+      }
+    });
+  }
 
   template <typename F>
   void addTaskRemote(F&& f) {
@@ -61,18 +119,103 @@ class ThreadInfo {
  private:
   std::thread thread_;
   folly::fibers::FiberManager fiberManager_;
-  std::unordered_set<std::shared_ptr<Client>> clients_;
+  std::unordered_set<std::shared_ptr<ClientBase>> clients_;
+};
+
+// Pool of threads, each of them has its own EventBase and FiberManager.
+class ThreadPool : public std::enable_shared_from_this<ThreadPool> {
+ public:
+  ThreadPool() {
+    threads_.reserve(FLAGS_cacheclient_external_connection_threads);
+  }
+
+  template <class Transport>
+  std::pair<
+      std::weak_ptr<detail::Client<Transport>>,
+      std::weak_ptr<detail::ThreadInfo>>
+  createClient(
+      facebook::memcache::ConnectionOptions connectionOptions,
+      ExternalCarbonConnectionImplOptions options) {
+    auto& threadInfo = [&]() -> detail::ThreadInfo& {
+      std::lock_guard<std::mutex> lck(mutex_);
+      // Select a thread in round robin fashion.
+      size_t threadId = (nextThreadId_++) % getThreadNum();
+
+      // If it's not running yet, then we need to start it.
+      if (threads_.size() <= threadId) {
+        threads_.emplace_back(std::make_unique<detail::ThreadInfo>());
+      }
+      return *threads_[threadId];
+    }();
+
+    std::weak_ptr<detail::Client<Transport>> clientPtr =
+        threadInfo.template createClient<Transport>(connectionOptions, options);
+
+    std::shared_ptr<detail::ThreadInfo> threadInfoShared(
+        shared_from_this(), &threadInfo);
+
+    return std::make_pair(
+        std::move(clientPtr),
+        std::weak_ptr<detail::ThreadInfo>(std::move(threadInfoShared)));
+  }
+
+  static std::shared_ptr<ThreadPool> getInstance();
+
+  int getThreadNum();
+
+ private:
+  std::mutex mutex_;
+  size_t nextThreadId_{0};
+  std::vector<std::unique_ptr<detail::ThreadInfo>> threads_;
 };
 
 } // namespace detail
 
+template <class Transport>
 class Impl {
  public:
   Impl(
       facebook::memcache::ConnectionOptions connectionOptions,
-      ExternalCarbonConnectionImplOptions options);
-  ~Impl();
-  bool healthCheck();
+      ExternalCarbonConnectionImplOptions options) {
+    auto pool = detail::ThreadPool::getInstance();
+
+    auto info = pool->createClient<Transport>(connectionOptions, options);
+    client_ = info.first;
+    threadInfo_ = info.second;
+  }
+
+  ~Impl() {
+    if (auto threadInfo = threadInfo_.lock()) {
+      threadInfo->releaseClient(client_);
+    }
+  }
+
+  bool healthCheck() {
+    folly::fibers::Baton baton;
+    bool ret = false;
+
+    auto clientWeak = client_;
+    auto threadInfo = threadInfo_.lock();
+    if (!threadInfo) {
+      throw CarbonConnectionRecreateException(
+          "Singleton<ThreadPool> was destroyed!");
+    }
+
+    threadInfo->addTaskRemote([clientWeak, &baton, &ret]() {
+      auto client = clientWeak.lock();
+      if (!client) {
+        baton.post();
+        return;
+      }
+
+      auto reply = client->sendRequest(facebook::memcache::McVersionRequest());
+      ret = !facebook::memcache::isErrorResult(*reply.result_ref());
+      baton.post();
+    });
+
+    baton.wait();
+    return ret;
+  }
 
   template <class Request, class F>
   void sendRequestOne(const Request& req, F&& f) {
@@ -184,7 +327,7 @@ class Impl {
 
  private:
   std::weak_ptr<detail::ThreadInfo> threadInfo_;
-  std::weak_ptr<detail::Client> client_;
+  std::weak_ptr<detail::Client<Transport>> client_;
 };
 
 template <class RouterInfo>
@@ -193,10 +336,12 @@ void ExternalCarbonConnectionImpl<RouterInfo>::sendRequestOne(
     const Request& req,
     RequestCb<Request> cb) {
   try {
-    impl_->sendRequestOne(req, std::move(cb));
+    thriftImpl_ ? thriftImpl_->sendRequestOne(req, std::move(cb))
+                : carbonImpl_->sendRequestOne(req, std::move(cb));
   } catch (const CarbonConnectionRecreateException&) {
-    impl_ = std::make_unique<Impl>(connectionOptions_, options_);
-    return impl_->sendRequestOne(req, std::move(cb));
+    makeImpl();
+    thriftImpl_ ? thriftImpl_->sendRequestOne(req, std::move(cb))
+                : carbonImpl_->sendRequestOne(req, std::move(cb));
   }
 }
 
@@ -206,10 +351,25 @@ void ExternalCarbonConnectionImpl<RouterInfo>::sendRequestMulti(
     std::vector<std::reference_wrapper<const Request>>&& reqs,
     RequestCb<Request> cb) {
   try {
-    impl_->sendRequestMulti(std::move(reqs), std::move(cb));
+    thriftImpl_ ? thriftImpl_->sendRequestMulti(std::move(reqs), std::move(cb))
+                : carbonImpl_->sendRequestMulti(std::move(reqs), std::move(cb));
   } catch (const CarbonConnectionRecreateException&) {
-    impl_ = std::make_unique<Impl>(connectionOptions_, options_);
-    return impl_->sendRequestMulti(std::move(reqs), std::move(cb));
+    makeImpl();
+    thriftImpl_ ? thriftImpl_->sendRequestMulti(std::move(reqs), std::move(cb))
+                : carbonImpl_->sendRequestMulti(std::move(reqs), std::move(cb));
+  }
+}
+
+template <class RouterInfo>
+void ExternalCarbonConnectionImpl<RouterInfo>::makeImpl() {
+  if (connectionOptions_.accessPoint &&
+      connectionOptions_.accessPoint->getProtocol() == mc_thrift_protocol) {
+    thriftImpl_ =
+        std::make_unique<Impl<facebook::memcache::ThriftTransport<RouterInfo>>>(
+            connectionOptions_, options_);
+  } else {
+    carbonImpl_ = std::make_unique<Impl<facebook::memcache::AsyncMcClient>>(
+        connectionOptions_, options_);
   }
 }
 
@@ -218,16 +378,19 @@ ExternalCarbonConnectionImpl<RouterInfo>::ExternalCarbonConnectionImpl(
     facebook::memcache::ConnectionOptions connectionOptions,
     ExternalCarbonConnectionImplOptions options)
     : connectionOptions_(std::move(connectionOptions)),
-      options_(std::move(options)),
-      impl_(std::make_unique<Impl>(connectionOptions_, options_)) {}
+      options_(std::move(options)) {
+  makeImpl();
+}
 
 template <class RouterInfo>
 bool ExternalCarbonConnectionImpl<RouterInfo>::healthCheck() {
   try {
-    return impl_->healthCheck();
+    return thriftImpl_ ? thriftImpl_->healthCheck()
+                       : carbonImpl_->healthCheck();
   } catch (const CarbonConnectionRecreateException&) {
-    impl_ = std::make_unique<Impl>(connectionOptions_, options_);
-    return impl_->healthCheck();
+    makeImpl();
+    return thriftImpl_ ? thriftImpl_->healthCheck()
+                       : carbonImpl_->healthCheck();
   }
 }
 
