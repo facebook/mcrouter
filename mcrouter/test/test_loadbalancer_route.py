@@ -12,7 +12,7 @@ class TestLoadBalancerRoute(McrouterTestCase):
     config = "./mcrouter/test/test_loadbalancer_route.json"
     extra_args = []
     num_reqs = 20000
-    delta = 0.01
+    delta = 0.02
 
     def setUp(self):
         self.mc = self.makeServers()
