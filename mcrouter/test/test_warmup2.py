@@ -28,8 +28,8 @@ class TestWarmup2(McrouterTestCase):
         self.assertTrue(self.mc_cold.get(k), v)
         cold_exptime = int(self.mc_cold.metaget(k)['exptime'])
         warm_exptime = int(self.mc_warm.metaget(k)['exptime'])
-        self.assertAlmostEqual(cold_exptime, time.time() + 1000, delta=10)
-        self.assertAlmostEqual(warm_exptime, time.time() + 1000, delta=10)
+        self.assertAlmostEqual(cold_exptime, time.time() + 1000, delta=20)
+        self.assertAlmostEqual(warm_exptime, time.time() + 1000, delta=20)
 
         self.assertTrue(self.mc_warm.delete(k))
         self.assertEqual(self.mcrouter.get(k), v)
@@ -81,8 +81,8 @@ class TestWarmup2(McrouterTestCase):
         self.assertIsNone(ret['token'])
         cold_exptime = int(self.mc_cold.metaget(k)['exptime'])
         warm_exptime = int(self.mc_warm.metaget(k)['exptime'])
-        self.assertAlmostEqual(cold_exptime, time.time() + 1000, delta=10)
-        self.assertAlmostEqual(warm_exptime, time.time() + 1000, delta=10)
+        self.assertAlmostEqual(cold_exptime, time.time() + 1000, delta=20)
+        self.assertAlmostEqual(warm_exptime, time.time() + 1000, delta=20)
 
     def test_warmup_metaget(self):
         k = 'key'
