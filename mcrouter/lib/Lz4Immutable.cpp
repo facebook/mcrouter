@@ -117,7 +117,7 @@ void safeCopy(uint8_t* dest, IovecCursor& source, size_t count) {
   int64_t left = count;
   uint64_t src;
   do {
-    size_t toWrite = std::min(8l, left);
+    size_t toWrite = std::min((int64_t)8, left);
     if (LIKELY(toWrite == sizeof(uint64_t))) {
       src = source.peek<uint64_t>();
     } else {

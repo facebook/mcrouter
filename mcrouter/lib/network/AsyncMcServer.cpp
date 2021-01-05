@@ -694,7 +694,7 @@ size_t AsyncMcServer::Options::setMaxConnections(
   // if the soft limit is not large enough, increase it.
   if (rlim.rlim_cur < desiredRlim && rlim.rlim_cur < rlim.rlim_max) {
     auto newRlim = rlim;
-    newRlim.rlim_cur = std::min(rlim.rlim_max, desiredRlim);
+    newRlim.rlim_cur = std::min<size_t>(rlim.rlim_max, desiredRlim);
     if (setrlimit(RLIMIT_NOFILE, &newRlim) == 0) {
       VLOG(2) << "Successfully updated soft rlimit to " << newRlim.rlim_cur;
       // setrlimit succeeded, update globalMaxConns.
