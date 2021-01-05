@@ -110,16 +110,15 @@ class McrouterTestCase(unittest.TestCase):
             for server in self.open_servers:
                 server.terminate()
 
-    def eventually_get(self, key, expVal, timeout=5):
+    def eventually_get(self, key, expVal, retries=20):
         start_time = time.time()
         interval = 0.5
-        while (True):
+        while retries > 0:
             if (self.mc.get(key) == expVal):
                 return True
             time.sleep(interval)
-            now = time.time()
-            if (now - start_time > timeout):
-                return False
+            retries -= 1
+        return False
 
     def _is_mcrouter_running(self, mcrouter):
         try:
