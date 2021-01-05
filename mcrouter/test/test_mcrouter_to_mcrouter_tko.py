@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import re
+import time
 
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 
@@ -23,6 +24,11 @@ class TestMcrouterToMcrouterTko(McrouterTestCase):
         mcr = self.get_mcrouter()
 
         self.assertFalse(mcr.delete("key"))
+
+        retries = 10
+        while self.underlying_mcr.stats()['cmd_delete_count'] != 1 and retries > 0:
+            retries = retries - 1
+            time.sleep(1)
 
         stats = self.underlying_mcr.stats("suspect_servers")
         print(stats)
