@@ -140,6 +140,22 @@ AC_CHECK_HEADER([folly/Likely.h], [], [AC_MSG_ERROR(
 #AC_CHECK_LIB([wangle], [getenv], [], [AC_MSG_ERROR(
 #             [Please install the wangle library])])
 
+PKG_CHECK_MODULES([GTEST], [gtest], [], [
+  # gtest-devel shipped by CentOS doesn't include a .pc file, so let's fallback
+  # to using normal library and header checks and just set defaults for the
+  # GTEST_* variables.
+  #
+  # The libgtest-dev package in Ubuntu 18.04 is worse, it doesn't even ship
+  # a built library, and only sources... Update the Ubuntu scripts to build
+  # it from source on that platform.
+  AC_CHECK_LIB([gtest], [main], [GTEST_LIBS="-lgtest"], [
+    AC_MSG_ERROR([Please install the gtest library])
+  ])
+  AC_CHECK_HEADER([gtest/gtest.h], [], [
+    AC_MSG_ERROR([Please install the gtest library])
+  ])
+])
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
 AC_C_CONST

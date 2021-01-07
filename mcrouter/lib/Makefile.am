@@ -261,6 +261,6 @@ libmcrouter_a_CFLAGS = -I$(top_srcdir)/..
 check_LTLIBRARIES = libtestmain.la
 check_PROGRAMS =
 
-libtestmain_la_CPPFLAGS = -Igtest/include -Igtest
-libtestmain_la_SOURCES = TestMain.cpp gtest/src/gtest-all.cc
-libtestmain_la_LIBADD = -lfolly
+libtestmain_la_CPPFLAGS = $(GTEST_CFLAGS)
+libtestmain_la_SOURCES = TestMain.cpp
+libtestmain_la_LIBADD = -lfolly $(GTEST_LIBS)
