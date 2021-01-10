@@ -222,16 +222,17 @@ TEST(RendezvousHash, ConsistencyWithDecreasedWeight) {
 
 TEST(ConsistentHashRing, DistributionAccuracy) {
   constexpr size_t kNumRequests = 20000;
-  folly::StringPiece keys[] = {"first_proxy",
-                               "second_proxy",
-                               "third_proxy",
-                               "fourth_proxy",
-                               "a",
-                               "b",
-                               "c",
-                               "d",
-                               "e",
-                               "f"};
+  folly::StringPiece keys[] = {
+      "first_proxy",
+      "second_proxy",
+      "third_proxy",
+      "fourth_proxy",
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "f"};
 
   std::vector<double> weights[] = {
       {248.0, 342.0, 2.0, 384.0},

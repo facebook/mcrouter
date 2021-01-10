@@ -23,8 +23,9 @@ TEST(SerializedFormat, integers) {
   auto& matchingRanges = carbon::test::util::satisfiedSubranges<int16_t>;
 
   EXPECT_EQ(
-      (VectorPair{{std::numeric_limits<int16_t>::min(),
-                   std::numeric_limits<int16_t>::max()}}),
+      (VectorPair{
+          {std::numeric_limits<int16_t>::min(),
+           std::numeric_limits<int16_t>::max()}}),
       matchingRanges([](int16_t i) {
         const auto zigzagged = carbon::util::zigzag(i);
         if (i >= 0) {

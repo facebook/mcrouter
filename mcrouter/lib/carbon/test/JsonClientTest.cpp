@@ -232,13 +232,14 @@ TEST(CmdLineClient, sendRequests) {
   auto server = startServer(socket.getSocketFd());
   auto portStr = folly::to<std::string>(socket.getPort());
 
-  std::array<const char*, 7> argv = {{"binaryName",
-                                      "-h",
-                                      "localhost",
-                                      "-p",
-                                      portStr.c_str(),
-                                      "test", // Request name
-                                      R"json(
+  std::array<const char*, 7> argv = {
+      {"binaryName",
+       "-h",
+       "localhost",
+       "-p",
+       portStr.c_str(),
+       "test", // Request name
+       R"json(
         {
           "key": "abcdef",
           "testBool": true,
@@ -274,13 +275,14 @@ TEST(CmdLineClient, sendRequests_InvalidJson) {
   auto server = startServer(socket.getSocketFd());
   auto portStr = folly::to<std::string>(socket.getPort());
 
-  std::array<const char*, 7> argv = {{"binaryName",
-                                      "-h",
-                                      "localhost",
-                                      "-p",
-                                      portStr.c_str(),
-                                      "test", // Request name
-                                      "Invalid json."}};
+  std::array<const char*, 7> argv = {
+      {"binaryName",
+       "-h",
+       "localhost",
+       "-p",
+       portStr.c_str(),
+       "test", // Request name
+       "Invalid json."}};
 
   std::stringstream outStream(std::ios::out | std::ios::in);
   std::stringstream errStream(std::ios::out | std::ios::in);
@@ -304,13 +306,14 @@ TEST(CmdLineClient, sendRequests_InvalidRequestName) {
   auto server = startServer(socket.getSocketFd());
   auto portStr = folly::to<std::string>(socket.getPort());
 
-  std::array<const char*, 7> argv = {{"binaryName",
-                                      "-h",
-                                      "localhost",
-                                      "-p",
-                                      portStr.c_str(),
-                                      "abc", // Request name
-                                      R"json(
+  std::array<const char*, 7> argv = {
+      {"binaryName",
+       "-h",
+       "localhost",
+       "-p",
+       portStr.c_str(),
+       "abc", // Request name
+       R"json(
         {
           "key": "abcdef",
           "testBool": true,

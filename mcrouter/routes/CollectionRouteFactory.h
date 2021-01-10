@@ -24,7 +24,8 @@ namespace mcrouter {
  */
 template <
     class RouterInfo,
-    template <class, class...> class CollectionRoute,
+    template <class, class...>
+    class CollectionRoute,
     class... Args>
 typename RouterInfo::RouteHandlePtr createCollectionRoute(
     RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,

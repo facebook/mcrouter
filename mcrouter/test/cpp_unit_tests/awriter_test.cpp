@@ -104,8 +104,9 @@ int test_entry_writer(awriter_entry_t* e) {
   return 0;
 }
 
-const awriter_callbacks_t test_callbacks = {&callback_counter,
-                                            &test_entry_writer};
+const awriter_callbacks_t test_callbacks = {
+    &callback_counter,
+    &test_entry_writer};
 } // namespace
 
 // Simple test that creates a number of async writers and

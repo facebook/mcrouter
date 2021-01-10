@@ -32,10 +32,11 @@ bool getQoS(uint64_t qosClassLvl, uint64_t qosPathLvl, uint64_t& qos) {
   constexpr uint64_t kShortestPathNoProtection = 0x08;
   constexpr uint64_t kShortestPathProtection = 0x0c;
   constexpr uint64_t kMaxPathLvl = 3;
-  constexpr uint64_t kQoSPaths[] = {kAnyPathNoProtection,
-                                    kAnyPathProtection,
-                                    kShortestPathNoProtection,
-                                    kShortestPathProtection};
+  constexpr uint64_t kQoSPaths[] = {
+      kAnyPathNoProtection,
+      kAnyPathProtection,
+      kShortestPathNoProtection,
+      kShortestPathProtection};
 
   if (qosClassLvl > kMaxClassLvl || qosPathLvl > kMaxPathLvl) {
     qos = kQoSClasses[0] | kQoSPaths[0];

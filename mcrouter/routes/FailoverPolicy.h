@@ -343,9 +343,10 @@ class FailoverDeterministicOrderPolicy {
     }
 
     Stats getStats() const {
-      return {collisions_,
-              num_cached_failured_domain_hits_,
-              num_failed_domain_collisions_};
+      return {
+          collisions_,
+          num_cached_failured_domain_hits_,
+          num_failed_domain_collisions_};
     }
 
     uint32_t getFailureDomain(size_t index) {

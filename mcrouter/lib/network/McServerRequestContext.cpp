@@ -113,8 +113,8 @@ folly::EventBase& McServerRequestContext::getSessionEventBase() const noexcept {
   return session_->getEventBase();
 }
 
-const folly::AsyncTransportWrapper* McServerRequestContext::getTransport() const
-    noexcept {
+const folly::AsyncTransportWrapper* McServerRequestContext::getTransport()
+    const noexcept {
   return session_->getTransport();
 }
 

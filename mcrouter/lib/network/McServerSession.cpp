@@ -403,8 +403,8 @@ void McServerSession::updateCompressionCodecIdRange(
   if (headerInfo.supportedCodecsSize == 0 || !compressionCodecMap_) {
     codecIdRange_ = CodecIdRange::Empty;
   } else {
-    codecIdRange_ = {headerInfo.supportedCodecsFirstId,
-                     headerInfo.supportedCodecsSize};
+    codecIdRange_ = {
+        headerInfo.supportedCodecsFirstId, headerInfo.supportedCodecsSize};
   }
 }
 

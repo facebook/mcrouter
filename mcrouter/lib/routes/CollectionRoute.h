@@ -53,7 +53,8 @@ namespace memcache {
 
 template <
     class Request,
-    template <class, class...> class DerivedCollector,
+    template <class, class...>
+    class DerivedCollector,
     class... Args>
 class Collector {
  public:
@@ -101,7 +102,8 @@ class Collector {
 
 template <
     class RouterInfo,
-    template <class, class...> class Collector,
+    template <class, class...>
+    class Collector,
     class... Args>
 class CollectionRoute {
  private:

@@ -33,9 +33,9 @@ static inline void timeval_sub(timeval_t* a, const timeval_t* b) {
 }
 
 static inline int timeval_cmp(const timeval_t* a, const timeval_t* b) {
-  return a->tv_sec > b->tv_sec
-      ? 1
-      : a->tv_sec < b->tv_sec ? -1 : a->tv_usec - b->tv_usec;
+  return a->tv_sec > b->tv_sec ? 1
+      : a->tv_sec < b->tv_sec  ? -1
+                               : a->tv_usec - b->tv_usec;
 }
 
 static inline int timeval_lt(const timeval_t* a, const timeval_t* b) {

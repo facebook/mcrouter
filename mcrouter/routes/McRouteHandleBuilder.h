@@ -15,7 +15,8 @@ namespace memcache {
 namespace mcrouter {
 
 template <
-    template <typename... Ignored> class R,
+    template <typename... Ignored>
+    class R,
     typename... RArgs,
     typename... Args>
 McrouterRouteHandlePtr makeMcrouterRouteHandle(Args&&... args) {
@@ -24,7 +25,8 @@ McrouterRouteHandlePtr makeMcrouterRouteHandle(Args&&... args) {
 }
 
 template <
-    template <typename... Ignored> class R,
+    template <typename... Ignored>
+    class R,
     typename... RArgs,
     typename... Args>
 McrouterRouteHandlePtr makeMcrouterRouteHandleWithInfo(Args&&... args) {

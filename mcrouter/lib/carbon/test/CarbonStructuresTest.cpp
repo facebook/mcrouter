@@ -371,10 +371,11 @@ TEST(CarbonBasic, setAndGet) {
   EXPECT_EQ(strings, req.testList());
 
   // Vector of enums
-  std::vector<SimpleEnum> enums = {SimpleEnum::One,
-                                   SimpleEnum::Zero,
-                                   SimpleEnum::Twenty,
-                                   SimpleEnum::Negative};
+  std::vector<SimpleEnum> enums = {
+      SimpleEnum::One,
+      SimpleEnum::Zero,
+      SimpleEnum::Twenty,
+      SimpleEnum::Negative};
   req.testEnumVec() = enums;
   EXPECT_EQ(enums, req.testEnumVec());
 
@@ -554,21 +555,22 @@ TEST(CarbonTest, serializeDeserializeCompact) {
   outRequest.testLongString() = longString();
   outRequest.testIobuf() =
       folly::IOBuf(folly::IOBuf::COPY_BUFFER, kShortString);
-  outRequest.testList() = {"abcdefg",
-                           "xyz",
-                           kShortString.str(),
-                           "xyz",
-                           "xyz",
-                           "xyz",
-                           "xyz",
-                           "xyz",
-                           "xyz",
-                           "xyz",
-                           "xyz",
-                           "xyz",
-                           "xyz",
-                           "xyz",
-                           longString()};
+  outRequest.testList() = {
+      "abcdefg",
+      "xyz",
+      kShortString.str(),
+      "xyz",
+      "xyz",
+      "xyz",
+      "xyz",
+      "xyz",
+      "xyz",
+      "xyz",
+      "xyz",
+      "xyz",
+      "xyz",
+      "xyz",
+      longString()};
   const auto inRequest =
       serializeCarbonAndDeserializeCompactCompatibility(outRequest);
   expectEqTestCompactRequest(outRequest, inRequest);
@@ -1024,10 +1026,11 @@ TEST(CarbonBasic, setAndGetFieldRefAPI) {
   EXPECT_FALSE(req.testOptionalKeywordBool_ref());
 
   // Vector of enums
-  std::vector<SimpleEnum> enums = {SimpleEnum::One,
-                                   SimpleEnum::Zero,
-                                   SimpleEnum::Twenty,
-                                   SimpleEnum::Negative};
+  std::vector<SimpleEnum> enums = {
+      SimpleEnum::One,
+      SimpleEnum::Zero,
+      SimpleEnum::Twenty,
+      SimpleEnum::Negative};
   req.testEnumVec_ref() = enums;
   EXPECT_EQ(enums, *req.testEnumVec_ref());
 

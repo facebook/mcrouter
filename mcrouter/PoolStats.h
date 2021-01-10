@@ -43,11 +43,12 @@ class PoolStats {
     folly::make_atomic_ref(totalDurationStat.data.uint64)
         .store(totalDurationUsStat_.value(), std::memory_order_relaxed);
 
-    return {requestCountStat_,
-            finalResultErrorStat_,
-            nConnectionsStat_,
-            std::move(durationStat),
-            std::move(totalDurationStat)};
+    return {
+        requestCountStat_,
+        finalResultErrorStat_,
+        nConnectionsStat_,
+        std::move(durationStat),
+        std::move(totalDurationStat)};
   }
 
   void incrementRequestCount(uint64_t amount = 1) {

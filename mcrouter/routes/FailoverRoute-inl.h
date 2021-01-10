@@ -36,7 +36,8 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRoute(
 
 template <
     class RouterInfo,
-    template <typename...> class RouteHandle,
+    template <typename...>
+    class RouteHandle,
     class... Args>
 std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRouteInOrder(
     std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> rh,
@@ -53,7 +54,8 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRouteInOrder(
 
 template <
     class RouterInfo,
-    template <class...> class RouteHandle,
+    template <class...>
+    class RouteHandle,
     class... Args>
 std::shared_ptr<typename RouterInfo::RouteHandleIf>
 makeFailoverRouteLeastFailures(
@@ -71,7 +73,8 @@ makeFailoverRouteLeastFailures(
 
 template <
     class RouterInfo,
-    template <class...> class RouteHandle,
+    template <class...>
+    class RouteHandle,
     typename FailoverPolicyT,
     class FailoverErrorsSettingsT,
     class... Args>
@@ -131,7 +134,8 @@ makeFailoverRouteWithPolicyAndFailoverError(
 
 template <
     class RouterInfo,
-    template <class...> class RouteHandle,
+    template <class...>
+    class RouteHandle,
     typename FailoverPolicyT,
     class... Args>
 std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRouteWithPolicy(
@@ -159,7 +163,8 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRouteWithPolicy(
 
 template <
     class RouterInfo,
-    template <class...> class RouteHandle,
+    template <class...>
+    class RouteHandle,
     class FailoverErrorsSettingsT,
     class... Args>
 std::shared_ptr<typename RouterInfo::RouteHandleIf>
@@ -281,7 +286,8 @@ inline const folly::dynamic* parseFailoverPolicy(const folly::dynamic& json) {
 
 template <
     class RouterInfo,
-    template <class...> class RouteHandle,
+    template <class...>
+    class RouteHandle,
     class... Args>
 std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRouteDefault(
     const folly::dynamic& json,

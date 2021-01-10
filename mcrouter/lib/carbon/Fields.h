@@ -61,8 +61,8 @@ class IsThriftWrapperStruct {
   static constexpr std::false_type check(...);
 
  public:
-  static constexpr bool value{decltype(check<T>(0))::value &&
-                              IsCarbonStruct<T>::value};
+  static constexpr bool value{
+      decltype(check<T>(0))::value && IsCarbonStruct<T>::value};
 };
 
 template <class T>
@@ -150,20 +150,21 @@ struct IsKVContainer {
 
 using namespace apache::thrift::protocol;
 
-constexpr TType CarbonToThriftFields[14] = {TType::T_STOP,
-                                            TType::T_BOOL,
-                                            TType::T_BOOL,
-                                            TType::T_I08,
-                                            TType::T_I16,
-                                            TType::T_I32,
-                                            TType::T_I64,
-                                            TType::T_DOUBLE,
-                                            TType::T_STRING,
-                                            TType::T_LIST,
-                                            TType::T_SET,
-                                            TType::T_MAP,
-                                            TType::T_STRUCT,
-                                            TType::T_FLOAT};
+constexpr TType CarbonToThriftFields[14] = {
+    TType::T_STOP,
+    TType::T_BOOL,
+    TType::T_BOOL,
+    TType::T_I08,
+    TType::T_I16,
+    TType::T_I32,
+    TType::T_I64,
+    TType::T_DOUBLE,
+    TType::T_STRING,
+    TType::T_LIST,
+    TType::T_SET,
+    TType::T_MAP,
+    TType::T_STRUCT,
+    TType::T_FLOAT};
 
 template <class T, class Enable = void>
 struct TypeToField {};

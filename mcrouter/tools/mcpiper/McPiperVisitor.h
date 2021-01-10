@@ -60,10 +60,11 @@ class McPiperVisitor {
   }
 
  private:
-  const std::unordered_set<std::string> kExcuseValues = {"value",
-                                                         "flags",
-                                                         "result",
-                                                         "key"};
+  const std::unordered_set<std::string> kExcuseValues = {
+      "value",
+      "flags",
+      "result",
+      "key"};
   facebook::memcache::StyledString out_;
   size_t indent_{0};
   const facebook::memcache::PrettyFormat format_{};

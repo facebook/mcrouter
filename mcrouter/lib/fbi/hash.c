@@ -157,8 +157,7 @@ static uint32_t furc_get_bit(
 }
 
 uint32_t furc_hash(const char* const key, const size_t len, const uint32_t m) {
-  uint32_t try
-    ;
+  uint32_t try;
   uint32_t d;
   uint32_t num;
   uint32_t i;
@@ -181,7 +180,7 @@ uint32_t furc_hash(const char* const key, const size_t len, const uint32_t m) {
     ;
 
   a = d;
-  for (try = 0; try < MAX_TRIES; try ++) {
+  for (try = 0; try < MAX_TRIES; try++) {
     while (!furc_get_bit(key, len, a, hash, &old_ord)) {
       if (--d == 0) {
         return 0;

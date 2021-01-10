@@ -168,8 +168,8 @@ AsyncMcClientImpl::~AsyncMcClientImpl() {
 
 typename Transport::RequestQueueStats AsyncMcClientImpl::getRequestQueueStats()
     const {
-  return RequestQueueStats{queue_.getPendingRequestCount(),
-                           queue_.getInflightRequestCount()};
+  return RequestQueueStats{
+      queue_.getPendingRequestCount(), queue_.getInflightRequestCount()};
 }
 
 void AsyncMcClientImpl::setThrottle(size_t maxInflight, size_t maxPending) {

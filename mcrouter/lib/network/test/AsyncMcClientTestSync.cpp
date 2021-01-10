@@ -281,18 +281,19 @@ void testCerts(
     folly::Optional<SSLTestPaths> ssl,
     size_t numConns) {
   bool loggedFailure = false;
-  failure::addHandler({name,
-                       [&loggedFailure](
-                           folly::StringPiece,
-                           int,
-                           folly::StringPiece,
-                           folly::StringPiece,
-                           folly::StringPiece msg,
-                           const std::map<std::string, std::string>&) {
-                         if (msg.contains("SSLError")) {
-                           loggedFailure = true;
-                         }
-                       }});
+  failure::addHandler(
+      {name,
+       [&loggedFailure](
+           folly::StringPiece,
+           int,
+           folly::StringPiece,
+           folly::StringPiece,
+           folly::StringPiece msg,
+           const std::map<std::string, std::string>&) {
+         if (msg.contains("SSLError")) {
+           loggedFailure = true;
+         }
+       }});
   SCOPE_EXIT {
     failure::removeHandler(name);
   };

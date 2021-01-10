@@ -276,21 +276,22 @@ TEST(CarbonRouterClient, basicUsageRemoteThreadClientThreadAffinityMulti) {
       0 /* max_outstanding_requests */,
       false /* max_outstanding_requests_error */);
 
-  std::vector<McGetRequest> requests{McGetRequest("key1"),
-                                     McGetRequest("key2"),
-                                     McGetRequest("key3"),
-                                     McGetRequest("key4"),
-                                     McGetRequest("key5"),
-                                     McGetRequest("key6"),
-                                     McGetRequest("key7"),
-                                     McGetRequest("key8"),
-                                     McGetRequest("key9"),
-                                     McGetRequest("key10"),
-                                     McGetRequest("key11"),
-                                     McGetRequest("key12"),
-                                     McGetRequest("key13"),
-                                     McGetRequest("key14"),
-                                     McGetRequest("key15")};
+  std::vector<McGetRequest> requests{
+      McGetRequest("key1"),
+      McGetRequest("key2"),
+      McGetRequest("key3"),
+      McGetRequest("key4"),
+      McGetRequest("key5"),
+      McGetRequest("key6"),
+      McGetRequest("key7"),
+      McGetRequest("key8"),
+      McGetRequest("key9"),
+      McGetRequest("key10"),
+      McGetRequest("key11"),
+      McGetRequest("key12"),
+      McGetRequest("key13"),
+      McGetRequest("key14"),
+      McGetRequest("key15")};
   folly::fibers::Baton baton;
   std::atomic<size_t> replyCount = 0;
 
