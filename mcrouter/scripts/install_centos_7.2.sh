@@ -28,6 +28,7 @@ sudo yum install -y \
     git \
     gflags-devel \
     glog-devel \
+    gtest-devel \
     jemalloc-devel \
     libtool \
     libevent-devel \

@@ -1,6 +1,6 @@
 RECIPES_DIR := ./recipes
 
-all: .folly-done .fizz-done .wangle-done .fmt-done .fbthrift-done
+all: .folly-done .fizz-done .wangle-done .fmt-done .fbthrift-done .gtest-done
 	${RECIPES_DIR}/mcrouter.sh $(PKG_DIR) $(INSTALL_DIR) $(INSTALL_AUX_DIR)
 	touch $@
 
@@ -8,7 +8,7 @@ mcrouter:
 	${RECIPES_DIR}/mcrouter.sh $(PKG_DIR) $(INSTALL_DIR) $(INSTALL_AUX_DIR)
 	touch $@
 
-deps: .folly-done .fizz-done .wangle-done .fmt-done .fbthrift-done
+deps: .folly-done .fizz-done .wangle-done .fmt-done .fbthrift-done .gtest-done
 	touch $@
 
 .folly-done: .fmt-done
@@ -29,4 +29,8 @@ deps: .folly-done .fizz-done .wangle-done .fmt-done .fbthrift-done
 
 .fbthrift-done: .folly-done .fizz-done .wangle-done .fmt-done
 	${RECIPES_DIR}/fbthrift.sh $(PKG_DIR) $(INSTALL_DIR) $(INSTALL_AUX_DIR)
+	touch $@
+
+.gtest-done:
+	${RECIPES_DIR}/gtest.sh $(PKG_DIR) $(INSTALL_DIR) $(INSTALL_AUX_DIR)
 	touch $@
