@@ -76,8 +76,8 @@ class TestDeterministicFailoverAllSleepServers(McrouterTestCase):
             # timeout and be declared TKO after the first failure)
             # The progression of result errors and tko errors show how well the
             # hash function is working
-            expected_values = [(3, 0), (6, 0), (9, 3), (12, 9), (13, 18),
-                               (15, 26), (15, 36), (16, 45), (16, 55), (17, 64)]
+            expected_values = [(3, 0), (6, 0), (9, 3), (12, 9), (13, 17),
+                               (14, 25), (14, 34), (15, 42), (15, 51), (16, 59)]
 
             self.assertEqual(int(stats["failover_policy_result_error"]),
                     expected_values[i][0])
@@ -116,8 +116,8 @@ class TestDeterministicFailoverAllSleepServersSamePool(McrouterTestCase):
             # timeout and be declared TKO after the first failure)
             # The progression of result errors and tko errors show how well the
             expected_values = [(3, 0, 1), (6, 0, 3), (9, 2, 4), (12, 3, 5),
-                               (15, 5, 6), (17, 15, 10), (19, 25, 12),
-                               (21, 35, 21), (21, 47, 26), (23, 57, 30)]
+                               (15, 5, 6), (17, 14, 10), (19, 23, 12),
+                               (21, 32, 21), (21, 43, 26), (23, 52, 30)]
 
             self.assertEqual(int(stats["failover_policy_result_error"]),
                     expected_values[i][0])
@@ -125,7 +125,10 @@ class TestDeterministicFailoverAllSleepServersSamePool(McrouterTestCase):
                     expected_values[i][1])
             self.assertEqual(int(stats["failover_num_collisions"]),
                     expected_values[i][2])
-            self.assertEqual(int(stats["failover_all_failed_count"]), i + 1)
+            if i < 5 :
+                self.assertEqual(int(stats["failover_all_failed_count"]), 0)
+            else:
+                self.assertEqual(int(stats["failover_all_failed_count"]), i - 4)
 
 class TestDeterministicFailoverAllSleepServersSharedConfig(McrouterTestCase):
     config = './mcrouter/test/test_deterministic_failover3.json'
@@ -159,8 +162,8 @@ class TestDeterministicFailoverAllSleepServersSharedConfig(McrouterTestCase):
             # timeout and be declared TKO after the first failure)
             # The progression of result errors and tko errors show how well the
             expected_values = [(3, 0, 1), (6, 0, 3), (9, 2, 4), (12, 3, 5),
-                               (15, 5, 6), (18, 9, 7), (20, 19, 9),
-                               (20, 31, 18)]
+                               (15, 5, 6), (18, 9, 7), (20, 18, 9),
+                               (20, 29, 18)]
 
             self.assertEqual(int(stats["failover_policy_result_error"]),
                     expected_values[i][0])
@@ -168,7 +171,10 @@ class TestDeterministicFailoverAllSleepServersSharedConfig(McrouterTestCase):
                     expected_values[i][1])
             self.assertEqual(int(stats["failover_num_collisions"]),
                     expected_values[i][2])
-            self.assertEqual(int(stats["failover_all_failed_count"]), i + 1)
+            if i < 6 :
+                self.assertEqual(int(stats["failover_all_failed_count"]), 0)
+            else:
+                self.assertEqual(int(stats["failover_all_failed_count"]), i-5)
 
 
 class TestDeterministicFailoverAllSleepServersFailureDomains(McrouterTestCase):
@@ -204,7 +210,7 @@ class TestDeterministicFailoverAllSleepServersFailureDomains(McrouterTestCase):
             # The progression of result errors and tko errors show how well the
             expected_values = [(3, 0, 1, 0), (6, 0, 3, 0), (9, 2, 3, 1),
                                (12, 3, 4, 1), (15, 5, 4, 2), (18, 13, 5, 14),
-                               (21, 22, 5, 21), (22, 33, 5, 81)]
+                               (20, 22, 5, 21), (21, 32, 5, 81)]
 
             self.assertEqual(int(stats["failover_policy_result_error"]),
                     expected_values[i][0])
@@ -214,7 +220,10 @@ class TestDeterministicFailoverAllSleepServersFailureDomains(McrouterTestCase):
                     expected_values[i][2])
             self.assertEqual(int(stats["failover_num_failed_domain_collisions"]),
                     expected_values[i][3])
-            self.assertEqual(int(stats["failover_all_failed_count"]), i + 1)
+            if i < 6 :
+                self.assertEqual(int(stats["failover_all_failed_count"]), 0)
+            else:
+                self.assertEqual(int(stats["failover_all_failed_count"]), i-5)
 
 
 class TestDeterministicFailoverSmallerFailoverPool(McrouterTestCase):

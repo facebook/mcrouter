@@ -191,77 +191,92 @@ class FailoverRoute {
     return doRoute(req, tmp);
   }
 
+  template <class Request, class Iterator>
+  bool processReply(
+      const ReplyT<Request>& reply,
+      const Request& req,
+      bool& conditionalFailover,
+      Iterator& iter,
+      FailoverPolicyContext& ctx) {
+    auto res = shouldFailover(reply, req);
+    if (LIKELY(res == FailoverErrorsSettingsBase::FailoverType::NONE)) {
+      return true;
+    }
+    if (res == FailoverErrorsSettingsBase::FailoverType::CONDITIONAL) {
+      conditionalFailover = true;
+    }
+
+    auto& proxy = fiber_local<RouterInfo>::getSharedCtx()->proxy();
+    if (isErrorResult(*reply.result_ref())) {
+      if (!isTkoOrHardTkoResult(*reply.result_ref())) {
+        proxy.stats().increment(failover_policy_result_error_stat);
+      } else {
+        proxy.stats().increment(failover_policy_tko_error_stat);
+        // If it is Tko or Hard Tko set the failure domain so that
+        // we do not pick next failover target from the same failure domain
+        if (reply.destination()) {
+          iter.setFailedDomain(reply.destination()->getFailureDomain());
+        }
+      }
+    }
+    if (!isTkoOrHardTkoResult(*reply.result_ref())) {
+      if (rateLimiter_ && !rateLimiter_->failoverAllowed()) {
+        proxy.stats().increment(failover_rate_limited_stat);
+        return true;
+      }
+      // We didn't do any work for TKO or hard TKO. Don't count it as a try.
+      if (!failoverPolicy_.excludeError(*reply.result_ref())) {
+        ++ctx.numTries_;
+      }
+    }
+
+    return false;
+  }
+
   template <class Request>
   ReplyT<Request> doRoute(const Request& req, size_t& childIndex) {
     auto& proxy = fiber_local<RouterInfo>::getSharedCtx()->proxy();
 
     bool conditionalFailover = false;
+    bool allFailed = false;
     SCOPE_EXIT {
       if (conditionalFailover) {
         proxy.stats().increment(failover_conditional_stat);
         proxy.stats().increment(failover_conditional_count_stat);
+      }
+      if (allFailed) {
+        proxy.stats().increment(failover_all_failed_stat);
+        proxy.stats().increment(failover_all_failed_count_stat);
+        proxy.stats().increment(failoverPolicy_.getFailoverFailedStat());
       }
     };
 
     auto policyCtx = failoverPolicy_.context(req);
     auto iter = failoverPolicy_.begin(req);
     auto normalReply = iter->route(req, policyCtx);
-    if (failoverTagging_) {
-      setFailoverHopCount(normalReply, getFailoverHopCount(req));
-    }
-    if (isErrorResult(*normalReply.result_ref())) {
-      if (!isTkoOrHardTkoResult(*normalReply.result_ref())) {
-        proxy.stats().increment(failover_policy_result_error_stat);
-      } else {
-        proxy.stats().increment(failover_policy_tko_error_stat);
-        // If it is Tko or Hard Tko set the failure domain so that
-        // we do not pick next failover target from the same failure domain
-        if (normalReply.destination()) {
-          iter.setFailedDomain(normalReply.destination()->getFailureDomain());
-        }
-      }
-    }
-    ++iter;
-    if (iter == failoverPolicy_.end(req)) {
-      if (isErrorResult(*normalReply.result_ref())) {
-        proxy.stats().increment(failover_all_failed_stat);
-        proxy.stats().increment(failover_all_failed_count_stat);
-        proxy.stats().increment(failoverPolicy_.getFailoverFailedStat());
-      }
-      return normalReply;
-    }
-    childIndex = 0;
     if (rateLimiter_) {
       rateLimiter_->bumpTotalReqs();
     }
     if (fiber_local<RouterInfo>::getSharedCtx()->failoverDisabled()) {
       return normalReply;
     }
-    switch (shouldFailover(normalReply, req)) {
-      case FailoverErrorsSettingsBase::FailoverType::NONE:
-        return normalReply;
-      case FailoverErrorsSettingsBase::FailoverType::CONDITIONAL:
-        conditionalFailover = true;
-        break;
-      default:
-        break;
+    if (failoverTagging_) {
+      setFailoverHopCount(normalReply, getFailoverHopCount(req));
     }
-
+    if (LIKELY(processReply(
+            normalReply, req, conditionalFailover, iter, policyCtx))) {
+      return normalReply;
+    }
+    if (++iter == failoverPolicy_.end(req)) {
+      if (isErrorResult(*normalReply.result_ref())) {
+        allFailed = true;
+      }
+      return normalReply;
+    }
     proxy.stats().increment(failover_all_stat);
     proxy.stats().increment(failoverPolicy_.getFailoverStat());
 
-    if (rateLimiter_ && !isTkoOrHardTkoResult(*normalReply.result_ref()) &&
-        !rateLimiter_->failoverAllowed()) {
-      proxy.stats().increment(failover_rate_limited_stat);
-      return normalReply;
-    }
-
-    // We didn't do any work for TKO or hard TKO. Don't count it as a try.
-    if (!isTkoOrHardTkoResult(*normalReply.result_ref()) &&
-        !failoverPolicy_.excludeError(*normalReply.result_ref())) {
-      ++policyCtx.numTries_;
-    }
-
+    childIndex = 0;
     // Failover
     return fiber_local<RouterInfo>::runWithLocals([this,
                                                    iter,
@@ -270,6 +285,7 @@ class FailoverRoute {
                                                    &normalReply,
                                                    &policyCtx,
                                                    &childIndex,
+                                                   &allFailed,
                                                    &conditionalFailover]() {
       fiber_local<RouterInfo>::addRequestClass(RequestClass::kFailover);
       auto doFailover = [this, &req, &proxy, &normalReply, &policyCtx](
@@ -288,13 +304,6 @@ class FailoverRoute {
             failoverReply);
         logFailover(proxy, failoverContext);
         carbon::setIsFailoverIfPresent(failoverReply, true);
-        if (isErrorResult(*failoverReply.result_ref())) {
-          if (!isTkoOrHardTkoResult(*failoverReply.result_ref())) {
-            proxy.stats().increment(failover_policy_result_error_stat);
-          } else {
-            proxy.stats().increment(failover_policy_tko_error_stat);
-          }
-        }
         return failoverReply;
       };
 
@@ -312,46 +321,16 @@ class FailoverRoute {
            policyCtx.numTries_ < failoverPolicy_.maxErrorTries();
            ++cur, ++nx) {
         failoverReply = doFailover(cur);
-        switch (shouldFailover(failoverReply, req)) {
-          case FailoverErrorsSettingsBase::FailoverType::NONE:
-            return failoverReply;
-          case FailoverErrorsSettingsBase::FailoverType::CONDITIONAL:
-            conditionalFailover = true;
-            break;
-          default:
-            break;
-        }
-        if (rateLimiter_ &&
-            !isTkoOrHardTkoResult(*failoverReply.result_ref()) &&
-            !rateLimiter_->failoverAllowed()) {
-          proxy.stats().increment(failover_rate_limited_stat);
+        if (LIKELY(processReply(
+                failoverReply, req, conditionalFailover, cur, policyCtx))) {
           return failoverReply;
         }
-        // We didn't do any work for TKO or hard TKO. Don't count it as a try.
-        if (!isTkoOrHardTkoResult(*failoverReply.result_ref()) &&
-            !failoverPolicy_.excludeError(*failoverReply.result_ref())) {
-          ++policyCtx.numTries_;
-        } else {
-          // If it is Tko or Hard Tko set the failure domain so that
-          // we do not pick next failover target from the same failure domain
-          if (failoverReply.destination()) {
-            cur.setFailedDomain(
-                failoverReply.destination()->getFailureDomain());
-          }
-        }
       }
-
-      bool allFailed = true;
       if (policyCtx.numTries_ < failoverPolicy_.maxErrorTries()) {
         failoverReply = doFailover(cur);
-        if (!isErrorResult(*failoverReply.result_ref())) {
-          allFailed = false;
+        if (isErrorResult(*failoverReply.result_ref())) {
+          allFailed = true;
         }
-      }
-      if (allFailed) {
-        proxy.stats().increment(failover_all_failed_stat);
-        proxy.stats().increment(failover_all_failed_count_stat);
-        proxy.stats().increment(failoverPolicy_.getFailoverFailedStat());
       }
       proxy.stats().increment(
           failover_num_collisions_stat, cur.getStats().num_collisions);

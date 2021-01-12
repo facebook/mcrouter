@@ -292,6 +292,11 @@ class FailoverDeterministicOrderPolicy {
     } else {
       config_ = json;
     }
+    checkLogic(
+        (funcType_ == Ch3HashFunc::type() ||
+         funcType_ == WeightedCh3HashFunc::type()),
+        "Unknown hash function {}",
+        funcType_);
   }
 
   class ChildProxy {
@@ -316,20 +321,21 @@ class FailoverDeterministicOrderPolicy {
    public:
     Iter(
         Policy& failoverPolicy,
-        Config config,
-        StringLoc funcType,
+        const Config& config,
+        const StringLoc& funcType,
         uint32_t salt,
         uint32_t id,
         Request& req)
         : policy_(failoverPolicy),
-          funcType_(std::move(funcType)),
+          funcType_(funcType),
           salt_(salt),
-          config_(std::move(config)),
+          config_(config),
           id_(id),
-          req_(req),
-          usedIndexes_(policy_.children_.size()) {
+          req_(req) {
+      // Do default initialization here. Failover related initialization/sizing
+      // is done later, when failover actually occurs. So, usedIndexes_ is
+      // not initialized here.
       index_ = 0;
-      usedIndexes_.set(index_);
     }
 
     // By setting this, most of the increment() logic can be skipped for
@@ -394,7 +400,7 @@ class FailoverDeterministicOrderPolicy {
         return;
       }
       uint32_t numAttempts = 0;
-      auto nChildren = policy_.children_.size();
+      const auto nChildren = policy_.children_.size();
       // arbitrarily set high number of max attempts so that finding the next
       // index does not get into infinite loop
       constexpr uint32_t maxAttempts = 100;
@@ -406,38 +412,42 @@ class FailoverDeterministicOrderPolicy {
       // to get out of skipping all the destinations due to this pathological
       // case
       constexpr uint32_t failureDomainThreshold = (3 * maxAttempts) / 4;
-      // Use normal_reply_index only if ignore flag is false
-      if (!policy_.ignore_normal_reply_index_ && index_ == 0) {
-        size_t normal_reply_index =
-            mcrouter::fiber_local<RouterInfo>::getSelectedIndex();
-        // Skip the destination selected by normal route by adding the
-        // index of the normal route destination to usedIndexes.
-        if ((normal_reply_index + 1) < usedIndexes_.size()) {
-          usedIndexes_.set(normal_reply_index + 1);
-        } else {
-          LOG_FAILURE(
-              "mcrouter",
-              failure::Category::kInvalidConfig,
-              "Normal Route and Failover route pool sizes seem to be different."
-              " ignore_normal_reply_index config flag should be used.");
+      if (index_ == 0) {
+        // initialize usedIndexes_ here before it is used
+        usedIndexes_.resize(nChildren);
+        usedIndexes_.set(0);
+
+        // Use normal_reply_index only if ignore flag is false
+        if (!policy_.ignore_normal_reply_index_) {
+          size_t normal_reply_index =
+              mcrouter::fiber_local<RouterInfo>::getSelectedIndex();
+          // Skip the destination selected by normal route by adding the
+          // index of the normal route destination to usedIndexes.
+          if ((normal_reply_index + 1) < usedIndexes_.size()) {
+            usedIndexes_.set(normal_reply_index + 1);
+          } else {
+            LOG_FAILURE(
+                "mcrouter",
+                failure::Category::kInvalidConfig,
+                "Normal Route and Failover route pool sizes seem to be different."
+                " ignore_normal_reply_index config flag should be used.");
+          }
         }
       }
       bool failedDomain = false;
       do {
         salt_++;
-        // For now only Ch3Hash, and WeightedCh3Hash are supported
         if (funcType_ == Ch3HashFunc::type()) {
-          index_ = HashSelector<Ch3HashFunc>(
-                       std::to_string(salt_), Ch3HashFunc(nChildren))
+          Ch3HashFunc ch3Func(nChildren);
+          index_ = HashSelector<Ch3HashFunc>(std::to_string(salt_), ch3Func)
                        .select(req_, nChildren);
-        } else if (funcType_ == WeightedCh3HashFunc::type()) {
-          WeightedCh3HashFunc func{config_, nChildren};
-          index_ =
-              HashSelector<WeightedCh3HashFunc>(std::to_string(salt_), func)
-                  .select(req_, nChildren);
         } else {
-          throwLogic("Unknown hash function: {}", funcType_);
+          WeightedCh3HashFunc wCh3Func{config_, nChildren};
+          index_ =
+              HashSelector<WeightedCh3HashFunc>(std::to_string(salt_), wCh3Func)
+                  .select(req_, nChildren);
         }
+
         // Use failure domains only in case of non-const iterators
         if constexpr (!std::is_const<Policy>{}) {
           uint32_t nextFd = getFailureDomain(index_);
@@ -474,9 +484,9 @@ class FailoverDeterministicOrderPolicy {
 
     friend class boost::iterator_core_access;
     Policy& policy_;
-    StringLoc funcType_;
+    const StringLoc& funcType_;
     uint32_t salt_{0};
-    Config config_;
+    const Config& config_;
     uint32_t id_{0};
     const Request& req_;
     uint32_t collisions_{0};

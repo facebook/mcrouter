@@ -69,16 +69,16 @@ class TestRendezvousFailoverAllSleepServers(McrouterTestCase):
             # The progression of result errors and tko errors show how well the
             # hash function is working
             expected_values = [
-                (5, 0),
-                (5, 5),
-                (5, 10),
-                (5, 15),
-                (5, 20),
-                (5, 25),
-                (5, 30),
-                (5, 35),
-                (5, 40),
-                (5, 45),
+                (4, 0),
+                (4, 4),
+                (4, 8),
+                (4, 12),
+                (4, 16),
+                (4, 20),
+                (4, 24),
+                (4, 28),
+                (4, 32),
+                (4, 36),
             ]
 
             self.assertEqual(
