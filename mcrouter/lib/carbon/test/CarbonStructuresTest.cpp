@@ -1259,35 +1259,3 @@ TEST(CarbonTest, ForeachMemberTestThrift) {
   EXPECT_EQ(1, testUnion.get_a());
   EXPECT_TRUE(carbon::IsCarbonStruct<carbon::test::TestUnionThrift>::value);
 }
-
-TEST(CarbonTest, checkKeyHashPosition) {
-  {
-    TestRequest req;
-    checkKeyEmpty(*req.key_ref());
-    EXPECT_EQ(std::string::npos, req.key_ref()->getHashStopPosition());
-  }
-  {
-    TestRequest req;
-
-    const folly::IOBuf keyCopy(folly::IOBuf::CopyBufferOp(), kKeyLiteral);
-    req.key_ref() = keyCopy;
-    checkKeyFilledProperly(*req.key_ref());
-    auto keyData = req.key_ref()->keyWithoutRoute().data();
-    auto pos = strchr(keyData, '|') - keyData;
-    EXPECT_EQ(pos, req.key_ref()->getHashStopPosition());
-
-    req.key_ref() = "";
-    checkKeyEmpty(*req.key_ref());
-  }
-  {
-    TestRequest req;
-
-    const folly::IOBuf keyCopy(
-        folly::IOBuf::CopyBufferOp(), "KeyWithNoHashStop");
-    req.key_ref() = keyCopy;
-    EXPECT_EQ(std::string::npos, req.key_ref()->getHashStopPosition());
-
-    req.key_ref() = "";
-    checkKeyEmpty(*req.key_ref());
-  }
-}
