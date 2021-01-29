@@ -472,10 +472,10 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
       }
     }
   }
-  McSSLUtil::finalizeClientTransport(socket_.get());
+  socket_ = McSSLUtil::finalizeTransport(std::move(socket_));
 
   // Now authorize the connection
-  if (isAsyncSSLSocketMech(mech) && authorizationCallbacks_.onAuthorize &&
+  if (authorizationCallbacks_.onAuthorize &&
       !authorizationCallbacks_.onAuthorize(*socket_, connectionOptions_)) {
     if (connectionOptions_.securityOpts.sslAuthorizationEnforce) {
       // Enforcement is enabled, fail all requests and close connection.

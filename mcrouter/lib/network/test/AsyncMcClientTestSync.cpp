@@ -332,24 +332,22 @@ TEST(AsyncMcClient, noCerts) {
 }
 
 TEST(AsyncMcClient, testClientFinalize) {
-  folly::AsyncTransportWrapper* clientTransportCalledInFinalizer;
-  McSSLUtil::setApplicationClientTransportFinalizer(
-      [&clientTransportCalledInFinalizer](
-          folly::AsyncTransportWrapper* transport) {
-        clientTransportCalledInFinalizer = transport;
-      });
-
-  folly::AsyncTransportWrapper* serverTransportCalledInFinalizer;
-  McSSLUtil::setApplicationServerTransportFinalizer(
-      [&serverTransportCalledInFinalizer](
-          folly::AsyncTransportWrapper* transport) {
-        serverTransportCalledInFinalizer = transport;
+  /* Tests that finalizes got called on both the client and the server */
+  std::set<const folly::AsyncTransportWrapper*> finalizedTransports;
+  McSSLUtil::setTransportInitializer(
+      [&finalizedTransports](
+          folly::AsyncTransportWrapper::UniquePtr transport) {
+        finalizedTransports.insert(transport.get());
+        return transport;
       });
 
   TestServer::Config config;
   config.outOfOrder = false;
   config.onConnectionAcceptedAdditionalCb = [&](McServerSession& session) {
-    EXPECT_EQ(serverTransportCalledInFinalizer, session.getTransport());
+    const auto serverTransportIter =
+        finalizedTransports.find(session.getTransport());
+    EXPECT_NE(serverTransportIter, finalizedTransports.end());
+    finalizedTransports.erase(serverTransportIter);
   };
   auto server = TestServer::create(std::move(config));
   std::vector<SecurityMech> mechs{
@@ -362,16 +360,21 @@ TEST(AsyncMcClient, testClientFinalize) {
 
     client.sendGet("test1", carbon::Result::FOUND);
     client.waitForReplies();
-    EXPECT_EQ(
-        client.getClient().getTransport(), clientTransportCalledInFinalizer);
+    const auto clientTransportIter =
+        finalizedTransports.find(client.getClient().getTransport());
+    EXPECT_NE(clientTransportIter, finalizedTransports.end());
+    finalizedTransports.erase(clientTransportIter);
   }
+  EXPECT_EQ(finalizedTransports.size(), 0);
   server->shutdown();
   server->join();
   EXPECT_EQ(mechs.size(), server->getAcceptedConns());
 
   // Unset so we don't pollute other tests
-  McSSLUtil::setApplicationClientTransportFinalizer(
-      [](folly::AsyncTransportWrapper*) {});
+  McSSLUtil::setTransportInitializer(
+      [](folly::AsyncTransportWrapper::UniquePtr transport) {
+        return transport;
+      });
 }
 
 class AsyncMcClientBasicTestBase {

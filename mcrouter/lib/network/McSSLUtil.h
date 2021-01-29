@@ -26,8 +26,12 @@ class McSSLUtil {
   using SSLVerifyFunction =
       folly::Function<bool(folly::AsyncSSLSocket*, bool, X509_STORE_CTX*)
                           const noexcept>;
+  using TransportInitializeFunction =
+      folly::Function<folly::AsyncTransportWrapper::UniquePtr(
+          folly::AsyncTransportWrapper::UniquePtr) const noexcept>;
+
   using TransportFinalizeFunction =
-      folly::Function<void(folly::AsyncTransportWrapper*) const noexcept>;
+      folly::Function<void(folly::AsyncTransportWrapper&) const noexcept>;
 
   static const std::string kTlsToPlainProtocolName;
 
@@ -64,39 +68,42 @@ class McSSLUtil {
   static void setApplicationSSLVerifier(SSLVerifyFunction func);
 
   /**
+   * TODO: add desc
+   */
+  static void setTransportInitializer(TransportInitializeFunction func);
+
+  /**
    * Install an app specific transport finalizer for the server.  This function
    * will be called from multiple threads, so it must be threadsafe. This
    * function should be called once, typically around application init and
    * before the server has received any requests.
    */
-  static void setApplicationServerTransportFinalizer(
-      TransportFinalizeFunction func);
+  static void setTransportFinalizer(TransportFinalizeFunction func);
 
   /**
-   * Install an app specific transport finalizer for the client.  This function
-   * will be called from multiple threads, so it must be threadsafe. This
-   * function should be called once, before the client has sent any requests.
+   * Initialize a server connection. Use this to do any processing on the
+   * transport before the connection has been accepted.
    */
-  static void setApplicationClientTransportFinalizer(
-      TransportFinalizeFunction func);
+  static folly::AsyncTransportWrapper::UniquePtr initializeTransport(
+      folly::AsyncTransportWrapper::UniquePtr) noexcept;
+
+  /**
+   * Finalize a server connection. Use this to do any processing on the
+   * transport after the connection has been accepted.
+   */
+  static void finalizeTransport(folly::AsyncTransportWrapper&) noexcept;
+
+  /**
+   * The equivalent of initializing and finalizing a transport at once
+   */
+  static folly::AsyncTransportWrapper::UniquePtr finalizeTransport(
+      folly::AsyncTransportWrapper::UniquePtr) noexcept;
 
   /**
    * Verify an SSL connection.  If no application verifier is set, the default
    * verifier is used.
    */
   static bool verifySSL(folly::AsyncSSLSocket*, bool, X509_STORE_CTX*) noexcept;
-
-  /**
-   * Finalize a server connection. Use this to do any processing on the
-   * transport after the connection has been accepted.
-   */
-  static void finalizeServerTransport(folly::AsyncTransportWrapper*) noexcept;
-
-  /**
-   * Finalize a client connection. Use this to do any processing on the
-   * transport after the connection has been accepted.
-   */
-  static void finalizeClientTransport(folly::AsyncTransportWrapper*) noexcept;
 
   /**
    * Check if the ssl connection successfully negotiated falling back to
