@@ -617,14 +617,28 @@ class MCProcess(ProcessBase):
         return self._fdreadline().rstrip()
 
 
-def sub_port(s, substitute_ports, port_map):
-    parts = s.split(':')
-    if len(parts) < 2:
-        return s
+ATTR_PAT = '(?P<attr>(:([0-9a-z_])+){0,3})'
+IPV6_PAT = '\\[([A-Za-z:0-9]+)\\]'
+IPV6_SERVER_PAT = re.compile(f'^(?P<host>{IPV6_PAT}):(?P<port>[0-9]+){ATTR_PAT}$')
+SERVER_PAT = re.compile(f'^(?P<host>[0-9a-zA-Z_.]+):(?P<port>[0-9]+){ATTR_PAT}$')
 
-    for i in (-1, -2):
+
+def parse_parts(s, pattern):
+    m = pattern.fullmatch(s)
+    if m:
+        parts = [m["host"], m["port"]]
+        if m["attr"]:
+            parts.append(m["attr"].lstrip(":"))
+        return parts
+    return None
+
+
+def sub_port(s, substitute_ports, port_map):
+
+    parts = parse_parts(s, IPV6_SERVER_PAT) or parse_parts(s, SERVER_PAT)
+    if parts:
         try:
-            port = int(parts[i])
+            port = int(parts[1])
             if port not in port_map:
                 if len(port_map) < len(substitute_ports):
                     if isinstance(substitute_ports, list):
@@ -639,10 +653,11 @@ def sub_port(s, substitute_ports, port_map):
                     raise Exception("Looking up port {}: config file has more "
                                     "ports specified than the number of "
                                     "mock servers started".format(port))
-            parts[i] = str(port_map[port])
+            parts[1] = str(port_map[port])
+            return ':'.join(parts)
         except (IndexError, ValueError):
             pass
-    return ':'.join(parts)
+    return s
 
 
 def replace_ports(json, substitute_ports):

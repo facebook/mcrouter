@@ -122,9 +122,8 @@ class McrouterTestCase(unittest.TestCase):
 
     def _is_mcrouter_running(self, mcrouter):
         try:
-            mcrouter.stats()
+            return bool(mcrouter.stats())
 
-            return True
         except Exception as e:
             self.assertIsInstance(e, ConnectionResetError)
             return False
