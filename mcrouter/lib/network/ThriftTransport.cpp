@@ -154,7 +154,6 @@ apache::thrift::RocketClientChannel::Ptr ThriftTransportBase::createChannel() {
   if (!socket) {
     return nullptr;
   }
-  socket = McSSLUtil::initializeTransport(std::move(socket));
   auto channel =
       apache::thrift::RocketClientChannel::newChannel(std::move(socket));
   channel->setProtocolId(apache::thrift::protocol::T_COMPACT_PROTOCOL);
@@ -169,14 +168,18 @@ void ThriftTransportBase::connectSuccess() noexcept {
   auto transport = channel_->getTransport();
   assert(
       transport != nullptr && connectionState_ == ConnectionState::Connecting);
-  McSSLUtil::finalizeTransport(*transport);
   connectionState_ = ConnectionState::Up;
-  if (authorizationCallbacks_.onAuthorize &&
-      !authorizationCallbacks_.onAuthorize(*transport, connectionOptions_)) {
-    if (connectionOptions_.securityOpts.sslAuthorizationEnforce) {
-      // Enforcement is enabled, close the connection.
-      closeNow();
-      return;
+  McSSLUtil::finalizeClientTransport(transport);
+  if (isAsyncSSLSocketMech(connectionOptions_.accessPoint->getSecurityMech())) {
+    if (authorizationCallbacks_.onAuthorize &&
+        !authorizationCallbacks_.onAuthorize(
+            *transport->getUnderlyingTransport<AsyncSocket>(),
+            connectionOptions_)) {
+      if (connectionOptions_.securityOpts.sslAuthorizationEnforce) {
+        // Enforcement is enabled, close the connection.
+        closeNow();
+        return;
+      }
     }
   }
 

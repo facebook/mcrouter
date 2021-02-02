@@ -26,12 +26,12 @@ static McSSLUtil::SSLVerifyFunction& getAppFuncRef() {
   return VERIFIER;
 }
 
-static McSSLUtil::TransportInitializeFunction& getInitializeFuncRef() {
-  static McSSLUtil::TransportInitializeFunction FINALIZER;
+static McSSLUtil::TransportFinalizeFunction& getServerFinalizeFuncRef() {
+  static McSSLUtil::TransportFinalizeFunction FINALIZER;
   return FINALIZER;
 }
 
-static McSSLUtil::TransportFinalizeFunction& getFinalizeFuncRef() {
+static McSSLUtil::TransportFinalizeFunction& getClientFinalizeFuncRef() {
   static McSSLUtil::TransportFinalizeFunction FINALIZER;
   return FINALIZER;
 }
@@ -110,41 +110,34 @@ bool McSSLUtil::verifySSL(
   return func(sock, preverifyOk, ctx);
 }
 
-void McSSLUtil::setTransportInitializer(TransportInitializeFunction func) {
+void McSSLUtil::setApplicationServerTransportFinalizer(
+    TransportFinalizeFunction func) {
   folly::SharedMutex::WriteHolder wh(getMutex());
-  getInitializeFuncRef() = std::move(func);
+  getServerFinalizeFuncRef() = std::move(func);
 }
 
-void McSSLUtil::setTransportFinalizer(TransportFinalizeFunction func) {
+void McSSLUtil::setApplicationClientTransportFinalizer(
+    TransportFinalizeFunction func) {
   folly::SharedMutex::WriteHolder wh(getMutex());
-  getFinalizeFuncRef() = std::move(func);
+  getClientFinalizeFuncRef() = std::move(func);
 }
 
-folly::AsyncTransportWrapper::UniquePtr McSSLUtil::initializeTransport(
-    folly::AsyncTransportWrapper::UniquePtr transport) noexcept {
+void McSSLUtil::finalizeServerTransport(
+    folly::AsyncTransportWrapper* transport) noexcept {
   folly::SharedMutex::ReadHolder rh(getMutex());
-  auto& func = getInitializeFuncRef();
-  if (func) {
-    return func(std::move(transport));
-  }
-  return transport;
-}
-
-void McSSLUtil::finalizeTransport(
-    folly::AsyncTransportWrapper& transport) noexcept {
-  folly::SharedMutex::ReadHolder rh(getMutex());
-  auto& func = getFinalizeFuncRef();
+  auto& func = getServerFinalizeFuncRef();
   if (func) {
     func(transport);
   }
 }
 
-folly::AsyncTransportWrapper::UniquePtr McSSLUtil::finalizeTransport(
-    folly::AsyncTransportWrapper::UniquePtr transport) noexcept {
-  transport = initializeTransport(std::move(transport));
-  DCHECK(transport);
-  finalizeTransport(*transport);
-  return transport;
+void McSSLUtil::finalizeClientTransport(
+    folly::AsyncTransportWrapper* transport) noexcept {
+  folly::SharedMutex::ReadHolder rh(getMutex());
+  auto& func = getClientFinalizeFuncRef();
+  if (func) {
+    func(transport);
+  }
 }
 
 bool McSSLUtil::negotiatedPlaintextFallback(

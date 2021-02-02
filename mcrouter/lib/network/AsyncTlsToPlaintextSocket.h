@@ -47,10 +47,6 @@ class AsyncTlsToPlaintextSocket final : public folly::AsyncTransportWrapper {
     return impl_.get();
   }
 
-  void dropPeerCertificate() noexcept override {
-    impl_->dropPeerCertificate();
-  }
-
   void connect(
       folly::AsyncSocket::ConnectCallback* connectCallback,
       const folly::SocketAddress& address,
@@ -123,14 +119,6 @@ class AsyncTlsToPlaintextSocket final : public folly::AsyncTransportWrapper {
   }
   void getPeerAddress(folly::SocketAddress* address) const override {
     impl_->getPeerAddress(address);
-  }
-
-  const folly::AsyncTransportCertificate* getPeerCertificate() const override {
-    return impl_->getPeerCertificate();
-  }
-
-  const folly::AsyncTransportCertificate* getSelfCertificate() const override {
-    return impl_->getSelfCertificate();
   }
 
   bool isEorTrackingEnabled() const override {

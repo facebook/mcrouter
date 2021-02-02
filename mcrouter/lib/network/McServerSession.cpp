@@ -652,6 +652,9 @@ void McServerSession::handshakeSuc(folly::AsyncSSLSocket* sock) noexcept {
     }
   }
 
+  // finalize the transports at the end
+  McSSLUtil::finalizeServerTransport(transport_.get());
+
   // sock is currently wrapped by transport_, but underlying socket may
   // change by end of this function due to negotiatedPlaintextFallback or ktls.
   transport_->setReadCB(this);
@@ -691,6 +694,7 @@ void McServerSession::fizzHandshakeSuccess(
       }
     }
   }
+  McSSLUtil::finalizeServerTransport(transport);
   onAccepted();
 }
 
@@ -746,7 +750,6 @@ void McServerSession::fizzHandshakeAttemptFallback(
 }
 
 void McServerSession::onAccepted() {
-  transport_ = McSSLUtil::finalizeTransport(std::move(transport_));
   DCHECK(!onAcceptedCalled_);
   DCHECK(transport_);
   debugFifo_ = getDebugFifo(
