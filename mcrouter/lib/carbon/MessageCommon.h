@@ -34,6 +34,9 @@ class MessageCommon {
     traceContext_ = std::move(traceContext);
   }
 
+  static constexpr std::string_view kCryptoAuthTokenHeader =
+      "crypto_auth_tokens";
+
  protected:
   std::string traceContext_;
 };

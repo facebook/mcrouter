@@ -78,6 +78,11 @@ class ThriftHandler : virtual public hellogoodbye::thrift::HelloGoodbyeSvIf {
       if (it != headers.end()) {
         LOG(INFO) << "Got priority " << it->second << " from thrift header.";
       }
+      it = headers.find("crypto_auth_tokens");
+      if (it != headers.end()) {
+        LOG(INFO) << "Got optional header props " << it->second
+                  << " from thrift header.";
+      }
     } else {
       LOG(ERROR) << "Cannot get context.";
     }
@@ -170,6 +175,7 @@ void sendHelloRequestSync(
     CarbonRouterClient<HelloGoodbyeRouterInfo>* client,
     std::string key) {
   HelloRequest req(std::move(key));
+  req.setCryptoAuthToken("test_cat_token_from_client_req");
   req.shardId_ref() = 1;
   req.message_ref() = "test";
   req.priority_ref() = EnumUInt32::YESTERDAY;

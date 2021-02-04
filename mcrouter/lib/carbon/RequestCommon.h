@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <optional>
 #include <utility>
 
 #include <folly/io/IOBuf.h>
@@ -67,6 +68,19 @@ class RequestCommon : public MessageCommon {
     return serializedBuffer_;
   }
 
+  // Store CAT token in an optional field.
+  void setCryptoAuthToken(std::string&& token) {
+    cryptoAuthToken_.emplace(std::move(token));
+  }
+
+  /**
+   * get the optional field that may store a CAT token
+   * Used by mcrouter transport layer to pass the value to thrift header
+   */
+  const std::optional<std::string>& getCryptoAuthToken() const {
+    return cryptoAuthToken_;
+  }
+
  protected:
   void markBufferAsDirty() {
     serializedBuffer_ = nullptr;
@@ -74,6 +88,8 @@ class RequestCommon : public MessageCommon {
 
  private:
   const folly::IOBuf* serializedBuffer_{nullptr};
+  // cat token(s) in string serialzed format
+  std::optional<std::string> cryptoAuthToken_;
 };
 
 } // namespace carbon

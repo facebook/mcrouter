@@ -45,6 +45,11 @@ void sendSyncHelper(
   if (needServerLoad) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
   }
+  auto cryptoAuthToken = request.getCryptoAuthToken();
+  if (cryptoAuthToken.has_value()) {
+    rpcOptions.setWriteHeader(
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
+  }
 
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
@@ -75,6 +80,11 @@ void sendSyncHelper(
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (needServerLoad) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+  auto cryptoAuthToken = request.getCryptoAuthToken();
+  if (cryptoAuthToken.has_value()) {
+    rpcOptions.setWriteHeader(
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
   }
 
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -107,6 +117,11 @@ void sendSyncHelper(
   if (needServerLoad) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
   }
+  auto cryptoAuthToken = request.getCryptoAuthToken();
+  if (cryptoAuthToken.has_value()) {
+    rpcOptions.setWriteHeader(
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
+  }
 
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
@@ -137,6 +152,11 @@ void sendSyncHelper(
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (needServerLoad) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+  auto cryptoAuthToken = request.getCryptoAuthToken();
+  if (cryptoAuthToken.has_value()) {
+    rpcOptions.setWriteHeader(
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
   }
 
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -169,6 +189,11 @@ void sendSyncHelper(
   if (needServerLoad) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
   }
+  auto cryptoAuthToken = request.getCryptoAuthToken();
+  if (cryptoAuthToken.has_value()) {
+    rpcOptions.setWriteHeader(
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
+  }
 
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
@@ -199,6 +224,11 @@ void sendSyncHelper(
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (needServerLoad) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+  auto cryptoAuthToken = request.getCryptoAuthToken();
+  if (cryptoAuthToken.has_value()) {
+    rpcOptions.setWriteHeader(
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
   }
 
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -231,6 +261,11 @@ void sendSyncHelper(
   if (needServerLoad) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
   }
+  auto cryptoAuthToken = request.getCryptoAuthToken();
+  if (cryptoAuthToken.has_value()) {
+    rpcOptions.setWriteHeader(
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
+  }
 
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
@@ -261,6 +296,11 @@ void sendSyncHelper(
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (needServerLoad) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+  auto cryptoAuthToken = request.getCryptoAuthToken();
+  if (cryptoAuthToken.has_value()) {
+    rpcOptions.setWriteHeader(
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
   }
 
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -293,6 +333,11 @@ void sendSyncHelper(
   if (needServerLoad) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
   }
+  auto cryptoAuthToken = request.getCryptoAuthToken();
+  if (cryptoAuthToken.has_value()) {
+    rpcOptions.setWriteHeader(
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
+  }
 
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
@@ -323,6 +368,11 @@ void sendSyncHelper(
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (needServerLoad) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+  auto cryptoAuthToken = request.getCryptoAuthToken();
+  if (cryptoAuthToken.has_value()) {
+    rpcOptions.setWriteHeader(
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
   }
 
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -355,6 +405,11 @@ void sendSyncHelper(
   if (needServerLoad) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
   }
+  auto cryptoAuthToken = request.getCryptoAuthToken();
+  if (cryptoAuthToken.has_value()) {
+    rpcOptions.setWriteHeader(
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
+  }
 
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
@@ -385,6 +440,11 @@ void sendSyncHelper(
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (needServerLoad) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+  auto cryptoAuthToken = request.getCryptoAuthToken();
+  if (cryptoAuthToken.has_value()) {
+    rpcOptions.setWriteHeader(
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
   }
 
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -417,6 +477,11 @@ void sendSyncHelper(
   if (needServerLoad) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
   }
+  auto cryptoAuthToken = request.getCryptoAuthToken();
+  if (cryptoAuthToken.has_value()) {
+    rpcOptions.setWriteHeader(
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
+  }
 
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
@@ -447,6 +512,11 @@ void sendSyncHelper(
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (needServerLoad) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+  auto cryptoAuthToken = request.getCryptoAuthToken();
+  if (cryptoAuthToken.has_value()) {
+    rpcOptions.setWriteHeader(
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
   }
 
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -479,6 +549,11 @@ void sendSyncHelper(
   if (needServerLoad) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
   }
+  auto cryptoAuthToken = request.getCryptoAuthToken();
+  if (cryptoAuthToken.has_value()) {
+    rpcOptions.setWriteHeader(
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
+  }
 
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
@@ -509,6 +584,11 @@ void sendSyncHelper(
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (needServerLoad) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+  auto cryptoAuthToken = request.getCryptoAuthToken();
+  if (cryptoAuthToken.has_value()) {
+    rpcOptions.setWriteHeader(
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
   }
 
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -541,6 +621,11 @@ void sendSyncHelper(
   if (needServerLoad) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
   }
+  auto cryptoAuthToken = request.getCryptoAuthToken();
+  if (cryptoAuthToken.has_value()) {
+    rpcOptions.setWriteHeader(
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
+  }
 
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
@@ -571,6 +656,11 @@ void sendSyncHelper(
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (needServerLoad) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+  auto cryptoAuthToken = request.getCryptoAuthToken();
+  if (cryptoAuthToken.has_value()) {
+    rpcOptions.setWriteHeader(
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
   }
 
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -603,6 +693,11 @@ void sendSyncHelper(
   if (needServerLoad) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
   }
+  auto cryptoAuthToken = request.getCryptoAuthToken();
+  if (cryptoAuthToken.has_value()) {
+    rpcOptions.setWriteHeader(
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
+  }
 
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
@@ -633,6 +728,11 @@ void sendSyncHelper(
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (needServerLoad) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+  auto cryptoAuthToken = request.getCryptoAuthToken();
+  if (cryptoAuthToken.has_value()) {
+    rpcOptions.setWriteHeader(
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
   }
 
 #ifndef LIBMC_FBTRACE_DISABLE
