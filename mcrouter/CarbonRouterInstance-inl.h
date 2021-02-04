@@ -268,7 +268,13 @@ CarbonRouterInstance<RouterInfo>::spinUp() {
     proxyThreads_->removeObserver(executorObserver);
 
     if (opts_.enable_service_router && mcrouter::gSRInitHook) {
-      setMetadata(mcrouter::gSRInitHook(proxyThreads_));
+      try {
+        setMetadata(mcrouter::gSRInitHook(proxyThreads_, opts_));
+      } catch (...) {
+        return folly::makeUnexpected(folly::sformat(
+            "Failed to create SR {}",
+            folly::exceptionStr(std::current_exception())));
+      }
     }
 
     auto proxyResult = setupProxy(threadPoolEvbs);

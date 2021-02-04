@@ -9,6 +9,7 @@
 
 #include <folly/Portability.h>
 #include <folly/executors/IOThreadPoolExecutor.h>
+#include "mcrouter/options.h"
 
 namespace facebook {
 namespace memcache {
@@ -18,7 +19,8 @@ namespace mcrouter {
  * SR factory init hook
  */
 FOLLY_ATTR_WEAK std::shared_ptr<void> gSRInitHook(
-    std::shared_ptr<folly::IOThreadPoolExecutor>);
+    std::shared_ptr<folly::IOThreadPoolExecutor>,
+    const McrouterOptions&);
 
 } // namespace mcrouter
 } // namespace memcache
