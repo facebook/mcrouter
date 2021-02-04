@@ -767,8 +767,9 @@ class McrouterBase(MCProcess):
 
 class Mcrouter(McrouterBase):
     def __init__(self, config, port=None, default_route=None, extra_args=None,  # noqa: C901
-                 base_dir=None, substitute_config_ports=None,
-                 substitute_port_map=None, replace_map=None, flavor=None):
+                 base_dir=None, substitute_config_ports=None, substitute_config_smc_ports=None,
+                 substitute_port_map=None, replace_map=None, flavor=None,
+                 sr_mock_smc_config=None):
         if base_dir is None:
             base_dir = BaseDirectory('mcrouter')
 
@@ -780,7 +781,7 @@ class Mcrouter(McrouterBase):
             with open(config, 'w') as config_file:
                 config_file.write(replaced_config)
 
-        if substitute_config_ports:
+        if substitute_config_ports and not sr_mock_smc_config:
             with open(config, 'r') as config_file:
                 replaced_config = replace_ports(config_file.read(),
                                                 substitute_config_ports)
@@ -822,6 +823,16 @@ class Mcrouter(McrouterBase):
 
             self.terminate = terminate
             self.is_alive = is_alive
+
+        if substitute_config_smc_ports and sr_mock_smc_config:
+            with open(sr_mock_smc_config, 'r') as config_file:
+                replaced_config = replace_ports(config_file.read(),
+                                                substitute_config_smc_ports)
+            (_, sr_mock_smc_config) = tempfile.mkstemp(dir=base_dir.path)
+            with open(sr_mock_smc_config, 'w') as config_file:
+                config_file.write(replaced_config)
+            self.sr_mock_smc_config = sr_mock_smc_config
+            args.extend(['--debug-sr-host-list', self.sr_mock_smc_config])
 
         McrouterBase.__init__(self, args, port, base_dir)
 
