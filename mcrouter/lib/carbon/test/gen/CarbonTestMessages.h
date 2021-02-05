@@ -33,6 +33,7 @@
 #include "mcrouter/lib/carbon/test/a/gen/AMessages.h"
 #include "mcrouter/lib/network/gen/CommonMessages.h"
 
+#include "mcrouter/lib/carbon/test/TestCastableToFollyDynamicType.h"
 #include "mcrouter/lib/carbon/test/TestUserType.h"
 #include "folly/container/F14Map.h"
 #include "folly/container/F14Set.h"
@@ -480,6 +481,13 @@ class TestRequest : public carbon::RequestCommon {
      return {std::move(this->testOptionalKeywordBool_), __isset.testOptionalKeywordBool};
   }
   
+  const CastableToFollyDynamicType& testCastable() const {
+    return testCastable_;
+  }
+  CastableToFollyDynamicType& testCastable() {
+    markBufferAsDirty();
+    return testCastable_;
+  }
   const UserType& testType() const {
     return testType_;
   }
@@ -1007,6 +1015,19 @@ class TestRequest : public carbon::RequestCommon {
       return {std::move(this->testOptionalKeywordBool_), __isset.testOptionalKeywordBool};
   }
   
+  FOLLY_ERASE ::apache::thrift::field_ref<const CastableToFollyDynamicType&>
+   testCastable_ref() const& {
+    return {this->testCastable_, __isset.testCastable};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<CastableToFollyDynamicType&>
+   testCastable_ref() & {
+    return {this->testCastable_, __isset.testCastable};
+  }
+  FOLLY_ERASE ::apache::thrift::field_ref<CastableToFollyDynamicType&&>
+   testCastable_ref() && {
+      return {std::move(this->testCastable_), __isset.testCastable};
+  }
+  
   FOLLY_ERASE ::apache::thrift::field_ref<const UserType&>
    testType_ref() const& {
     return {this->testType_, __isset.testType};
@@ -1076,6 +1097,7 @@ class TestRequest : public carbon::RequestCommon {
     bool testOptionalKeywordString;
     bool testOptionalKeywordIobuf;
     bool testOptionalKeywordBool;
+    bool testCastable;
     bool testType;
   } __isset = {};
 
@@ -1113,6 +1135,7 @@ class TestRequest : public carbon::RequestCommon {
   folly::F14VectorSet<std::string> testF14VectorSet_;
   std::string testOptionalKeywordString_;
   folly::IOBuf testOptionalKeywordIobuf_;
+  CastableToFollyDynamicType testCastable_;
   UserType testType_;
   int32_t testInt32_{0};
   uint32_t testUInt32_{0};

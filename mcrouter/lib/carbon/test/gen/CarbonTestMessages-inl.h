@@ -63,6 +63,7 @@ void TestRequest::serialize(Writer&& writer) const {
   writer.writeField(41 /* field id */, testOptionalKeywordString());
   writer.writeField(42 /* field id */, testOptionalKeywordIobuf());
   writer.writeField(43 /* field id */, testOptionalKeywordBool());
+  writer.writeField(44 /* field id */, testCastable());
   writer.writeField(100 /* field id */, testType());
   writer.writeFieldStop();
   writer.writeStructEnd();
@@ -205,6 +206,9 @@ void TestRequest::visitFields(V&& v) {
   if (!v.visitField(43, "testOptionalKeywordBool", this->testOptionalKeywordBool())) {
     return;
   }
+  if (!v.visitField(44, "testCastable", this->testCastable())) {
+    return;
+  }
   if (!v.visitField(100, "testType", this->testType())) {
     return;
   }
@@ -345,6 +349,9 @@ void TestRequest::visitFields(V&& v) const {
     return;
   }
   if (!v.visitField(43, "testOptionalKeywordBool", this->testOptionalKeywordBool())) {
+    return;
+  }
+  if (!v.visitField(44, "testCastable", this->testCastable())) {
     return;
   }
   if (!v.visitField(100, "testType", this->testType())) {

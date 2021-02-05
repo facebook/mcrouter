@@ -67,6 +67,7 @@ TEST(CarbonMessageConversionUtils, toFollyDynamic_Complex) {
       {{"hello", {1, 1, 1}}, {"world", {2, 2, 2}}});
   r.testUSet() = std::unordered_set<std::string>({"hello", "world"});
   r.testSet() = std::set<uint64_t>({123, 456});
+  r.testCastable() = carbon::test::CastableToFollyDynamicType(42);
   r.testF14FastSet() = folly::F14FastSet<std::string>({"hello", "F14FastSet"});
   r.testF14NodeSet() = folly::F14NodeSet<std::string>({"hello", "F14NodeSet"});
   r.testF14ValueSet() =
@@ -123,7 +124,7 @@ TEST(CarbonMessageConversionUtils, toFollyDynamic_Complex) {
       "testF14ValueSet", folly::dynamic::array("F14ValueSet", "hello"))(
       "testF14VectorSet", folly::dynamic::array("F14VectorSet", "hello"))(
       "testSet", folly::dynamic::array(123, 456))("testType", "(user type)")(
-      "testOptionalVec", folly::dynamic::array())(
+      "testCastable", 42)("testOptionalVec", folly::dynamic::array())(
       "testIOBufList", folly::dynamic::array("", ""));
 
   auto dynamic = carbon::convertToFollyDynamic(r);

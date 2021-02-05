@@ -207,6 +207,10 @@ void TestRequest::deserialize(carbon::CarbonProtocolReader& reader) {
         reader.readField(testOptionalKeywordBool(), fieldType);
         break;
       }
+      case 44: {
+        reader.readField(testCastable(), fieldType);
+        break;
+      }
       case 100: {
         reader.readField(testType(), fieldType);
         break;

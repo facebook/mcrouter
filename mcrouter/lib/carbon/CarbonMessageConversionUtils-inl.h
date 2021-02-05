@@ -231,16 +231,32 @@ class ToDynamicVisitor {
   }
 
   template <class T>
+  typename std::enable_if<
+      std::is_convertible<T, folly::dynamic>::value,
+      folly::dynamic>::type
+  toDynamic8(const T& value) const {
+    return value;
+  }
+
+  template <class T>
+  typename std::enable_if<
+      !std::is_convertible<T, folly::dynamic>::value,
+      folly::dynamic>::type
+  toDynamic8(const T& value) const {
+    return toDynamic9(value);
+  }
+
+  template <class T>
   typename std::enable_if<IsUserReadWriteDefined<T>::value, folly::dynamic>::
       type
-      toDynamic8(const T& /* value */) const {
+      toDynamic9(const T& /* value */) const {
     return "(user type)";
   }
 
   template <class T>
   typename std::enable_if<!IsUserReadWriteDefined<T>::value, folly::dynamic>::
       type
-      toDynamic8(const T& /* value */) const {
+      toDynamic9(const T& /* value */) const {
     if (!opts_.ignoreUnserializableTypes) {
       return "(not serializable)";
     }

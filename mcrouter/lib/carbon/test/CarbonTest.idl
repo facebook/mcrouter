@@ -3,6 +3,7 @@ namespace carbon::test;
 import "mcrouter/lib/carbon/test/a/A.idl"
 import "mcrouter/lib/network/Common.idl"
 
+include "mcrouter/lib/carbon/test/TestCastableToFollyDynamicType.h"
 include "mcrouter/lib/carbon/test/TestUserType.h"
 
 include "folly/container/F14Map.h"
@@ -56,6 +57,7 @@ request TestRequest with 1: SimpleStruct as Base {
   41: optional std::string testOptionalKeywordString;
   42: optional folly::IOBuf testOptionalKeywordIobuf;
   43: optional bool testOptionalKeywordBool;
+  44: CastableToFollyDynamicType testCastable;
   100: UserType testType;
 };
 
