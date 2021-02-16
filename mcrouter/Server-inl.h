@@ -486,12 +486,14 @@ bool runServer(
   AsyncMcServer::Options opts =
       detail::createAsyncMcServerOptions(mcrouterOpts, standaloneOpts);
 
+  std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool;
+  CarbonRouterInstance<RouterInfo>* router = nullptr;
+  std::shared_ptr<AsyncMcServer> asyncMcServer;
   try {
     LOG(INFO) << "Spawning AsyncMcServer";
     // Create thread pool for both AsyncMcServer and CarbonRouterInstance
-    std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool =
-        std::make_shared<folly::IOThreadPoolExecutor>(
-            mcrouterOpts.num_proxies, mcrouterOpts.num_proxies);
+    ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(
+        mcrouterOpts.num_proxies, mcrouterOpts.num_proxies);
 
     // Run observer and extract event bases
     auto executorObserver = std::make_shared<ExecutorObserver>();
@@ -503,11 +505,10 @@ bool runServer(
     // Get EVB of main thread
     auto localEvb = ioThreadPool->getEventBaseManager()->getEventBase();
 
-    std::shared_ptr<AsyncMcServer> asyncMcServer =
+    asyncMcServer =
         std::make_shared<AsyncMcServer>(detail::createAsyncMcServerOptions(
             mcrouterOpts, standaloneOpts, &evbs));
 
-    CarbonRouterInstance<RouterInfo>* router = nullptr;
     if (standaloneOpts.remote_thread) {
       router =
           CarbonRouterInstance<RouterInfo>::init("standalone", mcrouterOpts);
@@ -577,7 +578,7 @@ bool runServer(
     LOG(INFO) << "Completed shutdown";
   } catch (const std::exception& e) {
     LOG(ERROR) << e.what();
-    return false;
+    exit(EXIT_FAILURE);
   }
   return true;
 }
