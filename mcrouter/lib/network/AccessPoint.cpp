@@ -91,6 +91,13 @@ AccessPoint::AccessPoint(
   }
 }
 
+AccessPoint::AccessPoint(const folly::IPAddress& ip, uint16_t port)
+    : port_(port), protocol_(mc_unknown_protocol) {
+  host_ = ip.toFullyQualified();
+  hash_ = folly::hash_value(ip);
+  isV6_ = ip.isV6();
+}
+
 std::shared_ptr<AccessPoint> AccessPoint::create(
     folly::StringPiece apString,
     mc_protocol_t defaultProtocol,

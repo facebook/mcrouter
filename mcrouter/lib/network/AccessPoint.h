@@ -15,6 +15,10 @@
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/network/SecurityOptions.h"
 
+namespace folly {
+class IPAddress;
+} // namespace folly
+
 namespace facebook {
 namespace memcache {
 
@@ -27,6 +31,8 @@ struct AccessPoint {
       bool compressed = false,
       bool unixDomainSocket = false,
       uint32_t failureDomain = 0);
+
+  AccessPoint(const folly::IPAddress& addr, uint16_t port);
 
   /**
    * @param apString accepts host:port, host:port:protocol and
@@ -114,7 +120,7 @@ struct AccessPoint {
   bool compressed_{false};
   bool isV6_{false};
   bool unixDomainSocket_{false};
-  uint32_t failureDomain_;
+  uint32_t failureDomain_{0};
 };
 
 } // namespace memcache
