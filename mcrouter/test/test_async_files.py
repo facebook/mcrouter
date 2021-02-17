@@ -13,9 +13,12 @@ from mcrouter.test.McrouterTestCase import McrouterTestCase
 
 
 class TestAsyncFiles(McrouterTestCase):
+    default_route = '/././'
     stat_prefix = 'libmcrouter.mcrouter.0.'
     config = './mcrouter/test/mcrouter_test_basic_1_1_1.json'
+    config_hash = '6bbe796e576bf700f5e3ba8a66d409d5'
     extra_args = ['--stats-logging-interval', '100', '--use-asynclog-version2']
+    mock_smc_config = None
 
     def check_stats(self, stats_dir, retries=20, sleep_interval=1):
         file_stat = os.path.join(stats_dir, self.stat_prefix + 'stats')
@@ -50,12 +53,20 @@ class TestAsyncFiles(McrouterTestCase):
         return (file_stat, file_startup_options, file_config_sources)
 
     def test_stats_no_requests(self):
-        mcrouter = self.add_mcrouter(self.config, extra_args=self.extra_args)
+        mcrouter = self.add_mcrouter(
+            self.config,
+            extra_args=self.extra_args,
+            sr_mock_smc_config=self.mock_smc_config,
+        )
         # check will wait for files
         self.check_stats(mcrouter.stats_dir)
 
     def test_async_files(self):
-        mcrouter = self.add_mcrouter(self.config, extra_args=self.extra_args)
+        mcrouter = self.add_mcrouter(
+            self.config,
+            extra_args=self.extra_args,
+            sr_mock_smc_config=self.mock_smc_config,
+        )
         self.assertIsNone(mcrouter.delete('key'))
 
         # wait for files
@@ -89,12 +100,11 @@ class TestAsyncFiles(McrouterTestCase):
 
         with open(file_startup_options) as f:
             startup_json = json.load(f)
-            self.assertEqual(startup_json['default_route'], '/././')
+            self.assertEqual(startup_json['default_route'], self.default_route)
 
         with open(file_config_sources) as f:
             sources_json = json.load(f)
-            self.assertEqual(sources_json['mcrouter_config'],
-                             '6bbe796e576bf700f5e3ba8a66d409d5')
+            self.assertEqual(sources_json['mcrouter_config'], self.config_hash)
 
         # check stats are up-to-date
         now = time.time()

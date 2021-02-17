@@ -106,8 +106,26 @@ McRouteHandleProvider<MemcacheRouterInfo>::createSRRoute(
     RouteHandleFactory<MemcacheRouterInfo::RouteHandleIf>& factory,
     const folly::dynamic& json) {
   if (makeSRRoute) {
-    return makeSRRoute(factory, json, proxy_);
+    auto route = makeSRRoute(factory, json, proxy_);
+
+    bool needAsynclog = true;
+    if (json.isObject()) {
+      if (auto* jNeedAsynclog = json.get_ptr("asynclog")) {
+        needAsynclog = parseBool(*jNeedAsynclog, "asynclog");
+      }
+
+      if (needAsynclog) {
+        auto jAsynclogName = json.get_ptr("service_name");
+        checkLogic(
+            jAsynclogName != nullptr,
+            "AsynclogRoute over SRRoute: 'service_name' property is missing");
+        auto asynclogName = parseString(*jAsynclogName, "service_name");
+        return createAsynclogRoute(std::move(route), asynclogName.toString());
+      }
+      return route;
+    }
   }
+
   throwLogic("SRRoute is not implemented for this router");
 }
 

@@ -4,7 +4,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-
 import os
 import unittest
 import time
@@ -76,8 +75,14 @@ class McrouterTestCase(unittest.TestCase):
                                 if 'port_map' not in self.__dict__
                                 else self.port_map)
 
+        substitute_smc_ports = None
+        if substitute_ports and sr_mock_smc_config:
+            substitute_smc_ports = substitute_ports
+            substitute_ports = None
+
         mcrouter = Mcrouter(config,
                             substitute_config_ports=substitute_ports,
+                            substitute_config_smc_ports=substitute_smc_ports,
                             default_route=route,
                             extra_args=extra_args,
                             replace_map=replace_map,
