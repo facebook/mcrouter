@@ -224,7 +224,9 @@ bool AsyncLog::writeDelete(
 
   if (options_.use_asynclog_version2) {
     json = dynamic::object;
+    json["s"] = options_.service_name;
     json["f"] = options_.flavor_name;
+    json["r"] = options_.default_route.getRegion();
     json["h"] = folly::sformat("[{}]:{}", host, port);
     json["p"] = poolName.str();
     json["k"] = key.str();
