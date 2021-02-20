@@ -431,7 +431,7 @@ class McServerThread {
         mcServerThread_->worker_.addClientSocket(fd);
       }
     }
-    void acceptError(const std::exception& ex) noexcept final {
+    void acceptError(folly::exception_wrapper ex) noexcept final {
       LOG(ERROR) << "Connection accept error: " << ex.what();
     }
 
