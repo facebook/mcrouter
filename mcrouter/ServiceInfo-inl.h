@@ -93,7 +93,7 @@ class RouteHandlesCommandDispatcher {
               "host: " + folly::to<std::string>(srHosts.front().getIp()) +
               " port:" + folly::to<std::string>(srHosts.front().getPort()) +
               '\n');
-          return true;
+          return false;
         });
     if (!key.empty() && key[0] == '{' && key[key.size() - 1] == '}') {
       carbon::convertFromFollyDynamic(folly::parseJson(key), request);
