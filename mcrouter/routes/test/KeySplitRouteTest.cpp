@@ -293,13 +293,16 @@ TEST_F(KeySplitRouteTest, FirstHitWorstCaseTest) {
 }
 
 TEST_F(KeySplitRouteTest, TestReplicaCounts) {
-  ASSERT_DEATH(testCreate(0, false), "Assertion .* failed.");
-  ASSERT_DEATH(testCreate(1, false), "Assertion .* failed.");
-
   testCreate(2, false);
   testCreate(999, false);
   testCreate(1000, false);
 
+  // Skip the rest of the test if running in TSAN mode
+  if (folly::kIsSanitizeThread) {
+    return;
+  }
+  ASSERT_DEATH(testCreate(0, false), "Assertion .* failed.");
+  ASSERT_DEATH(testCreate(1, false), "Assertion .* failed.");
   ASSERT_DEATH(testCreate(1001, false), "Assertion .* failed.");
 }
 
