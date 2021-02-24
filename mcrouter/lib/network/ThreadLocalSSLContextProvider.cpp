@@ -273,11 +273,11 @@ std::shared_ptr<SSLContext> createServerSSLContext(
 #endif
   if (requireClientVerification) {
     sslContext->setVerificationOption(
-        folly::SSLContext::SSLVerifyPeerEnum::VERIFY_REQ_CLIENT_CERT);
+        folly::SSLContext::VerifyClientCertificate::ALWAYS);
   } else {
     // request client certs and verify them if the client presents them.
     sslContext->setVerificationOption(
-        folly::SSLContext::SSLVerifyPeerEnum::VERIFY);
+        folly::SSLContext::VerifyClientCertificate::IF_PRESENTED);
   }
 #if FOLLY_OPENSSL_HAS_ALPN
   // servers can always negotiate this - it is up to the client to do so.
