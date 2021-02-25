@@ -12,6 +12,8 @@
 #include <folly/io/async/ssl/OpenSSLUtils.h>
 #include <mcrouter/lib/network/TlsToPlainTransport.h>
 
+#include "mcrouter/lib/fbi/cpp/LogFailure.h"
+
 namespace facebook {
 namespace memcache {
 
@@ -156,8 +158,19 @@ folly::AsyncTransportWrapper::UniquePtr McSSLUtil::moveToPlaintext(
   /// get the addresses out of the sock
   folly::SocketAddress local;
   folly::SocketAddress peer;
-  sock.getLocalAddress(&local);
-  sock.getPeerAddress(&peer);
+  auto exceptionWrapper =
+      folly::try_and_catch<std::exception>([&sock, &local, &peer] {
+        sock.getLocalAddress(&local);
+        sock.getPeerAddress(&peer);
+      });
+  if (exceptionWrapper) {
+    LOG_FAILURE(
+        "mcrouter",
+        failure::Category::kSystemError,
+        "Failed to get socket address: {}",
+        exceptionWrapper.what());
+    return nullptr;
+  }
 
   // Get the stats for the socket
   SecurityTransportStats stats;
