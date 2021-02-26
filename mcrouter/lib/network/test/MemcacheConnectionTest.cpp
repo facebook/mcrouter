@@ -26,28 +26,15 @@
 using facebook::memcache::test::TestServer;
 
 namespace {
-uint16_t getRandomPort() {
-  uint16_t port = 0;
-  for (size_t retry = 0; port == 0 && retry < 10; ++retry) {
-    port = folly::Random::rand32(10000, 3000);
-    if (facebook::memcache::isPortOpen(port)) {
-      LOG(INFO) << "port " << port << " is in use";
-      port = 0;
-    }
-  }
-  CHECK_GT(port, 0) << "Fail to find free port";
-  return port;
-}
-
 std::pair<
     std::shared_ptr<apache::thrift::ThriftServer>,
     std::unique_ptr<std::thread>>
-startMockMcThriftServer(uint16_t port) {
+startMockMcThriftServer(const facebook::memcache::ListenSocket& socket) {
   auto server = std::make_shared<apache::thrift::ThriftServer>();
   server->setInterface(
       std::make_shared<facebook::memcache::test::MockMcThriftServerHandler>());
-  server->setPort(port);
   server->setNumIOWorkerThreads(1);
+  server->useExistingSocket(socket.getSocketFd());
   auto thread = std::make_unique<std::thread>([server]() {
     LOG(INFO) << "Starting thrift server.";
     server->serve();
@@ -55,17 +42,18 @@ startMockMcThriftServer(uint16_t port) {
   });
   auto conn = std::make_unique<facebook::memcache::MemcacheExternalConnection>(
       facebook::memcache::ConnectionOptions(
-          "localhost", port, mc_thrift_protocol));
+          "localhost", socket.getPort(), mc_thrift_protocol));
   bool started = conn->healthCheck();
   for (int i = 0; !started && i < 5; i++) {
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
     LOG(INFO) << folly::sformat(
-        "health check thrift server on port {}, retry={}", port, i);
+        "health check thrift server on port {}, retry={}", socket.getPort(), i);
     started = conn->healthCheck();
   }
   conn.reset();
   EXPECT_TRUE(started) << folly::sformat(
-      "fail to start thrift server on port {} after max retries", port);
+      "fail to start thrift server on port {} after max retries",
+      socket.getPort());
   return std::make_pair(server, std::move(thread));
 }
 } // namespace
@@ -108,11 +96,11 @@ TEST(MemcacheExternalConnectionTest, simpleExternalConnection) {
 }
 
 TEST(MemcacheExternalConnectionTest, simpleExternalConnectionThrift) {
-  auto port = getRandomPort();
-  auto serverInfo = startMockMcThriftServer(port);
+  facebook::memcache::ListenSocket socket;
+  auto serverInfo = startMockMcThriftServer(socket);
   auto conn = std::make_unique<facebook::memcache::MemcacheExternalConnection>(
       facebook::memcache::ConnectionOptions(
-          "localhost", port, mc_thrift_protocol));
+          "localhost", socket.getPort(), mc_thrift_protocol));
   facebook::memcache::McSetRequest request("hello");
   request.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "world");
   folly::fibers::Baton baton;
