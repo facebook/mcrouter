@@ -1,3 +1,5 @@
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
 # ===========================================================================
 #  https://www.gnu.org/software/autoconf-archive/ax_cxx_compile_stdcxx.html
 # ===========================================================================
