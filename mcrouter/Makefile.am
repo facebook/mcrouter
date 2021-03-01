@@ -151,6 +151,7 @@ libmcroutercore_a_SOURCES = \
   routes/NullRoute.cpp \
   routes/OperationSelectorRoute-inl.h \
   routes/OperationSelectorRoute.h \
+  routes/OriginalClientHashRoute.h \
   routes/OutstandingLimitRoute.h \
   routes/PoolRouteUtils.h \
   routes/PrefixSelectorRoute.h \

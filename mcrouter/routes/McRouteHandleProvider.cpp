@@ -36,6 +36,7 @@
 #include "mcrouter/routes/ModifyExptimeRoute.h"
 #include "mcrouter/routes/ModifyKeyRoute.h"
 #include "mcrouter/routes/OperationSelectorRoute.h"
+#include "mcrouter/routes/OriginalClientHashRoute.h"
 #include "mcrouter/routes/OutstandingLimitRoute.h"
 #include "mcrouter/routes/RandomRouteFactory.h"
 #include "mcrouter/routes/RoutingGroupRoute.h"
@@ -166,6 +167,8 @@ McRouteHandleProvider<MemcacheRouterInfo>::buildRouteMap() {
       {"NullRoute", &makeNullRoute<MemcacheRouteHandleIf>},
       {"OperationSelectorRoute",
        &makeOperationSelectorRoute<MemcacheRouterInfo>},
+      {"OriginalClientHashRoute",
+       &makeOriginalClientHashRoute<MemcacheRouterInfo>},
       {"PoolRoute",
        [this](McRouteHandleFactory& factory, const folly::dynamic& json) {
          return makePoolRoute(factory, json);
