@@ -490,15 +490,25 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
   assert(queue_.getParserInitializer() == nullptr);
 
   if (connectionOptions_.enableQoS) {
-    folly::SocketAddress address;
-    socket_->getPeerAddress(&address);
-    auto asyncSock = socket_->getUnderlyingTransport<folly::AsyncSocket>();
-    if (asyncSock) {
-      checkWhetherQoSIsApplied(
-          asyncSock->getNetworkSocket().toFd(),
-          address,
-          connectionOptions_,
-          "AsyncMcClient");
+    // guard this since getPeerAddress could throw
+    auto exceptionWrapper = folly::try_and_catch<std::exception>([this] {
+      folly::SocketAddress address;
+      socket_->getPeerAddress(&address);
+      auto asyncSock = socket_->getUnderlyingTransport<folly::AsyncSocket>();
+      if (asyncSock) {
+        checkWhetherQoSIsApplied(
+            asyncSock->getNetworkSocket().toFd(),
+            address,
+            connectionOptions_,
+            "AsyncMcClient");
+      }
+    });
+    if (exceptionWrapper) {
+      LOG_FAILURE(
+          "AsyncMcClient",
+          failure::Category::kSystemError,
+          "Failed to enableQOS: {}",
+          exceptionWrapper.what());
     }
   }
 
