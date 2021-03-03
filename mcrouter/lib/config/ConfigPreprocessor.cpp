@@ -1215,7 +1215,7 @@ class ConfigPreprocessor::BuiltIns {
   static dynamic failMacro(Context&& ctx) {
     const auto& msg = ctx.at("msg");
     if (msg.isString()) {
-      throw std::logic_error(msg.data());
+      throw std::logic_error(msg.getString());
     } else {
       throw std::logic_error(folly::toPrettyJson(msg));
     }
