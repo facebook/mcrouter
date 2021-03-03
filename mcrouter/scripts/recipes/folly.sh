@@ -41,8 +41,8 @@ if [ ! -d "$PKG_DIR/zstd" ]; then
 
   cd "$PKG_DIR/zstd" || die "cd fail"
 
-  # Checkout zstd-1.3.7 release
-  git checkout 21cd8a9d95a321f1fe256dc837e388bbc168fdbf
+  # Checkout zstd-1.4.9 release
+  git checkout e4558ffd1dc49399faf4ee5d85abed4386b4dcf5
   cmake -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" build/cmake/
   make $MAKE_ARGS && make install $MAKE_ARGS
 fi
