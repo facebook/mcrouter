@@ -702,19 +702,22 @@ void McServerSession::fizzHandshakeError(
     fizz::server::AsyncFizzServer*,
     folly::exception_wrapper e) noexcept {
   e.handle(
-      [](const folly::AsyncSocketException& ex) {
+      [socketAddress = socketAddress_](const folly::AsyncSocketException& ex) {
         auto type = ex.getType();
         // we log non SSL errors less frequently as they are most likely network
         // related / not specific to SSL itself
         if (type !=
             folly::AsyncSocketException::AsyncSocketExceptionType::SSL_ERROR) {
-          LOG_EVERY_N(ERROR, 10000) << "Fizz Handshake failure: " << ex.what();
+          LOG_EVERY_N(ERROR, 10000) << "Fizz Handshake failure: " << ex.what()
+                                    << ". Peer IP address: " << socketAddress;
         } else {
-          LOG_EVERY_N(ERROR, 100) << "Fizz Handshake failure: " << ex.what();
+          LOG_EVERY_N(ERROR, 100) << "Fizz Handshake failure: " << ex.what()
+                                  << ". Peer IP address: " << socketAddress;
         }
       },
-      [](const std::exception& ex) {
-        LOG_EVERY_N(ERROR, 100) << "Fizz Handshake failure: " << ex.what();
+      [socketAddress = socketAddress_](const std::exception& ex) {
+        LOG_EVERY_N(ERROR, 100) << "Fizz Handshake failure: " << ex.what()
+                                << ". Peer IP address: " << socketAddress;
       });
   close();
 }
