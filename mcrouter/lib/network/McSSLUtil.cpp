@@ -158,11 +158,10 @@ folly::AsyncTransportWrapper::UniquePtr McSSLUtil::moveToPlaintext(
   /// get the addresses out of the sock
   folly::SocketAddress local;
   folly::SocketAddress peer;
-  auto exceptionWrapper =
-      folly::try_and_catch<std::exception>([&sock, &local, &peer] {
-        sock.getLocalAddress(&local);
-        sock.getPeerAddress(&peer);
-      });
+  auto exceptionWrapper = folly::try_and_catch([&sock, &local, &peer] {
+    sock.getLocalAddress(&local);
+    sock.getPeerAddress(&peer);
+  });
   if (exceptionWrapper) {
     LOG_FAILURE(
         "mcrouter",
