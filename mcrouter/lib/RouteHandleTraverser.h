@@ -56,7 +56,7 @@ class RouteHandleTraverser {
       std::function<bool(const AccessPoint&, const PoolContext&)>;
 
   using RequestClass = mcrouter::RequestClass;
-  using SRHostsFunc = std::function<bool(const SRHosts&, const RequestClass&)>;
+  using SRHostFunc = std::function<bool(const SRHost&, const RequestClass&)>;
 
   /**
    * Creates a route handle traverser.
@@ -65,11 +65,11 @@ class RouteHandleTraverser {
       StartFunc start = nullptr,
       EndFunc end = nullptr,
       AccessPointFunc accessPointFn = nullptr,
-      SRHostsFunc srHostsFn = nullptr)
+      SRHostFunc srHostFn = nullptr)
       : start_(std::move(start)),
         end_(std::move(end)),
         accessPointFn_(std::move(accessPointFn)),
-        srHostsFn_(std::move(srHostsFn)) {}
+        srHostFn_(std::move(srHostFn)) {}
 
   template <class Request>
   bool operator()(const RouteHandleIf& r, const Request& req) const {
@@ -97,12 +97,12 @@ class RouteHandleTraverser {
 
   template <class Request>
   bool operator()(
-      const SRHosts& srHosts,
+      const SRHost& srHost,
       const RequestClass& requestClass,
       const Request&) const {
     bool stopTraversal = false;
-    if (srHostsFn_ && !srHosts.empty()) {
-      stopTraversal = srHostsFn_(srHosts, requestClass);
+    if (srHostFn_) {
+      stopTraversal = srHostFn_(srHost, requestClass);
     }
     return stopTraversal;
   }
@@ -153,7 +153,7 @@ class RouteHandleTraverser {
   StartFunc start_;
   EndFunc end_;
   AccessPointFunc accessPointFn_;
-  SRHostsFunc srHostsFn_;
+  SRHostFunc srHostFn_;
   Options options_;
 
  public:

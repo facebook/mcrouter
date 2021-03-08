@@ -87,12 +87,11 @@ class RouteHandlesCommandDispatcher {
         [&level]() { --level; },
         nullptr,
         [&tree, &level](
-            const SRHosts& srHosts, const RequestClass& /* unused */) {
+            const SRHost& srHost, const RequestClass& /* unused */) {
           tree.append(
               std::string(level + 1, ' ') +
-              "host: " + folly::to<std::string>(srHosts.front().getIp()) +
-              " port:" + folly::to<std::string>(srHosts.front().getPort()) +
-              '\n');
+              "host: " + folly::to<std::string>(srHost.getIp()) +
+              " port:" + folly::to<std::string>(srHost.getPort()) + '\n');
           return false;
         });
     if (!key.empty() && key[0] == '{' && key[key.size() - 1] == '}') {

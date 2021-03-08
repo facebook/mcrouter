@@ -23,7 +23,6 @@ struct SRHost {
     return std::nullopt;
   }
 };
-using SRHosts = std::vector<SRHost>;
 
 } // namespace memcache
 } // namespace facebook
