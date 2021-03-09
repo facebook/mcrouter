@@ -142,14 +142,14 @@ using OtherThanT = typename std::
     enable_if<OtherThan<Request, RequestTraitOrType...>::value, void*>::type;
 
 template <class Request>
-static const std::string getRoutingGroupName() {
-  if (ArithmeticLike<Request>::value) {
+const std::string getRoutingGroupName() {
+  if constexpr (ArithmeticLike<Request>::value) {
     return kArithmeticKey;
-  } else if (DeleteLike<Request>::value) {
+  } else if constexpr (DeleteLike<Request>::value) {
     return kDeleteKey;
-  } else if (GetLike<Request>::value) {
+  } else if constexpr (GetLike<Request>::value) {
     return kGetKey;
-  } else if (UpdateLike<Request>::value) {
+  } else if constexpr (UpdateLike<Request>::value) {
     return kUpdateKey;
   } else {
     return "";
