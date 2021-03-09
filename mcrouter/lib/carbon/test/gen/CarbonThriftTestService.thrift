@@ -20,6 +20,7 @@ cpp_include "mcrouter/lib/carbon/test/gen/CarbonThriftTestMessages.h"
 namespace cpp2 carbon.test.thrift
 
 service CarbonThriftTest {
+  CarbonThriftTest.CustomReply (cpp.type = "carbon::test::CustomReply") customRequest(1: CarbonThriftTest.CustomRequest (cpp.type = "carbon::test::CustomRequest") request)
   CarbonThriftTest.DummyThriftReply (cpp.type = "carbon::test::DummyThriftReply") thrift_test(1: CarbonThriftTest.DummyThriftRequest (cpp.type = "carbon::test::DummyThriftRequest") request)
   CarbonThriftTest.ThriftTestReply (cpp.type = "carbon::test::ThriftTestReply") test(1: CarbonThriftTest.ThriftTestRequest (cpp.type = "carbon::test::ThriftTestRequest") request)
   Common.McVersionReply (cpp.type = "facebook::memcache::McVersionReply") mcVersion(1: Common.McVersionRequest (cpp.type = "facebook::memcache::McVersionRequest") request)

@@ -8,6 +8,8 @@ namespace carbon::test;
 thrift_namespace carbon.test.thrift;
 
 import "mcrouter/lib/network/Common.idl"
+cpp2_include "<mcrouter/lib/carbon/test/Timestamp.h>"
+
 
 enum MyEnum : int32_t {
   A = 0,
@@ -79,6 +81,21 @@ request DummyThriftRequest {
 reply DummyThriftReply {
   1: Result result;
   2: std::string message;
+};
+
+request CustomRequest {
+  id: 3;
+  name: "customRequest";
+  reply: CustomReply;
+
+  1: carbon::Keys<folly::IOBuf> key;
+  2: int8_t testInt8;
+  3: Timestamp timestamp thrift_cpp_indirection i64;
+};
+
+reply CustomReply {
+  1: Result result;
+  2: int32_t valInt32;
 };
 
 service {

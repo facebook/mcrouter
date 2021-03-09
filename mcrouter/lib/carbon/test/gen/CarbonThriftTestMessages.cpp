@@ -33,5 +33,7 @@ constexpr const char* const ThriftTestRequest::name;
 
 constexpr const char* const DummyThriftRequest::name;
 
+constexpr const char* const CustomRequest::name;
+
 } // namespace test
 } // namespace carbon

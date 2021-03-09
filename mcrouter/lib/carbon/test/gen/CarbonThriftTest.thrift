@@ -17,6 +17,7 @@ include "mcrouter/lib/carbon/carbon_result.thrift"
 include "mcrouter/lib/network/gen/Common.thrift"
 
 cpp_include "<mcrouter/lib/carbon/CarbonProtocolReader.h>"
+cpp_include "<mcrouter/lib/carbon/test/Timestamp.h>"
 
 namespace cpp2 carbon.test.thrift
 
@@ -168,6 +169,41 @@ cpp.virtual
 struct DummyThriftReply {
   1: carbon_result.Result result
   2: string message
+}(cpp.methods = "
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+",
+cpp.virtual
+)
+struct CustomRequest {
+  1: carbon.IOBufKey key
+  2: byte testInt8
+  3: i64 (cpp.type = "Timestamp", cpp.indirection) timestamp
+}(cpp.methods = "
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+",
+cpp.virtual
+)
+struct CustomReply {
+  1: carbon_result.Result result
+  2: i32 valInt32
 }(cpp.methods = "
   template <class V>
   void visitFields(V&& v);

@@ -454,6 +454,71 @@ void DummyThriftReply::visitFields(V&& v) const {
     return;
   }
 }
+
+template <class Writer>
+void CustomRequest::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key_ref());
+  writer.writeField(2 /* field id */, testInt8_ref());
+  writer.writeField(3 /* field id */, timestamp_ref());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void CustomRequest::visitFields(V&& v) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
+    return;
+  }
+  if (!v.visitField(2, "testInt8", *this->testInt8_ref())) {
+    return;
+  }
+  if (!v.visitField(3, "timestamp", *this->timestamp_ref())) {
+    return;
+  }
+}
+
+template <class V>
+void CustomRequest::visitFields(V&& v) const {
+  if (!v.visitField(1, "key", *this->key_ref())) {
+    return;
+  }
+  if (!v.visitField(2, "testInt8", *this->testInt8_ref())) {
+    return;
+  }
+  if (!v.visitField(3, "timestamp", *this->timestamp_ref())) {
+    return;
+  }
+}
+
+template <class Writer>
+void CustomReply::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result_ref());
+  writer.writeField(2 /* field id */, valInt32_ref());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void CustomReply::visitFields(V&& v) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
+    return;
+  }
+  if (!v.visitField(2, "valInt32", *this->valInt32_ref())) {
+    return;
+  }
+}
+
+template <class V>
+void CustomReply::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", *this->result_ref())) {
+    return;
+  }
+  if (!v.visitField(2, "valInt32", *this->valInt32_ref())) {
+    return;
+  }
+}
 } // namespace thrift
 } // namespace test
 } // namespace carbon
@@ -639,6 +704,56 @@ template <>
 class Cpp2Ops<carbon::test::DummyThriftReply> {
  public:
   typedef carbon::test::DummyThriftReply Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::CustomRequest> {
+ public:
+  typedef carbon::test::CustomRequest Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::CustomReply> {
+ public:
+  typedef carbon::test::CustomReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }

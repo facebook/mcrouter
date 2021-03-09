@@ -39,9 +39,13 @@ class CarbonThriftTestRouteHandleIf {
 
   virtual ~CarbonThriftTestRouteHandleIf() = default;
 
+  virtual CustomReply route(const CustomRequest&) = 0;
   virtual DummyThriftReply route(const DummyThriftRequest&) = 0;
   virtual ThriftTestReply route(const ThriftTestRequest&) = 0;
 
+virtual bool traverse(
+    const CustomRequest&,
+    const facebook::memcache::RouteHandleTraverser<CarbonThriftTestRouteHandleIf>&) const = 0;
 virtual bool traverse(
     const DummyThriftRequest&,
     const facebook::memcache::RouteHandleTraverser<CarbonThriftTestRouteHandleIf>&) const = 0;
@@ -60,6 +64,9 @@ class CarbonThriftTestRouteHandle : public CarbonThriftTestRouteHandleIf {
     return route_.routeName();
   }
 
+  CustomReply route(const CustomRequest& request) override final {
+    return route_.route(request);
+  }
   DummyThriftReply route(const DummyThriftRequest& request) override final {
     return route_.route(request);
   }
@@ -67,6 +74,12 @@ class CarbonThriftTestRouteHandle : public CarbonThriftTestRouteHandleIf {
     return route_.route(request);
   }
 
+bool traverse(
+    const CustomRequest& request,
+    const facebook::memcache::RouteHandleTraverser<CarbonThriftTestRouteHandleIf>& traverser)
+    const override final {
+  return route_.traverse(request, traverser);
+}
 bool traverse(
     const DummyThriftRequest& request,
     const facebook::memcache::RouteHandleTraverser<CarbonThriftTestRouteHandleIf>& traverser)

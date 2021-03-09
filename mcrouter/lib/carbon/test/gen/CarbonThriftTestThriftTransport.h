@@ -37,6 +37,42 @@ class ThriftTransportMethods<carbon::test::CarbonThriftTestRouterInfo> : public 
 
 void sendSyncHelper(
     typename carbon::test::CarbonThriftTestRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const carbon::test::CustomRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    folly::Try<apache::thrift::RpcResponseComplete<carbon::test::CustomReply>>& reply,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<carbon::test::CarbonThriftTestRouterInfo>::getThriftServerLoadEnabled();
+  if (needServerLoad) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+  auto cryptoAuthToken = request.getCryptoAuthToken();
+  if (cryptoAuthToken.has_value()) {
+    rpcOptions.setWriteHeader(
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
+  }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  reply = thriftClient->sync_complete_customRequest(
+      rpcOptions, request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcSizeStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (needServerLoad && reply->responseContext.serverLoad) {
+        rpcStatsContext->serverLoad = ServerLoad(
+            static_cast<int32_t>(*reply->responseContext.serverLoad));
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+}
+
+void sendSyncHelper(
+    typename carbon::test::CarbonThriftTestRouterInfo::RouteHandleAsyncClient* thriftClient,
     const carbon::test::DummyThriftRequest& request,
     apache::thrift::RpcOptions& rpcOptions,
     folly::Try<apache::thrift::RpcResponseComplete<carbon::test::DummyThriftReply>>& reply,
@@ -164,6 +200,25 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
           thriftClient_->getChannel());
       channel->setFlushList(flushList_);
     }
+  }
+
+  carbon::test::CustomReply sendSync(
+      const carbon::test::CustomRequest& request,
+      std::chrono::milliseconds timeout,
+      RpcStatsContext* rpcStatsContext = nullptr) {
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
+      folly::Try<apache::thrift::RpcResponseComplete<carbon::test::CustomReply>> reply;
+      if (auto* thriftClient = getThriftClient()) {
+        auto rpcOptions = getRpcOptions(timeout);
+        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
+      } else {
+        reply.emplaceException(
+            folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
+              apache::thrift::transport::TTransportException::NOT_OPEN,
+              "Error creating thrift client."));
+      }
+      return reply;
+    });
   }
 
   carbon::test::DummyThriftReply sendSync(

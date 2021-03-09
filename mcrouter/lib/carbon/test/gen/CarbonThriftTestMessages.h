@@ -134,6 +134,49 @@ class DummyThriftReply : public carbon::ReplyCommon, public carbon::test::thrift
   friend class apache::thrift::Cpp2Ops<DummyThriftReply>;
 
 };
+
+class CustomReply;
+
+class CustomRequest : public carbon::RequestCommon, public carbon::test::thrift::CustomRequest {
+ public:
+  using reply_type = CustomReply;
+
+  static constexpr size_t typeId = 69;
+  static constexpr const char* name = "customRequest";
+
+  CustomRequest() = default;
+  CustomRequest(const CustomRequest&) = default;
+  CustomRequest& operator=(const CustomRequest&) = default;
+  CustomRequest(CustomRequest&&) = default;
+  CustomRequest& operator=(CustomRequest&&) = default;
+  explicit CustomRequest(folly::StringPiece sp) {
+    key_ref() = sp;
+  }
+  explicit CustomRequest(folly::IOBuf&& carbonKey) {
+    key_ref() = std::move(carbonKey);
+  }
+
+  friend class apache::thrift::Cpp2Ops<CustomRequest>;
+
+};
+
+class CustomReply : public carbon::ReplyCommon, public carbon::test::thrift::CustomReply {
+ public:
+
+  static constexpr size_t typeId = 70;
+
+  CustomReply() = default;
+  CustomReply(const CustomReply&) = default;
+  CustomReply& operator=(const CustomReply&) = default;
+  CustomReply(CustomReply&&) = default;
+  CustomReply& operator=(CustomReply&&) = default;
+  explicit CustomReply(carbon::Result carbonResult) {
+    result_ref() = carbonResult;
+  }
+
+  friend class apache::thrift::Cpp2Ops<CustomReply>;
+
+};
 } // namespace test
 } // namespace carbon
 

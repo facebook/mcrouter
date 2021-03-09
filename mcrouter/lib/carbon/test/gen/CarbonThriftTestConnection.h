@@ -37,12 +37,18 @@ class CarbonThriftTestConnection {
   virtual ~CarbonThriftTestConnection() = default;
 
   virtual void sendRequestOne(
+      const CustomRequest&,
+      carbon::RequestCb<CustomRequest>) = 0;
+  virtual void sendRequestOne(
       const DummyThriftRequest&,
       carbon::RequestCb<DummyThriftRequest>) = 0;
   virtual void sendRequestOne(
       const ThriftTestRequest&,
       carbon::RequestCb<ThriftTestRequest>) = 0;
 
+  virtual void sendRequestMulti(
+      std::vector<std::reference_wrapper<const CustomRequest>>&&,
+      carbon::RequestCb<CustomRequest>) = 0;
   virtual void sendRequestMulti(
       std::vector<std::reference_wrapper<const DummyThriftRequest>>&&,
       carbon::RequestCb<DummyThriftRequest>) = 0;
@@ -82,6 +88,11 @@ class CarbonThriftTestConnectionImpl : public CarbonThriftTestConnection {
   }
 
   void sendRequestOne(
+      const CustomRequest& req,
+      carbon::RequestCb<CustomRequest> cb) {
+    return impl_.sendRequestOne(req, std::move(cb));
+  }
+  void sendRequestOne(
       const DummyThriftRequest& req,
       carbon::RequestCb<DummyThriftRequest> cb) {
     return impl_.sendRequestOne(req, std::move(cb));
@@ -92,6 +103,11 @@ class CarbonThriftTestConnectionImpl : public CarbonThriftTestConnection {
     return impl_.sendRequestOne(req, std::move(cb));
   }
 
+  void sendRequestMulti(
+      std::vector<std::reference_wrapper<const CustomRequest>>&& reqs,
+      carbon::RequestCb<CustomRequest> cb) {
+    return impl_.sendRequestMulti(std::move(reqs), std::move(cb));
+  }
   void sendRequestMulti(
       std::vector<std::reference_wrapper<const DummyThriftRequest>>&& reqs,
       carbon::RequestCb<DummyThriftRequest> cb) {
