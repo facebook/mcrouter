@@ -308,6 +308,9 @@ std::shared_ptr<SSLContext> createClientSSLContext(
   auto context = std::make_shared<ClientSSLContext>(ticketCache.get());
   auto ciphers = folly::ssl::SSLCommonOptions::ciphers();
   std::vector<std::string> cVec(ciphers.begin(), ciphers.end());
+  // Explicitly disable TLS 1.3 because of assumption in codebase that
+  // AsyncSSLSocket == TLS 1.2 (e.g. tls_to_plain).
+  context->disableTLS13();
 #if FOLLY_OPENSSL_HAS_ALPN
   if (mech == SecurityMech::TLS_TO_PLAINTEXT) {
     // Prepend ECDHE-RSA-NULL-SHA to make it obvious from the ClientHello
