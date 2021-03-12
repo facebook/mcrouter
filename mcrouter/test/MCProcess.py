@@ -92,6 +92,18 @@ class ProcessBase:
         self.proc.poll()
         return self.proc.returncode is None
 
+    def get_log(self):
+        if hasattr(self, 'log'):
+            print(self.base_dir)
+            try:
+                with open(self.log, 'r') as log_f:
+                    log = log_f.read()
+            except IOError:
+                log = ""
+        else:
+            log = ""
+        return log
+
     def dump(self):
         """ dump stderr, stdout, and the log file to stdout with nice headers.
         This allows us to get all this information in a test failure (hidden by
@@ -102,23 +114,14 @@ class ProcessBase:
         except Exception:
             stdout, stderr = b'', b''
 
-        if hasattr(self, 'log'):
-            print(self.base_dir)
-            try:
-                with open(self.log, 'r') as log_f:
-                    log = log_f.read()
-            except IOError:
-                log = ""
-        else:
-            log = ""
-
+        log = self.get_log()
         if log:
-            print("{} ({}) stdout:\n{}".format(self, self.cmd_line, log))
+            print("{} ({}) log:\n{}".format(self, self.cmd_line, log))
         if stdout:
             print("{} ({}) stdout:\n{}".format(self, self.cmd_line,
                                                stdout.decode()))
         if stderr:
-            print("{} ({}) stdout:\n{}".format(self, self.cmd_line,
+            print("{} ({}) stderr:\n{}".format(self, self.cmd_line,
                                                stderr.decode()))
 
 

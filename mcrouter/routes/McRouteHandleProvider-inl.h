@@ -709,6 +709,9 @@ McRouteHandleProvider<RouterInfo>::create(
     return ret;
   }
 
+  if (json.empty()) {
+    throwLogic("Unknown type or Missing Name Handle : {}", type.str());
+  }
   const auto& configMetadataMap = poolFactory_.getConfigMetadataMap();
   auto jType = json.get_ptr("type");
   auto typeMetadata = configMetadataMap.find(jType);
