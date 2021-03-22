@@ -141,12 +141,6 @@ class McRouteHandleProvider
       bool keepRoutingPrefix);
 
   RouteHandleFactoryMap buildRouteMap();
-
-  void buildRouteMap0(RouteHandleFactoryMap& map);
-  void buildRouteMap1(RouteHandleFactoryMap& map);
-  void buildRouteMap2(RouteHandleFactoryMap& map);
-  void buildRouteMap3(RouteHandleFactoryMap& map);
-
   RouteHandleFactoryMapWithProxy buildRouteMapWithProxy();
 
   // This can be removed when the buildRouteMap specialization for
