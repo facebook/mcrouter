@@ -21,6 +21,8 @@ class McrouterTestCase(unittest.TestCase):
             self.open_servers = []
         if 'open_ports' not in self.__dict__:
             self.open_ports = []
+        if 'open_ports_sr' not in self.__dict__:
+            self.open_ports_sr = []
 
     @classmethod
     def wait_for_file(cls, path, *, retries=0, interval=0.25):
@@ -46,14 +48,17 @@ class McrouterTestCase(unittest.TestCase):
                 return False
             time.sleep(interval)
 
-    def add_server(self, server, logical_port=None):
+    def add_server(self, server, logical_port=None, sr_routing=False):
         self.ensureClassVariables()
         server.ensure_connected()
         self.open_servers.append(server)
-        if server.getsslport() is not None:
-            self.open_ports.append(server.getsslport())
+        if sr_routing:
+                self.open_ports_sr.append(server.get_secondary_port())
         else:
-            self.open_ports.append(server.getport())
+            if server.getsslport() is not None:
+                self.open_ports.append(server.getsslport())
+            else:
+                self.open_ports.append(server.getport())
 
         if logical_port:
             if 'port_map' not in self.__dict__:
@@ -75,14 +80,9 @@ class McrouterTestCase(unittest.TestCase):
                                 if 'port_map' not in self.__dict__
                                 else self.port_map)
 
-        substitute_smc_ports = None
-        if substitute_ports and sr_mock_smc_config:
-            substitute_smc_ports = substitute_ports
-            substitute_ports = None
-
         mcrouter = Mcrouter(config,
                             substitute_config_ports=substitute_ports,
-                            substitute_config_smc_ports=substitute_smc_ports,
+                            substitute_config_smc_ports=self.open_ports_sr,
                             default_route=route,
                             extra_args=extra_args,
                             replace_map=replace_map,
