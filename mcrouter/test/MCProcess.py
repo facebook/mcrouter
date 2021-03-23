@@ -784,7 +784,7 @@ class Mcrouter(McrouterBase):
             with open(config, 'w') as config_file:
                 config_file.write(replaced_config)
 
-        if substitute_config_ports and not sr_mock_smc_config:
+        if substitute_config_ports:
             with open(config, 'r') as config_file:
                 replaced_config = replace_ports(config_file.read(),
                                                 substitute_config_ports)

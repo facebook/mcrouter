@@ -32,7 +32,10 @@ struct AccessPoint {
       bool unixDomainSocket = false,
       uint32_t failureDomain = 0);
 
-  AccessPoint(const folly::IPAddress& addr, uint16_t port);
+  AccessPoint(
+      const folly::IPAddress& addr,
+      uint16_t port,
+      uint32_t failureDomain = 0);
 
   /**
    * @param apString accepts host:port, host:port:protocol and
