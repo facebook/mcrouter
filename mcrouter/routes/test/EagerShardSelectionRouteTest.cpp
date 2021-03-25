@@ -531,19 +531,19 @@ TEST_F(EagerShardSelectionRouteTest, customJsonmRoute) {
           EXPECT_EQ(
               "host|pool=pool1|id=0|"
               "ap=localhost:12345:caret:plain:notcompressed|timeout=1000ms"
-              "|keep_routing_prefix=false",
+              "|keep_routing_prefix=false|msb=0",
               r.routeName());
         } else if (iterations == 3) {
           EXPECT_EQ(
               "host|pool=pool1|id=1|"
               "ap=localhost:12325:caret:plain:notcompressed|timeout=1000ms"
-              "|keep_routing_prefix=false",
+              "|keep_routing_prefix=false|msb=0",
               r.routeName());
         } else if (iterations == 4) {
           EXPECT_EQ(
               "host|pool=pool2|id=0|"
               "ap=localhost:12302:caret:plain:notcompressed|timeout=1000ms"
-              "|keep_routing_prefix=false",
+              "|keep_routing_prefix=false|msb=0",
               r.routeName());
         }
       }};
@@ -615,19 +615,19 @@ TEST_F(EagerShardSelectionRouteTest, customJsonmRoute_twice) {
           EXPECT_EQ(
               "host|pool=pool1|id=0|"
               "ap=localhost:12345:caret:plain:notcompressed|timeout=1000ms"
-              "|keep_routing_prefix=false",
+              "|keep_routing_prefix=false|msb=0",
               r.routeName());
         } else if (iterations == 3) {
           EXPECT_EQ(
               "host|pool=pool1|id=1|"
               "ap=localhost:12325:caret:plain:notcompressed|timeout=1000ms"
-              "|keep_routing_prefix=false",
+              "|keep_routing_prefix=false|msb=0",
               r.routeName());
         } else if (iterations == 4) {
           EXPECT_EQ(
               "host|pool=pool2|id=0|"
               "ap=localhost:12302:caret:plain:notcompressed|timeout=1000ms"
-              "|keep_routing_prefix=false",
+              "|keep_routing_prefix=false|msb=0",
               r.routeName());
         } else if (iterations == 5) {
           EXPECT_EQ("null", r.routeName());
@@ -635,19 +635,19 @@ TEST_F(EagerShardSelectionRouteTest, customJsonmRoute_twice) {
           EXPECT_EQ(
               "host|pool=pool1|id=0|"
               "ap=localhost:12345:caret:plain:notcompressed|timeout=1000ms"
-              "|keep_routing_prefix=false",
+              "|keep_routing_prefix=false|msb=0",
               r.routeName());
         } else if (iterations == 7) {
           EXPECT_EQ(
               "host|pool=pool1|id=1|"
               "ap=localhost:12325:caret:plain:notcompressed|timeout=1000ms"
-              "|keep_routing_prefix=false",
+              "|keep_routing_prefix=false|msb=0",
               r.routeName());
         } else if (iterations == 8) {
           EXPECT_EQ(
               "host|pool=pool2|id=0|"
               "ap=localhost:12302:caret:plain:notcompressed|timeout=1000ms"
-              "|keep_routing_prefix=false",
+              "|keep_routing_prefix=false|msb=0",
               r.routeName());
         }
       }};
