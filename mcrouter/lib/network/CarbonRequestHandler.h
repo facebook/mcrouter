@@ -31,7 +31,7 @@ class CarbonRequestHandler : public facebook::memcache::CarbonMessageDispatcher<
  public:
   template <class... Args>
   explicit CarbonRequestHandler(Args&&... args)
-      : onRequest_(std::forward<Args>(args)...) {}
+      : onRequest_(std::make_unique<OnRequest>(std::forward<Args>(args)...)) {}
 
   template <class Request>
   void onRequest(
@@ -60,7 +60,7 @@ class CarbonRequestHandler : public facebook::memcache::CarbonMessageDispatcher<
   }
 
  private:
-  OnRequest onRequest_;
+  std::unique_ptr<OnRequest> onRequest_;
 
   template <class Request>
   void onRequestImpl(
@@ -128,7 +128,7 @@ class CarbonRequestHandler : public facebook::memcache::CarbonMessageDispatcher<
       const facebook::memcache::CaretMessageInfo* headerInfo,
       const folly::IOBuf* reqBuf,
       std::true_type) {
-    onRequest_.onRequest(std::move(ctx), std::move(req), headerInfo, reqBuf);
+    onRequest_->onRequest(std::move(ctx), std::move(req), headerInfo, reqBuf);
   }
 
   template <class Request>
@@ -138,7 +138,7 @@ class CarbonRequestHandler : public facebook::memcache::CarbonMessageDispatcher<
       const facebook::memcache::CaretMessageInfo*,
       const folly::IOBuf*,
       std::false_type) {
-    onRequest_.onRequest(std::move(ctx), std::move(req));
+    onRequest_->onRequest(std::move(ctx), std::move(req));
   }
 };
 
