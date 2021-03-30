@@ -40,7 +40,7 @@ AM_INIT_AUTOMAKE([1.14 foreign dist-bzip2 nostdinc subdir-objects parallel-tests
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_PROG_INSTALL
-AC_PROG_LIBTOOL
+LT_INIT
 
 AC_LANG([C++])
 
