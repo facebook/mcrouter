@@ -41,6 +41,10 @@ Keys<Storage>& Keys<Storage>::operator=(Keys<Storage>&& other) noexcept {
 
 template <class Storage>
 void Keys<Storage>::update() {
+  if constexpr (std::is_same_v<Storage, folly::IOBuf>) {
+    key_.coalesce();
+  }
+
   const folly::StringPiece key = fullKey();
   keyWithoutRoute_ = key;
   routingPrefix_.reset(key.begin(), 0);
