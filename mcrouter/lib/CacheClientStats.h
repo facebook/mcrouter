@@ -40,26 +40,26 @@ struct CacheClientCounters {
 class CacheClientStats {
  public:
   CacheClientCounters getCounters() const noexcept {
-    folly::SpinLockGuard g(lock_);
+    std::unique_lock g(lock_);
     return counters_;
   }
 
   void recordFetchRequest(size_t keyBytes, size_t replyValueBytes) noexcept {
-    folly::SpinLockGuard g(lock_);
+    std::unique_lock g(lock_);
     counters_.fetchCount++;
     counters_.fetchKeyBytes += keyBytes;
     counters_.fetchValueBytes += replyValueBytes;
   }
 
   void recordUpdateRequest(size_t keyBytes, size_t valueBytes) noexcept {
-    folly::SpinLockGuard g(lock_);
+    std::unique_lock g(lock_);
     counters_.updateCount++;
     counters_.updateKeyBytes += keyBytes;
     counters_.updateValueBytes += valueBytes;
   }
 
   void recordInvalidateRequest(size_t keyBytes) noexcept {
-    folly::SpinLockGuard g(lock_);
+    std::unique_lock g(lock_);
     counters_.invalidateCount++;
     counters_.invalidateKeyBytes += keyBytes;
   }

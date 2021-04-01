@@ -127,7 +127,7 @@ template <class Transport>
 void ProxyDestination<Transport>::updateTransportTimeoutsIfShorter(
     std::chrono::milliseconds shortestConnectTimeout,
     std::chrono::milliseconds shortestWriteTimeout) {
-  folly::SpinLockGuard g(transportLock_);
+  std::unique_lock g(transportLock_);
   if (transport_) {
     transport_->updateTimeoutsIfShorter(
         shortestConnectTimeout, shortestWriteTimeout);
@@ -191,7 +191,7 @@ typename Transport::RequestQueueStats
 ProxyDestination<Transport>::getRequestStats() const {
   RequestQueueStats stats{0, 0};
   {
-    folly::SpinLockGuard g(transportLock_);
+    std::unique_lock g(transportLock_);
     if (transport_) {
       stats = transport_->getRequestQueueStats();
     }
@@ -256,7 +256,7 @@ void ProxyDestination<Transport>::resetInactive() {
   if (transport_) {
     std::unique_ptr<Transport> client;
     {
-      folly::SpinLockGuard g(transportLock_);
+      std::unique_lock g(transportLock_);
       client = std::move(transport_);
     }
     client->closeNow();
@@ -314,7 +314,7 @@ void ProxyDestination<Transport>::initializeTransport() {
   auto client =
       std::make_unique<Transport>(proxy().eventBase(), std::move(options));
   {
-    folly::SpinLockGuard g(transportLock_);
+    std::unique_lock g(transportLock_);
     transport_ = std::move(client);
   }
 
@@ -519,7 +519,7 @@ void ProxyDestination<Transport>::closeGracefully() {
           ConnectionStatusCallbacks{nullptr, nullptr});
       std::unique_ptr<Transport> client;
       {
-        folly::SpinLockGuard g(transportLock_);
+        std::unique_lock g(transportLock_);
         client = std::move(transport_);
       }
       client.reset();
