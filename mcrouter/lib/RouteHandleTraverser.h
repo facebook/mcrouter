@@ -56,7 +56,8 @@ class RouteHandleTraverser {
       std::function<bool(const AccessPoint&, const PoolContext&)>;
 
   using RequestClass = mcrouter::RequestClass;
-  using SRHostFunc = std::function<bool(const SRHost&, const RequestClass&)>;
+  using SRHostFunc =
+      std::function<bool(const HostInfoPtr&, const RequestClass&)>;
 
   /**
    * Creates a route handle traverser.
@@ -97,7 +98,7 @@ class RouteHandleTraverser {
 
   template <class Request>
   bool operator()(
-      const SRHost& srHost,
+      const HostInfoPtr& srHost,
       const RequestClass& requestClass,
       const Request&) const {
     bool stopTraversal = false;

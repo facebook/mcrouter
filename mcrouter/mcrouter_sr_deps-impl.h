@@ -10,18 +10,37 @@
 namespace facebook {
 namespace memcache {
 
-struct SRHost {
+class HostInfo;
+using HostInfoPtr = std::shared_ptr<HostInfo>;
+
+class HostInfoLocation {
  public:
-  SRHost(){};
+  HostInfoLocation(){};
+
   const std::string& getIp() const {
-    return "127.0.0.1";
+    return ip_;
   }
   uint16_t getPort() const {
     return 0;
   }
-  const std::optional<uint16_t> getTwTaskId() const {
-    return std::nullopt;
+  const uint16_t* getTWTaskID() const {
+    return nullptr;
   }
+
+ private:
+  const std::string ip_ = "127.0.0.1";
+};
+
+class HostInfo {
+ public:
+  HostInfo(){};
+
+  const HostInfoLocation& location() {
+    return location_;
+  }
+
+ private:
+  const HostInfoLocation location_;
 };
 
 } // namespace memcache

@@ -214,10 +214,10 @@ CarbonRouterClient<RouterInfo>::findAffinitizedProxyIdx(
         }
         return false;
       },
-      [&hash](const SRHost& srHost, const RequestClass& requestClass) {
-        if (!requestClass.is(RequestClass::kShadow) &&
-            srHost.getTwTaskId().has_value()) {
-          hash = srHost.getTwTaskId().value();
+      [&hash](const HostInfoPtr& host, const RequestClass& requestClass) {
+        if (!requestClass.is(RequestClass::kShadow) && host &&
+            host->location().getTWTaskID()) {
+          hash = *host->location().getTWTaskID();
           return true;
         }
         return false;

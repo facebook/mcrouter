@@ -87,11 +87,14 @@ class RouteHandlesCommandDispatcher {
         [&level]() { --level; },
         nullptr,
         [&tree, &level](
-            const SRHost& srHost, const RequestClass& /* unused */) {
+            const HostInfoPtr& host, const RequestClass& /* unused */) {
+          bool haveHost = (host != nullptr);
           tree.append(
-              std::string(level + 1, ' ') +
-              "host: " + folly::to<std::string>(srHost.getIp()) +
-              " port:" + folly::to<std::string>(srHost.getPort()) + '\n');
+              std::string(level + 1, ' ') + "host: " +
+              (haveHost ? host->location().getIp() : "unknown") + " port:" +
+              (haveHost ? folly::to<std::string>(host->location().getPort())
+                        : "unknown") +
+              '\n');
           return false;
         });
     if (!key.empty() && key[0] == '{' && key[key.size() - 1] == '}') {
