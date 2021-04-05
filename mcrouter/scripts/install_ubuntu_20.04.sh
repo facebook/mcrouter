@@ -46,4 +46,4 @@ sudo apt-get install -y \
 
 cd "$(dirname "$0")" || ( echo "cd fail"; exit 1 )
 
-./get_and_build_by_make.sh "Makefile_ubuntu-18.04" "$TARGET" "$BASE_DIR"
+./get_and_build_by_make.sh "Makefile_ubuntu-20.04" "$TARGET" "$BASE_DIR"
