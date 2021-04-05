@@ -139,7 +139,7 @@ class ProxyBase {
   static folly::fibers::FiberManager::Options getFiberManagerOptions(
       const McrouterOptions& opts);
 
-  static FOLLY_TLS bool isProxyThread_;
+  static thread_local bool isProxyThread_;
 
  protected:
   // A queue of callbacks for flushing requests in AsyncMcClients.

@@ -16,7 +16,7 @@ namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
-FOLLY_TLS bool ProxyBase::isProxyThread_{false};
+thread_local bool ProxyBase::isProxyThread_{false};
 
 const McrouterOptions& ProxyBase::getRouterOptions() const {
   return router_.opts();
