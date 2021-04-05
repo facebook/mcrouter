@@ -17,8 +17,8 @@ jobs:
         uses: actions/checkout@v2
       - name: Build dependencies
         run: |
-          ./mcrouter/scripts/install_ubuntu_18.04.sh "$(pwd)"/mcrouter-install deps
+          ./mcrouter/scripts/install_ubuntu_20.04.sh "$(pwd)"/mcrouter-install deps
       - name: Build mcrouter
         run: |
           mkdir -p "$(pwd)"/mcrouter-install/install
-          ./mcrouter/scripts/install_ubuntu_18.04.sh "$(pwd)"/mcrouter-install mcrouter
+          ./mcrouter/scripts/install_ubuntu_20.04.sh "$(pwd)"/mcrouter-install mcrouter
