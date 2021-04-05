@@ -41,8 +41,7 @@ sudo apt-get install -y \
     make \
     pkg-config \
     python-dev \
-    ragel \
-    sudo
+    ragel
 
 cd "$(dirname "$0")" || ( echo "cd fail"; exit 1 )
 
