@@ -173,19 +173,30 @@ class DestinationRoute {
     }
 
     if (isShadow) {
-      if (proxy->router().opts().target_max_shadow_requests > 0 &&
-          pendingShadowReqs_ >=
-              proxy->router().opts().target_max_shadow_requests) {
+      if ((proxy->router().opts().target_max_shadow_requests > 0 &&
+           pendingShadowReqs_ >=
+               proxy->router().opts().target_max_shadow_requests) ||
+          (proxy->router().opts().proxy_max_inflight_shadow_requests > 0 &&
+           proxy->stats().getValue(destination_inflight_shadow_reqs_stat) >=
+               proxy->router().opts().proxy_max_inflight_shadow_requests)) {
         return constructAndLog(req, *ctx, ErrorReply);
       }
       auto& mutableCounter = const_cast<size_t&>(pendingShadowReqs_);
       ++mutableCounter;
+      proxy->stats().increment(destination_inflight_shadow_reqs_stat, 1);
+      proxy->stats().setValue(
+          destination_max_inflight_shadow_reqs_stat,
+          std::max(
+              proxy->stats().getValue(
+                  destination_max_inflight_shadow_reqs_stat),
+              proxy->stats().getValue(destination_inflight_reqs_stat)));
     }
 
     SCOPE_EXIT {
       if (isShadow) {
         auto& mutableCounter = const_cast<size_t&>(pendingShadowReqs_);
         --mutableCounter;
+        proxy->stats().decrement(destination_inflight_shadow_reqs_stat, 1);
       }
     };
 

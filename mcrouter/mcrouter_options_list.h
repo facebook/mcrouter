@@ -291,6 +291,16 @@ MCROUTER_OPTION_INTEGER(
 
 MCROUTER_OPTION_INTEGER(
     size_t,
+    proxy_max_inflight_shadow_requests,
+    0,
+    "proxy-max-inflight-shadow-requests",
+    no_short,
+    "If non-zero, sets the limit on maximum shadow requests that can be inflight"
+    " on each proxy thread.  Shadow requests over the limit will be dropped and"
+    " an error reply sent.")
+
+MCROUTER_OPTION_INTEGER(
+    size_t,
     proxy_max_throttled_requests,
     0,
     "proxy-max-throttled-requests",

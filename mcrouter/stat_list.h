@@ -287,6 +287,7 @@ STUI(max_num_soft_tko, 0, 1)
 STUI(destination_pending_reqs, 0, 1)
 // Total reqs waiting for reply from server.
 STUI(destination_inflight_reqs, 0, 1)
+STUI(destination_inflight_shadow_reqs, 0, 1)
 STAT(destination_batch_size, stat_double, 0, .dbl = 0.0)
 STAT(destination_reqs_dirty_buffer_ratio, stat_double, 0, .dbl = 0.0)
 // duration of the rpc call
@@ -298,6 +299,7 @@ STAT(duration_update_us, stat_double, 0, .dbl = 0.0)
 #define GROUP ods_stats | basic_stats | max_stats
 STUI(destination_max_pending_reqs, 0, 1)
 STUI(destination_max_inflight_reqs, 0, 1)
+STUI(destination_max_inflight_shadow_reqs, 0, 1)
 #undef GROUP
 #define GROUP ods_stats | count_stats
 // stats about sending lease-set to where the lease-get came from
