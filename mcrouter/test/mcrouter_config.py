@@ -10,8 +10,8 @@ class McrouterGlobals:
         bins = {
             'mcrouter': './mcrouter/mcrouter',
             'mcpiper': './mcrouter/tools/mcpiper/mcpiper',
-            'mockmc': './mcrouter/lib/network/mock_mc_server',
-            'prodmc': './mcrouter/lib/network/mock_mc_server',
+            'mockmc': './mcrouter/lib/network/test/mock_mc_server',
+            'prodmc': './mcrouter/lib/network/test/mock_mc_server',
         }
         return bins[name]
 

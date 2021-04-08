@@ -117,7 +117,7 @@ std::string getBinPath(folly::StringPiece name) {
   if (name == "mcrouter") {
     return "./mcrouter/mcrouter";
   } else if (name == "mockmc") {
-    return "./mcrouter/lib/network/mock_mc_server";
+    return "./mcrouter/lib/network/test/mock_mc_server";
   }
   return "unknown";
 }
