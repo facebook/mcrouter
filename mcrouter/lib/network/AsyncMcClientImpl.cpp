@@ -52,10 +52,8 @@ struct GoAwayContext : public folly::AsyncTransportWrapper::WriteCallback {
   McSerializedRequest data;
   std::unique_ptr<GoAwayContext> selfPtr;
 
-  explicit GoAwayContext(
-      const CodecIdRange& supportedCodecs,
-      PayloadFormat payloadFormat)
-      : data(message, 0, mc_caret_protocol, supportedCodecs, payloadFormat) {}
+  explicit GoAwayContext(const CodecIdRange& supportedCodecs)
+      : data(message, 0, mc_caret_protocol, supportedCodecs) {}
 
   void writeSuccess() noexcept final {
     auto self = std::move(selfPtr);
@@ -325,8 +323,7 @@ void AsyncMcClientImpl::pushMessages() {
 }
 
 void AsyncMcClientImpl::sendGoAwayReply() {
-  auto ctxPtr = std::make_unique<GoAwayContext>(
-      supportedCompressionCodecs_, connectionOptions_.payloadFormat);
+  auto ctxPtr = std::make_unique<GoAwayContext>(supportedCompressionCodecs_);
   auto& ctx = *ctxPtr;
   switch (ctx.data.serializationResult()) {
     case McSerializedRequest::Result::OK: {

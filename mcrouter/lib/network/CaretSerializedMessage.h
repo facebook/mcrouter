@@ -59,8 +59,7 @@ class CaretSerializedMessage {
       size_t reqId,
       const CodecIdRange& supportedCodecs,
       const struct iovec*& iovOut,
-      size_t& niovOut,
-      PayloadFormat payloadFormat = PayloadFormat::Carbon) noexcept;
+      size_t& niovOut) noexcept;
 
   /**
    * Prepare replies for serialization
@@ -114,8 +113,7 @@ class CaretSerializedMessage {
       std::pair<uint64_t, uint64_t> traceId,
       const CodecIdRange& supportedCodecs,
       const struct iovec*& iovOut,
-      size_t& niovOut,
-      PayloadFormat payloadFormat);
+      size_t& niovOut);
 
   template <class Reply>
   bool fill(

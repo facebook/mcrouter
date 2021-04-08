@@ -97,8 +97,7 @@ class McClientRequestContextBase
       InitializerFuncPtr initializer,
       const std::function<void(int pendingDiff, int inflightDiff)>&
           onStateChange,
-      const CodecIdRange& supportedCodecs,
-      PayloadFormat payloadFormat);
+      const CodecIdRange& supportedCodecs);
 
   virtual void replyErrorImpl(
       carbon::Result result,
@@ -185,8 +184,7 @@ class McClientRequestContext : public McClientRequestContextBase {
       McClientRequestContextBase::InitializerFuncPtr,
       const std::function<void(int pendingDiff, int inflightDiff)>&
           onStateChange,
-      const CodecIdRange& supportedCodecs,
-      PayloadFormat payloadFormat);
+      const CodecIdRange& supportedCodecs);
 
   std::string getContextTypeStr() const final;
 

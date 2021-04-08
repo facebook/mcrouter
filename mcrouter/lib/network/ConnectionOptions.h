@@ -20,25 +20,6 @@
 
 namespace facebook {
 namespace memcache {
-enum class PayloadFormat {
-  /**
-   * Carbon protocol serialization format.
-   */
-  Carbon = 0,
-
-  /**
-   * Thrift's compact protocol format.
-   * NOTE: Not supported yet.
-   */
-  // CompactProtocol = 1
-
-  /**
-   * A cusotmized version of thrift's compact protocol that is compatible with
-   * the carbon serialization format (i.e. it's possible to serialize with
-   * "Carbon" and deserialize with "CompactProtocolCompatibility").
-   */
-  CompactProtocolCompatibility = 2,
-};
 
 /**
  * A struct for storing all connection related options.
@@ -50,11 +31,9 @@ struct ConnectionOptions {
       folly::StringPiece host_,
       uint16_t port_,
       mc_protocol_t protocol_,
-      SecurityMech mech_ = SecurityMech::NONE,
-      PayloadFormat payloadFormat_ = PayloadFormat::Carbon)
+      SecurityMech mech_ = SecurityMech::NONE)
       : accessPoint(
-            std::make_shared<AccessPoint>(host_, port_, protocol_, mech_)),
-        payloadFormat(payloadFormat_) {}
+            std::make_shared<AccessPoint>(host_, port_, protocol_, mech_)) {}
 
   explicit ConnectionOptions(std::shared_ptr<const AccessPoint> ap)
       : accessPoint(std::move(ap)) {}
@@ -147,11 +126,6 @@ struct ConnectionOptions {
    * True to enable thrift compression.
    */
   bool thriftCompression{false};
-
-  /**
-   * The payload format.
-   */
-  PayloadFormat payloadFormat{PayloadFormat::Carbon};
 };
 } // namespace memcache
 } // namespace facebook

@@ -113,19 +113,6 @@ void testEnumCompatibility(bool expectCompatible) {
       serializeAndDeserialize<T1, T2>(struct1),
       expectCompatible,
       folly::sformat("{} to {}", typeid(T1).name(), typeid(T2).name()));
-
-  checkStructWithEnum(
-      struct1,
-      serializeCarbonAndDeserializeCompactCompatibility<T2, T1>(struct2),
-      expectCompatible,
-      folly::sformat(
-          "{} to {}, compact", typeid(T2).name(), typeid(T1).name()));
-  checkStructWithEnum(
-      struct2,
-      serializeCarbonAndDeserializeCompactCompatibility<T1, T2>(struct1),
-      expectCompatible,
-      folly::sformat(
-          "{} to {}, compact", typeid(T1).name(), typeid(T2).name()));
 }
 
 template <class T1, class T2>
@@ -538,44 +525,6 @@ TEST(CarbonTest, serializeDeserialize) {
   expectEqTestRequest(outRequest, inRequest);
 }
 
-TEST(CarbonTest, serializeDeserializeCompact) {
-  carbon::test::TestCompactRequest outRequest("abcdefghijklmnopqrstuvwxyz");
-  outRequest.testBool() = true;
-  outRequest.testChar() = 'A';
-  outRequest.testEnum() = carbon::test::SimpleEnum::Negative;
-  outRequest.testInt8() = kMinInt8;
-  outRequest.testInt16() = kMinInt16;
-  outRequest.testInt32() = kMinInt32;
-  outRequest.testInt64() = kMinInt64;
-  outRequest.testUInt8() = kMaxUInt8;
-  outRequest.testUInt16() = kMaxUInt16;
-  outRequest.testUInt32() = kMaxUInt32;
-  outRequest.testUInt64() = kMaxUInt64;
-  outRequest.testShortString() = kShortString.str();
-  outRequest.testLongString() = longString();
-  outRequest.testIobuf() =
-      folly::IOBuf(folly::IOBuf::COPY_BUFFER, kShortString);
-  outRequest.testList() = {
-      "abcdefg",
-      "xyz",
-      kShortString.str(),
-      "xyz",
-      "xyz",
-      "xyz",
-      "xyz",
-      "xyz",
-      "xyz",
-      "xyz",
-      "xyz",
-      "xyz",
-      "xyz",
-      "xyz",
-      longString()};
-  const auto inRequest =
-      serializeCarbonAndDeserializeCompactCompatibility(outRequest);
-  expectEqTestCompactRequest(outRequest, inRequest);
-}
-
 TEST(CarbonTest, unionZeroSerialization) {
   TestRequest outRequest;
   outRequest.testUnion().emplace<1>(0);
@@ -704,32 +653,6 @@ TEST(CarbonTest, veryLongIobuf) {
   outRequest.testIobuf() = std::move(veryLongIobuf);
   const auto inRequest = serializeAndDeserialize(outRequest);
   expectEqTestRequest(outRequest, inRequest);
-  EXPECT_EQ(kVeryLongIobufSize, inRequest.testIobuf().length());
-}
-
-TEST(CarbonTest, veryLongStringCompact) {
-  constexpr uint32_t kVeryLongStringSize = 1 << 30;
-  std::string veryLongString(kVeryLongStringSize, 'x');
-
-  carbon::test::TestCompactRequest outRequest(longString());
-  outRequest.testLongString() = std::move(veryLongString);
-  const auto inRequest =
-      serializeCarbonAndDeserializeCompactCompatibility(outRequest);
-  expectEqTestCompactRequest(outRequest, inRequest);
-  EXPECT_EQ(kVeryLongStringSize, inRequest.testLongString().length());
-}
-
-TEST(CarbonTest, veryLongIobufCompact) {
-  constexpr uint32_t kVeryLongIobufSize = 1 << 30;
-  folly::IOBuf veryLongIobuf(folly::IOBuf::CREATE, kVeryLongIobufSize);
-  std::memset(veryLongIobuf.writableTail(), 'x', kVeryLongIobufSize);
-  veryLongIobuf.append(kVeryLongIobufSize);
-
-  carbon::test::TestCompactRequest outRequest(longString());
-  outRequest.testIobuf() = std::move(veryLongIobuf);
-  const auto inRequest =
-      serializeCarbonAndDeserializeCompactCompatibility(outRequest);
-  expectEqTestCompactRequest(outRequest, inRequest);
   EXPECT_EQ(kVeryLongIobufSize, inRequest.testIobuf().length());
 }
 

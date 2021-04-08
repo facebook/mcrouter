@@ -432,13 +432,6 @@ MCROUTER_OPTION_TOGGLE(
     no_short,
     "")
 
-MCROUTER_OPTION_TOGGLE(
-    use_compact_serialization,
-    false,
-    "use-compact-serialization",
-    no_short,
-    "Use compact protocol for serialization")
-
 MCROUTER_OPTION_STRING(
     config,
     "",

@@ -13,7 +13,6 @@
 
 #include "mcrouter/lib/carbon/CarbonProtocolReader.h"
 #include "mcrouter/lib/carbon/CarbonProtocolWriter.h"
-#include "mcrouter/lib/carbon/CarbonWriter.h"
 #include "mcrouter/lib/carbon/CommonSerializationTraits.h"
 
 namespace carbon {
@@ -75,19 +74,6 @@ template <class T, class Out>
 Out serializeAndDeserialize(const T& toSerialize) {
   size_t tmp;
   return serializeAndDeserialize<T, Out>(toSerialize, tmp);
-}
-
-template <class T, class Out>
-Out serializeCarbonAndDeserializeCompactCompatibility(const T& toSerialize) {
-  folly::IOBufQueue queue;
-  CarbonWriter writer;
-  writer.setOutput(&queue);
-  toSerialize.serialize(writer);
-  CarbonQueueAppenderStorage storage;
-  storage.append(*queue.move());
-
-  size_t tmp;
-  return detail::deserialize<Out>(storage, tmp);
 }
 } // namespace util
 } // namespace test

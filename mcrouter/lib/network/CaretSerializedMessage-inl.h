@@ -34,8 +34,7 @@ bool CaretSerializedMessage::prepare(
     size_t reqId,
     const CodecIdRange& supportedCodecs,
     const struct iovec*& iovOut,
-    size_t& niovOut,
-    PayloadFormat payloadFormat) noexcept {
+    size_t& niovOut) noexcept {
   return fill(
       req,
       reqId,
@@ -43,8 +42,7 @@ bool CaretSerializedMessage::prepare(
       detail::getRequestTraceId(req),
       supportedCodecs,
       iovOut,
-      niovOut,
-      payloadFormat);
+      niovOut);
 }
 
 template <class Reply>
@@ -76,11 +74,10 @@ bool CaretSerializedMessage::fill(
     std::pair<uint64_t, uint64_t> traceId,
     const CodecIdRange& supportedCodecs,
     const struct iovec*& iovOut,
-    size_t& niovOut,
-    PayloadFormat payloadFormat) {
+    size_t& niovOut) {
   // Serialize body into storage_. Note we must defer serialization of header.
   try {
-    serializeCarbonRequest(message, storage_, payloadFormat);
+    serializeCarbonRequest(message, storage_);
   } catch (const std::exception& e) {
     LOG(ERROR) << "Failed to serialize: " << e.what();
     return false;

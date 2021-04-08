@@ -277,9 +277,6 @@ void ProxyDestination<Transport>::initializeTransport() {
   options.connectTimeout = shortestConnectTimeout();
   options.writeTimeout = shortestWriteTimeout();
   options.routerInfoName = proxy().router().routerInfoName();
-  options.payloadFormat = opts.use_compact_serialization
-      ? PayloadFormat::CompactProtocolCompatibility
-      : PayloadFormat::Carbon;
   if (!opts.debug_fifo_root.empty()) {
     options.debugFifoPath = getClientDebugFifoFullPath(opts);
   }

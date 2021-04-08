@@ -34,8 +34,7 @@ McSerializedRequest::McSerializedRequest(
     const Request& req,
     size_t reqId,
     mc_protocol_t protocol,
-    const CodecIdRange& compressionCodecs,
-    PayloadFormat payloadFormat)
+    const CodecIdRange& compressionCodecs)
     : protocol_(protocol), typeId_(Request::typeId) {
   folly::fibers::runInMainContext([&] {
     switch (protocol_) {
@@ -56,12 +55,7 @@ McSerializedRequest::McSerializedRequest(
           return;
         }
         if (!caretRequest_.prepare(
-                req,
-                reqId,
-                compressionCodecs,
-                iovsBegin_,
-                iovsCount_,
-                payloadFormat)) {
+                req, reqId, compressionCodecs, iovsBegin_, iovsCount_)) {
           result_ = Result::ERROR;
         }
         break;

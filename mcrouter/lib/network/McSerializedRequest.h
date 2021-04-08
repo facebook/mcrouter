@@ -41,8 +41,7 @@ class McSerializedRequest {
       const Request& req,
       size_t reqId,
       mc_protocol_t protocol,
-      const CodecIdRange& supportedCodecs,
-      PayloadFormat payloadFormat = PayloadFormat::Carbon);
+      const CodecIdRange& supportedCodecs);
 
   ~McSerializedRequest();
 

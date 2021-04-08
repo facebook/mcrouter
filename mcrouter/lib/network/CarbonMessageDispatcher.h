@@ -14,7 +14,6 @@
 #include "mcrouter/lib/carbon/CarbonProtocolReader.h"
 #include "mcrouter/lib/carbon/CarbonProtocolWriter.h"
 #include "mcrouter/lib/carbon/CarbonQueueAppender.h"
-#include "mcrouter/lib/carbon/CarbonWriter.h"
 #include "mcrouter/lib/carbon/RequestReplyUtil.h"
 #include "mcrouter/lib/network/CaretHeader.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
@@ -38,31 +37,17 @@ void serializeCarbonStruct(
   msg.serialize(writer);
 }
 
-template <class Message>
-void compactSerializeCarbonStruct(
-    const Message& msg,
-    carbon::CarbonQueueAppenderStorage& storage) {
-  folly::IOBufQueue queue;
-  carbon::CarbonWriter writer;
-  writer.setOutput(&queue);
-  msg.serialize(writer);
-  storage.append(*queue.move());
-}
-
 template <class Request>
 void serializeCarbonRequest(
     const Request& req,
-    carbon::CarbonQueueAppenderStorage& storage,
-    PayloadFormat payloadFormat) {
+    carbon::CarbonQueueAppenderStorage& storage) {
   if (!req.isBufferDirty()) {
     const auto& buf = *req.serializedBuffer();
     if (LIKELY(storage.setFullBuffer(buf))) {
       return;
     }
   }
-  payloadFormat == PayloadFormat::CompactProtocolCompatibility
-      ? compactSerializeCarbonStruct(req, storage)
-      : serializeCarbonStruct(req, storage);
+  serializeCarbonStruct(req, storage);
 }
 
 /**
