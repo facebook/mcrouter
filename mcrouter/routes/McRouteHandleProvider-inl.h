@@ -475,6 +475,12 @@ McRouteHandleProvider<RouterInfo>::createSRRoute(
   throwLogic("SRRoute is not implemented for this router");
 }
 
+template <>
+std::shared_ptr<MemcacheRouterInfo::RouteHandleIf>
+McRouteHandleProvider<MemcacheRouterInfo>::createSRRoute(
+    RouteHandleFactory<MemcacheRouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json);
+
 template <class RouterInfo>
 std::shared_ptr<typename RouterInfo::RouteHandleIf>
 McRouteHandleProvider<RouterInfo>::makePoolRoute(
