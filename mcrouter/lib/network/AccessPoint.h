@@ -38,6 +38,14 @@ struct AccessPoint {
       uint32_t failureDomain = 0);
 
   /**
+   * Constructor used by SRRoute where AccessPoints need to be
+   * constructed on the fly for logging purposes only and only require
+   * the IP in string format
+   */
+  struct HostOnlyTag {};
+  AccessPoint(const std::string_view host, HostOnlyTag) : host_(host) {}
+
+  /**
    * @param apString accepts host:port, host:port:protocol and
    *                 host:port:protocol:(ssl|plain):(compressed|notcompressed)
    * @param defaultProtocol this is the protocol used if no protocol specified
