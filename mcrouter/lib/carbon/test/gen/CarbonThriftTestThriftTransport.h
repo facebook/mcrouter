@@ -206,6 +206,8 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
       const carbon::test::CustomRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
+    DestructorGuard dg(this);
+
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<carbon::test::CustomReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
@@ -225,6 +227,8 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
       const carbon::test::DummyThriftRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
+    DestructorGuard dg(this);
+
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<carbon::test::DummyThriftReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
@@ -244,6 +248,8 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
       const carbon::test::ThriftTestRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
+    DestructorGuard dg(this);
+
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<carbon::test::ThriftTestReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
@@ -263,6 +269,8 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
       const McVersionRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
+    DestructorGuard dg(this);
+
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> reply;
       if (auto* thriftClient = getThriftClient()) {

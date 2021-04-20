@@ -254,7 +254,7 @@ template <class Transport>
 void ProxyDestination<Transport>::resetInactive() {
   // No need to reset non-existing client.
   if (transport_) {
-    std::unique_ptr<Transport> client;
+    std::unique_ptr<Transport, typename Transport::Destructor> client;
     {
       std::unique_lock g(transportLock_);
       client = std::move(transport_);
@@ -308,8 +308,9 @@ void ProxyDestination<Transport>::initializeTransport() {
     options.securityOpts.tlsPreferOcbCipher = opts.tls_prefer_ocb_cipher;
   }
 
-  auto client =
-      std::make_unique<Transport>(proxy().eventBase(), std::move(options));
+  auto client = std::unique_ptr<Transport, typename Transport::Destructor>(
+      new Transport(proxy().eventBase(), std::move(options)),
+      typename Transport::Destructor());
   {
     std::unique_lock g(transportLock_);
     transport_ = std::move(client);
@@ -514,7 +515,7 @@ void ProxyDestination<Transport>::closeGracefully() {
     if (transport_) {
       transport_->setConnectionStatusCallbacks(
           ConnectionStatusCallbacks{nullptr, nullptr});
-      std::unique_ptr<Transport> client;
+      std::unique_ptr<Transport, typename Transport::Destructor> client;
       {
         std::unique_lock g(transportLock_);
         client = std::move(transport_);

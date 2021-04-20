@@ -87,7 +87,7 @@ class ProxyDestination : public ProxyDestinationBase {
   }
 
  private:
-  std::unique_ptr<Transport> transport_;
+  std::unique_ptr<Transport, typename Transport::Destructor> transport_;
   // Ensure proxy thread doesn't reset the Transport
   // while config and stats threads may be accessing it
   mutable folly::SpinLock transportLock_;

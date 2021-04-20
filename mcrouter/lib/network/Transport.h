@@ -54,7 +54,7 @@ namespace memcache {
  * NOTE: Concrete transport classes should mark all methods as final to avoid
  *       unnecessary virtual function calls.
  */
-class Transport {
+class Transport : public folly::DelayedDestruction {
  public:
   /**
    * Queue used for managing flush callbacks.
@@ -147,8 +147,6 @@ class Transport {
     size_t numInflight;
   };
 
-  virtual ~Transport() = default;
-
   /**
    * Close connection and fail all outstanding requests immediately.
    */
@@ -229,6 +227,9 @@ class Transport {
    * By default we'll use EventBase as a manager of these callbacks.
    */
   virtual void setFlushList(FlushList* flushList) = 0;
+
+ protected:
+  ~Transport() = default;
 };
 
 } // namespace memcache

@@ -782,6 +782,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McAddRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
+    DestructorGuard dg(this);
+
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McAddReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
@@ -801,6 +803,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McAppendRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
+    DestructorGuard dg(this);
+
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McAppendReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
@@ -820,6 +824,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McCasRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
+    DestructorGuard dg(this);
+
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McCasReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
@@ -839,6 +845,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McDecrRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
+    DestructorGuard dg(this);
+
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McDecrReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
@@ -858,6 +866,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McDeleteRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
+    DestructorGuard dg(this);
+
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McDeleteReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
@@ -877,6 +887,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McFlushAllRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
+    DestructorGuard dg(this);
+
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McFlushAllReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
@@ -896,6 +908,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McFlushReRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
+    DestructorGuard dg(this);
+
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McFlushReReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
@@ -915,6 +929,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McGatRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
+    DestructorGuard dg(this);
+
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McGatReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
@@ -934,6 +950,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McGatsRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
+    DestructorGuard dg(this);
+
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McGatsReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
@@ -953,6 +971,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McGetRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
+    DestructorGuard dg(this);
+
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McGetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
@@ -972,6 +992,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McGetsRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
+    DestructorGuard dg(this);
+
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McGetsReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
@@ -991,6 +1013,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McIncrRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
+    DestructorGuard dg(this);
+
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McIncrReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
@@ -1010,6 +1034,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McLeaseGetRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
+    DestructorGuard dg(this);
+
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McLeaseGetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
@@ -1029,6 +1055,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McLeaseSetRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
+    DestructorGuard dg(this);
+
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McLeaseSetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
@@ -1048,6 +1076,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McMetagetRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
+    DestructorGuard dg(this);
+
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McMetagetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
@@ -1067,6 +1097,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McPrependRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
+    DestructorGuard dg(this);
+
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McPrependReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
@@ -1086,6 +1118,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McReplaceRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
+    DestructorGuard dg(this);
+
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McReplaceReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
@@ -1105,6 +1139,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McSetRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
+    DestructorGuard dg(this);
+
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McSetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
@@ -1124,6 +1160,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McTouchRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
+    DestructorGuard dg(this);
+
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McTouchReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
@@ -1143,6 +1181,8 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McVersionRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
+    DestructorGuard dg(this);
+
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
