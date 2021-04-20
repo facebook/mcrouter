@@ -12,6 +12,7 @@
  *
  *  @generated
  */
+include "common/fb303/if/fb303.thrift"
 include "mcrouter/lib/network/gen/Common.thrift"
 include "mcrouter/lib/network/gen/Memcache.thrift"
 
@@ -19,7 +20,7 @@ cpp_include "mcrouter/lib/network/gen/MemcacheMessages.h"
 
 namespace cpp2 facebook.memcache.thrift
 
-service Memcache {
+service Memcache extends fb303.FacebookService {
   Memcache.McAddReply (cpp.type = "facebook::memcache::McAddReply") mcAdd(1: Memcache.McAddRequest (cpp.type = "facebook::memcache::McAddRequest") request) (thread = "eb")
   Memcache.McAppendReply (cpp.type = "facebook::memcache::McAppendReply") mcAppend(1: Memcache.McAppendRequest (cpp.type = "facebook::memcache::McAppendRequest") request) (thread = "eb")
   Memcache.McCasReply (cpp.type = "facebook::memcache::McCasReply") mcCas(1: Memcache.McCasRequest (cpp.type = "facebook::memcache::McCasRequest") request) (thread = "eb")

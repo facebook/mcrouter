@@ -12,6 +12,7 @@
  *
  *  @generated
  */
+include "common/fb303/if/fb303.thrift"
 include "mcrouter/lib/network/gen/Common.thrift"
 include "mcrouter/lib/carbon/test/gen/CarbonThriftTest.thrift"
 
@@ -19,7 +20,7 @@ cpp_include "mcrouter/lib/carbon/test/gen/CarbonThriftTestMessages.h"
 
 namespace cpp2 carbon.test.thrift
 
-service CarbonThriftTest {
+service CarbonThriftTest extends fb303.FacebookService {
   CarbonThriftTest.CustomReply (cpp.type = "carbon::test::CustomReply") customRequest(1: CarbonThriftTest.CustomRequest (cpp.type = "carbon::test::CustomRequest") request)
   CarbonThriftTest.DummyThriftReply (cpp.type = "carbon::test::DummyThriftReply") thrift_test(1: CarbonThriftTest.DummyThriftRequest (cpp.type = "carbon::test::DummyThriftRequest") request)
   CarbonThriftTest.ThriftTestReply (cpp.type = "carbon::test::ThriftTestReply") test(1: CarbonThriftTest.ThriftTestRequest (cpp.type = "carbon::test::ThriftTestRequest") request)

@@ -12,6 +12,7 @@
  *
  *  @generated
  */
+include "common/fb303/if/fb303.thrift"
 include "mcrouter/lib/network/gen/Common.thrift"
 include "mcrouter/lib/carbon/example/gen/HelloGoodbye.thrift"
 
@@ -19,7 +20,7 @@ cpp_include "mcrouter/lib/carbon/example/gen/HelloGoodbyeMessages.h"
 
 namespace cpp2 hellogoodbye.thrift
 
-service HelloGoodbye {
+service HelloGoodbye extends fb303.FacebookService {
   HelloGoodbye.GoodbyeReply (cpp.type = "hellogoodbye::GoodbyeReply") goodbye(1: HelloGoodbye.GoodbyeRequest (cpp.type = "hellogoodbye::GoodbyeRequest") request) (thread = "eb")
   HelloGoodbye.HelloReply (cpp.type = "hellogoodbye::HelloReply") hello(1: HelloGoodbye.HelloRequest (cpp.type = "hellogoodbye::HelloRequest") request) (thread = "eb")
   Common.McVersionReply (cpp.type = "facebook::memcache::McVersionReply") mcVersion(1: Common.McVersionRequest (cpp.type = "facebook::memcache::McVersionRequest") request) (thread = "eb")
