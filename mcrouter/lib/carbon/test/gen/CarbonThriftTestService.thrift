@@ -12,9 +12,10 @@
  *
  *  @generated
  */
-include "common/fb303/if/fb303.thrift"
 include "mcrouter/lib/network/gen/Common.thrift"
 include "mcrouter/lib/carbon/test/gen/CarbonThriftTest.thrift"
+
+include "common/fb303/if/fb303.thrift"
 
 cpp_include "mcrouter/lib/carbon/test/gen/CarbonThriftTestMessages.h"
 
