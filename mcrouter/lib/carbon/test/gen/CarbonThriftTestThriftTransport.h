@@ -293,16 +293,10 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
   carbon::test::thrift::CarbonThriftTestAsyncClient* getThriftClient() {
     if (UNLIKELY(!thriftClient_)) {
       thriftClient_ = createThriftClient<carbon::test::thrift::CarbonThriftTestAsyncClient>();
-      if (flushList_ || connectionOptions_.thriftCompression) {
+      if (flushList_) {
         auto* channel = static_cast<apache::thrift::RocketClientChannel*>(
             thriftClient_->getChannel());
-        if (flushList_) {
-          channel->setFlushList(flushList_);
-        }
-        if (connectionOptions_.thriftCompression) {
-          channel->setNegotiatedCompressionAlgorithm(
-              apache::thrift::CompressionAlgorithm::ZSTD);
-        }
+        channel->setFlushList(flushList_);
       }
     }
     return thriftClient_.get();
