@@ -42,11 +42,11 @@ void sendSyncHelper(
     folly::Try<apache::thrift::RpcResponseComplete<carbon::test::CustomReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<carbon::test::CarbonThriftTestRouterInfo>::getThriftServerLoadEnabled();
-  if (needServerLoad) {
+  if (UNLIKELY(needServerLoad)) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
   }
-  auto cryptoAuthToken = request.getCryptoAuthToken();
-  if (cryptoAuthToken.has_value()) {
+  const auto& cryptoAuthToken = request.getCryptoAuthToken();
+  if (UNLIKELY(cryptoAuthToken.has_value())) {
     rpcOptions.setWriteHeader(
         std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
   }
@@ -78,11 +78,11 @@ void sendSyncHelper(
     folly::Try<apache::thrift::RpcResponseComplete<carbon::test::DummyThriftReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<carbon::test::CarbonThriftTestRouterInfo>::getThriftServerLoadEnabled();
-  if (needServerLoad) {
+  if (UNLIKELY(needServerLoad)) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
   }
-  auto cryptoAuthToken = request.getCryptoAuthToken();
-  if (cryptoAuthToken.has_value()) {
+  const auto& cryptoAuthToken = request.getCryptoAuthToken();
+  if (UNLIKELY(cryptoAuthToken.has_value())) {
     rpcOptions.setWriteHeader(
         std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
   }
@@ -114,11 +114,11 @@ void sendSyncHelper(
     folly::Try<apache::thrift::RpcResponseComplete<carbon::test::ThriftTestReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<carbon::test::CarbonThriftTestRouterInfo>::getThriftServerLoadEnabled();
-  if (needServerLoad) {
+  if (UNLIKELY(needServerLoad)) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
   }
-  auto cryptoAuthToken = request.getCryptoAuthToken();
-  if (cryptoAuthToken.has_value()) {
+  const auto& cryptoAuthToken = request.getCryptoAuthToken();
+  if (UNLIKELY(cryptoAuthToken.has_value())) {
     rpcOptions.setWriteHeader(
         std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
   }
@@ -150,11 +150,11 @@ void sendSyncHelper(
     folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<carbon::test::CarbonThriftTestRouterInfo>::getThriftServerLoadEnabled();
-  if (needServerLoad) {
+  if (UNLIKELY(needServerLoad)) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
   }
-  auto cryptoAuthToken = request.getCryptoAuthToken();
-  if (cryptoAuthToken.has_value()) {
+  const auto& cryptoAuthToken = request.getCryptoAuthToken();
+  if (UNLIKELY(cryptoAuthToken.has_value())) {
     rpcOptions.setWriteHeader(
         std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
   }

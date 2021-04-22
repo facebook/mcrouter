@@ -42,11 +42,11 @@ void sendSyncHelper(
     folly::Try<apache::thrift::RpcResponseComplete<hellogoodbye::GoodbyeReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<hellogoodbye::HelloGoodbyeRouterInfo>::getThriftServerLoadEnabled();
-  if (needServerLoad) {
+  if (UNLIKELY(needServerLoad)) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
   }
-  auto cryptoAuthToken = request.getCryptoAuthToken();
-  if (cryptoAuthToken.has_value()) {
+  const auto& cryptoAuthToken = request.getCryptoAuthToken();
+  if (UNLIKELY(cryptoAuthToken.has_value())) {
     rpcOptions.setWriteHeader(
         std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
   }
@@ -78,11 +78,11 @@ void sendSyncHelper(
     folly::Try<apache::thrift::RpcResponseComplete<hellogoodbye::HelloReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<hellogoodbye::HelloGoodbyeRouterInfo>::getThriftServerLoadEnabled();
-  if (needServerLoad) {
+  if (UNLIKELY(needServerLoad)) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
   }
-  auto cryptoAuthToken = request.getCryptoAuthToken();
-  if (cryptoAuthToken.has_value()) {
+  const auto& cryptoAuthToken = request.getCryptoAuthToken();
+  if (UNLIKELY(cryptoAuthToken.has_value())) {
     rpcOptions.setWriteHeader(
         std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
   }
@@ -117,11 +117,11 @@ void sendSyncHelper(
     folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<hellogoodbye::HelloGoodbyeRouterInfo>::getThriftServerLoadEnabled();
-  if (needServerLoad) {
+  if (UNLIKELY(needServerLoad)) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
   }
-  auto cryptoAuthToken = request.getCryptoAuthToken();
-  if (cryptoAuthToken.has_value()) {
+  const auto& cryptoAuthToken = request.getCryptoAuthToken();
+  if (UNLIKELY(cryptoAuthToken.has_value())) {
     rpcOptions.setWriteHeader(
         std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
   }
