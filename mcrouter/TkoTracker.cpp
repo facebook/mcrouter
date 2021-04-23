@@ -319,7 +319,13 @@ void TkoTrackerMap::foreachTkoTracker(
   //  - We would try to lock "mx_" again from the same thread (which is UB).
   //  - We would change "trackers_" while iterating over it.
   std::vector<std::shared_ptr<TkoTracker>> lockedTrackers;
-  lockedTrackers.reserve(trackers_.size());
+  // Preallocate lockedTrackers
+  decltype(lockedTrackers)::size_type trackersCount;
+  {
+    std::lock_guard<std::mutex> lock(mx_);
+    trackersCount = trackers_.size();
+  }
+  lockedTrackers.reserve(trackersCount);
 
   {
     std::lock_guard<std::mutex> lock(mx_);
