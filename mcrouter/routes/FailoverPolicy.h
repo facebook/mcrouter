@@ -211,6 +211,10 @@ class FailoverInOrderPolicy {
     return failover_inorder_policy_failed_stat;
   }
 
+  bool getFailureDomainsEnabled() const {
+    return false;
+  }
+
  private:
   const std::vector<RouteHandlePtr>& children_;
   uint32_t maxTries_{std::numeric_limits<uint32_t>::max()};
@@ -574,6 +578,10 @@ class FailoverDeterministicOrderPolicy {
     }
   }
 
+  bool getFailureDomainsEnabled() const {
+    return enableFailureDomains_;
+  }
+
  private:
   const std::vector<RouteHandlePtr>& children_;
   uint32_t maxTries_;
@@ -740,6 +748,10 @@ class FailoverRendezvousPolicy {
     return failover_rendezvous_policy_failed_stat;
   }
 
+  bool getFailureDomainsEnabled() const {
+    return false;
+  }
+
  private:
   const std::vector<RouteHandlePtr>& children_;
   folly::dynamic config_;
@@ -890,6 +902,10 @@ class FailoverLeastFailuresPolicy {
   // Returns the stat when all failover destinations are exhausted.
   stat_name_t getFailoverFailedStat() const {
     return failover_least_failures_policy_failed_stat;
+  }
+
+  bool getFailureDomainsEnabled() const {
+    return false;
   }
 
  private:

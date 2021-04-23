@@ -300,6 +300,7 @@ class FailoverRoute {
             child.getTrueIndex(),
             targets_.size() - 1,
             req,
+            failoverPolicy_.getFailureDomainsEnabled(),
             normalReply,
             failoverReply);
         logFailover(proxy, failoverContext);
@@ -316,11 +317,21 @@ class FailoverRoute {
       // Passive iterator does not do routing
       nx.setPassive();
 
+      auto incFailureDomainStat =
+          [&proxy](ReplyT<Request>& nReply, ReplyT<Request>& fReply) {
+            if (nReply.destination() && fReply.destination() &&
+                (nReply.destination()->getFailureDomain() ==
+                 fReply.destination()->getFailureDomain())) {
+              proxy.stats().increment(failover_same_failure_domain_stat, 1);
+            }
+          };
+
       ReplyT<Request> failoverReply;
       for (++nx; nx != failoverPolicy_.end(req) &&
            policyCtx.numTries_ < failoverPolicy_.maxErrorTries();
            ++cur, ++nx) {
         failoverReply = doFailover(cur);
+        incFailureDomainStat(normalReply, failoverReply);
         if (LIKELY(processReply(
                 failoverReply, req, conditionalFailover, cur, policyCtx))) {
           return failoverReply;
@@ -328,6 +339,7 @@ class FailoverRoute {
       }
       if (policyCtx.numTries_ < failoverPolicy_.maxErrorTries()) {
         failoverReply = doFailover(cur);
+        incFailureDomainStat(normalReply, failoverReply);
         if (isErrorResult(*failoverReply.result_ref())) {
           allFailed = true;
         }

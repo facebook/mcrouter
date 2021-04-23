@@ -32,6 +32,7 @@ struct FailoverContext {
       size_t numRetries_,
       size_t maxRetries_,
       const Request& request,
+      const bool failureDomainsEnabled_,
       const ReplyT<Request>& normal,
       const ReplyT<Request>& failover)
       : requestName(Request::name),
@@ -46,7 +47,8 @@ struct FailoverContext {
         failoverDestination(failover.destination().get()),
         failoverResult(*failover.result_ref()),
         numRetries(numRetries_),
-        maxRetries(maxRetries_) {}
+        maxRetries(maxRetries_),
+        failureDomainsEnabled(failureDomainsEnabled_) {}
 
   FailoverContext(const FailoverContext&) = delete;
   FailoverContext& operator=(const FailoverContext&) = delete;
@@ -71,6 +73,7 @@ struct FailoverContext {
 
   const size_t numRetries;
   const size_t maxRetries;
+  const bool failureDomainsEnabled;
 };
 } // namespace mcrouter
 } // namespace memcache
