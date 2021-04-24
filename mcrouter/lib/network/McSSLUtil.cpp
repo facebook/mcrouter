@@ -49,7 +49,7 @@ static McSSLUtil::KtlsStatsFunction& getKtlsStatsFuncRef() {
 }
 } // namespace
 
-const std::string McSSLUtil::kTlsToPlainProtocolName = "mc_plaintext";
+const std::string McSSLUtil::kTlsToPlainProtocolName = "stopTLS";
 
 bool McSSLUtil::verifySSLWithDefaultBehavior(
     folly::AsyncSSLSocket*,

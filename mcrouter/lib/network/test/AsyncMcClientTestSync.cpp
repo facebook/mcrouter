@@ -99,7 +99,7 @@ TEST_P(AsyncMcClientSimpleTest, serverShutdownTest) {
     EXPECT_NE(sslsock, nullptr);
   } else if (ssl->mech == SecurityMech::TLS_TO_PLAINTEXT) {
     // TLS_TO_PLAINTEXT
-    EXPECT_EQ(transport->getSecurityProtocol(), "mc_plaintext");
+    EXPECT_EQ(transport->getSecurityProtocol(), "stopTLS");
     auto* sock = transport->getUnderlyingTransport<TlsToPlainTransport>();
     EXPECT_NE(sock, nullptr);
     auto peerCert = transport->getPeerCertificate();
