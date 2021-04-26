@@ -22,6 +22,28 @@ class IPAddress;
 namespace facebook {
 namespace memcache {
 
+struct McProtocolT {
+  operator mc_protocol_t() const {
+    return static_cast<mc_protocol_t>(data_);
+  }
+
+  explicit McProtocolT(mc_protocol_t proto = mc_unknown_protocol)
+      : data_(proto) {}
+  McProtocolT& operator=(mc_protocol_t proto) {
+    data_ = proto;
+    return *this;
+  }
+
+  uint8_t data_;
+};
+
+static_assert(
+    sizeof(McProtocolT) == sizeof(uint8_t),
+    "McProtocolT must have uint8_t size");
+static_assert(
+    std::alignment_of<McProtocolT>::value == std::alignment_of<uint8_t>::value,
+    "McProtocolT must have uint8_t alignemnt");
+
 struct AccessPoint {
   explicit AccessPoint(
       folly::StringPiece host = "",
@@ -131,7 +153,7 @@ struct AccessPoint {
   std::string host_;
   uint64_t hash_{0};
   uint16_t port_;
-  mc_protocol_t protocol_ : 8;
+  McProtocolT protocol_;
   SecurityMech securityMech_{SecurityMech::NONE};
   bool compressed_{false};
   bool isV6_{false};
