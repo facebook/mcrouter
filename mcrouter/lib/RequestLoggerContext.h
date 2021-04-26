@@ -28,6 +28,75 @@ struct AccessPoint;
 
 namespace mcrouter {
 
+enum class RequestLoggerContextFlags : uint8_t {
+  NONE = 0x00,
+  // Underlying routing is SR based
+  USING_SR = 0x01,
+};
+
+/*
+ * union operator
+ */
+constexpr RequestLoggerContextFlags operator|(
+    RequestLoggerContextFlags a,
+    RequestLoggerContextFlags b) {
+  return static_cast<RequestLoggerContextFlags>(
+      static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+}
+
+/*
+ * compound assignment union operator
+ */
+constexpr RequestLoggerContextFlags& operator|=(
+    RequestLoggerContextFlags& a,
+    RequestLoggerContextFlags b) {
+  a = a | b;
+  return a;
+}
+
+/*
+ * intersection operator
+ */
+constexpr RequestLoggerContextFlags operator&(
+    RequestLoggerContextFlags a,
+    RequestLoggerContextFlags b) {
+  return static_cast<RequestLoggerContextFlags>(
+      static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+}
+
+/*
+ * compound assignment intersection operator
+ */
+constexpr RequestLoggerContextFlags& operator&=(
+    RequestLoggerContextFlags& a,
+    RequestLoggerContextFlags b) {
+  a = a & b;
+  return a;
+}
+
+/*
+ * exclusion parameter
+ */
+constexpr RequestLoggerContextFlags operator~(RequestLoggerContextFlags a) {
+  return static_cast<RequestLoggerContextFlags>(~static_cast<uint32_t>(a));
+}
+
+/*
+ * unset operator
+ */
+constexpr RequestLoggerContextFlags unSet(
+    RequestLoggerContextFlags a,
+    RequestLoggerContextFlags b) {
+  return a & ~b;
+}
+
+/*
+ * inclusion operator
+ */
+constexpr bool isSet(RequestLoggerContextFlags a, RequestLoggerContextFlags b) {
+  return (a & b) == b;
+}
+
 struct RequestLoggerContext {
   RequestLoggerContext(
       const folly::StringPiece poolName_,
@@ -39,7 +108,8 @@ struct RequestLoggerContext {
       const carbon::Result replyResult_,
       const RpcStatsContext rpcStatsContext_,
       const int64_t networkTransportTimeUs_,
-      const std::vector<ExtraDataCallbackT>& extraDataCallbacks_)
+      const std::vector<ExtraDataCallbackT>& extraDataCallbacks_,
+      const RequestLoggerContextFlags flags_ = RequestLoggerContextFlags::NONE)
       : strippedRoutingPrefix(strippedRoutingPrefix_),
         requestClass(requestClass_),
         poolName(poolName_),
@@ -49,7 +119,8 @@ struct RequestLoggerContext {
         replyResult(replyResult_),
         rpcStatsContext(rpcStatsContext_),
         networkTransportTimeUs(networkTransportTimeUs_),
-        extraDataCallbacks(extraDataCallbacks_) {}
+        extraDataCallbacks(extraDataCallbacks_),
+        flags(flags_) {}
 
   RequestLoggerContext(const RequestLoggerContext&) = delete;
   RequestLoggerContext& operator=(const RequestLoggerContext&) = delete;
@@ -64,6 +135,7 @@ struct RequestLoggerContext {
   const RpcStatsContext rpcStatsContext;
   const int64_t networkTransportTimeUs;
   const std::vector<ExtraDataCallbackT>& extraDataCallbacks;
+  const RequestLoggerContextFlags flags;
 };
 
 } // namespace mcrouter

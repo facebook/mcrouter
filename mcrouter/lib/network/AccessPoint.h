@@ -35,7 +35,8 @@ struct AccessPoint {
   AccessPoint(
       const folly::IPAddress& addr,
       uint16_t port,
-      uint32_t failureDomain = 0);
+      uint32_t failureDomain = 0,
+      mc_protocol_t protocol = mc_unknown_protocol);
 
   /**
    * Constructor used by SRRoute where AccessPoints need to be
@@ -43,7 +44,11 @@ struct AccessPoint {
    * the IP in string format
    */
   struct HostOnlyTag {};
-  AccessPoint(const std::string_view host, HostOnlyTag) : host_(host) {}
+  AccessPoint(
+      HostOnlyTag,
+      const std::string_view host,
+      mc_protocol_t protocol = mc_unknown_protocol)
+      : host_(host), port_(0), protocol_(protocol) {}
 
   /**
    * @param apString accepts host:port, host:port:protocol and

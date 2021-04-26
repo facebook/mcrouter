@@ -94,10 +94,9 @@ AccessPoint::AccessPoint(
 AccessPoint::AccessPoint(
     const folly::IPAddress& ip,
     uint16_t port,
-    uint32_t failureDomain)
-    : port_(port),
-      protocol_(mc_unknown_protocol),
-      failureDomain_(failureDomain) {
+    uint32_t failureDomain,
+    mc_protocol_t protocol)
+    : port_(port), protocol_(protocol), failureDomain_(failureDomain) {
   host_ = ip.toFullyQualified();
   hash_ = folly::hash_value(ip);
   isV6_ = ip.isV6();
