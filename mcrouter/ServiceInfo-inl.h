@@ -365,6 +365,38 @@ ServiceInfo<RouterInfo>::ServiceInfoImpl::ServiceInfoImpl(
             "expected at most 1 argument, got " +
             folly::to<std::string>(args.size()));
       });
+
+  commands_.emplace(
+      "partial_config_enabled_pools",
+      [&config](const std::vector<folly::StringPiece>& /* args */) {
+        auto partialConfigs = config.getPartialConfigs();
+        folly::dynamic result = folly::dynamic::object;
+        for (const auto& partialConfig : partialConfigs) {
+          folly::dynamic poolsJson = folly::dynamic::object;
+          for (const auto& p : partialConfig.second.second) {
+            poolsJson.update(
+                facebook::memcache::mcrouter::
+                    getConfigJsonFromCommonAccessPointAttributes(p.first));
+          }
+          result[partialConfig.first] = poolsJson;
+        }
+        return toPrettySortedJson(result);
+      });
+
+  commands_.emplace(
+      "pools", [&config](const std::vector<folly::StringPiece>& /* args */) {
+        folly::dynamic result = folly::dynamic::object;
+        auto pools = config.getPools();
+        for (const auto& pool : pools) {
+          folly::dynamic servers = folly::dynamic::array;
+          const auto& poolServers = pool.second;
+          for (auto pdstn : poolServers) {
+            servers.push_back(pdstn->routeName());
+          }
+          result[pool.first] = servers;
+        }
+        return toPrettySortedJson(result);
+      });
 }
 
 template <class RouterInfo>

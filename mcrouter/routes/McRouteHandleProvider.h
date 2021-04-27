@@ -20,6 +20,7 @@
 #include "mcrouter/ProxyBase.h"
 #include "mcrouter/TkoTracker.h"
 #include "mcrouter/lib/config/RouteHandleProviderIf.h"
+#include "mcrouter/lib/network/SecurityOptions.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace folly {
@@ -38,6 +39,42 @@ FOLLY_ATTR_WEAK MemcacheRouterInfo::RouteHandlePtr makeSRRoute(
 template <class RouteHandleIf>
 class ExtraRouteHandleProviderIf;
 class ProxyBase;
+
+struct CommonAccessPointAttributes {
+  folly::dynamic json;
+  folly::StringPiece poolName;
+  mc_protocol_t protocol;
+  SecurityMech mech = SecurityMech::NONE;
+  folly::Optional<SecurityMech> mechOverride;
+  folly::Optional<SecurityMech> withinDcMech;
+  folly::Optional<SecurityMech> crossDcMech;
+  folly::Optional<uint16_t> crossDcPort;
+  folly::Optional<uint16_t> withinDcPort;
+  uint16_t port;
+  bool enableCompression;
+
+  bool operator==(const CommonAccessPointAttributes& other) const {
+    return protocol == other.protocol && mech == other.mech &&
+        mechOverride == other.mechOverride &&
+        withinDcMech == other.withinDcMech &&
+        crossDcMech == other.crossDcMech && crossDcPort == other.crossDcPort &&
+        withinDcPort == other.withinDcPort && port == other.port &&
+        enableCompression == other.enableCompression;
+  }
+};
+
+const folly::dynamic& getConfigJsonFromCommonAccessPointAttributes(
+    const std::shared_ptr<CommonAccessPointAttributes>& apAttr);
+
+std::shared_ptr<CommonAccessPointAttributes> getCommonAccessPointAttributes(
+    const folly::dynamic& json,
+    CarbonRouterInstanceBase& router);
+
+std::shared_ptr<AccessPoint> createAccessPoint(
+    folly::StringPiece apString,
+    uint32_t failureDomain,
+    CarbonRouterInstanceBase& router,
+    const CommonAccessPointAttributes& apAttr);
 
 /**
  * RouteHandleProviderIf implementation that can create mcrouter-specific
@@ -80,6 +117,15 @@ class McRouteHandleProvider
     return std::move(pools_);
   }
 
+  folly::StringKeyedUnorderedMap<std::pair<
+      bool,
+      std::vector<std::pair<
+          std::shared_ptr<CommonAccessPointAttributes>,
+          std::vector<std::string>>>>>
+  releasePartialConfigs() {
+    return std::move(partialConfigs_);
+  }
+
   folly::StringKeyedUnorderedMap<
       std::vector<std::shared_ptr<const AccessPoint>>>
   releaseAccessPoints() {
@@ -98,6 +144,14 @@ class McRouteHandleProvider
 
   // poolName -> AsynclogRoute
   folly::StringKeyedUnorderedMap<RouteHandlePtr> asyncLogRoutes_;
+
+  // pool source name -> (allow_partial_reconfig, [(pool_config,[pool_names])])
+  folly::StringKeyedUnorderedMap<std::pair<
+      bool,
+      std::vector<std::pair<
+          std::shared_ptr<CommonAccessPointAttributes>,
+          std::vector<std::string>>>>>
+      partialConfigs_;
 
   // poolName -> destinations
   folly::StringKeyedUnorderedMap<std::vector<RouteHandlePtr>> pools_;

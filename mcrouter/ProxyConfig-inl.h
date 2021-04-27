@@ -29,7 +29,8 @@ ProxyConfig<RouterInfo>::ProxyConfig(
     Proxy<RouterInfo>& proxy,
     const folly::dynamic& json,
     std::string configMd5Digest,
-    PoolFactory& poolFactory)
+    PoolFactory& poolFactory,
+    size_t index)
     : configMd5Digest_(std::move(configMd5Digest)) {
   McRouteHandleProvider<RouterInfo> provider(proxy, poolFactory);
   RouteHandleFactory<typename RouterInfo::RouteHandleIf> factory(
@@ -98,6 +99,10 @@ ProxyConfig<RouterInfo>::ProxyConfig(
 
   asyncLogRoutes_ = provider.releaseAsyncLogRoutes();
   pools_ = provider.releasePools();
+  if (index == 0) {
+    // only need to keep partial config info in one proxy
+    partialConfigs_ = provider.releasePartialConfigs();
+  }
   accessPoints_ = provider.releaseAccessPoints();
   proxyRoute_ = std::make_shared<ProxyRoute<RouterInfo>>(proxy, routeSelectors);
   serviceInfo_ = std::make_shared<ServiceInfo<RouterInfo>>(proxy, *this);

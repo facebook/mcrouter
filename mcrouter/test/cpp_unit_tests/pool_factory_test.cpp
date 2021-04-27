@@ -27,6 +27,10 @@ class MockConfigApi : public ConfigApiIf {
   explicit MockConfigApi(folly::StringKeyedUnorderedMap<std::string> pools)
       : pools_(std::move(pools)) {}
 
+  bool partialReconfigurableSource(const std::string&, std::string&) override {
+    return false;
+  }
+
   bool get(ConfigType type, const std::string& path, std::string& contents)
       final {
     ++getCalls_;

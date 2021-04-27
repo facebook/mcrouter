@@ -32,6 +32,7 @@ template <class RouterInfo>
 class ServiceInfo;
 
 class PoolFactory;
+struct CommonAccessPointAttributes;
 
 /**
  * Topmost struct for mcrouter configs.
@@ -60,6 +61,24 @@ class ProxyConfig {
     return pools_;
   }
 
+  // pool source name -> (allow_partial_reconfig, [(pool_config,[pool_names])])
+  const folly::StringKeyedUnorderedMap<std::pair<
+      bool,
+      std::vector<std::pair<
+          std::shared_ptr<CommonAccessPointAttributes>,
+          std::vector<std::string>>>>>&
+  getPartialConfigs() const {
+    return partialConfigs_;
+  }
+
+  bool allowPartialConfig(folly::StringPiece poolSourceName) const {
+    auto it = partialConfigs_.find(poolSourceName);
+    if (it == partialConfigs_.end()) {
+      return false;
+    }
+    return it->second.first;
+  }
+
   const folly::StringKeyedUnorderedMap<
       std::vector<std::shared_ptr<const AccessPoint>>>&
   getAccessPoints() const {
@@ -75,6 +94,15 @@ class ProxyConfig {
   folly::StringKeyedUnorderedMap<
       std::vector<std::shared_ptr<const AccessPoint>>>
       accessPoints_;
+
+  // pool source name -> (allow_partial_reconfig, [(pool_config,[pool_names])])
+  folly::StringKeyedUnorderedMap<std::pair<
+      bool,
+      std::vector<std::pair<
+          std::shared_ptr<CommonAccessPointAttributes>,
+          std::vector<std::string>>>>>
+      partialConfigs_;
+
   folly::StringKeyedUnorderedMap<
       std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>>>
       pools_;
@@ -94,7 +122,8 @@ class ProxyConfig {
       Proxy<RouterInfo>& proxy,
       const folly::dynamic& json,
       std::string configMd5Digest,
-      PoolFactory& poolFactory);
+      PoolFactory& poolFactory,
+      size_t index);
 
   friend class ProxyConfigBuilder;
 };

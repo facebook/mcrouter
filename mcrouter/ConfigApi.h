@@ -60,6 +60,10 @@ class ConfigApi : public ConfigApiIf {
   bool get(ConfigType type, const std::string& path, std::string& contents)
       override;
 
+  bool partialReconfigurableSource(
+      const std::string& configPath,
+      std::string& path) override;
+
   /**
    * All files we 'get' after this call will be marked as 'tracked'. Once
    * we call 'subscribeToTrackedSources', we'll receive updates only for

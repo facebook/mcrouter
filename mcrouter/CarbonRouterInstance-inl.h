@@ -33,6 +33,7 @@
 #include "mcrouter/ServiceInfo.h"
 #include "mcrouter/TargetHooks.h"
 #include "mcrouter/ThreadUtil.h"
+#include "mcrouter/routes/McRouteHandleProvider.h"
 #include "mcrouter/stats.h"
 
 namespace facebook {
@@ -486,7 +487,7 @@ CarbonRouterInstance<RouterInfo>::configure(const ProxyConfigBuilder& builder) {
   newConfigs.reserve(opts_.num_proxies);
   try {
     for (size_t i = 0; i < opts_.num_proxies; i++) {
-      newConfigs.push_back(builder.buildConfig<RouterInfo>(*getProxy(i)));
+      newConfigs.push_back(builder.buildConfig<RouterInfo>(*getProxy(i), i));
     }
   } catch (const std::exception& e) {
     std::string error = folly::sformat("Failed to reconfigure: {}", e.what());

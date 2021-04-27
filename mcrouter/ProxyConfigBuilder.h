@@ -37,9 +37,10 @@ class ProxyConfigBuilder {
 
   template <class RouterInfo>
   std::shared_ptr<ProxyConfig<RouterInfo>> buildConfig(
-      Proxy<RouterInfo>& proxy) const {
+      Proxy<RouterInfo>& proxy,
+      size_t index) const {
     return std::shared_ptr<ProxyConfig<RouterInfo>>(new ProxyConfig<RouterInfo>(
-        proxy, json_, configMd5Digest_, *poolFactory_));
+        proxy, json_, configMd5Digest_, *poolFactory_, index));
   }
 
   const folly::dynamic& preprocessedConfig() const {

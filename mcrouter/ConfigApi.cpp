@@ -344,6 +344,10 @@ bool ConfigApi::get(
   return true;
 }
 
+bool ConfigApi::partialReconfigurableSource(const std::string&, std::string&) {
+  return false;
+}
+
 void ConfigApi::trackConfigSources() {
   std::lock_guard<std::mutex> lock(fileInfoMutex_);
   tracking_ = true;
