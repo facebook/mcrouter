@@ -20,6 +20,7 @@ namespace mcrouter {
  */
 FOLLY_ATTR_WEAK std::shared_ptr<void> gSRInitHook(
     std::shared_ptr<folly::IOThreadPoolExecutor>,
+    const std::string& /* threadPrefix */,
     const McrouterOptions&);
 
 } // namespace mcrouter
