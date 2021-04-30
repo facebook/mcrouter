@@ -12,27 +12,9 @@ See https://github.com/facebook/mcrouter/wiki to get started.
 
 ## Quick start guide
 
-### New! Ubuntu package available
+### Building on Amazon Linux 2
 
-Currently, we support Ubuntu Bionic (18.04) amd64.
-Here is how to install it:
-
-Add the repo key:
-
-    $ wget -O - https://facebook.github.io/mcrouter/debrepo/bionic/PUBLIC.KEY | sudo apt-key add
-
-Add the following line to apt sources file /etc/apt/sources.list
-
-    deb https://facebook.github.io/mcrouter/debrepo/bionic bionic contrib
-
-Update the local repo cache:
-
-    $ sudo apt-get update
-
-Install mcrouter:
-
-    $ sudo apt-get install mcrouter
-
+See [INSTALL.md](/mcrouter/scripts/INSTALL.md)
 
 ### Installing From Source
 
@@ -86,6 +68,15 @@ the simplest mcrouter setup is:
 
 Documentation: https://github.com/facebook/mcrouter/wiki
 Engineering discussions and support: https://www.facebook.com/groups/mcrouter
+
+## Development
+
+This is an internal fork, aimed only to add packaging support for Amazon Linux 2.
+
+Branches:
+
+- upstream: This should track facebook/master
+- main: PRs can target this for review
 
 ## License
 
