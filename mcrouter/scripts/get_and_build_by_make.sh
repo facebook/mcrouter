@@ -6,13 +6,11 @@
 
 set -ex
 
-MAKE_FILE="$1"
-TARGET="$3"
-PKG_DIR="${2%/}"/pkgs
-INSTALL_DIR="${2%/}"/install
-INSTALL_AUX_DIR="${2%/}"/install/aux
+TARGET="$2"
+PKG_DIR="${1%/}"/pkgs
+INSTALL_DIR="${1%/}"/install
+INSTALL_AUX_DIR="${1%/}"/install/aux
 
-[ -n "$MAKE_FILE" ] || ( echo "Make file missing"; exit 1 )
 [ -n "$TARGET" ] || ( echo "Target missing"; exit 1 )
 
 mkdir -p "$PKG_DIR" "$INSTALL_DIR" "$INSTALL_AUX_DIR"
@@ -32,7 +30,10 @@ REPO_BASE_DIR="$(cd ../../ && pwd)" || die "Couldn't determine repo top dir"
 export REPO_BASE_DIR
 
 export LDFLAGS="-ljemalloc $LDFLAGS"
+# Set CC and CXX to unambiguously choose compiler.
+export CC=/usr/bin/gcc
+export CXX=/usr/bin/c++
 
-make "$TARGET" -j "$(nproc)" -f "$MAKE_FILE" PKG_DIR="$PKG_DIR" INSTALL_DIR="$INSTALL_DIR" INSTALL_AUX_DIR="$INSTALL_AUX_DIR"
+make "$TARGET" -j "$(nproc)" -f "Makefile_amazon-linux-2" PKG_DIR="$PKG_DIR" INSTALL_DIR="$INSTALL_DIR" INSTALL_AUX_DIR="$INSTALL_AUX_DIR"
 
 printf "%s\n" "make $TARGET for $MAKE_FILE done"
