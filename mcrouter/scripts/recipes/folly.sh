@@ -6,46 +6,20 @@
 
 source common.sh
 
-if [[ ! -d folly ]]; then
+if [ ! -d "$PKG_DIR/folly" ]; then
   git clone https://github.com/facebook/folly
-  cd "$PKG_DIR/folly" || die "cd fail"
-  if [[ -f "$REPO_BASE_DIR/mcrouter/FOLLY_COMMIT" ]]; then
-    FOLLY_COMMIT="$(head -n 1 "$REPO_BASE_DIR/mcrouter/FOLLY_COMMIT")"
-    echo "FOLLY_COMMIT file found: using folly commit $FOLLY_COMMIT"
-    git checkout "$FOLLY_COMMIT"
-  else
-    echo "No FOLLY_COMMIT file, using folly HEAD=$(git rev-parse HEAD)"
-  fi
 fi
 
-if [ ! -d /usr/include/double-conversion ]; then
-  if [ ! -d "$PKG_DIR/double-conversion" ]; then
-    cd "$PKG_DIR" || die "cd fail"
-    git clone https://github.com/google/double-conversion.git
-  fi
-  cd "$PKG_DIR/double-conversion" || die "cd fail"
+cd "$PKG_DIR/folly" || die "cd fail"
 
-  # Workaround double-conversion CMakeLists.txt changes that
-  # are incompatible with cmake-2.8
-  git checkout ea970f69edacf66bd3cba2892be284b76e9599b0
-  cmake . -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR"
-  make $MAKE_ARGS && make install $MAKE_ARGS
+# Use a known compatible version
+git checkout v2021.04.26.00
 
-  export LDFLAGS="-L$INSTALL_DIR/lib -ldl $LDFLAGS"
-  export CPPFLAGS="-I$INSTALL_DIR/include $CPPFLAGS"
-fi
-
-if [ ! -d "$PKG_DIR/zstd" ]; then
-  cd "$PKG_DIR" || die "cd fail"
-  git clone https://github.com/facebook/zstd
-
-  cd "$PKG_DIR/zstd" || die "cd fail"
-
-  # Checkout zstd-1.4.9 release
-  git checkout e4558ffd1dc49399faf4ee5d85abed4386b4dcf5
-  cmake -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" build/cmake/
-  make $MAKE_ARGS && make install $MAKE_ARGS
-fi
+# There is an issue when compiling folly on aarch64 when libunwind is available.
+# The build configuration does expose a direct way to avoid using libunwind, and we
+# need to have it installed for other dependencies, so we just edit the cmake config
+# file to force this variable to OFF.
+sed -i 's/set(FOLLY_HAVE_LIBUNWIND ON)/set(FOLLY_HAVE_LIBUNWIND OFF)/' CMake/folly-deps.cmake
 
 cd "$PKG_DIR/folly/folly/" || die "cd fail"
 
@@ -56,4 +30,4 @@ CXXFLAGS="$CXXFLAGS -fPIC" \
     -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" \
     -DCMAKE_INCLUDE_PATH="$INSTALL_DIR/lib" \
     -DCMAKE_LIBRARY_PATH="$INSTALL_DIR/lib"
-make $MAKE_ARGS && make install $MAKE_ARGS
+make -j "$(nproc)" && make install

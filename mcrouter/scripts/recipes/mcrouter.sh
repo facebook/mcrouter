@@ -6,6 +6,7 @@
 
 source common.sh
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR/../.." || die "cd fail"
 
 autoreconf --install
@@ -14,5 +15,6 @@ LD_LIBRARY_PATH="$INSTALL_DIR/lib:$LD_LIBRARY_PATH" \
     LDFLAGS="-L$INSTALL_DIR/lib $LDFLAGS" \
     CPPFLAGS="-I$INSTALL_DIR/include $CPPFLAGS" \
     FBTHRIFT_BIN="$INSTALL_DIR/bin/" \
-    ./configure --prefix="$INSTALL_DIR"
-make $MAKE_ARGS && make install $MAKE_ARGS
+    ./configure --prefix="$INSTALL_DIR" --includedir="$INSTALL_DIR/include"
+
+make -j "$(nproc)" && make install

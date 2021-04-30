@@ -6,18 +6,19 @@
 
 source common.sh
 
-if [ ! -d "$PKG_DIR/glog" ]; then
-    git clone https://github.com/google/glog.git
+if [ ! -d "$PKG_DIR/gflags" ]; then
+    git clone https://github.com/gflags/gflags.git
 fi
 
-cd "$PKG_DIR/glog" || die "cd fail"
+cd "$PKG_DIR/gflags" || die "cd fail"
 
 # Use a known compatible version
-# N.B. More recent versions (v0.5.0.rcx) failed to work with mcrouter.
-git reset --hard v0.4.0
+# There hasn't been a release in years, this is just the (currently) most
+# recent commit.
+git checkout 827c769e5fc98e0f2a34c47cef953cc6328abced
 
-autoreconf --install
 LDFLAGS="-Wl,-rpath=$INSTALL_DIR/lib,--enable-new-dtags -L$INSTALL_DIR/lib $LDFLAGS" \
     CPPFLAGS="-I$INSTALL_DIR/include -DGOOGLE_GLOG_DLL_DECL='' $CPPFLAGS" \
-    ./configure --prefix="$INSTALL_DIR" &&
-    make -j "$(nproc)" && make install
+    cmake -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" -DBUILD_SHARED_LIBS=YES -S . -B build -G "Unix Makefiles"
+
+cmake --build build --target install

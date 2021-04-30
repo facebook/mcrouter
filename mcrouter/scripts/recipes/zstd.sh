@@ -6,17 +6,14 @@
 
 source common.sh
 
-if [ ! -d "$PKG_DIR/fbthrift" ]; then
-  git clone https://github.com/facebook/fbthrift
+if [ ! -d "$PKG_DIR/zstd" ]; then
+  git clone https://github.com/facebook/zstd
 fi
 
-cd "$PKG_DIR/fbthrift" || die "cd fail"
+cd "$PKG_DIR/zstd" || die "cd fail"
 
 # Use a known compatible version
-git checkout v2021.04.26.00
+git checkout v1.4.9
 
-cd "$PKG_DIR/fbthrift/build" || die "cd fbthrift failed"
-
-CXXFLAGS="$CXXFLAGS -fPIC" \
-cmake .. -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR"
+cmake -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" build/cmake/
 make -j "$(nproc)" && make install

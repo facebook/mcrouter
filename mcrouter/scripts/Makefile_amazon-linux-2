@@ -1,0 +1,58 @@
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+RECIPES_DIR := ./recipes
+
+all: mcrouter
+
+# Boost available from Amazon Linux is not recent enough.
+# There *are* more recent versions available via EPEL, but they introduce python dependency conflicts.
+.boost-done:
+	${RECIPES_DIR}/boost.sh $(PKG_DIR) $(INSTALL_DIR) $(INSTALL_AUX_DIR)
+	touch $@
+
+# The version of fmt from the package repositories is insufficient to satisfy the "folly" build.
+.fmt-done: .boost-done
+	${RECIPES_DIR}/fmtlib.sh $(PKG_DIR) $(INSTALL_DIR) $(INSTALL_AUX_DIR)
+	touch $@
+
+# The version of gflags in the repo is insufficient for compiling mcrouter
+.gflags-done: .boost-done
+	${RECIPES_DIR}/gflags.sh $(PKG_DIR) $(INSTALL_DIR) $(INSTALL_AUX_DIR)
+	touch $@
+
+# The version of glog in the repo is insufficient for compiling folly.
+# Additionally, the most recent (HEAD / v0.5.0.rc2) revision from upstream is incompatible for compiling mcrouter.
+# Fortunately, v0.4.0 works for both, so we just check out that revision.
+.glog-done: .gflags-done .boost-done
+	${RECIPES_DIR}/glog.sh $(PKG_DIR) $(INSTALL_DIR) $(INSTALL_AUX_DIR)
+	touch $@
+
+.zstd-done:
+	${RECIPES_DIR}/zstd.sh $(PKG_DIR) $(INSTALL_DIR) $(INSTALL_AUX_DIR)
+	touch $@
+
+.folly-done: .zstd-done .glog-done .gflags-done .boost-done .fmt-done
+	${RECIPES_DIR}/folly.sh $(PKG_DIR) $(INSTALL_DIR) $(INSTALL_AUX_DIR)
+	touch $@
+
+.fizz-done: .folly-done .glog-done .gflags-done .boost-done
+	${RECIPES_DIR}/fizz.sh $(PKG_DIR) $(INSTALL_DIR) $(INSTALL_AUX_DIR)
+	touch $@
+
+.wangle-done: .folly-done .fizz-done .glog-done .gflags-done .boost-done
+	${RECIPES_DIR}/wangle.sh $(PKG_DIR) $(INSTALL_DIR) $(INSTALL_AUX_DIR)
+	touch $@
+
+.fbthrift-done: .folly-done .fizz-done .wangle-done .fmt-done .glog-done .gflags-done .boost-done
+	${RECIPES_DIR}/fbthrift.sh $(PKG_DIR) $(INSTALL_DIR) $(INSTALL_AUX_DIR)
+	touch $@
+
+deps: .fbthrift-done .folly-done .fizz-done .wangle-done .fmt-done .zstd-done .glog-done .gflags-done .boost-done
+	touch $@
+
+mcrouter: deps
+	${RECIPES_DIR}/mcrouter.sh $(PKG_DIR) $(INSTALL_DIR) $(INSTALL_AUX_DIR)
+	touch $@
