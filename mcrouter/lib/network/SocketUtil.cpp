@@ -32,10 +32,15 @@ namespace memcache {
 
 namespace {
 
-std::string getServiceIdentity(const ConnectionOptions& opts) {
+std::string getSessionKey(const ConnectionOptions& opts) {
   const auto& svcIdentity = opts.securityOpts.sslServiceIdentity;
-  return svcIdentity.empty() ? opts.accessPoint->toHostPortString()
-                             : svcIdentity;
+  auto service =
+      svcIdentity.empty() ? opts.accessPoint->toHostPortString() : svcIdentity;
+  return fmt::format(
+      "{}:{}:{}",
+      service,
+      mc_protocol_to_string(opts.accessPoint->getProtocol()),
+      securityMechToString(opts.accessPoint->getSecurityMech()));
 }
 
 void createTCPKeepAliveOptions(
@@ -132,7 +137,7 @@ createSocketCommon(
         "SSL protocol is not applicable for Unix Domain Sockets"));
   }
   const auto& securityOpts = connectionOptions.securityOpts;
-  const auto& serviceId = getServiceIdentity(connectionOptions);
+  const auto& sessionKey = getSessionKey(connectionOptions);
   if (isAsyncSSLSocketMech(mech)) {
     // openssl based tls
     auto sslContext = getClientContext(securityOpts, mech);
@@ -148,8 +153,8 @@ createSocketCommon(
     if (securityOpts.sessionCachingEnabled) {
       if (auto clientCtx =
               std::dynamic_pointer_cast<ClientSSLContext>(sslContext)) {
-        sslSocket->setSessionKey(serviceId);
-        auto session = clientCtx->getCache().getSSLSession(serviceId);
+        sslSocket->setSessionKey(sessionKey);
+        auto session = clientCtx->getCache().getSSLSession(sessionKey);
         if (session) {
           sslSocket->setRawSSLSession(std::move(session));
         }
@@ -175,7 +180,7 @@ createSocketCommon(
       &eventBase,
       std::move(fizzContextAndVerifier.first),
       std::move(fizzContextAndVerifier.second));
-  fizzClient->setSessionKey(serviceId);
+  fizzClient->setSessionKey(sessionKey);
   if (securityOpts.tfoEnabledForSsl) {
     if (auto underlyingSocket =
             fizzClient->getUnderlyingTransport<folly::AsyncSocket>()) {
