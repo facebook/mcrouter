@@ -91,7 +91,7 @@ class ThriftTransportBase : public Transport,
   bool connectionTimedOut_{false};
 
   template <class ThriftClient>
-  std::unique_ptr<ThriftClient> createThriftClient();
+  std::optional<ThriftClient> createThriftClient();
 
   /**
    * Resets the client pointer.

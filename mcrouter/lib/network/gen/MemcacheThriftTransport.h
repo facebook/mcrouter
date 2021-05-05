@@ -1199,7 +1199,7 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
   }
 
  private:
-  std::unique_ptr<thrift::MemcacheAsyncClient> thriftClient_;
+  std::optional<thrift::MemcacheAsyncClient> thriftClient_;
   FlushList* flushList_{nullptr};
 
   thrift::MemcacheAsyncClient* getThriftClient() {
@@ -1211,7 +1211,7 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
         channel->setFlushList(flushList_);
       }
     }
-    return thriftClient_.get();
+    return thriftClient_.has_value() ? &thriftClient_.value() : nullptr;
   }
 
   void resetClient() override final {

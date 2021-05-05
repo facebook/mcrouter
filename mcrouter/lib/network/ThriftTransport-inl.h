@@ -19,15 +19,16 @@ namespace facebook {
 namespace memcache {
 
 template <class ThriftClient>
-std::unique_ptr<ThriftClient> ThriftTransportBase::createThriftClient() {
+std::optional<ThriftClient> ThriftTransportBase::createThriftClient() {
+  std::optional<ThriftClient> client;
   channel_ = createChannel();
   if (!channel_) {
-    return nullptr;
+    return std::nullopt;
   }
-  auto ret = std::make_unique<ThriftClient>(channel_);
+  client = ThriftClient(channel_);
   // Avoid any static default-registered event handlers.
-  ret->clearEventHandlers();
-  return ret;
+  client->clearEventHandlers();
+  return client;
 }
 
 template <class F>

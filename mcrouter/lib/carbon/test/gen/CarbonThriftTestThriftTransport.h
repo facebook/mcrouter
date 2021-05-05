@@ -287,7 +287,7 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
   }
 
  private:
-  std::unique_ptr<carbon::test::thrift::CarbonThriftTestAsyncClient> thriftClient_;
+  std::optional<carbon::test::thrift::CarbonThriftTestAsyncClient> thriftClient_;
   FlushList* flushList_{nullptr};
 
   carbon::test::thrift::CarbonThriftTestAsyncClient* getThriftClient() {
@@ -299,7 +299,7 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
         channel->setFlushList(flushList_);
       }
     }
-    return thriftClient_.get();
+    return thriftClient_.has_value() ? &thriftClient_.value() : nullptr;
   }
 
   void resetClient() override final {

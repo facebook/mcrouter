@@ -233,7 +233,7 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
   }
 
  private:
-  std::unique_ptr<hellogoodbye::thrift::HelloGoodbyeAsyncClient> thriftClient_;
+  std::optional<hellogoodbye::thrift::HelloGoodbyeAsyncClient> thriftClient_;
   FlushList* flushList_{nullptr};
 
   hellogoodbye::thrift::HelloGoodbyeAsyncClient* getThriftClient() {
@@ -245,7 +245,7 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
         channel->setFlushList(flushList_);
       }
     }
-    return thriftClient_.get();
+    return thriftClient_.has_value() ? &thriftClient_.value() : nullptr;
   }
 
   void resetClient() override final {
