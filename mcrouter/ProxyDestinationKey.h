@@ -25,6 +25,7 @@ struct ProxyDestinationKey {
 
   explicit ProxyDestinationKey(const ProxyDestinationBase& dst);
   ProxyDestinationKey(const AccessPoint& ap, std::chrono::milliseconds timeout);
+  explicit ProxyDestinationKey(const AccessPoint& ap);
 
   std::string str() const;
   size_t hash() const;

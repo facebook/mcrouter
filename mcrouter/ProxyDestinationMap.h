@@ -68,6 +68,12 @@ class ProxyDestinationMap {
       uint32_t qosPath,
       const std::shared_ptr<PoolTkoTracker>& poolTkoTracker);
 
+  template <class Transport>
+  std::shared_ptr<const AccessPoint> replace(
+      const AccessPoint& tmpOldAccessPoint,
+      std::shared_ptr<const AccessPoint> newAccessPoint,
+      std::chrono::milliseconds timeout);
+
   std::shared_ptr<PoolTkoTracker> createPoolTkoTracker(
       std::string poolName,
       uint32_t numEnterSoftTkos,

@@ -266,10 +266,9 @@ McRouteHandleProvider<RouterInfo>::makePool(
 
       auto it = accessPoints_.find(name);
       if (it == accessPoints_.end()) {
-        std::vector<std::shared_ptr<const AccessPoint>> accessPoints;
+        std::unordered_set<std::shared_ptr<const AccessPoint>> accessPoints;
         it = accessPoints_.emplace(name, std::move(accessPoints)).first;
       }
-      it->second.push_back(ap);
       folly::StringPiece nameSp = it->first;
 
       if (ap->getProtocol() == mc_thrift_protocol) {
@@ -283,7 +282,7 @@ McRouteHandleProvider<RouterInfo>::makePool(
             securityMechToString(ap->getSecurityMech()));
 
         using Transport = ThriftTransport<RouterInfo>;
-        destinations.push_back(createDestinationRoute<Transport>(
+        auto destResult = createDestinationRoute<Transport>(
             std::move(ap),
             timeout,
             connectTimeout,
@@ -294,10 +293,12 @@ McRouteHandleProvider<RouterInfo>::makePool(
             poolStatIndex,
             disableRequestDeadlineCheck,
             poolTkoTracker,
-            keepRoutingPrefix));
+            keepRoutingPrefix);
+        it->second.insert(destResult.second);
+        destinations.push_back(std::move(destResult.first));
       } else {
         using Transport = AsyncMcClient;
-        destinations.push_back(createDestinationRoute<Transport>(
+        auto destResult = createDestinationRoute<Transport>(
             std::move(ap),
             timeout,
             connectTimeout,
@@ -308,7 +309,9 @@ McRouteHandleProvider<RouterInfo>::makePool(
             poolStatIndex,
             disableRequestDeadlineCheck,
             poolTkoTracker,
-            keepRoutingPrefix));
+            keepRoutingPrefix);
+        it->second.insert(destResult.second);
+        destinations.push_back(std::move(destResult.first));
       }
     } // servers
 
@@ -368,7 +371,9 @@ McRouteHandleProvider<RouterInfo>::makePool(
 
 template <class RouterInfo>
 template <class Transport>
-typename McRouteHandleProvider<RouterInfo>::RouteHandlePtr
+std::pair<
+    typename McRouteHandleProvider<RouterInfo>::RouteHandlePtr,
+    std::shared_ptr<const AccessPoint>>
 McRouteHandleProvider<RouterInfo>::createDestinationRoute(
     std::shared_ptr<AccessPoint> ap,
     std::chrono::milliseconds timeout,
@@ -384,15 +389,18 @@ McRouteHandleProvider<RouterInfo>::createDestinationRoute(
   auto pdstn = proxy_.destinationMap()->template emplace<Transport>(
       std::move(ap), timeout, qosClass, qosPath, poolTkoTracker);
   pdstn->updateShortestTimeout(connectTimeout, timeout);
+  auto resAp = pdstn->accessPoint();
 
-  return makeDestinationRoute<RouterInfo, Transport>(
-      std::move(pdstn),
-      poolName,
-      indexInPool,
-      poolStatIndex,
-      timeout,
-      disableRequestDeadlineCheck,
-      keepRoutingPrefix);
+  return {
+      makeDestinationRoute<RouterInfo, Transport>(
+          std::move(pdstn),
+          poolName,
+          indexInPool,
+          poolStatIndex,
+          timeout,
+          disableRequestDeadlineCheck,
+          keepRoutingPrefix),
+      std::move(resAp)};
 }
 
 template <class RouterInfo>

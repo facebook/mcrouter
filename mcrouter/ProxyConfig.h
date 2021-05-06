@@ -79,9 +79,27 @@ class ProxyConfig {
     return it->second.first;
   }
 
-  const folly::StringKeyedUnorderedMap<
-      std::vector<std::shared_ptr<const AccessPoint>>>&
-  getAccessPoints() const {
+  bool updateAccessPoints(
+      const std::string& pool,
+      std::shared_ptr<const AccessPoint>& oldAccessPoint,
+      std::shared_ptr<const AccessPoint>& newAccessPoint) {
+    auto it = accessPoints_.find(pool);
+    if (it != accessPoints_.end()) {
+      auto apIt = it->second.find(oldAccessPoint);
+      if (apIt != it->second.end()) {
+        it->second.erase(apIt);
+      } else {
+        return false;
+      }
+      it->second.insert(newAccessPoint);
+      return true;
+    }
+    return false;
+  }
+
+  folly::StringKeyedUnorderedMap<
+      std::unordered_set<std::shared_ptr<const AccessPoint>>>&
+  getAccessPoints() {
     return accessPoints_;
   }
 
@@ -92,7 +110,7 @@ class ProxyConfig {
   // config (after all RouteHandles) because its keys are being referenced
   // by object in the Config.
   folly::StringKeyedUnorderedMap<
-      std::vector<std::shared_ptr<const AccessPoint>>>
+      std::unordered_set<std::shared_ptr<const AccessPoint>>>
       accessPoints_;
 
   // pool source name -> (allow_partial_reconfig, [(pool_config,[pool_names])])

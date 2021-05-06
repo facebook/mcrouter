@@ -114,7 +114,7 @@ bool ProxyDestinationBase::maySend(carbon::Result& tkoReason) const {
 void ProxyDestinationBase::onTkoEvent(TkoLogEvent event, carbon::Result result)
     const {
   auto logUtil = [this, result](folly::StringPiece eventStr) {
-    VLOG(2) << accessPoint_->toHostPortString() << " " << eventStr
+    VLOG(2) << accessPoint_.load()->toHostPortString() << " " << eventStr
             << ". Total hard TKOs: " << tracker_->globalTkos().hardTkos
             << "; soft TKOs: " << tracker_->globalTkos().softTkos
             << ". Reply: " << carbon::resultToString(result);
@@ -135,7 +135,7 @@ void ProxyDestinationBase::onTkoEvent(TkoLogEvent event, carbon::Result result)
       break;
   }
 
-  TkoLog tkoLog(*accessPoint_, tracker_->globalTkos());
+  TkoLog tkoLog(*accessPoint_.load(), tracker_->globalTkos());
   tkoLog.event = event;
   tkoLog.isHardTko = tracker_->isHardTko();
   tkoLog.isSoftTko = tracker_->isSoftTko();

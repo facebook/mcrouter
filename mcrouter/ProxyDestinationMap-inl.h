@@ -21,6 +21,33 @@ namespace memcache {
 namespace mcrouter {
 
 template <class Transport>
+std::shared_ptr<const AccessPoint> ProxyDestinationMap::replace(
+    const AccessPoint& tmpAccessPoint,
+    std::shared_ptr<const AccessPoint> newAccessPoint,
+    const std::chrono::milliseconds timeout) {
+  // Find the destination with old access point using
+  // temp access point. If it is found, the old access point is replaced
+  // with new access point
+  std::lock_guard<std::mutex> lck(destinationsLock_);
+  auto it = destinations_.find(ProxyDestinationKey(tmpAccessPoint, timeout));
+  if (it != destinations_.end()) {
+    auto destination = std::dynamic_pointer_cast<ProxyDestination<Transport>>(
+        (*it)->selfPtr().lock());
+    // Erase the destination before the access point is replaced because
+    // the internal logic to identify the destination inside destinations_
+    // uses access point info as Key
+    destinations_.erase(destination.get());
+    auto oldAccessPoint = destination->replaceAP(newAccessPoint);
+    // After the access point is replaced, insert the destination back into
+    // destinations with new access point used as Key
+    destinations_.emplace(destination.get());
+    // force the destination in TKO state
+    destination->handleTko(carbon::Result::CONNECT_ERROR, false);
+    return oldAccessPoint;
+  }
+  return nullptr;
+}
+template <class Transport>
 std::shared_ptr<ProxyDestination<Transport>> ProxyDestinationMap::emplace(
     std::shared_ptr<AccessPoint> ap,
     std::chrono::milliseconds timeout,

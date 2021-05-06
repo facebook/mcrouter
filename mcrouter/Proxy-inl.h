@@ -314,6 +314,12 @@ void Proxy<RouterInfo>::messageReady(ProxyMessage::Type t, void* data) {
       delete oldConfig;
     } break;
 
+    case ProxyMessage::Type::REPLACE_AP: {
+      auto rep = reinterpret_cast<replace_ap_t*>(data);
+      processReplaceMessage(rep);
+      rep->baton.post();
+    } break;
+
     case ProxyMessage::Type::SHUTDOWN:
       /*
        * No-op. We just wanted to wake this event base up so that
@@ -420,6 +426,41 @@ Proxy<RouterInfo>::rateLimited(ProxyRequestPriority priority, const Request&)
 template <class RouterInfo>
 bool Proxy<RouterInfo>::messageQueueFull() const noexcept {
   return messageQueue_->isFull();
+}
+
+template <class RouterInfo>
+void Proxy<RouterInfo>::processReplaceMessage(replace_ap_t* rep) {
+  rep->replacedAccessPoint = nullptr;
+  if (rep->oldAccessPoint.getProtocol() == mc_thrift_protocol) {
+    rep->replacedAccessPoint =
+        destinationMap_->replace<ThriftTransport<RouterInfo>>(
+            rep->oldAccessPoint,
+            rep->newAccessPoint,
+            std::chrono::milliseconds(0));
+  } else if (rep->oldAccessPoint.getProtocol() == mc_caret_protocol) {
+    rep->replacedAccessPoint = destinationMap_->replace<AsyncMcClient>(
+        rep->oldAccessPoint, rep->newAccessPoint, std::chrono::milliseconds(0));
+  }
+}
+
+template <class RouterInfo>
+std::shared_ptr<const AccessPoint> Proxy<RouterInfo>::replaceAP(
+    const AccessPoint& oldAP,
+    std::shared_ptr<const AccessPoint> newAP) {
+  // Send message to replace AP in the ProxyDestination
+  try {
+    auto repMsg = std::make_unique<replace_ap_t>(oldAP, newAP);
+    sendMessage(ProxyMessage::Type::REPLACE_AP, repMsg.get());
+    // wait for the response
+    repMsg->baton.wait();
+    auto replacedAP = repMsg->replacedAccessPoint;
+    VLOG(2) << ((replacedAP != nullptr) ? "SUCCESS " : "FAILED ")
+            << " Replacing oldAP = " << oldAP.toString()
+            << " newAP = " << newAP->toString();
+    return replacedAP;
+  } catch (...) {
+    return nullptr;
+  }
 }
 
 } // namespace mcrouter

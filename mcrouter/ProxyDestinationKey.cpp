@@ -22,6 +22,9 @@ ProxyDestinationKey::ProxyDestinationKey(
     std::chrono::milliseconds timeout_)
     : accessPoint(ap), timeout(timeout_) {}
 
+ProxyDestinationKey::ProxyDestinationKey(const AccessPoint& ap)
+    : ProxyDestinationKey(ap, std::chrono::milliseconds{0}) {}
+
 std::string ProxyDestinationKey::str() const {
   if (accessPoint.getProtocol() == mc_ascii_protocol) {
     // we cannot send requests with different timeouts for ASCII, since

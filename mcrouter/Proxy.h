@@ -33,7 +33,9 @@
 #include "mcrouter/lib/carbon/Keys.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
+#include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
+#include "mcrouter/lib/network/ThriftTransport.h"
 #include "mcrouter/lib/network/UniqueIntrusiveList.h"
 #include "mcrouter/options.h"
 
@@ -63,7 +65,7 @@ class ProxyRequestContextTyped;
 class ShardSplitter;
 
 struct ProxyMessage {
-  enum class Type { REQUEST, OLD_CONFIG, SHUTDOWN };
+  enum class Type { REQUEST, OLD_CONFIG, REPLACE_AP, SHUTDOWN };
 
   Type type{Type::REQUEST};
   void* data{nullptr};
@@ -71,6 +73,35 @@ struct ProxyMessage {
   constexpr ProxyMessage() = default;
 
   ProxyMessage(Type t, void* d) noexcept : type(t), data(d) {}
+};
+
+// struct used for replace message
+//
+struct replace_ap_t {
+  explicit replace_ap_t(
+      const AccessPoint& oldAp,
+      std::shared_ptr<const AccessPoint> newAp)
+      : oldAccessPoint(oldAp), newAccessPoint(std::move(newAp)) {}
+
+  // oldAccessPoint contains IP+port+other AP related info of the host that just
+  //                got removed
+  AccessPoint oldAccessPoint;
+  // newAccessPoint contains IP+port+other AP related info of the host that just
+  //                got added
+  std::shared_ptr<const AccessPoint> newAccessPoint;
+  // replacedAccessPoint
+  //                is the RETURN value from replace command which contains the
+  //                actual access point corresponding to the removed host
+  //                which is in the internal data structures like
+  //                ProxyDestination, ProxyDestinationMap, AccessPoints set in
+  //                ProxyConfig.
+  //                Since this is the actual AP present in the internal data
+  //                structures, we need to find this using the oldAccessPoint
+  //                and querying ProxyDestinationMap
+  std::shared_ptr<const AccessPoint> replacedAccessPoint;
+
+  // baton to wait on for the completion of the message processing
+  folly::fibers::Baton baton;
 };
 
 template <class RouterInfo>
@@ -130,6 +161,25 @@ class Proxy : public ProxyBase {
   folly::dynamic dumpRequestStats(bool filterZeroes) const final {
     return requestStats_.dump(filterZeroes);
   }
+
+  void processReplaceMessage(replace_ap_t* rep);
+
+  // replaceAP
+  // @oldAP    temporary AP constructed from IP address of the host
+  //           that got replaced
+  // @newAP    new AP that is used to replace oldAP in the ProxyDestination and
+  //           ProxyDestinationMap
+  //
+  // Returns
+  // replacedAP    AP in ProxyDestinationMap corresponding to the host that got
+  //           replaced, this is the real AP to be replaced. oldAP is used
+  //           to find this real AP
+  // Replace message is sent to proxy thread to find the AP to be replaced
+  // using 'oldAP' and then the AP is replaced by newAP and the replaced AP
+  // is returned to caller
+  std::shared_ptr<const AccessPoint> replaceAP(
+      const AccessPoint& oldAP,
+      std::shared_ptr<const AccessPoint> newAP);
 
   void advanceRequestStatsBin() override {
     requestStats().advanceBin();

@@ -125,13 +125,9 @@ class McRouteHandleProvider
   releasePartialConfigs() {
     return std::move(partialConfigs_);
   }
-
   folly::StringKeyedUnorderedMap<
-      std::vector<std::shared_ptr<const AccessPoint>>>
+      std::unordered_set<std::shared_ptr<const AccessPoint>>>
   releaseAccessPoints() {
-    for (auto& it : accessPoints_) {
-      it.second.shrink_to_fit();
-    }
     return std::move(accessPoints_);
   }
 
@@ -158,7 +154,7 @@ class McRouteHandleProvider
 
   // poolName -> AccessPoints
   folly::StringKeyedUnorderedMap<
-      std::vector<std::shared_ptr<const AccessPoint>>>
+      std::unordered_set<std::shared_ptr<const AccessPoint>>>
       accessPoints_;
 
   const RouteHandleFactoryMap routeMap_;
@@ -181,7 +177,8 @@ class McRouteHandleProvider
       std::string asynclogName);
 
   template <class Transport>
-  RouteHandlePtr createDestinationRoute(
+  std::pair<RouteHandlePtr, std::shared_ptr<const AccessPoint>>
+  createDestinationRoute(
       std::shared_ptr<AccessPoint> ap,
       std::chrono::milliseconds timeout,
       std::chrono::milliseconds connectTimeout,

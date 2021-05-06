@@ -86,6 +86,13 @@ class ProxyDestination : public ProxyDestinationBase {
     return selfPtr_;
   }
 
+  std::shared_ptr<const AccessPoint> replaceAP(
+      std::shared_ptr<const AccessPoint> newAccessPoint) {
+    auto ret = ProxyDestinationBase::replaceAP(newAccessPoint);
+    closeGracefully();
+    return ret;
+  }
+
  private:
   std::unique_ptr<Transport, typename Transport::Destructor> transport_;
   // Ensure proxy thread doesn't reset the Transport

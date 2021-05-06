@@ -12,6 +12,7 @@
 #include <memory>
 
 #include <folly/IntrusiveList.h>
+#include <folly/concurrency/AtomicSharedPtr.h>
 
 #include "mcrouter/ExponentialSmoothData.h"
 #include "mcrouter/TkoLog.h"
@@ -97,8 +98,8 @@ class ProxyDestinationBase {
   /**
    * Destination host that this client talks to.
    */
-  const std::shared_ptr<const AccessPoint>& accessPoint() const {
-    return accessPoint_;
+  const std::shared_ptr<const AccessPoint> accessPoint() const {
+    return accessPoint_.load();
   }
 
   /**
@@ -174,12 +175,17 @@ class ProxyDestinationBase {
     return probeInflight_;
   }
 
+  std::shared_ptr<const AccessPoint> replaceAP(
+      std::shared_ptr<const AccessPoint> newAccessPoint) {
+    return accessPoint_.exchange(newAccessPoint);
+  }
+
  private:
   ProxyBase& proxy_;
   std::shared_ptr<TkoTracker> tracker_;
 
   // Destination host information
-  const std::shared_ptr<const AccessPoint> accessPoint_;
+  folly::atomic_shared_ptr<const AccessPoint> accessPoint_;
   std::chrono::milliseconds shortestConnectTimeout_{0};
   std::chrono::milliseconds shortestWriteTimeout_{0};
   const uint32_t qosClass_{0};
