@@ -163,7 +163,7 @@ apache::thrift::RocketClientChannel::Ptr ThriftTransportBase::createChannel() {
     codec.zstdConfig_ref() = apache::thrift::ZstdCompressionCodecConfig();
     apache::thrift::CompressionConfig compressionConfig;
     compressionConfig.codecConfig_ref() = std::move(codec);
-    channel->setDefaultCompressionConfig(std::move(compressionConfig));
+    channel->setDesiredCompressionConfig(std::move(compressionConfig));
   }
 
   return channel;
