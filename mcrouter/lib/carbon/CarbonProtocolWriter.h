@@ -533,6 +533,7 @@ class CarbonProtocolWriterImpl {
   template <class T>
   void doWriteVarint(T val) {
     constexpr uint8_t kMaxIters = (sizeof(T) * 8 + 6) / 7;
+    uint8_t buf[kMaxIters + 1];
 
     static_assert(
         std::is_unsigned<T>::value,
@@ -544,12 +545,13 @@ class CarbonProtocolWriterImpl {
 
     uint8_t iter = 0;
     // While loop should consume at most (kMaxIters - 1) iterations
-    while (val >= 0x80 && ++iter < kMaxIters) {
-      uint8_t byte = 0x80 | (static_cast<uint8_t>(val) & 0x7f);
-      appender_.write(byte);
+    while (val >= 0x80 && iter < kMaxIters - 1) {
+      buf[iter] = 0x80 | (static_cast<uint8_t>(val) & 0x7f);
       val >>= 7;
+      iter++;
     }
-    appender_.write(static_cast<uint8_t>(val));
+    buf[iter] = static_cast<uint8_t>(val);
+    appender_.push(buf, iter + 1);
   }
 
   template <class T>
