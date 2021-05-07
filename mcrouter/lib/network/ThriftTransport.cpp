@@ -158,6 +158,14 @@ apache::thrift::RocketClientChannel::Ptr ThriftTransportBase::createChannel() {
       apache::thrift::RocketClientChannel::newChannel(std::move(socket));
   channel->setProtocolId(apache::thrift::protocol::T_COMPACT_PROTOCOL);
   channel->setCloseCallback(this);
+  if (connectionOptions_.thriftCompression) {
+    apache::thrift::CodecConfig codec;
+    codec.zstdConfig_ref() = apache::thrift::ZstdCompressionCodecConfig();
+    apache::thrift::CompressionConfig compressionConfig;
+    compressionConfig.codecConfig_ref() = std::move(codec);
+    channel->setDefaultCompressionConfig(std::move(compressionConfig));
+  }
+
   return channel;
 #else
   return nullptr;
