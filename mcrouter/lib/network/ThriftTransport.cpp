@@ -156,7 +156,6 @@ apache::thrift::RocketClientChannel::Ptr ThriftTransportBase::createChannel() {
   }
   auto channel =
       apache::thrift::RocketClientChannel::newChannel(std::move(socket));
-  channel->setProtocolId(apache::thrift::protocol::T_COMPACT_PROTOCOL);
   channel->setCloseCallback(this);
   if (connectionOptions_.thriftCompression) {
     apache::thrift::CodecConfig codec;
