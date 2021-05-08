@@ -543,6 +543,10 @@ bool ConfigApi::shouldReadFromBackupFiles() const {
   return readFromBackupFiles_;
 }
 
+std::vector<ConfigApi::PartialUpdate> ConfigApi::releasePartialUpdatesLocked() {
+  return {};
+}
+
 } // namespace mcrouter
 } // namespace memcache
 } // namespace facebook

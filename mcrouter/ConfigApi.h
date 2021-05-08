@@ -39,6 +39,7 @@ class ConfigApi : public ConfigApiIf {
  public:
   typedef std::function<void()> Callback;
   typedef CallbackPool<>::CallbackHandle CallbackHandle;
+  struct PartialUpdate;
 
   static const char* const kFilePrefix;
 
@@ -113,6 +114,8 @@ class ConfigApi : public ConfigApiIf {
    */
   virtual void stopObserving(pid_t pid) noexcept;
 
+  virtual std::vector<PartialUpdate> releasePartialUpdatesLocked();
+
   ~ConfigApi() override;
 
   /**
@@ -127,6 +130,15 @@ class ConfigApi : public ConfigApiIf {
    *                      other than the first.
    */
   void enableReadingFromBackupFiles();
+
+  struct PartialUpdate {
+    std::string tierName;
+    std::string oldApString;
+    std::string newApString;
+    uint32_t oldFailureDomain;
+    uint32_t newFailureDomain;
+    int64_t version;
+  };
 
  protected:
   const McrouterOptions& opts_;

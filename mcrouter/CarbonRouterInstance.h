@@ -232,6 +232,7 @@ class CarbonRouterInstance
       NB file-based configuration is synchronous
       but server-based configuration is asynchronous */
   bool reconfigure(const ProxyConfigBuilder& builder);
+  bool reconfigurePartially();
   /** Create the ProxyConfigBuilder used to reconfigure.
   Returns error reason if constructor fails. **/
   folly::Expected<ProxyConfigBuilder, std::string> createConfigBuilder();
