@@ -164,6 +164,18 @@ class CarbonRouterInstanceBase {
     return configuredFromDisk_.load(std::memory_order_relaxed);
   }
 
+  size_t partialReconfigAttempt() const {
+    return partialReconfigAttempt_.load(std::memory_order_relaxed);
+  }
+
+  size_t partialReconfigSuccess() const {
+    return partialReconfigSuccess_.load(std::memory_order_relaxed);
+  }
+
+  size_t configFullAttempt() const {
+    return configFullAttempt_.load(std::memory_order_relaxed);
+  }
+
   bool isRxmitReconnectionDisabled() const {
     return disableRxmitReconnection_;
   }
@@ -243,6 +255,9 @@ class CarbonRouterInstanceBase {
   std::atomic<time_t> lastConfigAttempt_{0};
   std::atomic<size_t> configFailures_{0};
   std::atomic<bool> configuredFromDisk_{false};
+  std::atomic<size_t> partialReconfigAttempt_{0};
+  std::atomic<size_t> partialReconfigSuccess_{0};
+  std::atomic<size_t> configFullAttempt_{0};
 
   // Stores whether we should reconnect after hitting rxmit threshold
   std::atomic<bool> disableRxmitReconnection_{false};

@@ -220,7 +220,6 @@ CarbonRouterInstance<RouterInfo>::spinUp() {
   bool configuringFromDisk = false;
   {
     std::lock_guard<std::mutex> lg(configReconfigLock_);
-
     auto builder = createConfigBuilder();
     if (builder.hasError()) {
       std::string initialError = std::move(builder.error());
@@ -382,7 +381,11 @@ void CarbonRouterInstance<RouterInfo>::subscribeToConfigUpdate() {
             return;
           }
         } catch (const std::exception& e) {
-          LOG(ERROR) << "Error on partial reconfiguring: " << e.what();
+          MC_LOG_FAILURE(
+              opts(),
+              failure::Category::kInvalidConfig,
+              "Error on partial reconfiguring: {}",
+              e.what());
         }
       }
 
@@ -498,6 +501,10 @@ bool CarbonRouterInstance<RouterInfo>::reconfigurePartially() {
   if (partialUpdates.empty()) {
     return false;
   }
+  partialReconfigAttempt_.store(
+      partialReconfigAttempt_.load(std::memory_order_relaxed) +
+          partialUpdates.size(),
+      std::memory_order_relaxed);
 
   // Use the first proxy's config, as it's same in all proxies.
   // Also there is no contention for holding the read lock as write lock is
@@ -564,6 +571,10 @@ bool CarbonRouterInstance<RouterInfo>::reconfigurePartially() {
   // TODO(lukeye): dumpConfigSourceToDisk
   VLOG_IF(0, !opts_.constantly_reload_configs)
       << "Partially reconfigured " << opts_.num_proxies << " proxies";
+  partialReconfigSuccess_.store(
+      partialReconfigSuccess_.load(std::memory_order_relaxed) +
+          partialUpdates.size(),
+      std::memory_order_relaxed);
   return true;
 }
 
@@ -604,6 +615,9 @@ CarbonRouterInstance<RouterInfo>::createConfigBuilder() {
   /* mark config attempt before, so that
      successful config is always >= last config attempt. */
   lastConfigAttempt_.store(time(nullptr), std::memory_order_relaxed);
+  configFullAttempt_.store(
+      configFullAttempt_.load(std::memory_order_relaxed) + 1,
+      std::memory_order_relaxed);
   configApi_->trackConfigSources();
   std::string config;
   std::string path;

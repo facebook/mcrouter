@@ -333,6 +333,9 @@ STUI(config_last_attempt, 0, 0)
 STUI(config_last_success, 0, 0)
 STUI(config_failures, 0, 0)
 STUI(configs_from_disk, 0, 0)
+STUI(config_partial_reconfig_attempt, 0, 0)
+STUI(config_partial_reconfig_success, 0, 0)
+STUI(config_full_attempt, 0, 0)
 #undef GROUP
 
 /* Declaring external stats */

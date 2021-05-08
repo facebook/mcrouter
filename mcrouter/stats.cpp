@@ -487,10 +487,19 @@ void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
       config_last_attempt_stat,
       static_cast<uint64_t>(router.lastConfigAttempt()));
   stat_set(stats, config_failures_stat, router.configFailures());
+  stat_set(stats, config_full_attempt_stat, router.configFullAttempt());
   stat_set(
       stats,
       configs_from_disk_stat,
       static_cast<uint64_t>(router.configuredFromDisk()));
+  stat_set(
+      stats,
+      config_partial_reconfig_attempt_stat,
+      router.partialReconfigAttempt());
+  stat_set(
+      stats,
+      config_partial_reconfig_success_stat,
+      router.partialReconfigSuccess());
 
   folly::make_atomic_ref(stats[pid_stat].data.int64)
       .store(getpid(), std::memory_order_relaxed);
