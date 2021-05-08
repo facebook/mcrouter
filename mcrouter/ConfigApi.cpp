@@ -547,6 +547,11 @@ std::vector<ConfigApi::PartialUpdate> ConfigApi::releasePartialUpdatesLocked() {
   return {};
 }
 
+bool ConfigApi::updatePartialConfigSource(
+    std::vector<ConfigApi::PartialUpdate> /*updates*/) {
+  return true;
+}
+
 } // namespace mcrouter
 } // namespace memcache
 } // namespace facebook

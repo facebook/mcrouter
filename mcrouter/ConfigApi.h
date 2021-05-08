@@ -116,6 +116,8 @@ class ConfigApi : public ConfigApiIf {
 
   virtual std::vector<PartialUpdate> releasePartialUpdatesLocked();
 
+  virtual bool updatePartialConfigSource(std::vector<PartialUpdate> updates);
+
   ~ConfigApi() override;
 
   /**
@@ -138,6 +140,8 @@ class ConfigApi : public ConfigApiIf {
     uint32_t oldFailureDomain;
     uint32_t newFailureDomain;
     int64_t version;
+    std::string hostname;
+    int64_t serviceId;
   };
 
  protected:

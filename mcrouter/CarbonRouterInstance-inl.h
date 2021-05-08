@@ -568,12 +568,15 @@ bool CarbonRouterInstance<RouterInfo>::reconfigurePartially() {
       }
     }
   }
-  // TODO(lukeye): dumpConfigSourceToDisk
+  int numUpdates = partialUpdates.size();
+  if (!configApi_->updatePartialConfigSource(std::move(partialUpdates))) {
+    return false;
+  }
+
   VLOG_IF(0, !opts_.constantly_reload_configs)
       << "Partially reconfigured " << opts_.num_proxies << " proxies";
   partialReconfigSuccess_.store(
-      partialReconfigSuccess_.load(std::memory_order_relaxed) +
-          partialUpdates.size(),
+      partialReconfigSuccess_.load(std::memory_order_relaxed) + numUpdates,
       std::memory_order_relaxed);
   return true;
 }
