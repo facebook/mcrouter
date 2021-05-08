@@ -30,7 +30,11 @@ class TestShadowRoute(McrouterTestCase):
         for key, value in kv:
             self.mcrouter.set(key, value)
 
-        time.sleep(1)
+        retries = 0
+        key, val = kv[0]
+        while self.mcrouter.get(key) != val and retries < 5:
+            time.sleep(1)
+            retries += 1
 
         for key, value in kv:
             self.assertEqual(self.mc_foo_0.get(key), value)
