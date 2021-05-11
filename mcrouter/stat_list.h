@@ -173,6 +173,7 @@ STUI(request_replied_count, 0, 1)
 #undef GROUP
 #define GROUP ods_stats | detailed_stats | rate_stats
 STUIR(request_sent, 0, 1)
+STUIR(request_has_crypto_auth_token, 0, 1)
 STUIR(request_error, 0, 1)
 STUIR(request_success, 0, 1)
 STUIR(request_replied, 0, 1)
