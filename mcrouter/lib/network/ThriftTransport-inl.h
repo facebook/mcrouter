@@ -10,6 +10,8 @@
 #include <memory>
 #include <type_traits>
 
+#include <folly/ExceptionWrapper.h>
+
 #ifndef LIBMC_FBTRACE_DISABLE
 #include "contextprop/cpp/serde/SerDeHelper.h"
 #include "contextprop/if/gen-cpp2/ContextpropConstants_constants.h"
@@ -31,17 +33,10 @@ std::optional<ThriftClient> ThriftTransportBase::createThriftClient() {
   return client;
 }
 
-template <class F>
-auto ThriftTransportBase::sendSyncImpl(F&& sendFunc) {
-  typename std::result_of_t<F()>::element_type::response_type reply;
-  auto tryReply = sendFunc();
-
-  if (LIKELY(tryReply.hasValue() && tryReply->response.hasValue())) {
-    return std::move(*tryReply->response);
-  }
-
-  const auto& ew = tryReply.hasException() ? tryReply.exception()
-                                           : tryReply->response.exception();
+template <class T>
+FOLLY_NOINLINE auto ThriftTransportBase::makeError(
+    const folly::exception_wrapper& ew) {
+  T reply;
   if (ew.with_exception([&](const apache::thrift::transport::
                                 TTransportException& tex) {
         carbon::Result res;
@@ -79,8 +74,20 @@ auto ThriftTransportBase::sendSyncImpl(F&& sendFunc) {
                    reply, carbon::Result::LOCAL_ERROR, e.what());
              })) {
   }
-
   return reply;
+}
+
+template <class F>
+auto ThriftTransportBase::sendSyncImpl(F&& sendFunc) {
+  auto tryReply = sendFunc();
+
+  if (LIKELY(tryReply.hasValue() && tryReply->response.hasValue())) {
+    return std::move(*tryReply->response);
+  }
+
+  return makeError<typename std::result_of_t<F()>::element_type::response_type>(
+      tryReply.hasException() ? tryReply.exception()
+                              : tryReply->response.exception());
 }
 
 #ifndef LIBMC_FBTRACE_DISABLE

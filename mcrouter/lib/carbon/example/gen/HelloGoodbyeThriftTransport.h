@@ -35,11 +35,10 @@ class ThriftTransportMethods<hellogoodbye::HelloGoodbyeRouterInfo> : public Thri
   ThriftTransportMethods() = default;
   virtual ~ThriftTransportMethods() override = default;
 
-void sendSyncHelper(
+folly::Try<apache::thrift::RpcResponseComplete<hellogoodbye::GoodbyeReply>> sendSyncHelper(
     typename hellogoodbye::HelloGoodbyeRouterInfo::RouteHandleAsyncClient* thriftClient,
     const hellogoodbye::GoodbyeRequest& request,
     apache::thrift::RpcOptions& rpcOptions,
-    folly::Try<apache::thrift::RpcResponseComplete<hellogoodbye::GoodbyeReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<hellogoodbye::HelloGoodbyeRouterInfo>::getThriftServerLoadEnabled();
   if (UNLIKELY(needServerLoad)) {
@@ -54,7 +53,7 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
 #endif
-  reply = thriftClient->sync_complete_goodbye(
+  auto reply = thriftClient->sync_complete_goodbye(
       rpcOptions, request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
@@ -69,13 +68,13 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceResponse(request, reply);
 #endif
+  return reply;
 }
 
-void sendSyncHelper(
+folly::Try<apache::thrift::RpcResponseComplete<hellogoodbye::HelloReply>> sendSyncHelper(
     typename hellogoodbye::HelloGoodbyeRouterInfo::RouteHandleAsyncClient* thriftClient,
     const hellogoodbye::HelloRequest& request,
     apache::thrift::RpcOptions& rpcOptions,
-    folly::Try<apache::thrift::RpcResponseComplete<hellogoodbye::HelloReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<hellogoodbye::HelloGoodbyeRouterInfo>::getThriftServerLoadEnabled();
   if (UNLIKELY(needServerLoad)) {
@@ -93,7 +92,7 @@ void sendSyncHelper(
         rpcOptions.setWriteHeader("shardId", folly::to<std::string>(*request.shardId_ref()));
         rpcOptions.setWriteHeader("message", folly::to<std::string>(*request.message_ref()));
         rpcOptions.setWriteHeader("priority", folly::to<std::string>(*request.priority_ref()));
-  reply = thriftClient->sync_complete_hello(
+  auto reply = thriftClient->sync_complete_hello(
       rpcOptions, request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
@@ -108,13 +107,13 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceResponse(request, reply);
 #endif
+  return reply;
 }
 
-void sendSyncHelper(
+folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> sendSyncHelper(
     typename hellogoodbye::HelloGoodbyeRouterInfo::RouteHandleAsyncClient* thriftClient,
     const McVersionRequest& request,
     apache::thrift::RpcOptions& rpcOptions,
-    folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<hellogoodbye::HelloGoodbyeRouterInfo>::getThriftServerLoadEnabled();
   if (UNLIKELY(needServerLoad)) {
@@ -129,7 +128,7 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
 #endif
-  reply = thriftClient->sync_complete_mcVersion(
+  auto reply = thriftClient->sync_complete_mcVersion(
       rpcOptions, request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
@@ -144,6 +143,7 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceResponse(request, reply);
 #endif
+  return reply;
 }
 
 };
@@ -176,17 +176,15 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
     DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      folly::Try<apache::thrift::RpcResponseComplete<hellogoodbye::GoodbyeReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
+        return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
-        reply.emplaceException(
+        return folly::Try<apache::thrift::RpcResponseComplete<hellogoodbye::GoodbyeReply>>(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
               apache::thrift::transport::TTransportException::NOT_OPEN,
               "Error creating thrift client."));
       }
-      return reply;
     });
   }
 
@@ -197,17 +195,15 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
     DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      folly::Try<apache::thrift::RpcResponseComplete<hellogoodbye::HelloReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
+        return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
-        reply.emplaceException(
+        return folly::Try<apache::thrift::RpcResponseComplete<hellogoodbye::HelloReply>>(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
               apache::thrift::transport::TTransportException::NOT_OPEN,
               "Error creating thrift client."));
       }
-      return reply;
     });
   }
 
@@ -218,17 +214,15 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
     DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
+        return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
-        reply.emplaceException(
+        return folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>>(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
               apache::thrift::transport::TTransportException::NOT_OPEN,
               "Error creating thrift client."));
       }
-      return reply;
     });
   }
 

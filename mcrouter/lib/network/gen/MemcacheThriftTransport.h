@@ -35,11 +35,10 @@ class ThriftTransportMethods<MemcacheRouterInfo> : public ThriftTransportUtil {
   ThriftTransportMethods() = default;
   virtual ~ThriftTransportMethods() override = default;
 
-void sendSyncHelper(
+folly::Try<apache::thrift::RpcResponseComplete<McAddReply>> sendSyncHelper(
     typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
     const McAddRequest& request,
     apache::thrift::RpcOptions& rpcOptions,
-    folly::Try<apache::thrift::RpcResponseComplete<McAddReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (UNLIKELY(needServerLoad)) {
@@ -54,7 +53,7 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
 #endif
-  reply = thriftClient->sync_complete_mcAdd(
+  auto reply = thriftClient->sync_complete_mcAdd(
       rpcOptions, request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
@@ -69,13 +68,13 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceResponse(request, reply);
 #endif
+  return reply;
 }
 
-void sendSyncHelper(
+folly::Try<apache::thrift::RpcResponseComplete<McAppendReply>> sendSyncHelper(
     typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
     const McAppendRequest& request,
     apache::thrift::RpcOptions& rpcOptions,
-    folly::Try<apache::thrift::RpcResponseComplete<McAppendReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (UNLIKELY(needServerLoad)) {
@@ -90,7 +89,7 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
 #endif
-  reply = thriftClient->sync_complete_mcAppend(
+  auto reply = thriftClient->sync_complete_mcAppend(
       rpcOptions, request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
@@ -105,13 +104,13 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceResponse(request, reply);
 #endif
+  return reply;
 }
 
-void sendSyncHelper(
+folly::Try<apache::thrift::RpcResponseComplete<McCasReply>> sendSyncHelper(
     typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
     const McCasRequest& request,
     apache::thrift::RpcOptions& rpcOptions,
-    folly::Try<apache::thrift::RpcResponseComplete<McCasReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (UNLIKELY(needServerLoad)) {
@@ -126,7 +125,7 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
 #endif
-  reply = thriftClient->sync_complete_mcCas(
+  auto reply = thriftClient->sync_complete_mcCas(
       rpcOptions, request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
@@ -141,13 +140,13 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceResponse(request, reply);
 #endif
+  return reply;
 }
 
-void sendSyncHelper(
+folly::Try<apache::thrift::RpcResponseComplete<McDecrReply>> sendSyncHelper(
     typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
     const McDecrRequest& request,
     apache::thrift::RpcOptions& rpcOptions,
-    folly::Try<apache::thrift::RpcResponseComplete<McDecrReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (UNLIKELY(needServerLoad)) {
@@ -162,7 +161,7 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
 #endif
-  reply = thriftClient->sync_complete_mcDecr(
+  auto reply = thriftClient->sync_complete_mcDecr(
       rpcOptions, request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
@@ -177,13 +176,13 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceResponse(request, reply);
 #endif
+  return reply;
 }
 
-void sendSyncHelper(
+folly::Try<apache::thrift::RpcResponseComplete<McDeleteReply>> sendSyncHelper(
     typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
     const McDeleteRequest& request,
     apache::thrift::RpcOptions& rpcOptions,
-    folly::Try<apache::thrift::RpcResponseComplete<McDeleteReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (UNLIKELY(needServerLoad)) {
@@ -198,7 +197,7 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
 #endif
-  reply = thriftClient->sync_complete_mcDelete(
+  auto reply = thriftClient->sync_complete_mcDelete(
       rpcOptions, request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
@@ -213,13 +212,13 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceResponse(request, reply);
 #endif
+  return reply;
 }
 
-void sendSyncHelper(
+folly::Try<apache::thrift::RpcResponseComplete<McFlushAllReply>> sendSyncHelper(
     typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
     const McFlushAllRequest& request,
     apache::thrift::RpcOptions& rpcOptions,
-    folly::Try<apache::thrift::RpcResponseComplete<McFlushAllReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (UNLIKELY(needServerLoad)) {
@@ -234,7 +233,7 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
 #endif
-  reply = thriftClient->sync_complete_mcFlushAll(
+  auto reply = thriftClient->sync_complete_mcFlushAll(
       rpcOptions, request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
@@ -249,13 +248,13 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceResponse(request, reply);
 #endif
+  return reply;
 }
 
-void sendSyncHelper(
+folly::Try<apache::thrift::RpcResponseComplete<McFlushReReply>> sendSyncHelper(
     typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
     const McFlushReRequest& request,
     apache::thrift::RpcOptions& rpcOptions,
-    folly::Try<apache::thrift::RpcResponseComplete<McFlushReReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (UNLIKELY(needServerLoad)) {
@@ -270,7 +269,7 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
 #endif
-  reply = thriftClient->sync_complete_mcFlushRe(
+  auto reply = thriftClient->sync_complete_mcFlushRe(
       rpcOptions, request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
@@ -285,13 +284,13 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceResponse(request, reply);
 #endif
+  return reply;
 }
 
-void sendSyncHelper(
+folly::Try<apache::thrift::RpcResponseComplete<McGatReply>> sendSyncHelper(
     typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
     const McGatRequest& request,
     apache::thrift::RpcOptions& rpcOptions,
-    folly::Try<apache::thrift::RpcResponseComplete<McGatReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (UNLIKELY(needServerLoad)) {
@@ -306,7 +305,7 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
 #endif
-  reply = thriftClient->sync_complete_mcGat(
+  auto reply = thriftClient->sync_complete_mcGat(
       rpcOptions, request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
@@ -321,13 +320,13 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceResponse(request, reply);
 #endif
+  return reply;
 }
 
-void sendSyncHelper(
+folly::Try<apache::thrift::RpcResponseComplete<McGatsReply>> sendSyncHelper(
     typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
     const McGatsRequest& request,
     apache::thrift::RpcOptions& rpcOptions,
-    folly::Try<apache::thrift::RpcResponseComplete<McGatsReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (UNLIKELY(needServerLoad)) {
@@ -342,7 +341,7 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
 #endif
-  reply = thriftClient->sync_complete_mcGats(
+  auto reply = thriftClient->sync_complete_mcGats(
       rpcOptions, request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
@@ -357,13 +356,13 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceResponse(request, reply);
 #endif
+  return reply;
 }
 
-void sendSyncHelper(
+folly::Try<apache::thrift::RpcResponseComplete<McGetReply>> sendSyncHelper(
     typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
     const McGetRequest& request,
     apache::thrift::RpcOptions& rpcOptions,
-    folly::Try<apache::thrift::RpcResponseComplete<McGetReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (UNLIKELY(needServerLoad)) {
@@ -378,7 +377,7 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
 #endif
-  reply = thriftClient->sync_complete_mcGet(
+  auto reply = thriftClient->sync_complete_mcGet(
       rpcOptions, request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
@@ -393,13 +392,13 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceResponse(request, reply);
 #endif
+  return reply;
 }
 
-void sendSyncHelper(
+folly::Try<apache::thrift::RpcResponseComplete<McGetsReply>> sendSyncHelper(
     typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
     const McGetsRequest& request,
     apache::thrift::RpcOptions& rpcOptions,
-    folly::Try<apache::thrift::RpcResponseComplete<McGetsReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (UNLIKELY(needServerLoad)) {
@@ -414,7 +413,7 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
 #endif
-  reply = thriftClient->sync_complete_mcGets(
+  auto reply = thriftClient->sync_complete_mcGets(
       rpcOptions, request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
@@ -429,13 +428,13 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceResponse(request, reply);
 #endif
+  return reply;
 }
 
-void sendSyncHelper(
+folly::Try<apache::thrift::RpcResponseComplete<McIncrReply>> sendSyncHelper(
     typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
     const McIncrRequest& request,
     apache::thrift::RpcOptions& rpcOptions,
-    folly::Try<apache::thrift::RpcResponseComplete<McIncrReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (UNLIKELY(needServerLoad)) {
@@ -450,7 +449,7 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
 #endif
-  reply = thriftClient->sync_complete_mcIncr(
+  auto reply = thriftClient->sync_complete_mcIncr(
       rpcOptions, request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
@@ -465,13 +464,13 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceResponse(request, reply);
 #endif
+  return reply;
 }
 
-void sendSyncHelper(
+folly::Try<apache::thrift::RpcResponseComplete<McLeaseGetReply>> sendSyncHelper(
     typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
     const McLeaseGetRequest& request,
     apache::thrift::RpcOptions& rpcOptions,
-    folly::Try<apache::thrift::RpcResponseComplete<McLeaseGetReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (UNLIKELY(needServerLoad)) {
@@ -486,7 +485,7 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
 #endif
-  reply = thriftClient->sync_complete_mcLeaseGet(
+  auto reply = thriftClient->sync_complete_mcLeaseGet(
       rpcOptions, request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
@@ -501,13 +500,13 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceResponse(request, reply);
 #endif
+  return reply;
 }
 
-void sendSyncHelper(
+folly::Try<apache::thrift::RpcResponseComplete<McLeaseSetReply>> sendSyncHelper(
     typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
     const McLeaseSetRequest& request,
     apache::thrift::RpcOptions& rpcOptions,
-    folly::Try<apache::thrift::RpcResponseComplete<McLeaseSetReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (UNLIKELY(needServerLoad)) {
@@ -522,7 +521,7 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
 #endif
-  reply = thriftClient->sync_complete_mcLeaseSet(
+  auto reply = thriftClient->sync_complete_mcLeaseSet(
       rpcOptions, request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
@@ -537,13 +536,13 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceResponse(request, reply);
 #endif
+  return reply;
 }
 
-void sendSyncHelper(
+folly::Try<apache::thrift::RpcResponseComplete<McMetagetReply>> sendSyncHelper(
     typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
     const McMetagetRequest& request,
     apache::thrift::RpcOptions& rpcOptions,
-    folly::Try<apache::thrift::RpcResponseComplete<McMetagetReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (UNLIKELY(needServerLoad)) {
@@ -558,7 +557,7 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
 #endif
-  reply = thriftClient->sync_complete_mcMetaget(
+  auto reply = thriftClient->sync_complete_mcMetaget(
       rpcOptions, request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
@@ -573,13 +572,13 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceResponse(request, reply);
 #endif
+  return reply;
 }
 
-void sendSyncHelper(
+folly::Try<apache::thrift::RpcResponseComplete<McPrependReply>> sendSyncHelper(
     typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
     const McPrependRequest& request,
     apache::thrift::RpcOptions& rpcOptions,
-    folly::Try<apache::thrift::RpcResponseComplete<McPrependReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (UNLIKELY(needServerLoad)) {
@@ -594,7 +593,7 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
 #endif
-  reply = thriftClient->sync_complete_mcPrepend(
+  auto reply = thriftClient->sync_complete_mcPrepend(
       rpcOptions, request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
@@ -609,13 +608,13 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceResponse(request, reply);
 #endif
+  return reply;
 }
 
-void sendSyncHelper(
+folly::Try<apache::thrift::RpcResponseComplete<McReplaceReply>> sendSyncHelper(
     typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
     const McReplaceRequest& request,
     apache::thrift::RpcOptions& rpcOptions,
-    folly::Try<apache::thrift::RpcResponseComplete<McReplaceReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (UNLIKELY(needServerLoad)) {
@@ -630,7 +629,7 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
 #endif
-  reply = thriftClient->sync_complete_mcReplace(
+  auto reply = thriftClient->sync_complete_mcReplace(
       rpcOptions, request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
@@ -645,13 +644,13 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceResponse(request, reply);
 #endif
+  return reply;
 }
 
-void sendSyncHelper(
+folly::Try<apache::thrift::RpcResponseComplete<McSetReply>> sendSyncHelper(
     typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
     const McSetRequest& request,
     apache::thrift::RpcOptions& rpcOptions,
-    folly::Try<apache::thrift::RpcResponseComplete<McSetReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (UNLIKELY(needServerLoad)) {
@@ -666,7 +665,7 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
 #endif
-  reply = thriftClient->sync_complete_mcSet(
+  auto reply = thriftClient->sync_complete_mcSet(
       rpcOptions, request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
@@ -681,13 +680,13 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceResponse(request, reply);
 #endif
+  return reply;
 }
 
-void sendSyncHelper(
+folly::Try<apache::thrift::RpcResponseComplete<McTouchReply>> sendSyncHelper(
     typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
     const McTouchRequest& request,
     apache::thrift::RpcOptions& rpcOptions,
-    folly::Try<apache::thrift::RpcResponseComplete<McTouchReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (UNLIKELY(needServerLoad)) {
@@ -702,7 +701,7 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
 #endif
-  reply = thriftClient->sync_complete_mcTouch(
+  auto reply = thriftClient->sync_complete_mcTouch(
       rpcOptions, request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
@@ -717,13 +716,13 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceResponse(request, reply);
 #endif
+  return reply;
 }
 
-void sendSyncHelper(
+folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> sendSyncHelper(
     typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
     const McVersionRequest& request,
     apache::thrift::RpcOptions& rpcOptions,
-    folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>>& reply,
     RpcStatsContext* rpcStatsContext = nullptr) {
   bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
   if (UNLIKELY(needServerLoad)) {
@@ -738,7 +737,7 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
 #endif
-  reply = thriftClient->sync_complete_mcVersion(
+  auto reply = thriftClient->sync_complete_mcVersion(
       rpcOptions, request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
@@ -753,6 +752,7 @@ void sendSyncHelper(
 #ifndef LIBMC_FBTRACE_DISABLE
   traceResponse(request, reply);
 #endif
+  return reply;
 }
 
 };
@@ -785,17 +785,15 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
     DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      folly::Try<apache::thrift::RpcResponseComplete<McAddReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
+        return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
-        reply.emplaceException(
+        return folly::Try<apache::thrift::RpcResponseComplete<McAddReply>>(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
               apache::thrift::transport::TTransportException::NOT_OPEN,
               "Error creating thrift client."));
       }
-      return reply;
     });
   }
 
@@ -806,17 +804,15 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
     DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      folly::Try<apache::thrift::RpcResponseComplete<McAppendReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
+        return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
-        reply.emplaceException(
+        return folly::Try<apache::thrift::RpcResponseComplete<McAppendReply>>(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
               apache::thrift::transport::TTransportException::NOT_OPEN,
               "Error creating thrift client."));
       }
-      return reply;
     });
   }
 
@@ -827,17 +823,15 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
     DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      folly::Try<apache::thrift::RpcResponseComplete<McCasReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
+        return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
-        reply.emplaceException(
+        return folly::Try<apache::thrift::RpcResponseComplete<McCasReply>>(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
               apache::thrift::transport::TTransportException::NOT_OPEN,
               "Error creating thrift client."));
       }
-      return reply;
     });
   }
 
@@ -848,17 +842,15 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
     DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      folly::Try<apache::thrift::RpcResponseComplete<McDecrReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
+        return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
-        reply.emplaceException(
+        return folly::Try<apache::thrift::RpcResponseComplete<McDecrReply>>(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
               apache::thrift::transport::TTransportException::NOT_OPEN,
               "Error creating thrift client."));
       }
-      return reply;
     });
   }
 
@@ -869,17 +861,15 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
     DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      folly::Try<apache::thrift::RpcResponseComplete<McDeleteReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
+        return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
-        reply.emplaceException(
+        return folly::Try<apache::thrift::RpcResponseComplete<McDeleteReply>>(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
               apache::thrift::transport::TTransportException::NOT_OPEN,
               "Error creating thrift client."));
       }
-      return reply;
     });
   }
 
@@ -890,17 +880,15 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
     DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      folly::Try<apache::thrift::RpcResponseComplete<McFlushAllReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
+        return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
-        reply.emplaceException(
+        return folly::Try<apache::thrift::RpcResponseComplete<McFlushAllReply>>(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
               apache::thrift::transport::TTransportException::NOT_OPEN,
               "Error creating thrift client."));
       }
-      return reply;
     });
   }
 
@@ -911,17 +899,15 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
     DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      folly::Try<apache::thrift::RpcResponseComplete<McFlushReReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
+        return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
-        reply.emplaceException(
+        return folly::Try<apache::thrift::RpcResponseComplete<McFlushReReply>>(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
               apache::thrift::transport::TTransportException::NOT_OPEN,
               "Error creating thrift client."));
       }
-      return reply;
     });
   }
 
@@ -932,17 +918,15 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
     DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      folly::Try<apache::thrift::RpcResponseComplete<McGatReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
+        return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
-        reply.emplaceException(
+        return folly::Try<apache::thrift::RpcResponseComplete<McGatReply>>(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
               apache::thrift::transport::TTransportException::NOT_OPEN,
               "Error creating thrift client."));
       }
-      return reply;
     });
   }
 
@@ -953,17 +937,15 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
     DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      folly::Try<apache::thrift::RpcResponseComplete<McGatsReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
+        return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
-        reply.emplaceException(
+        return folly::Try<apache::thrift::RpcResponseComplete<McGatsReply>>(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
               apache::thrift::transport::TTransportException::NOT_OPEN,
               "Error creating thrift client."));
       }
-      return reply;
     });
   }
 
@@ -974,17 +956,15 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
     DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      folly::Try<apache::thrift::RpcResponseComplete<McGetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
+        return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
-        reply.emplaceException(
+        return folly::Try<apache::thrift::RpcResponseComplete<McGetReply>>(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
               apache::thrift::transport::TTransportException::NOT_OPEN,
               "Error creating thrift client."));
       }
-      return reply;
     });
   }
 
@@ -995,17 +975,15 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
     DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      folly::Try<apache::thrift::RpcResponseComplete<McGetsReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
+        return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
-        reply.emplaceException(
+        return folly::Try<apache::thrift::RpcResponseComplete<McGetsReply>>(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
               apache::thrift::transport::TTransportException::NOT_OPEN,
               "Error creating thrift client."));
       }
-      return reply;
     });
   }
 
@@ -1016,17 +994,15 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
     DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      folly::Try<apache::thrift::RpcResponseComplete<McIncrReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
+        return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
-        reply.emplaceException(
+        return folly::Try<apache::thrift::RpcResponseComplete<McIncrReply>>(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
               apache::thrift::transport::TTransportException::NOT_OPEN,
               "Error creating thrift client."));
       }
-      return reply;
     });
   }
 
@@ -1037,17 +1013,15 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
     DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      folly::Try<apache::thrift::RpcResponseComplete<McLeaseGetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
+        return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
-        reply.emplaceException(
+        return folly::Try<apache::thrift::RpcResponseComplete<McLeaseGetReply>>(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
               apache::thrift::transport::TTransportException::NOT_OPEN,
               "Error creating thrift client."));
       }
-      return reply;
     });
   }
 
@@ -1058,17 +1032,15 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
     DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      folly::Try<apache::thrift::RpcResponseComplete<McLeaseSetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
+        return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
-        reply.emplaceException(
+        return folly::Try<apache::thrift::RpcResponseComplete<McLeaseSetReply>>(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
               apache::thrift::transport::TTransportException::NOT_OPEN,
               "Error creating thrift client."));
       }
-      return reply;
     });
   }
 
@@ -1079,17 +1051,15 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
     DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      folly::Try<apache::thrift::RpcResponseComplete<McMetagetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
+        return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
-        reply.emplaceException(
+        return folly::Try<apache::thrift::RpcResponseComplete<McMetagetReply>>(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
               apache::thrift::transport::TTransportException::NOT_OPEN,
               "Error creating thrift client."));
       }
-      return reply;
     });
   }
 
@@ -1100,17 +1070,15 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
     DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      folly::Try<apache::thrift::RpcResponseComplete<McPrependReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
+        return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
-        reply.emplaceException(
+        return folly::Try<apache::thrift::RpcResponseComplete<McPrependReply>>(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
               apache::thrift::transport::TTransportException::NOT_OPEN,
               "Error creating thrift client."));
       }
-      return reply;
     });
   }
 
@@ -1121,17 +1089,15 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
     DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      folly::Try<apache::thrift::RpcResponseComplete<McReplaceReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
+        return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
-        reply.emplaceException(
+        return folly::Try<apache::thrift::RpcResponseComplete<McReplaceReply>>(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
               apache::thrift::transport::TTransportException::NOT_OPEN,
               "Error creating thrift client."));
       }
-      return reply;
     });
   }
 
@@ -1142,17 +1108,15 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
     DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      folly::Try<apache::thrift::RpcResponseComplete<McSetReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
+        return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
-        reply.emplaceException(
+        return folly::Try<apache::thrift::RpcResponseComplete<McSetReply>>(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
               apache::thrift::transport::TTransportException::NOT_OPEN,
               "Error creating thrift client."));
       }
-      return reply;
     });
   }
 
@@ -1163,17 +1127,15 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
     DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      folly::Try<apache::thrift::RpcResponseComplete<McTouchReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
+        return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
-        reply.emplaceException(
+        return folly::Try<apache::thrift::RpcResponseComplete<McTouchReply>>(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
               apache::thrift::transport::TTransportException::NOT_OPEN,
               "Error creating thrift client."));
       }
-      return reply;
     });
   }
 
@@ -1184,17 +1146,15 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
     DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> reply;
       if (auto* thriftClient = getThriftClient()) {
         auto rpcOptions = getRpcOptions(timeout);
-        sendSyncHelper(thriftClient, request, rpcOptions, reply, rpcStatsContext);
+        return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
-        reply.emplaceException(
+        return folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>>(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
               apache::thrift::transport::TTransportException::NOT_OPEN,
               "Error creating thrift client."));
       }
-      return reply;
     });
   }
 

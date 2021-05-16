@@ -102,6 +102,9 @@ class ThriftTransportBase : public Transport,
   template <class F>
   auto sendSyncImpl(F&& sendFunc);
 
+  template <class T>
+  auto makeError(const folly::exception_wrapper& ew);
+
  private:
   // AsyncSocket::ConnectCallback overrides
   void connectSuccess() noexcept final;
