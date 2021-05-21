@@ -37,9 +37,7 @@ enum class FieldType : uint8_t {
 template <class T>
 class IsCarbonStruct {
   template <class C>
-  static constexpr decltype(
-      std::declval<C>().serialize(std::declval<CarbonProtocolWriter&>()),
-      std::true_type())
+  static constexpr decltype(std::declval<C>().serialize(std::declval<CarbonProtocolWriter&>()), std::true_type())
   check(int);
 
   template <class C>
@@ -52,9 +50,7 @@ class IsCarbonStruct {
 template <class T>
 class IsThriftWrapperStruct {
   template <class C>
-  static constexpr decltype(
-      std::declval<const C>().getThriftStruct(),
-      std::true_type())
+  static constexpr decltype(std::declval<const C>().getThriftStruct(), std::true_type())
   check(int);
 
   template <class C>
@@ -85,12 +81,7 @@ namespace detail {
 template <class T>
 class IsUserReadWriteDefined {
   template <class C>
-  static constexpr decltype(
-      SerializationTraits<C>::read(std::declval<CarbonProtocolReader&>()),
-      SerializationTraits<C>::write(
-          std::declval<C&>(),
-          std::declval<CarbonProtocolWriter&>()),
-      std::true_type())
+  static constexpr decltype(SerializationTraits<C>::read(std::declval<CarbonProtocolReader&>()), SerializationTraits<C>::write(std::declval<C&>(), std::declval<CarbonProtocolWriter&>()), std::true_type())
   check(int);
 
   template <class C>

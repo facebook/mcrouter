@@ -39,8 +39,9 @@ constexpr auto hasNonConstFailoverHopCount = false;
 template <typename T>
 constexpr auto hasNonConstFailoverHopCount<
     T,
-    std::void_t<decltype(
-        std::declval<std::decay_t<T>&>().failoverHopCount_ref())>> = true;
+    std::void_t<
+        decltype(std::declval<std::decay_t<T>&>().failoverHopCount_ref())>> =
+    true;
 
 /**
  * incFailoverHopCount - If the Request has failoverHopCount field in it,

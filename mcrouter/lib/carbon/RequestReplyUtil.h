@@ -380,11 +380,8 @@ namespace detail {
  */
 class CanHandleRequest {
   template <class Request, class OnRequest>
-  static constexpr auto check(int) -> decltype(
-      std::declval<OnRequest>().onRequest(
-          std::declval<facebook::memcache::McServerRequestContext>(),
-          std::declval<Request>()),
-      std::true_type()) {
+  static constexpr auto check(int)
+      -> decltype(std::declval<OnRequest>().onRequest(std::declval<facebook::memcache::McServerRequestContext>(), std::declval<Request>()), std::true_type()) {
     return {};
   }
 
@@ -410,13 +407,7 @@ class CanHandleRequest {
  */
 class CanHandleRequestWithBuffer {
   template <class Request, class OnRequest>
-  static constexpr auto check(int) -> decltype(
-      std::declval<OnRequest>().onRequest(
-          std::declval<facebook::memcache::McServerRequestContext>(),
-          std::declval<Request>(),
-          std::declval<facebook::memcache::CaretMessageInfo*>(),
-          std::declval<folly::IOBuf*>()),
-      std::true_type()) {
+  static constexpr auto check(int) -> decltype(std::declval<OnRequest>().onRequest(std::declval<facebook::memcache::McServerRequestContext>(), std::declval<Request>(), std::declval<facebook::memcache::CaretMessageInfo*>(), std::declval<folly::IOBuf*>()), std::true_type()) {
     return {};
   }
 

@@ -77,55 +77,22 @@ TEST(CarbonMessageConversionUtils, toFollyDynamic_Complex) {
   r.testIOBufList() =
       std::vector<folly::IOBuf>({folly::IOBuf(), folly::IOBuf()});
 
-  folly::dynamic expected = folly::dynamic::object(
-      "__Base",
-      folly::dynamic::object(
-          "__BaseStruct", folly::dynamic::object("baseInt64Member", 1))(
-          "int32Member", -1)("stringMember", "testStrMbr")("enumMember", 1)(
-          "vectorMember",
-          folly::dynamic::array(
-              folly::dynamic::object("member1", 342),
-              folly::dynamic::object("member1", 123))))("key", "/test/key/")(
-      "testEnum", -92233)("testBool", true)("testChar", "a")("testInt8", -123)(
-      "testInt16", -7890)("testInt32", -123456789)(
-      "testInt64", -9876543210123ll)("testUInt8", 123)("testUInt16", 7890)(
-      "testUInt32", 123456789)("testUInt64", 9876543210123ll)("testFloat", 1.5)(
-      "testDouble", 5.6)("testShortString", "abcdef")(
-      "testLongString",
-      "asdfghjkl;'eqtirgwuifhiivlzkhbvjkhc3978y42h97*&687gba")(
-      "testIobuf", "TestTheBuf")(
-      "testStruct",
-      folly::dynamic::object(
-          "__BaseStruct", folly::dynamic::object("baseInt64Member", 345))(
-          "enumMember", 20)("int32Member", 0)(
-          "stringMember", "nestedSimpleStruct")(
-          "vectorMember", folly::dynamic::array()))(
-      "testOptionalString", "tstOptStr")(
-      "testList", folly::dynamic::array("abc", "bce", "xyz"))(
-      "testEnumVec", folly::dynamic::array(1, 20))(
-      "testUnion", folly::dynamic::object("umember2", true))(
-      "testNestedVec",
-      folly::dynamic::array(
-          folly::dynamic::array(1, 1, 1), folly::dynamic::array(2, 2, 2)))(
-      "testUMap", folly::dynamic::object("key", "value")("adele", "beyonce"))(
-      "testMap", folly::dynamic::object("3.14", 2.7)("0.577", 0.2))(
-      "testF14FastMap", folly::dynamic::object("Fast", "Map")("hello", "F14"))(
-      "testF14NodeMap", folly::dynamic::object("Node", "Map")("hello", "F14"))(
-      "testF14ValueMap",
-      folly::dynamic::object("Value", "Map")("hello", "F14"))(
-      "testF14VectorMap",
-      folly::dynamic::object("Vector", "Map")("hello", "F14"))(
-      "testComplexMap",
-      folly::dynamic::object("hello", folly::dynamic::array(1, 1, 1))(
-          "world", folly::dynamic::array(2, 2, 2)))(
-      "testUSet", folly::dynamic::array("hello", "world"))(
-      "testF14FastSet", folly::dynamic::array("F14FastSet", "hello"))(
-      "testF14NodeSet", folly::dynamic::array("F14NodeSet", "hello"))(
-      "testF14ValueSet", folly::dynamic::array("F14ValueSet", "hello"))(
-      "testF14VectorSet", folly::dynamic::array("F14VectorSet", "hello"))(
-      "testSet", folly::dynamic::array(123, 456))("testType", "(user type)")(
-      "testCastable", 42)("testOptionalVec", folly::dynamic::array())(
-      "testIOBufList", folly::dynamic::array("", ""));
+  folly::
+      dynamic
+          expected =
+              folly::
+                  dynamic::
+                      object(
+                          "__Base",
+                          folly::
+                              dynamic::
+                                  object(
+                                      "__BaseStruct",
+                                      folly::
+                                          dynamic::
+                                              object(
+                                                  "baseInt64Member",
+                                                  1))("int32Member", -1)("stringMember", "testStrMbr")("enumMember", 1)("vectorMember", folly::dynamic::array(folly::dynamic::object("member1", 342), folly::dynamic::object("member1", 123))))("key", "/test/key/")("testEnum", -92233)("testBool", true)("testChar", "a")("testInt8", -123)("testInt16", -7890)("testInt32", -123456789)("testInt64", -9876543210123ll)("testUInt8", 123)("testUInt16", 7890)("testUInt32", 123456789)("testUInt64", 9876543210123ll)("testFloat", 1.5)("testDouble", 5.6)("testShortString", "abcdef")("testLongString", "asdfghjkl;'eqtirgwuifhiivlzkhbvjkhc3978y42h97*&687gba")("testIobuf", "TestTheBuf")("testStruct", folly::dynamic::object("__BaseStruct", folly::dynamic::object("baseInt64Member", 345))("enumMember", 20)("int32Member", 0)("stringMember", "nestedSimpleStruct")("vectorMember", folly::dynamic::array()))("testOptionalString", "tstOptStr")("testList", folly::dynamic::array("abc", "bce", "xyz"))("testEnumVec", folly::dynamic::array(1, 20))("testUnion", folly::dynamic::object("umember2", true))("testNestedVec", folly::dynamic::array(folly::dynamic::array(1, 1, 1), folly::dynamic::array(2, 2, 2)))("testUMap", folly::dynamic::object("key", "value")("adele", "beyonce"))("testMap", folly::dynamic::object("3.14", 2.7)("0.577", 0.2))("testF14FastMap", folly::dynamic::object("Fast", "Map")("hello", "F14"))("testF14NodeMap", folly::dynamic::object("Node", "Map")("hello", "F14"))("testF14ValueMap", folly::dynamic::object("Value", "Map")("hello", "F14"))("testF14VectorMap", folly::dynamic::object("Vector", "Map")("hello", "F14"))("testComplexMap", folly::dynamic::object("hello", folly::dynamic::array(1, 1, 1))("world", folly::dynamic::array(2, 2, 2)))("testUSet", folly::dynamic::array("hello", "world"))("testF14FastSet", folly::dynamic::array("F14FastSet", "hello"))("testF14NodeSet", folly::dynamic::array("F14NodeSet", "hello"))("testF14ValueSet", folly::dynamic::array("F14ValueSet", "hello"))("testF14VectorSet", folly::dynamic::array("F14VectorSet", "hello"))("testSet", folly::dynamic::array(123, 456))("testType", "(user type)")("testCastable", 42)("testOptionalVec", folly::dynamic::array())("testIOBufList", folly::dynamic::array("", ""));
 
   auto dynamic = carbon::convertToFollyDynamic(r);
 
@@ -154,12 +121,14 @@ TEST(CarbonMessageConversionUtils, toFollyDynamic_InlineMixins) {
   s.stringMember() = "abcdef";
   folly::dynamic noInline = folly::dynamic::object(
       "__BaseStruct", folly::dynamic::object("baseInt64Member", 123))(
-      "int32Member", 0)("stringMember", "abcdef")("enumMember", 20)(
-      "vectorMember", folly::dynamic::array());
+      "int32Member", 0)(
+      "stringMember",
+      "abcdef")("enumMember", 20)("vectorMember", folly::dynamic::array());
   EXPECT_EQ(noInline, carbon::convertToFollyDynamic(s));
-  folly::dynamic withInline = folly::dynamic::object("baseInt64Member", 123)(
-      "int32Member", 0)("stringMember", "abcdef")("enumMember", 20)(
-      "vectorMember", folly::dynamic::array());
+  folly::dynamic withInline =
+      folly::dynamic::object("baseInt64Member", 123)("int32Member", 0)(
+          "stringMember",
+          "abcdef")("enumMember", 20)("vectorMember", folly::dynamic::array());
   carbon::FollyDynamicConversionOptions opts;
   opts.inlineMixins = true;
   EXPECT_EQ(withInline, carbon::convertToFollyDynamic(s, opts));
@@ -186,13 +155,9 @@ TEST(CarbonMessageConversionUtils, toFollyDynamic_NoDefaultValues_Complex) {
 
   const folly::dynamic expected = folly::dynamic::object(
       "__Base", folly::dynamic::object("enumMember", 20))(
-      "testList", folly::dynamic::array("", "bce", ""))("testChar", "a")(
-      "testEnum", 20)("testStruct", folly::dynamic::object("enumMember", 20))(
-      "testNestedVec",
-      folly::dynamic::array(
-          folly::dynamic::array(0),
-          folly::dynamic::array(2, 0, 2),
-          folly::dynamic::array()))("testType", "(user type)");
+      "testList", folly::dynamic::array("", "bce", ""))(
+      "testChar",
+      "a")("testEnum", 20)("testStruct", folly::dynamic::object("enumMember", 20))("testNestedVec", folly::dynamic::array(folly::dynamic::array(0), folly::dynamic::array(2, 0, 2), folly::dynamic::array()))("testType", "(user type)");
 
   carbon::FollyDynamicConversionOptions opts;
   opts.serializeFieldsWithDefaultValue = false;

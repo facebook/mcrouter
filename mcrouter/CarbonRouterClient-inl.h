@@ -251,8 +251,8 @@ bool CarbonRouterClient<RouterInfo>::send(
     F&& callback,
     folly::StringPiece ipAddr) {
   using IterReference = typename std::iterator_traits<InputIt>::reference;
-  using Request = typename std::decay<decltype(
-      detail::unwrapRequest(std::declval<IterReference>()))>::type;
+  using Request = typename std::decay<decltype(detail::unwrapRequest(
+      std::declval<IterReference>()))>::type;
 
   auto makeNextPreq = [this, ipAddr, &callback, &begin](bool inBatch) {
     auto proxyRequestContext = makeProxyRequestContext(
