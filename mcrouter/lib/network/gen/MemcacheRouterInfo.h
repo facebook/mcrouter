@@ -125,3 +125,73 @@ struct MemcacheRouterInfo {
 } // namespace facebook
 
 #include "mcrouter/lib/network/gen/MemcacheThriftTransport.h"
+
+#include <cstddef>
+#include <memory>
+#include <vector>
+
+namespace facebook {
+namespace memcache {
+
+class FailoverErrorsSettings;
+
+template <class RouteHandleIf>
+class RouteHandleFactory;
+
+namespace mcrouter {
+
+template <
+    class RouterInfo,
+    typename FailoverPolicyT,
+    typename FailoverErrorsSettingsT>
+class FailoverRoute;
+
+template <class RouterInfo>
+std::shared_ptr<typename RouterInfo::RouteHandleIf> createHashRoute(
+    const folly::dynamic& json,
+    std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> rh,
+    size_t threadId);
+
+template <class RouterInfo>
+typename RouterInfo::RouteHandlePtr makeAllFastestRoute(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json);
+
+template <
+    class RouterInfo,
+    template <class...>
+    class RouteHandle,
+    class FailoverErrorsSettingsT,
+    class... Args>
+std::shared_ptr<typename RouterInfo::RouteHandleIf>
+makeFailoverRouteWithFailoverErrorSettings(
+    const folly::dynamic& json,
+    std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> children,
+    FailoverErrorsSettingsT failoverErrors,
+    const folly::dynamic* jFailoverPolicy,
+    Args&&... args);
+
+extern template facebook::memcache::MemcacheRouterInfo::RouteHandlePtr
+createHashRoute<facebook::memcache::MemcacheRouterInfo>(
+    const folly::dynamic& json,
+    std::vector<facebook::memcache::MemcacheRouterInfo::RouteHandlePtr> rh,
+    size_t threadId);
+
+extern template facebook::memcache::MemcacheRouterInfo::RouteHandlePtr
+makeAllFastestRoute<facebook::memcache::MemcacheRouterInfo>(
+    RouteHandleFactory<facebook::memcache::MemcacheRouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json);
+
+extern template facebook::memcache::MemcacheRouterInfo::RouteHandlePtr
+makeFailoverRouteWithFailoverErrorSettings<
+    facebook::memcache::MemcacheRouterInfo,
+    FailoverRoute,
+    FailoverErrorsSettings>(
+    const folly::dynamic& json,
+    std::vector<facebook::memcache::MemcacheRouterInfo::RouteHandlePtr> children,
+    FailoverErrorsSettings failoverErrors,
+    const folly::dynamic* jFailoverPolicy);
+
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
