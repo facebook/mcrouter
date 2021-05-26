@@ -142,6 +142,11 @@ libmcroutercore_a_SOURCES = \
   routes/McRouteHandleBuilder.h \
   routes/McRouteHandleProvider-inl.h \
   routes/McRouteHandleProvider.cpp \
+  routes/McRouteHandleProvider-AllFastestRoute.cpp \
+  routes/McRouteHandleProvider-CarbonLookasideRoute.cpp \
+  routes/McRouteHandleProvider-FailoverRoute.cpp \
+  routes/McRouteHandleProvider-HashRoute.cpp \
+  routes/McRouteHandleProvider-PoolRoute.cpp \
   routes/McRouteHandleProvider.h \
   routes/McrouterRouteHandle.h \
   routes/MigrateRouteFactory.h \

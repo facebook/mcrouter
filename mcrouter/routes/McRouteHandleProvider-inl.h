@@ -25,6 +25,7 @@
 #include "mcrouter/lib/network/SecurityOptions.h"
 #include "mcrouter/lib/network/ThriftTransport.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
+#include "mcrouter/routes/AllFastestRouteFactory.h"
 #include "mcrouter/routes/AsynclogRoute.h"
 #include "mcrouter/routes/DestinationRoute.h"
 #include "mcrouter/routes/ExtraRouteHandleProviderIf.h"
@@ -41,6 +42,37 @@
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
+
+extern template MemcacheRouterInfo::RouteHandlePtr
+createHashRoute<MemcacheRouterInfo>(
+    const folly::dynamic& json,
+    std::vector<MemcacheRouterInfo::RouteHandlePtr> rh,
+    size_t threadId);
+
+extern template MemcacheRouterInfo::RouteHandlePtr
+makeAllFastestRoute<MemcacheRouterInfo>(
+    RouteHandleFactory<MemcacheRouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json);
+
+extern template MemcacheRouterInfo::RouteHandlePtr
+makeFailoverRouteWithFailoverErrorSettings<
+    MemcacheRouterInfo,
+    FailoverRoute,
+    FailoverErrorsSettings>(
+    const folly::dynamic& json,
+    std::vector<MemcacheRouterInfo::RouteHandlePtr> children,
+    FailoverErrorsSettings failoverErrors,
+    const folly::dynamic* jFailoverPolicy);
+
+extern template const std::vector<MemcacheRouterInfo::RouteHandlePtr>&
+McRouteHandleProvider<MemcacheRouterInfo>::makePool(
+    RouteHandleFactory<MemcacheRouteHandleIf>& factory,
+    const PoolFactory::PoolJson& json);
+
+extern template MemcacheRouterInfo::RouteHandlePtr
+McRouteHandleProvider<MemcacheRouterInfo>::makePoolRoute(
+    RouteHandleFactory<MemcacheRouteHandleIf>& factory,
+    const folly::dynamic& json);
 
 template <class RouterInfo>
 std::shared_ptr<typename RouterInfo::RouteHandleIf> makeLoggingRoute(

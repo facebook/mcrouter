@@ -212,42 +212,14 @@ std::shared_ptr<AccessPoint> createAccessPoint(
 using McRouteHandleFactory = RouteHandleFactory<McrouterRouteHandleIf>;
 using MemcacheRouterInfo = facebook::memcache::MemcacheRouterInfo;
 
-/**
- * This implementation is only for test purposes. Typically the users of
- * CarbonLookaside will be services other than memcache.
- */
-class MemcacheCarbonLookasideHelper {
- public:
-  MemcacheCarbonLookasideHelper(const folly::dynamic* /* jsonConfig */) {}
+class MemcacheCarbonLookasideHelper;
 
-  static std::string name() {
-    return "MemcacheCarbonLookasideHelper";
-  }
-
-  template <typename Request>
-  bool cacheCandidate(const Request& /* unused */) const {
-    if (HasKeyTrait<Request>::value) {
-      return true;
-    }
-    return false;
-  }
-
-  template <typename Request>
-  std::string buildKey(const Request& req) const {
-    if (HasKeyTrait<Request>::value) {
-      return req.key_ref()->fullKey().str();
-    }
-    return std::string();
-  }
-
-  template <typename Reply>
-  bool shouldCacheReply(const Reply& /* unused */) const {
-    return true;
-  }
-
-  template <typename Reply>
-  void postProcessCachedReply(Reply& /* reply */) const {}
-};
+// This is rather expensive to instantiate, therefore explicitly instantiated
+// in separate file: `McrouteHandleProvider-CarbonLookasideRoute.cpp`.
+extern template MemcacheRouterInfo::RouteHandlePtr
+createCarbonLookasideRoute<MemcacheRouterInfo, MemcacheCarbonLookasideHelper>(
+    RouteHandleFactory<MemcacheRouteHandleIf>& factory,
+    const folly::dynamic& json);
 
 McrouterRouteHandlePtr makeWarmUpRoute(
     McRouteHandleFactory& factory,
