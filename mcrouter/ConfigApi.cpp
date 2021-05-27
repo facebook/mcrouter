@@ -552,6 +552,8 @@ bool ConfigApi::updatePartialConfigSource(
   return true;
 }
 
+void ConfigApi::addPartialUpdateForTest(PartialUpdate&) {}
+
 } // namespace mcrouter
 } // namespace memcache
 } // namespace facebook

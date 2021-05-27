@@ -117,6 +117,7 @@ class ConfigApi : public ConfigApiIf {
   virtual std::vector<PartialUpdate> releasePartialUpdatesLocked();
 
   virtual bool updatePartialConfigSource(std::vector<PartialUpdate> updates);
+  virtual void addPartialUpdateForTest(PartialUpdate& update);
 
   ~ConfigApi() override;
 
