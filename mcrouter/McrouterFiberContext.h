@@ -16,6 +16,7 @@
 #include <folly/ScopeGuard.h>
 #include <folly/container/F14Map.h>
 #include <folly/fibers/FiberManager.h>
+#include <folly/lang/Aligned.h>
 
 #include "mcrouter/lib/network/ServerLoad.h"
 
@@ -65,15 +66,15 @@ class fiber_local {
     NUM_FLAGS
   };
 
-  struct McrouterFiberContext {
+  struct alignas(folly::cacheline_align_v) McrouterFiberContext {
     std::shared_ptr<ProxyRequestContextWithInfo<RouterInfo>> sharedCtx;
-    folly::StringPiece asynclogName;
-    ServerLoad load{0};
-    RequestClass requestClass;
-    int32_t selectedIndex{-1};
-    int64_t networkTransportTimeUs{0};
-    uint32_t failoverCount{0};
     std::bitset<NUM_FLAGS> featureFlags;
+    int32_t selectedIndex{-1};
+    uint32_t failoverCount{0};
+    RequestClass requestClass;
+    folly::StringPiece asynclogName;
+    int64_t networkTransportTimeUs{0};
+    ServerLoad load{0};
     std::vector<ExtraDataCallbackT> extraDataCallbacks;
   };
 

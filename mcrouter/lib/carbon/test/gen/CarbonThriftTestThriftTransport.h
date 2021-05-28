@@ -60,7 +60,7 @@ folly::Try<apache::thrift::RpcResponseComplete<carbon::test::CustomReply>> sendS
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad && reply->responseContext.serverLoad) {
+      if (UNLIKELY(needServerLoad && reply->responseContext.serverLoad)) {
         rpcStatsContext->serverLoad = ServerLoad(
             static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
@@ -96,7 +96,7 @@ folly::Try<apache::thrift::RpcResponseComplete<carbon::test::DummyThriftReply>> 
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad && reply->responseContext.serverLoad) {
+      if (UNLIKELY(needServerLoad && reply->responseContext.serverLoad)) {
         rpcStatsContext->serverLoad = ServerLoad(
             static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
@@ -132,7 +132,7 @@ folly::Try<apache::thrift::RpcResponseComplete<carbon::test::ThriftTestReply>> s
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad && reply->responseContext.serverLoad) {
+      if (UNLIKELY(needServerLoad && reply->responseContext.serverLoad)) {
         rpcStatsContext->serverLoad = ServerLoad(
             static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
@@ -168,7 +168,7 @@ folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> sendSyncHelper(
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad && reply->responseContext.serverLoad) {
+      if (UNLIKELY(needServerLoad && reply->responseContext.serverLoad)) {
         rpcStatsContext->serverLoad = ServerLoad(
             static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
@@ -208,7 +208,8 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
       RpcStatsContext* rpcStatsContext = nullptr) {
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      if (auto* thriftClient = getThriftClient()) {
+      auto* thriftClient = getThriftClient();
+      if (LIKELY(thriftClient != nullptr)) {
         auto rpcOptions = getRpcOptions(timeout);
         return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
@@ -226,7 +227,8 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
       RpcStatsContext* rpcStatsContext = nullptr) {
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      if (auto* thriftClient = getThriftClient()) {
+      auto* thriftClient = getThriftClient();
+      if (LIKELY(thriftClient != nullptr)) {
         auto rpcOptions = getRpcOptions(timeout);
         return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
@@ -244,7 +246,8 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
       RpcStatsContext* rpcStatsContext = nullptr) {
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      if (auto* thriftClient = getThriftClient()) {
+      auto* thriftClient = getThriftClient();
+      if (LIKELY(thriftClient != nullptr)) {
         auto rpcOptions = getRpcOptions(timeout);
         return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
@@ -262,7 +265,8 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
       RpcStatsContext* rpcStatsContext = nullptr) {
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      if (auto* thriftClient = getThriftClient()) {
+      auto* thriftClient = getThriftClient();
+      if (LIKELY(thriftClient != nullptr)) {
         auto rpcOptions = getRpcOptions(timeout);
         return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {

@@ -60,7 +60,7 @@ folly::Try<apache::thrift::RpcResponseComplete<hellogoodbye::GoodbyeReply>> send
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad && reply->responseContext.serverLoad) {
+      if (UNLIKELY(needServerLoad && reply->responseContext.serverLoad)) {
         rpcStatsContext->serverLoad = ServerLoad(
             static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
@@ -99,7 +99,7 @@ folly::Try<apache::thrift::RpcResponseComplete<hellogoodbye::HelloReply>> sendSy
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad && reply->responseContext.serverLoad) {
+      if (UNLIKELY(needServerLoad && reply->responseContext.serverLoad)) {
         rpcStatsContext->serverLoad = ServerLoad(
             static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
@@ -135,7 +135,7 @@ folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> sendSyncHelper(
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
       rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
       rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
-      if (needServerLoad && reply->responseContext.serverLoad) {
+      if (UNLIKELY(needServerLoad && reply->responseContext.serverLoad)) {
         rpcStatsContext->serverLoad = ServerLoad(
             static_cast<int32_t>(*reply->responseContext.serverLoad));
       }
@@ -175,7 +175,8 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
       RpcStatsContext* rpcStatsContext = nullptr) {
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      if (auto* thriftClient = getThriftClient()) {
+      auto* thriftClient = getThriftClient();
+      if (LIKELY(thriftClient != nullptr)) {
         auto rpcOptions = getRpcOptions(timeout);
         return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
@@ -193,7 +194,8 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
       RpcStatsContext* rpcStatsContext = nullptr) {
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      if (auto* thriftClient = getThriftClient()) {
+      auto* thriftClient = getThriftClient();
+      if (LIKELY(thriftClient != nullptr)) {
         auto rpcOptions = getRpcOptions(timeout);
         return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
@@ -211,7 +213,8 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
       RpcStatsContext* rpcStatsContext = nullptr) {
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
-      if (auto* thriftClient = getThriftClient()) {
+      auto* thriftClient = getThriftClient();
+      if (LIKELY(thriftClient != nullptr)) {
         auto rpcOptions = getRpcOptions(timeout);
         return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
