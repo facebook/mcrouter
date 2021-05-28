@@ -173,7 +173,6 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
       const hellogoodbye::GoodbyeRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
@@ -192,7 +191,6 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
       const hellogoodbye::HelloRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
@@ -211,7 +209,6 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
       const McVersionRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {

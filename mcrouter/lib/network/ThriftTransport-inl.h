@@ -35,6 +35,7 @@ std::optional<ThriftClient> ThriftTransportBase::createThriftClient() {
 
 template <class T>
 FOLLY_NOINLINE auto ThriftTransportBase::makeError(
+    const ConnectionState oldState,
     const folly::exception_wrapper& ew) {
   T reply;
   if (ew.with_exception([&](const apache::thrift::transport::
@@ -42,15 +43,22 @@ FOLLY_NOINLINE auto ThriftTransportBase::makeError(
         carbon::Result res;
         switch (tex.getType()) {
           case apache::thrift::transport::TTransportException::NOT_OPEN:
-          case apache::thrift::transport::TTransportException::ALREADY_OPEN:
-          case apache::thrift::transport::TTransportException::END_OF_FILE:
-          case apache::thrift::transport::TTransportException::SSL_ERROR:
-          case apache::thrift::transport::TTransportException::COULD_NOT_BIND:
-            if (connectionState_ == ConnectionState::Error &&
+            if ((oldState == ConnectionState::Down ||
+                 oldState == ConnectionState::Connecting) &&
                 connectionTimedOut_) {
               res = carbon::Result::CONNECT_TIMEOUT;
-            } else {
+            } else if (oldState == ConnectionState::Error) {
               res = carbon::Result::CONNECT_ERROR;
+            } else {
+              res = carbon::Result::REMOTE_ERROR;
+            }
+            break;
+          case apache::thrift::transport::TTransportException::END_OF_FILE:
+            if (oldState == ConnectionState::Down ||
+                oldState == ConnectionState::Connecting) {
+              res = carbon::Result::CONNECT_ERROR;
+            } else {
+              res = carbon::Result::REMOTE_ERROR;
             }
             break;
           case apache::thrift::transport::TTransportException::TIMED_OUT:
@@ -62,6 +70,9 @@ FOLLY_NOINLINE auto ThriftTransportBase::makeError(
           case apache::thrift::transport::TTransportException::INTERRUPTED:
             res = carbon::Result::ABORTED;
             break;
+          case apache::thrift::transport::TTransportException::ALREADY_OPEN:
+          case apache::thrift::transport::TTransportException::SSL_ERROR:
+          case apache::thrift::transport::TTransportException::COULD_NOT_BIND:
           default:
             // Using local_error as the default error now for a lack of better
             // options.
@@ -79,6 +90,12 @@ FOLLY_NOINLINE auto ThriftTransportBase::makeError(
 
 template <class F>
 auto ThriftTransportBase::sendSyncImpl(F&& sendFunc) {
+  // Destructor guard used to keep transport alive when connecting
+  std::optional<DestructorGuard> dgConn;
+  ConnectionState oldState = connectionState_;
+  if (UNLIKELY(connectionState_ != ConnectionState::Up)) {
+    dgConn.emplace(this);
+  }
   auto tryReply = sendFunc();
 
   if (LIKELY(tryReply.hasValue() && tryReply->response.hasValue())) {
@@ -86,6 +103,7 @@ auto ThriftTransportBase::sendSyncImpl(F&& sendFunc) {
   }
 
   return makeError<typename std::result_of_t<F()>::element_type::response_type>(
+      oldState,
       tryReply.hasException() ? tryReply.exception()
                               : tryReply->response.exception());
 }

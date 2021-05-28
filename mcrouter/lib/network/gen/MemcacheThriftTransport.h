@@ -782,7 +782,6 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McAddRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
@@ -801,7 +800,6 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McAppendRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
@@ -820,7 +818,6 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McCasRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
@@ -839,7 +836,6 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McDecrRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
@@ -858,7 +854,6 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McDeleteRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
@@ -877,7 +872,6 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McFlushAllRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
@@ -896,7 +890,6 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McFlushReRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
@@ -915,7 +908,6 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McGatRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
@@ -934,7 +926,6 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McGatsRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
@@ -953,7 +944,6 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McGetRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
@@ -972,7 +962,6 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McGetsRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
@@ -991,7 +980,6 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McIncrRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
@@ -1010,7 +998,6 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McLeaseGetRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
@@ -1029,7 +1016,6 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McLeaseSetRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
@@ -1048,7 +1034,6 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McMetagetRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
@@ -1067,7 +1052,6 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McPrependRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
@@ -1086,7 +1070,6 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McReplaceRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
@@ -1105,7 +1088,6 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McSetRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
@@ -1124,7 +1106,6 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McTouchRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
@@ -1143,7 +1124,6 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
       const McVersionRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {

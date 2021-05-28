@@ -206,7 +206,6 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
       const carbon::test::CustomRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
@@ -225,7 +224,6 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
       const carbon::test::DummyThriftRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
@@ -244,7 +242,6 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
       const carbon::test::ThriftTestRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
@@ -263,7 +260,6 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
       const McVersionRequest& request,
       std::chrono::milliseconds timeout,
       RpcStatsContext* rpcStatsContext = nullptr) {
-    DestructorGuard dg(this);
 
     return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
       if (auto* thriftClient = getThriftClient()) {
