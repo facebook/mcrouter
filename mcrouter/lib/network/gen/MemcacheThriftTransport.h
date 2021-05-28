@@ -755,6 +755,8 @@ folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> sendSyncHelper(
   return reply;
 }
 
+ protected:
+  std::optional<thrift::MemcacheAsyncClient> thriftClient_;
 };
 
 template <>
@@ -1159,7 +1161,6 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
   }
 
  private:
-  std::optional<thrift::MemcacheAsyncClient> thriftClient_;
   FlushList* flushList_{nullptr};
 
   thrift::MemcacheAsyncClient* getThriftClient() {

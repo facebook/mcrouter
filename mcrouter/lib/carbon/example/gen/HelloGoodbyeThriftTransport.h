@@ -146,6 +146,8 @@ folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> sendSyncHelper(
   return reply;
 }
 
+ protected:
+  std::optional<hellogoodbye::thrift::HelloGoodbyeAsyncClient> thriftClient_;
 };
 
 template <>
@@ -227,7 +229,6 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
   }
 
  private:
-  std::optional<hellogoodbye::thrift::HelloGoodbyeAsyncClient> thriftClient_;
   FlushList* flushList_{nullptr};
 
   hellogoodbye::thrift::HelloGoodbyeAsyncClient* getThriftClient() {

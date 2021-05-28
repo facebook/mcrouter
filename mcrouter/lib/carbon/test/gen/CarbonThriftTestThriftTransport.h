@@ -179,6 +179,8 @@ folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> sendSyncHelper(
   return reply;
 }
 
+ protected:
+  std::optional<carbon::test::thrift::CarbonThriftTestAsyncClient> thriftClient_;
 };
 
 template <>
@@ -279,7 +281,6 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
   }
 
  private:
-  std::optional<carbon::test::thrift::CarbonThriftTestAsyncClient> thriftClient_;
   FlushList* flushList_{nullptr};
 
   carbon::test::thrift::CarbonThriftTestAsyncClient* getThriftClient() {
