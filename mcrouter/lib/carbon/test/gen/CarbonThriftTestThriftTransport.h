@@ -44,10 +44,9 @@ folly::Try<apache::thrift::RpcResponseComplete<carbon::test::CustomReply>> sendS
   if (UNLIKELY(needServerLoad)) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
   }
-  const auto& cryptoAuthToken = request.getCryptoAuthToken();
-  if (UNLIKELY(cryptoAuthToken.has_value())) {
+  if (UNLIKELY(request.getCryptoAuthToken().has_value())) {
     rpcOptions.setWriteHeader(
-        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, request.getCryptoAuthToken().value());
   }
 
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -80,10 +79,9 @@ folly::Try<apache::thrift::RpcResponseComplete<carbon::test::DummyThriftReply>> 
   if (UNLIKELY(needServerLoad)) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
   }
-  const auto& cryptoAuthToken = request.getCryptoAuthToken();
-  if (UNLIKELY(cryptoAuthToken.has_value())) {
+  if (UNLIKELY(request.getCryptoAuthToken().has_value())) {
     rpcOptions.setWriteHeader(
-        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, request.getCryptoAuthToken().value());
   }
 
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -116,10 +114,9 @@ folly::Try<apache::thrift::RpcResponseComplete<carbon::test::ThriftTestReply>> s
   if (UNLIKELY(needServerLoad)) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
   }
-  const auto& cryptoAuthToken = request.getCryptoAuthToken();
-  if (UNLIKELY(cryptoAuthToken.has_value())) {
+  if (UNLIKELY(request.getCryptoAuthToken().has_value())) {
     rpcOptions.setWriteHeader(
-        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, request.getCryptoAuthToken().value());
   }
 
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -152,10 +149,9 @@ folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> sendSyncHelper(
   if (UNLIKELY(needServerLoad)) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
   }
-  const auto& cryptoAuthToken = request.getCryptoAuthToken();
-  if (UNLIKELY(cryptoAuthToken.has_value())) {
+  if (UNLIKELY(request.getCryptoAuthToken().has_value())) {
     rpcOptions.setWriteHeader(
-        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, request.getCryptoAuthToken().value());
   }
 
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -292,7 +288,10 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
         channel->setFlushList(flushList_);
       }
     }
-    return thriftClient_.has_value() ? &thriftClient_.value() : nullptr;
+    if (LIKELY(thriftClient_.has_value())) {
+      return &thriftClient_.value();
+    }
+    return nullptr;
   }
 
   void resetClient() override final {

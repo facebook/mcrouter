@@ -44,10 +44,9 @@ folly::Try<apache::thrift::RpcResponseComplete<hellogoodbye::GoodbyeReply>> send
   if (UNLIKELY(needServerLoad)) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
   }
-  const auto& cryptoAuthToken = request.getCryptoAuthToken();
-  if (UNLIKELY(cryptoAuthToken.has_value())) {
+  if (UNLIKELY(request.getCryptoAuthToken().has_value())) {
     rpcOptions.setWriteHeader(
-        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, request.getCryptoAuthToken().value());
   }
 
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -80,10 +79,9 @@ folly::Try<apache::thrift::RpcResponseComplete<hellogoodbye::HelloReply>> sendSy
   if (UNLIKELY(needServerLoad)) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
   }
-  const auto& cryptoAuthToken = request.getCryptoAuthToken();
-  if (UNLIKELY(cryptoAuthToken.has_value())) {
+  if (UNLIKELY(request.getCryptoAuthToken().has_value())) {
     rpcOptions.setWriteHeader(
-        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, request.getCryptoAuthToken().value());
   }
 
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -119,10 +117,9 @@ folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> sendSyncHelper(
   if (UNLIKELY(needServerLoad)) {
     rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
   }
-  const auto& cryptoAuthToken = request.getCryptoAuthToken();
-  if (UNLIKELY(cryptoAuthToken.has_value())) {
+  if (UNLIKELY(request.getCryptoAuthToken().has_value())) {
     rpcOptions.setWriteHeader(
-        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, cryptoAuthToken.value());
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, request.getCryptoAuthToken().value());
   }
 
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -240,7 +237,10 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
         channel->setFlushList(flushList_);
       }
     }
-    return thriftClient_.has_value() ? &thriftClient_.value() : nullptr;
+    if (LIKELY(thriftClient_.has_value())) {
+      return &thriftClient_.value();
+    }
+    return nullptr;
   }
 
   void resetClient() override final {
