@@ -102,12 +102,6 @@ AccessPoint::AccessPoint(
   isV6_ = ip.isV6();
 }
 
-AccessPoint::AccessPoint(
-    HostOnlyTag,
-    const folly::IPAddress& addr,
-    mc_protocol_t protocol)
-    : host_(addr.toFullyQualified()), port_(0), protocol_(protocol) {}
-
 std::shared_ptr<AccessPoint> AccessPoint::create(
     folly::StringPiece apString,
     mc_protocol_t defaultProtocol,
