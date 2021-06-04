@@ -250,7 +250,8 @@ void ThriftTransportUtil::traceRequestImpl(
 
 void ThriftTransportUtil::traceResponseImpl(
     carbon::MessageCommon& response,
-    const std::map<std::string, std::string>& responseHeaders) {
+    const apache::thrift::transport::THeader::StringToStringMap&
+        responseHeaders) {
   auto artilleryTraceIDs = contextprop::SerDeHelper::decodeAndDeserialize<
       facebook::contextprop::ArtilleryTraceIDs>(
       responseHeaders,

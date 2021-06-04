@@ -180,7 +180,8 @@ class ThriftTransportUtil {
 
   void FOLLY_NOINLINE traceResponseImpl(
       carbon::MessageCommon& response,
-      const std::map<std::string, std::string>& responseHeaders);
+      const apache::thrift::transport::THeader::StringToStringMap&
+          responseHeaders);
 #endif
 };
 
