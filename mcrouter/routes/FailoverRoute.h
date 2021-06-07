@@ -212,11 +212,9 @@ class FailoverRoute {
         proxy.stats().increment(failover_policy_result_error_stat);
       } else {
         proxy.stats().increment(failover_policy_tko_error_stat);
-        // If it is Tko or Hard Tko set the failure domain so that
-        // we do not pick next failover target from the same failure domain
-        if (reply.destination()) {
-          iter.setFailedDomain(reply.destination()->getFailureDomain());
-        }
+      }
+      if (reply.destination()) {
+        iter.setFailedDomain(reply.destination()->getFailureDomain());
       }
     }
     if (!isTkoOrHardTkoResult(*reply.result_ref())) {

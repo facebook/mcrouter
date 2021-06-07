@@ -208,9 +208,9 @@ class TestDeterministicFailoverAllSleepServersFailureDomains(McrouterTestCase):
             # route responses when all servers are not present (ie expected to
             # timeout and be declared TKO after the first failure)
             # The progression of result errors and tko errors show how well the
-            expected_values = [(3, 0, 1, 0), (6, 0, 3, 0), (9, 2, 3, 1),
-                               (12, 3, 4, 1), (15, 5, 4, 2), (18, 13, 5, 14),
-                               (20, 22, 5, 21), (21, 32, 5, 81)]
+            expected_values = [(3, 0, 0, 1), (6, 0, 1, 2), (9, 2, 1, 3),
+                               (12, 3, 1, 4), (15, 5, 1, 5), (18, 13, 1, 31),
+                               (21, 21, 1, 41), (22, 31, 1, 104)]
 
             self.assertEqual(int(stats["failover_policy_result_error"]),
                     expected_values[i][0])
@@ -220,10 +220,11 @@ class TestDeterministicFailoverAllSleepServersFailureDomains(McrouterTestCase):
                     expected_values[i][2])
             self.assertEqual(int(stats["failover_num_failed_domain_collisions"]),
                     expected_values[i][3])
-            if i < 6 :
+            self.assertEqual(int(stats["failover_same_failure_domain"]), 0)
+            if i < 7 :
                 self.assertEqual(int(stats["failover_all_failed_count"]), 0)
             else:
-                self.assertEqual(int(stats["failover_all_failed_count"]), i-5)
+                self.assertEqual(int(stats["failover_all_failed_count"]), 1)
 
 
 class TestDeterministicFailoverSmallerFailoverPool(McrouterTestCase):
@@ -253,3 +254,39 @@ class TestDeterministicFailoverSmallerFailoverPool(McrouterTestCase):
             time.sleep(1)
             stats = self.mcrouter.stats('all')
             self.assertEqual(int(stats["failover_num_failed_domain_collisions"]),0)
+
+class TestMSBAwareDeterministicFailoverTraversal(McrouterTestCase):
+    config = './mcrouter/test/test_deterministic_failover6.json'
+    null_route_config = './mcrouter/test/test_nullroute.json'
+    mcrouter_server_extra_args = []
+    extra_args = [
+        '--timeouts-until-tko=1',
+        '--disable-miss-on-get-errors',
+        '--route-prefix=/Route/A/',
+        '--num-proxies=1']
+
+    def setUp(self):
+        self.mc = []
+        # configure SleepServer for all servers
+        for _i in range(23):
+            self.mc.append(SleepServer())
+            self.add_server(self.mc[_i])
+
+        self.mcrouter = self.add_mcrouter(
+            self.config,
+            extra_args=self.extra_args)
+
+    def test_msb_aware_deterministic_failover_traversal(self):
+        route = self.mcrouter.get("__mcrouter__.route_handles(get,test_abcd)")
+        parts = route.split("\n")
+        route_parts = []
+        msbs = set()
+        for part in parts:
+            if 'msb=' in part:
+                route_parts.append(part)
+                attr = part.split("|")
+                self.assertEqual('msb=' in attr[-1], True)
+                msbparts = attr[-1].split("=")
+                msbs.add(msbparts[1])
+        self.assertEqual(len(route_parts), 4)
+        self.assertEqual(len(msbs), 4)

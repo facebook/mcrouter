@@ -76,6 +76,7 @@ class fiber_local {
     int64_t networkTransportTimeUs{0};
     ServerLoad load{0};
     std::vector<ExtraDataCallbackT> extraDataCallbacks;
+    std::unordered_set<uint32_t> traversedFailureDomains;
   };
 
  public:
@@ -187,6 +188,27 @@ class fiber_local {
    */
   static uint32_t getFailoverCount() {
     return folly::fibers::local<McrouterFiberContext>().failoverCount;
+  }
+
+  /**
+   * clear traversed failure domains
+   */
+  static void clearTraversedFailureDomain() {
+    folly::fibers::local<McrouterFiberContext>()
+        .traversedFailureDomains.clear();
+  }
+
+  /**
+   * set fd in traversed failure domains
+   */
+  static void setTraversedFailureDomain(uint32_t fd) {
+    folly::fibers::local<McrouterFiberContext>().traversedFailureDomains.insert(
+        fd);
+  }
+
+  static size_t traversedFailureDomainsSize() {
+    return folly::fibers::local<McrouterFiberContext>()
+        .traversedFailureDomains.size();
   }
 
   /**
