@@ -396,7 +396,6 @@ class TestCarbonLookasideRouteLeasesHotMiss(McrouterTestCase):
             time.sleep(1)
             retry += 1
         self.assertTrue(stats["cmd_lease_set"] == '1')
-        self.assertTrue(stats["lease_tokens_in_use"] == '0')
 
 
 class TestCarbonLookasideRouteExpiryMsTTLBase(McrouterTestCase):
