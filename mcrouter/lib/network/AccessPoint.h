@@ -68,9 +68,8 @@ struct AccessPoint {
   struct HostOnlyTag {};
   AccessPoint(
       HostOnlyTag,
-      const std::string_view host,
-      mc_protocol_t protocol = mc_unknown_protocol)
-      : host_(host), port_(0), protocol_(protocol) {}
+      const folly::IPAddress& addr,
+      mc_protocol_t protocol = mc_unknown_protocol);
 
   /**
    * @param apString accepts host:port, host:port:protocol and
