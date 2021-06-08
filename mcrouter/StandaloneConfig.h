@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <folly/io/async/AsyncTransport.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include <functional>
 #include <unordered_map>
@@ -47,7 +46,7 @@ std::function<bool(const folly::AsyncTransportWrapper*)>
 getThriftConnectionAclChecker(const std::string& serviceIdentity, bool enforce);
 
 using MemcacheRequestAclCheckerCallback = std::function<
-    bool(const folly::AsyncTransportWrapper*, const folly::StringPiece)>;
+    bool(const apache::thrift::Cpp2RequestContext*, const folly::StringPiece)>;
 MemcacheRequestAclCheckerCallback getMemcacheServerRequestAclCheckCallback(
     ExternalStatsHandler& statsHandler);
 

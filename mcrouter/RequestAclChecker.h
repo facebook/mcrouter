@@ -76,7 +76,8 @@ class RequestAclChecker<MemcacheRouterInfo> : public std::true_type {
       bool>
   operator()(Callback&& ctx, Request&& req) const {
     if (requestAclCheckerEnable_ &&
-        !requestAclCheckCb_(ctx.getTransport(), req.key_ref()->routingKey())) {
+        !requestAclCheckCb_(
+            ctx.getThriftRequestContext(), req.key_ref()->routingKey())) {
       // TODO: Change this error code when T67679592 is done
       auto reply = ReplyT<Request>{carbon::Result::BAD_FLAGS};
       reply.message_ref() = "Permission Denied";
