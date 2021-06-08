@@ -219,6 +219,8 @@ libmcrouter_a_SOURCES = \
   network/McServerRequestContext.h \
   network/McServerSession.cpp \
   network/McServerSession.h \
+  network/McServerThriftRequestContext.cpp \
+  network/McServerThriftRequestContext.h \
   network/McSSLUtil.cpp \
   network/McSSLUtil.h \
   network/MessageHelpers.h \

@@ -18,6 +18,7 @@
 #include "mcrouter/lib/CompressionCodecManager.h"
 #include "mcrouter/lib/debug/ConnectionFifo.h"
 #include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
+#include "mcrouter/lib/network/McServerThriftRequestContext.h"
 #include "mcrouter/lib/network/SecurityOptions.h"
 #include "mcrouter/lib/network/ServerMcParser.h"
 #include "mcrouter/lib/network/WriteBuffer.h"
@@ -255,6 +256,12 @@ class McServerSession
   const folly::AsyncTransportWrapper* getTransport() const noexcept {
     return transport_.get();
   }
+  /* In order to save memory in McServerRequestContext, we store the actual
+   * request context here since it is the same for every request for this
+   * McServerSession
+   */
+  const apache::thrift::Cpp2RequestContext*
+  getConnectionLevelThriftRequestContext() const noexcept;
 
   /**
    * Called to create a chained IOBuf from iovecs which has a free function that
@@ -288,6 +295,9 @@ class McServerSession
   const AsyncMcServerWorkerOptions& options_;
 
   folly::AsyncTransportWrapper::UniquePtr transport_;
+  /* A thin bridge in Carbon to be able to have the same request context
+   * interface as Thrift */
+  std::unique_ptr<const McServerThriftRequestContext> thriftRequestContext_;
   folly::EventBase& eventBase_;
   // When using the virtual event base mode, McServerSession is kept
   // alive by the KeepAlive

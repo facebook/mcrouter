@@ -13,6 +13,7 @@
 #include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/io/async/VirtualEventBase.h>
 #include <folly/small_vector.h>
+#include <thrift/lib/cpp2/server/Cpp2Worker.h>
 
 #include "mcrouter/lib/debug/FifoManager.h"
 #include "mcrouter/lib/network/McFizzServer.h"
@@ -134,6 +135,11 @@ McServerSession::McServerSession(
 
 SecurityMech McServerSession::securityMech() const noexcept {
   return negotiatedMech_;
+}
+
+const apache::thrift::Cpp2RequestContext*
+McServerSession::getConnectionLevelThriftRequestContext() const noexcept {
+  return thriftRequestContext_->getRequestContext();
 }
 
 void McServerSession::pause(PauseReason reason) {
@@ -652,9 +658,6 @@ void McServerSession::handshakeSuc(folly::AsyncSSLSocket* sock) noexcept {
     }
   }
 
-  // finalize the transports at the end
-  McSSLUtil::finalizeServerTransport(transport_.get());
-
   // sock is currently wrapped by transport_, but underlying socket may
   // change by end of this function due to negotiatedPlaintextFallback or ktls.
   transport_->setReadCB(this);
@@ -694,7 +697,6 @@ void McServerSession::fizzHandshakeSuccess(
       }
     }
   }
-  McSSLUtil::finalizeServerTransport(transport);
   onAccepted();
 }
 
@@ -753,6 +755,10 @@ void McServerSession::fizzHandshakeAttemptFallback(
 }
 
 void McServerSession::onAccepted() {
+  /* Initializes request context, used for identity extraction downstream */
+  thriftRequestContext_ =
+      std::make_unique<const McServerThriftRequestContext>(transport_.get());
+
   DCHECK(!onAcceptedCalled_);
   DCHECK(transport_);
   debugFifo_ = getDebugFifo(

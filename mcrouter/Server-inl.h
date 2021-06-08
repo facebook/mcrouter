@@ -374,6 +374,9 @@ bool runServerDual(
         std::make_shared<ServerOnRequestThrift<RouterInfo>>(
             serverOnRequestMap));
 
+    // Add Identity Hook
+    thriftServer->setClientIdentityHook(McSSLUtil::getClientIdentityHook());
+
     // ACL Checker for ThriftServer
     auto aclCheckerThrift =
         detail::getThriftAclChecker(mcrouterOpts, standaloneOpts);

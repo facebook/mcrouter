@@ -13,6 +13,7 @@
 #include <folly/Optional.h>
 #include <folly/io/async/AsyncSSLSocket.h>
 #include <mcrouter/lib/network/SecurityOptions.h>
+#include <thrift/lib/cpp2/server/Cpp2ConnContext.h>
 
 namespace facebook {
 namespace memcache {
@@ -26,8 +27,6 @@ class McSSLUtil {
   using SSLVerifyFunction =
       folly::Function<bool(folly::AsyncSSLSocket*, bool, X509_STORE_CTX*)
                           const noexcept>;
-  using TransportFinalizeFunction =
-      folly::Function<void(folly::AsyncTransportWrapper*) const noexcept>;
 
   static const std::string kTlsToPlainProtocolName;
 
@@ -64,21 +63,9 @@ class McSSLUtil {
   static void setApplicationSSLVerifier(SSLVerifyFunction func);
 
   /**
-   * Install an app specific transport finalizer for the server.  This function
-   * will be called from multiple threads, so it must be threadsafe. This
-   * function should be called once, typically around application init and
-   * before the server has received any requests.
+   * Install an identity hook to extract identities from a Cpp2ConnContext
    */
-  static void setApplicationServerTransportFinalizer(
-      TransportFinalizeFunction func);
-
-  /**
-   * Install an app specific transport finalizer for the client.  This function
-   * will be called from multiple threads, so it must be threadsafe. This
-   * function should be called once, before the client has sent any requests.
-   */
-  static void setApplicationClientTransportFinalizer(
-      TransportFinalizeFunction func);
+  static void setClientIdentityHook(apache::thrift::ClientIdentityHook func);
 
   /**
    * Verify an SSL connection.  If no application verifier is set, the default
@@ -86,17 +73,8 @@ class McSSLUtil {
    */
   static bool verifySSL(folly::AsyncSSLSocket*, bool, X509_STORE_CTX*) noexcept;
 
-  /**
-   * Finalize a server connection. Use this to do any processing on the
-   * transport after the connection has been accepted.
-   */
-  static void finalizeServerTransport(folly::AsyncTransportWrapper*) noexcept;
-
-  /**
-   * Finalize a client connection. Use this to do any processing on the
-   * transport after the connection has been accepted.
-   */
-  static void finalizeClientTransport(folly::AsyncTransportWrapper*) noexcept;
+  /* Extracts identities from a Transport into a Cpp2ConnectionContext */
+  static apache::thrift::ClientIdentityHook getClientIdentityHook() noexcept;
 
   /**
    * Check if the ssl connection successfully negotiated falling back to

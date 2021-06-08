@@ -176,7 +176,6 @@ void ThriftTransportBase::connectSuccess() noexcept {
   assert(
       transport != nullptr && connectionState_ == ConnectionState::Connecting);
   connectionState_ = ConnectionState::Up;
-  McSSLUtil::finalizeClientTransport(transport);
   if (isAsyncSSLSocketMech(connectionOptions_.accessPoint->getSecurityMech())) {
     if (authorizationCallbacks_.onAuthorize &&
         !authorizationCallbacks_.onAuthorize(

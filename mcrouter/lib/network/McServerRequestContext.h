@@ -15,6 +15,7 @@
 #include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/EventBase.h>
 
+#include <thrift/lib/cpp2/server/Cpp2ConnContext.h>
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/carbon/RequestReplyUtil.h"
 #include "mcrouter/lib/carbon/RoutingGroups.h"
@@ -66,6 +67,9 @@ class McServerRequestContext {
   folly::Optional<std::string> getPeerSocketAddressStr();
 
   folly::EventBase& getSessionEventBase() const noexcept;
+  const apache::thrift::Cpp2RequestContext* getThriftRequestContext()
+      const noexcept;
+
   const folly::AsyncTransportWrapper* getTransport() const noexcept;
 
   void markAsTraced();

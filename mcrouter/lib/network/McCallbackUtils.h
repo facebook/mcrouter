@@ -58,6 +58,11 @@ class McThriftCallback {
         ->getTransport();
   }
 
+  const apache::thrift::Cpp2RequestContext* getThriftRequestContext()
+      const noexcept {
+    return underlying_->getRequestContext();
+  }
+
   void* getConnectionUserData() const {
     return underlying_->getConnectionContext()->getUserData();
   }

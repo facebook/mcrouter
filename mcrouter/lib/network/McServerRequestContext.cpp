@@ -113,9 +113,14 @@ folly::EventBase& McServerRequestContext::getSessionEventBase() const noexcept {
   return session_->getEventBase();
 }
 
+const apache::thrift::Cpp2RequestContext*
+McServerRequestContext::getThriftRequestContext() const noexcept {
+  return session_->getConnectionLevelThriftRequestContext();
+}
+
 const folly::AsyncTransportWrapper* McServerRequestContext::getTransport()
     const noexcept {
-  return session_->getTransport();
+  return getThriftRequestContext()->getConnectionContext()->getTransport();
 }
 
 void McServerRequestContext::markAsTraced() {

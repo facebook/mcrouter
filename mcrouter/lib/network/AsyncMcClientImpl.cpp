@@ -469,7 +469,6 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
       }
     }
   }
-  McSSLUtil::finalizeClientTransport(socket_.get());
 
   // Now authorize the connection
   if (isAsyncSSLSocketMech(mech) && authorizationCallbacks_.onAuthorize &&
