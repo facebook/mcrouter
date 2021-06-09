@@ -179,6 +179,15 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
     additionalLogger_->log(request, reply, loggerContext);
   }
 
+  bool mayLog(
+      uint32_t routingKeyHash,
+      const RequestClass& reqClass,
+      const carbon::Result& replyResult,
+      const int64_t durationUs) const {
+    return additionalLogger_->mayLog(
+        routingKeyHash, reqClass, replyResult, durationUs);
+  }
+
  public:
   Proxy<RouterInfo>& proxyWithRouterInfo() const {
     return proxy_;
