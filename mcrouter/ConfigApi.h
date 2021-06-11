@@ -109,6 +109,10 @@ class ConfigApi : public ConfigApiIf {
     return true;
   }
 
+  virtual std::string getFailureDomainStr(uint32_t /* unused */) const {
+    return "";
+  }
+
   /**
    * Stops observing for file changes
    */
