@@ -126,6 +126,12 @@ struct ConnectionOptions {
    * True to enable thrift compression.
    */
   bool thriftCompression{false};
+
+  /**
+   * Payloads >= thriftCompressionTreshold will be compressed
+   * iff thriftCompression is enabled.
+   */
+  size_t thriftCompressionThreshold{0};
 };
 } // namespace memcache
 } // namespace facebook

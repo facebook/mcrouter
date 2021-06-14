@@ -290,6 +290,7 @@ void ProxyDestination<Transport>::initializeTransport() {
     if (auto codecManager = proxy().router().getCodecManager()) {
       options.compressionCodecMap = codecManager->getCodecMap();
       options.thriftCompression = true;
+      options.thriftCompressionThreshold = opts.thrift_compression_threshold;
     }
   }
 
