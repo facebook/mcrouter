@@ -96,8 +96,6 @@ class DestinationRoute {
     if (auto* ctx = fiber_local<RouterInfo>::getTraverseCtx()) {
       ctx->recordDestination(poolContext, accessPoint);
     }
-    fiber_local<RouterInfo>::setTraversedFailureDomain(
-        accessPoint.getFailureDomain());
     return t(accessPoint, poolContext, req) &&
         !destination_->tracker()->isTko();
   }

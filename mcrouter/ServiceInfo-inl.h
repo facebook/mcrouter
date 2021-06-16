@@ -102,11 +102,7 @@ class RouteHandlesCommandDispatcher {
     } else {
       request.key_ref() = key;
     }
-    fiber_local<RouterInfo>::runWithLocals(
-        [&t, &request, &proxyRoute]() mutable {
-          /* ignore the reply */
-          proxyRoute.traverse(request, t);
-        });
+    proxyRoute.traverse(request, t);
     return tree;
   }
 };

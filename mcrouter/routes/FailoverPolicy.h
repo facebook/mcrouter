@@ -452,17 +452,12 @@ class FailoverDeterministicOrderPolicy {
                   .select(req_, nChildren);
         }
 
+        // Use failure domains only in case of non-const iterators
         if constexpr (!std::is_const<Policy>{}) {
-          auto nextFd = getFailureDomain(index_);
+          uint32_t nextFd = getFailureDomain(index_);
           failedDomain =
               (policy_.enableFailureDomains_ &&
                (failedDomains_.find(nextFd) != failedDomains_.end()));
-        } else {
-          auto prevSize =
-              fiber_local<RouterInfo>::traversedFailureDomainsSize();
-          getFailureDomain(index_);
-          auto newSize = fiber_local<RouterInfo>::traversedFailureDomainsSize();
-          failedDomain = (policy_.enableFailureDomains_ && prevSize == newSize);
         }
         // force ignore failure-domain if we have tried more than
         // failureDomainThreshold -- FAIL safe mechanism

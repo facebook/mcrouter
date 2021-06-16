@@ -49,7 +49,6 @@ class ProxyRoute {
   bool traverse(
       const Request& req,
       const RouteHandleTraverser<typename RouterInfo::RouteHandleIf>& t) const {
-    fiber_local<RouterInfo>::clearTraversedFailureDomain();
     return t(*root_, req);
   }
 
