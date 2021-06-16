@@ -27,7 +27,7 @@ size_t WeightedCh3HashFunc::hash(
   size_t salt = 0;
   size_t index = 0;
   std::string saltedKey;
-  auto originalKey = key;
+  const auto originalKey = key;
   for (size_t i = 0; i < retryCount; ++i) {
     index = furc_hash(key.data(), key.size(), n);
 
@@ -44,8 +44,14 @@ size_t WeightedCh3HashFunc::hash(
     }
 
     /* Change the key to rehash */
+    if (saltedKey.empty()) {
+      /* Reserve room for a few extra digits */
+      saltedKey.reserve(originalKey.size() + 2);
+      saltedKey = originalKey;
+    }
+
     auto s = salt++;
-    saltedKey = originalKey.str();
+    saltedKey.resize(originalKey.size());
     do {
       saltedKey.push_back(char(s % 10) + '0');
       s /= 10;
