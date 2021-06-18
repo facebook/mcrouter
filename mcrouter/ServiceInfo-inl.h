@@ -90,7 +90,7 @@ class RouteHandlesCommandDispatcher {
             const HostInfoPtr& host, const RequestClass& /* unused */) {
           bool haveHost = (host != nullptr);
           tree.append(
-              std::string(level + 1, ' ') + "host: " +
+              std::string(level, ' ') + "host: " +
               (haveHost ? host->location().getIp() : "unknown") + " port:" +
               (haveHost ? folly::to<std::string>(host->location().getPort())
                         : "unknown") +
