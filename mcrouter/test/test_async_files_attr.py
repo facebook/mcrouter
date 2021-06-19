@@ -86,7 +86,7 @@ class TestAsyncFilesAttr(McrouterTestCase):
         with open(file_config_sources) as f:
             sources_json = json.load(f)
             self.assertEqual(sources_json['mcrouter_config'],
-                             '6bbe796e576bf700f5e3ba8a66d409d5')
+                             '837ae7d82f2fe7cb785b941dae505811')
 
         # check stats are up-to-date
         now = time.time()

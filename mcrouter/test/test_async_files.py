@@ -113,3 +113,8 @@ class TestAsyncFiles(McrouterTestCase):
         self.assertGreater(os.path.getmtime(file_stat), now)
         self.assertGreater(os.path.getmtime(file_startup_options), now)
         self.assertGreater(os.path.getmtime(file_config_sources), now)
+
+
+class TestNamedAsyncFiles(TestAsyncFiles):
+    config = './mcrouter/test/mcrouter_test_basic_3_1_1.json'
+    config_hash = '37ba14d3319c638d970353f6f3861c68'

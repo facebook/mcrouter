@@ -520,7 +520,9 @@ McRouteHandleProvider<RouterInfo>::makePoolRoute(
       if (auto jasynclog = json.get_ptr("asynclog")) {
         needAsynclog = parseBool(*jasynclog, "asynclog");
       }
-      if (auto jname = json.get_ptr("name")) {
+      if (auto jasynclogName = json.get_ptr("asynclog_name")) {
+        asynclogName = parseString(*jasynclogName, "asynclog_name");
+      } else if (auto jname = json.get_ptr("name")) {
         asynclogName = parseString(*jname, "name");
       }
     }

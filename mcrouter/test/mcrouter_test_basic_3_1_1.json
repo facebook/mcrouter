@@ -4,5 +4,8 @@
       "servers": [ "localhost:12345" ]
     }
   },
-  "route": "PoolRoute|foo"
+  "route": {
+    "type": "PoolRoute",
+    "pool": "foo"
+  }
 }

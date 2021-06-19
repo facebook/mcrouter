@@ -244,13 +244,16 @@ McRouteHandleProvider<MemcacheRouterInfo>::createSRRoute(
       if (auto* jNeedAsynclog = json.get_ptr("asynclog")) {
         needAsynclog = parseBool(*jNeedAsynclog, "asynclog");
       }
-
       if (needAsynclog) {
-        auto jAsynclogName = json.get_ptr("service_name");
-        checkLogic(
-            jAsynclogName != nullptr,
-            "AsynclogRoute over SRRoute: 'service_name' property is missing");
-        auto asynclogName = parseString(*jAsynclogName, "service_name");
+        folly::StringPiece asynclogName;
+        if (auto jAsynclogName = json.get_ptr("asynclog_name")) {
+          asynclogName = parseString(*jAsynclogName, "asynclog_name");
+        } else if (auto jServiceName = json.get_ptr("service_name")) {
+          asynclogName = parseString(*jServiceName, "service_name");
+        } else {
+          throwLogic(
+              "AsynclogRoute over SRRoute: 'service_name' property is missing");
+        }
         return createAsynclogRoute(std::move(route), asynclogName.toString());
       }
       return route;
