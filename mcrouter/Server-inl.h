@@ -420,7 +420,7 @@ bool runServerDual(
 
     initStandaloneSSLDualServer(standaloneOpts, thriftServer);
     thriftServer->watchTicketPathForChanges(
-        standaloneOpts.tls_ticket_key_seed_path, true);
+        standaloneOpts.tls_ticket_key_seed_path);
     thriftServer->setStopWorkersOnStopListening(false);
 
     // Get acl checker for AsyncMcServer
