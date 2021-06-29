@@ -520,8 +520,8 @@ bool ConfigApi::readFromBackupFile(
     return false;
   }
 
-  LOG(INFO) << "Reading config source " << sourcePrefix << name
-            << " from backup.";
+  VLOG(1) << "Reading config source " << sourcePrefix << name
+          << " from backup.";
   return folly::readFile(filePath.c_str(), contents);
 }
 
