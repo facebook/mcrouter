@@ -41,8 +41,6 @@ std::shared_ptr<const AccessPoint> ProxyDestinationMap::replace(
     // After the access point is replaced, insert the destination back into
     // destinations with new access point used as Key
     destinations_.emplace(destination.get());
-    // force the destination in TKO state
-    destination->handleTko(carbon::Result::CONNECT_ERROR, false);
     return oldAccessPoint;
   }
   return nullptr;
