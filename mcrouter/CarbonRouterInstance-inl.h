@@ -109,9 +109,10 @@ CarbonRouterInstance<RouterInfo>* CarbonRouterInstance<RouterInfo>::createRaw(
   }
 
   if (!input_options.async_spool.empty()) {
-    auto rc = ::access(input_options.async_spool.c_str(), W_OK);
-    PLOG_IF(WARNING, rc) << "Error while checking spooldir ("
-                         << input_options.async_spool << ")";
+    if (!ensureDirExistsAndWritable(input_options.async_spool)) {
+      LOG(WARNING) << "Error verifying async log spool directory writability: "
+                   << input_options.async_spool;
+    }
   }
 
   if (input_options.enable_failure_logging) {
