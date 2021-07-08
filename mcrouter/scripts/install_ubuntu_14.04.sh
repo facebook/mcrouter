@@ -15,7 +15,7 @@ sudo add-apt-repository -y ppa:sickpig/boost
 
 sudo apt-get update
 
-sudo apt-get install -y \
+sudo apt-get --no-install-recommends install -y \
     autoconf \
     binutils-dev \
     bison \
@@ -58,3 +58,8 @@ export CC="gcc-5"
 export CXX="g++-5"
 
 ./get_and_build_everything.sh ubuntu-14.04 "$@"
+
+# Some Cleanup Up On the go
+sudo apt-get clean
+
+sudo apt-get -y --purge autoremove

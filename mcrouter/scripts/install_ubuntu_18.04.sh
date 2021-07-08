@@ -14,7 +14,7 @@ TARGET="${2:-all}"
 sudo apt-get update
 
 # Note libzstd-dev is not available on stock Ubuntu 14.04 or 15.04.
-sudo apt-get install -y \
+sudo apt-get --no-install-recommends install -y \
     autoconf \
     binutils-dev \
     bison \
@@ -46,3 +46,9 @@ sudo apt-get install -y \
 cd "$(dirname "$0")" || ( echo "cd fail"; exit 1 )
 
 ./get_and_build_by_make.sh "Makefile_ubuntu-18.04" "$TARGET" "$BASE_DIR"
+
+
+# Some Cleanup Up On the go
+sudo apt-get clean
+
+sudo apt-get -y --purge autoremove
