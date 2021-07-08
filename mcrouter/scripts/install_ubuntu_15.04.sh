@@ -21,6 +21,7 @@ sudo apt-get install -y \
     git \
     libboost1.55-all-dev \
     libbz2-dev \
+    libfmt-dev \
     libdouble-conversion-dev \
     libevent-dev \
     libgflags-dev \
