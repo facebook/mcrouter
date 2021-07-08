@@ -1,0 +1,29 @@
+{
+   "pools": {
+      "A": {
+         "servers": [
+             "192.168.45.101:11211",
+             "192.168.45.102:11211"
+         ]
+     },
+     "B": {
+        "servers": [
+            "192.168.45.103:11211",
+            "192.168.45.104:11211"
+        ]
+     }
+   },
+   "route": {
+     "type": "OperationSelectorRoute",
+     "default_policy": {
+         "type": "AllAsyncRoute",
+         "children": [ "PoolRoute|A", "PoolRoute|B" ]
+     },
+     "operation_policies": {
+        "get": {
+            "type": "MissFailoverRoute",
+            "children": [ "PoolRoute|A", "PoolRoute|B" ]
+        }
+     }
+   }
+ }
