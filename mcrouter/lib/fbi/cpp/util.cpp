@@ -203,7 +203,7 @@ bool ensureDirExistsAndWritable(const std::string& path) {
     return false;
   }
 
-  return ensureHasPermission(path, 0777);
+  return ensureHasPermission(path, 0600);
 }
 
 bool ensureHasPermission(const std::string& path, mode_t mode) {
