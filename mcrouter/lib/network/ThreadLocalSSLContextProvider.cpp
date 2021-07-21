@@ -257,8 +257,12 @@ std::shared_ptr<SSLContext> createServerSSLContext(
   }
   sslContext->setServerECCurve("prime256v1");
 #ifdef SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB
-  // ServerSSLContext handles null
-  sslContext->setupTicketManager(ticketKeySeeds, cfg, nullptr);
+  if (ticketKeySeeds && cfg.sessionTicketEnabled) {
+    sslContext->setTicketHandler(
+        wangle::TicketSeedHandler::fromSeeds(ticketKeySeeds));
+  } else {
+    sslContext->setOptions(SSL_OP_NO_TICKET);
+  }
 #endif
   sslContext->setupSessionCache(
       cfg,
