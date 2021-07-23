@@ -130,7 +130,8 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
         rpcStatsContext,
         /* networkTransportTimeUs */ 0,
         {},
-        flags);
+        flags,
+        0);
     assert(additionalLogger_.hasValue());
     additionalLogger_->logBeforeRequestSent(request, loggerContext);
   }
@@ -172,7 +173,8 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
         rpcStatsContext,
         networkTransportTimeUs,
         extraDataCallbacks,
-        flags);
+        flags,
+        fiber_local<RouterInfo>::getFailoverCount());
     assert(logger_.hasValue());
     logger_->template log<Request>(loggerContext);
     assert(additionalLogger_.hasValue());

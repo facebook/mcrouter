@@ -109,7 +109,8 @@ struct RequestLoggerContext {
       const RpcStatsContext rpcStatsContext_,
       const int64_t networkTransportTimeUs_,
       const std::vector<ExtraDataCallbackT>& extraDataCallbacks_,
-      const RequestLoggerContextFlags flags_ = RequestLoggerContextFlags::NONE)
+      const RequestLoggerContextFlags flags_ = RequestLoggerContextFlags::NONE,
+      const uint32_t numFailovers_ = 0)
       : strippedRoutingPrefix(strippedRoutingPrefix_),
         requestClass(requestClass_),
         poolName(poolName_),
@@ -120,7 +121,8 @@ struct RequestLoggerContext {
         rpcStatsContext(rpcStatsContext_),
         networkTransportTimeUs(networkTransportTimeUs_),
         extraDataCallbacks(extraDataCallbacks_),
-        flags(flags_) {}
+        flags(flags_),
+        numFailovers(numFailovers_) {}
 
   RequestLoggerContext(const RequestLoggerContext&) = delete;
   RequestLoggerContext& operator=(const RequestLoggerContext&) = delete;
@@ -136,6 +138,7 @@ struct RequestLoggerContext {
   const int64_t networkTransportTimeUs;
   const std::vector<ExtraDataCallbackT>& extraDataCallbacks;
   const RequestLoggerContextFlags flags;
+  const uint32_t numFailovers;
 };
 
 } // namespace mcrouter
