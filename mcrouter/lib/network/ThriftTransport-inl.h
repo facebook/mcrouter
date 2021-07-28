@@ -13,8 +13,8 @@
 #include <folly/ExceptionWrapper.h>
 
 #ifndef LIBMC_FBTRACE_DISABLE
-#include "contextprop/cpp/serde/SerDeHelper.h"
-#include "contextprop/if/gen-cpp2/ContextpropConstants_constants.h"
+#include <contextprop/cpp/serde/SerDeHelper.h>
+#include <contextprop/if/gen-cpp2/ContextpropConstants_constants.h>
 #endif
 
 namespace facebook {
@@ -47,10 +47,10 @@ FOLLY_NOINLINE auto ThriftTransportBase::makeError(
                  oldState == ConnectionState::Connecting) &&
                 connectionTimedOut_) {
               res = carbon::Result::CONNECT_TIMEOUT;
-            } else if (oldState == ConnectionState::Error) {
-              res = carbon::Result::CONNECT_ERROR;
-            } else {
+            } else if (oldState == ConnectionState::Up) {
               res = carbon::Result::REMOTE_ERROR;
+            } else {
+              res = carbon::Result::CONNECT_ERROR;
             }
             break;
           case apache::thrift::transport::TTransportException::END_OF_FILE:
@@ -80,6 +80,15 @@ FOLLY_NOINLINE auto ThriftTransportBase::makeError(
         }
         setReplyResultAndMessage(reply, res, tex.what());
       })) {
+  } else if (ew.with_exception(
+                 [&](const apache::thrift::TApplicationException& ex) {
+                   carbon::Result res = carbon::Result::REMOTE_ERROR;
+                   if (ex.getType() ==
+                       apache::thrift::TApplicationException::LOADSHEDDING) {
+                     res = carbon::Result::RES_TRY_AGAIN;
+                   }
+                   setReplyResultAndMessage(reply, res, ex.what());
+                 })) {
   } else if (ew.with_exception([&](const std::exception& e) {
                setReplyResultAndMessage(
                    reply, carbon::Result::LOCAL_ERROR, e.what());

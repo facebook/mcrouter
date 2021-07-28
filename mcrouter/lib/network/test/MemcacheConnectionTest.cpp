@@ -293,3 +293,77 @@ TEST(MemcachePooledConnectionTest, PooledInternalConnection) {
   server->shutdown();
   server->join();
 }
+
+TEST(MemcacheResultTest, testThriftResult) {
+  facebook::memcache::ListenSocket socket;
+  auto serverInfo = startMockMcThriftServer(socket);
+  auto conn = std::make_unique<facebook::memcache::MemcacheExternalConnection>(
+      facebook::memcache::ConnectionOptions(
+          "localhost", socket.getPort(), mc_thrift_protocol));
+
+  folly::fibers::Baton baton;
+  facebook::memcache::McGetRequest loadSheddingReq(
+      "__mockmc__.want_load_shedding");
+  carbon::Result res;
+  conn->sendRequestOne(
+      loadSheddingReq,
+      [&](const facebook::memcache::McGetRequest& /* req */,
+          facebook::memcache::McGetReply&& reply) {
+        res = *reply.result_ref();
+        baton.post();
+      });
+  baton.wait();
+  EXPECT_EQ(res, carbon::Result::RES_TRY_AGAIN);
+  conn.reset();
+  serverInfo.first->stop();
+  serverInfo.second->join();
+}
+
+TEST(MemcacheResultTest, testThriftResultForServerRestart) {
+  facebook::memcache::ListenSocket socket;
+  std::atomic_bool sending{true};
+  std::unordered_map<carbon::Result, int> counts;
+  auto reqThread = std::make_unique<std::thread>([&]() {
+    folly::fibers::Baton baton;
+    while (sending) {
+      auto conn = facebook::memcache::MemcacheExternalConnection(
+          facebook::memcache::ConnectionOptions(
+              "localhost", socket.getPort(), mc_thrift_protocol));
+      facebook::memcache::McGetRequest req("hello");
+      conn.sendRequestOne(
+          req,
+          [&](const facebook::memcache::McGetRequest& /* req */,
+              facebook::memcache::McGetReply&& reply) {
+            counts[*reply.result_ref()]++;
+            baton.post();
+          });
+      baton.wait();
+      baton.reset();
+    }
+  });
+
+  auto serverInfo = startMockMcThriftServer(socket);
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+  serverInfo.first->stop();
+  serverInfo.second->join();
+
+  sending = false;
+  reqThread->join();
+  reqThread.reset();
+  VLOG(1) << "Counts:"
+          << std::accumulate(
+                 counts.begin(),
+                 counts.end(),
+                 std::string(""),
+                 [](std::string s, const auto& p) -> std::string {
+                   return s +
+                       folly::to<std::string>(carbon::resultToString(p.first)) +
+                       ":" + folly::to<std::string>(p.second) + ",";
+                 });
+  // During startup and shutdown, expect most error are mc_res_connect_error,
+  // may have few mc_res_local_error, but no mc_res_remote_error
+  EXPECT_TRUE(counts.find(carbon::Result::CONNECT_ERROR) != counts.end());
+  EXPECT_TRUE(counts.find(carbon::Result::REMOTE_ERROR) == counts.end());
+}

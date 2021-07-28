@@ -41,6 +41,11 @@ class MockMcThriftServerHandler
       std::unique_ptr<apache::thrift::HandlerCallback<
           facebook::memcache::McGetReply>> callback,
       const facebook::memcache::McGetRequest& request) override final {
+    auto key = request.key_ref()->fullKey();
+    if (key == "__mockmc__.want_load_shedding") {
+      callback->appOverloadedException("load shedding");
+      return;
+    }
     auto reqCopy = request;
     onRequest_.onRequest(
         ThriftContext(std::move(callback)), std::move(reqCopy));
