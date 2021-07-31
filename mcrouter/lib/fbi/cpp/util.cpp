@@ -203,7 +203,7 @@ bool ensureDirExistsAndWritable(const std::string& path) {
     return false;
   }
 
-  return ensureHasPermission(path, 0600);
+  return ensureHasPermission(path, 0700);
 }
 
 bool ensureHasPermission(const std::string& path, mode_t mode) {
@@ -216,7 +216,7 @@ bool ensureHasPermission(const std::string& path, mode_t mode) {
     return true;
   }
 
-  if (::chmod(path.c_str(), mode) != 0) {
+  if (::chmod(path.c_str(), mode | st.st_mode) != 0) {
     return false;
   }
 
