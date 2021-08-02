@@ -755,12 +755,15 @@ void McServerSession::fizzHandshakeAttemptFallback(
 }
 
 void McServerSession::onAccepted() {
+  DCHECK(!onAcceptedCalled_);
+  DCHECK(transport_);
   /* Initializes request context, used for identity extraction downstream */
   thriftRequestContext_ =
       std::make_unique<const McServerThriftRequestContext>(transport_.get());
-
-  DCHECK(!onAcceptedCalled_);
-  DCHECK(transport_);
+  /* Trims the certificate memory */
+  if (auto sock = transport_->getUnderlyingTransport<folly::AsyncSSLSocket>()) {
+    McSSLUtil::dropCertificateX509Payload(*sock);
+  }
   debugFifo_ = getDebugFifo(
       options_.debugFifoPath, transport_.get(), onRequest_->name());
   parser_.setDebugFifo(&debugFifo_);
