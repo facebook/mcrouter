@@ -471,7 +471,7 @@ void ConfigApi::dumpConfigSourceToDisk(
       if (atomicallyWriteFileToDisk(contents, filePath)) {
         // Makes sure the file has the correct permission for when we decide to
         // run mcrouter with another user.
-        ensureHasPermission(filePath, 0644);
+        ensureHasPermission(filePath, 0664);
         backupFileIt->second = md5OrVersion;
       } else {
         logFailureEveryN<DumpFileTag>(
