@@ -28,9 +28,6 @@ class McSSLUtil {
       folly::Function<bool(folly::AsyncSSLSocket*, bool, X509_STORE_CTX*)
                           const noexcept>;
 
-  using DropCertificateX509PayloadFunction =
-      folly::Function<bool(folly::AsyncSSLSocket&) const noexcept>;
-
   static const std::string kTlsToPlainProtocolName;
 
   static bool verifySSLWithDefaultBehavior(
@@ -70,12 +67,6 @@ class McSSLUtil {
    */
   static void setClientIdentityHook(apache::thrift::ClientIdentityHook func);
 
-  /*
-   * Certificate x509 payload drop function
-   */
-  static void setDropCertificateX509PayloadFunction(
-      DropCertificateX509PayloadFunction func);
-
   /**
    * Verify an SSL connection.  If no application verifier is set, the default
    * verifier is used.
@@ -101,11 +92,6 @@ class McSSLUtil {
    */
   static folly::AsyncTransportWrapper::UniquePtr moveToPlaintext(
       folly::AsyncSSLSocket& sock) noexcept;
-
-  /**
-   * Drops certificate x509 payload after connection is established
-   */
-  static void dropCertificateX509Payload(folly::AsyncSSLSocket& sock) noexcept;
 
   /**
    * Move the existing transport to kTLS if possible.  Return value of
