@@ -12,6 +12,12 @@ from mcrouter.test.McrouterTestCase import McrouterTestCase
 from mcrouter.test.mock_servers import SleepServer
 from mcrouter.test.mock_servers import ConnectionErrorServer
 
+def wait_until(target_time, increment):
+    curr_time = int(time.time())
+    while (int(target_time) > curr_time):
+        time.sleep(increment)
+        curr_time = int(time.time())
+
 class TestMigratedPoolsFailover(McrouterTestCase):
     config = './mcrouter/test/test_migrated_pools_failover.json'
     extra_args = []
@@ -58,7 +64,7 @@ class TestMigratedPoolsFailover(McrouterTestCase):
             self.a_old.terminate()
 
         # next phase (2)
-        time.sleep(phase_2_time - int(time.time()))
+        wait_until(phase_2_time, 0.5)
         # note: only run if we're still in phase 2
         if int(time.time()) < phase_3_time:
             self.assertEqual(mcr.get("get-key-2"), str(200))
@@ -66,7 +72,7 @@ class TestMigratedPoolsFailover(McrouterTestCase):
             self.assertEqual(self.b_old.get("set-key-2"), str(42))
 
         # last phase (4)
-        time.sleep(phase_4_time - int(time.time()) + 1)
+        wait_until(phase_4_time + 1, 0.5)
         # gets/sets go to the new place
         self.assertEqual(mcr.get("get-key-3"), str(30))
         mcr.set("set-key-3", str(424242))
