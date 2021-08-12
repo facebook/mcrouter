@@ -452,7 +452,7 @@ MCROUTER_OPTION_STRING(
 MCROUTER_OPTION_INTEGER(
     int,
     max_dumped_config_age,
-    1 * 60 * 60 /* 1 hour */,
+    12 * 60 * 60 /* 12 hours */,
     "max-dumped-config-age",
     no_short,
     "Max age of backup config files that mcrouter is allowed to use"
