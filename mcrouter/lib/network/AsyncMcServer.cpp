@@ -413,12 +413,19 @@ class McServerThread {
       if (secure_) {
         const auto& server = mcServerThread_->server_;
         auto& opts = server.opts_;
+
+        folly::Optional<wangle::TLSTicketKeySeeds> ticketKeySeeds =
+            server.getTicketKeySeeds();
+        if (ticketKeySeeds && ticketKeySeeds->isEmpty()) {
+          ticketKeySeeds = folly::none;
+        }
+
         auto contextPair = getServerContexts(
             opts.pemCertPath,
             opts.pemKeyPath,
             opts.pemCaPath,
             opts.sslRequirePeerCerts,
-            server.getTicketKeySeeds(),
+            std::move(ticketKeySeeds),
             opts.tlsPreferOcbCipher);
 
         if (contextPair.first) {

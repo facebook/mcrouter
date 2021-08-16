@@ -239,9 +239,9 @@ std::shared_ptr<SSLContext> createServerSSLContext(
   wangle::SSLContextConfig cfg;
   // don't need to set any certs on the cfg since the context is configured
   // in configureSSLContext;
-  cfg.sessionTicketEnabled = true;
   cfg.sessionCacheEnabled = true;
   cfg.sessionContext = "async-server";
+  cfg.sessionTicketEnabled = ticketKeySeeds && ticketKeySeeds->isNotEmpty();
 
   // we'll use our own internal session cache instead of openssl's
   wangle::SSLCacheOptions cacheOpts;
@@ -257,7 +257,7 @@ std::shared_ptr<SSLContext> createServerSSLContext(
   }
   sslContext->setServerECCurve("prime256v1");
 #ifdef SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB
-  if (ticketKeySeeds && cfg.sessionTicketEnabled) {
+  if (cfg.sessionTicketEnabled) {
     sslContext->setTicketHandler(
         wangle::TicketSeedHandler::fromSeeds(ticketKeySeeds));
   } else {
