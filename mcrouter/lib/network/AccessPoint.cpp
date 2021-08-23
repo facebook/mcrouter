@@ -79,15 +79,16 @@ AccessPoint::AccessPoint(
       compressed_(compressed),
       unixDomainSocket_(unixDomainSocket),
       failureDomain_(failureDomain) {
-  try {
-    folly::IPAddress ip(host);
-    host_ = ip.toFullyQualified();
-    hash_ = folly::hash_value(ip);
-    isV6_ = ip.isV6();
-  } catch (const folly::IPAddressFormatException&) {
+  auto const maybe_ip = folly::IPAddress::tryFromString(host);
+  if (maybe_ip.hasError()) {
     // host is not an IP address (e.g. 'localhost')
     host_ = host.str();
     isV6_ = false;
+  } else {
+    auto const& ip = maybe_ip.value();
+    host_ = ip.toFullyQualified();
+    hash_ = folly::hash_value(ip);
+    isV6_ = ip.isV6();
   }
 }
 
