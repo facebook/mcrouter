@@ -422,6 +422,29 @@ ServiceInfo<RouterInfo>::ServiceInfoImpl::ServiceInfoImpl(
         }
         return toPrettySortedJson(result);
       });
+
+  commands_.emplace(
+      "failure_domains", [this](const std::vector<folly::StringPiece>& args) {
+        if (args.size() != 1) {
+          throw std::runtime_error("failure_domains: 1 arg expected");
+        }
+        auto& configApi = proxy_.router().configApi();
+        auto& accessPoints = proxy_.getConfigUnsafe()->getAccessPoints();
+        folly::dynamic result = folly::dynamic::object;
+        auto it = accessPoints.find(args[0].str());
+        if (it != accessPoints.end()) {
+          for (auto it2 = it->second.begin(); it2 != it->second.end(); it2++) {
+            auto ap = *it2;
+            auto failureDomain = ap->getFailureDomain();
+            result[ap->toHostPortString()] = fmt::format(
+                "{}({})",
+                failureDomain,
+                configApi.getFailureDomainStr(failureDomain));
+          }
+        }
+
+        return toPrettySortedJson(result);
+      });
 }
 
 template <class RouterInfo>
