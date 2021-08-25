@@ -53,7 +53,7 @@ folly::Try<apache::thrift::RpcResponseComplete<carbon::test::CustomReply>> sendS
   traceRequest(request, rpcOptions);
 #endif
   auto reply = thriftClient->sync_complete_customRequest(
-      rpcOptions, request);
+      std::move(rpcOptions), request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
@@ -88,7 +88,7 @@ folly::Try<apache::thrift::RpcResponseComplete<carbon::test::DummyThriftReply>> 
   traceRequest(request, rpcOptions);
 #endif
   auto reply = thriftClient->sync_complete_thrift_test(
-      rpcOptions, request);
+      std::move(rpcOptions), request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
@@ -123,7 +123,7 @@ folly::Try<apache::thrift::RpcResponseComplete<carbon::test::ThriftTestReply>> s
   traceRequest(request, rpcOptions);
 #endif
   auto reply = thriftClient->sync_complete_test(
-      rpcOptions, request);
+      std::move(rpcOptions), request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
@@ -158,7 +158,7 @@ folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> sendSyncHelper(
   traceRequest(request, rpcOptions);
 #endif
   auto reply = thriftClient->sync_complete_mcVersion(
-      rpcOptions, request);
+      std::move(rpcOptions), request);
   if (rpcStatsContext && reply.hasValue()) {
       auto& stats = reply->responseContext.rpcSizeStats;
       rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
