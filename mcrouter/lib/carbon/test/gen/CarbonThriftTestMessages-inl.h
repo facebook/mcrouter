@@ -461,6 +461,8 @@ void CustomRequest::serialize(Writer&& writer) const {
   writer.writeField(1 /* field id */, key_ref());
   writer.writeField(2 /* field id */, testInt8_ref());
   writer.writeField(3 /* field id */, timestamp_ref());
+  writer.writeField(4 /* field id */, customAdapterTypeI64_ref());
+  writer.writeField(5 /* field id */, customAdapterTypeBinary_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
@@ -476,6 +478,12 @@ void CustomRequest::visitFields(V&& v) {
   if (!v.visitField(3, "timestamp", *this->timestamp_ref())) {
     return;
   }
+  if (!v.visitField(4, "customAdapterTypeI64", this->customAdapterTypeI64_ref())) {
+    return;
+  }
+  if (!v.visitField(5, "customAdapterTypeBinary", *this->customAdapterTypeBinary_ref())) {
+    return;
+  }
 }
 
 template <class V>
@@ -487,6 +495,12 @@ void CustomRequest::visitFields(V&& v) const {
     return;
   }
   if (!v.visitField(3, "timestamp", *this->timestamp_ref())) {
+    return;
+  }
+  if (!v.visitField(4, "customAdapterTypeI64", this->customAdapterTypeI64_ref())) {
+    return;
+  }
+  if (!v.visitField(5, "customAdapterTypeBinary", *this->customAdapterTypeBinary_ref())) {
     return;
   }
 }

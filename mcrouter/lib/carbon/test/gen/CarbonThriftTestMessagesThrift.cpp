@@ -364,6 +364,14 @@ void CustomRequest::deserialize(carbon::CarbonProtocolReader& reader) {
         reader.readField(timestamp_ref(), fieldType);
         break;
       }
+      case 4: {
+        reader.readField(customAdapterTypeI64_ref(), fieldType);
+        break;
+      }
+      case 5: {
+        reader.readField(customAdapterTypeBinary_ref(), fieldType);
+        break;
+      }
       default: {
         reader.skip(fieldType);
         break;

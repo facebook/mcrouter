@@ -45,6 +45,26 @@ class Timestamp {
   uint64_t v_{0};
 };
 
+struct TimestampAdapter {
+  static Timestamp fromThrift(const int64_t& v) {
+    return Timestamp::fromInt64(v);
+  }
+
+  static int64_t toThrift(const Timestamp& v) {
+    return v.toInt64();
+  }
+};
+
+template <typename T1, typename T2>
+struct DummyPairAdapter {
+  static std::pair<T1, T2> fromThrift(const folly::IOBuf& /*buffer*/) {
+    return {};
+  }
+
+  static folly::IOBuf toThrift(const std::pair<T1, T2>& /*value*/) {
+    return {};
+  }
+};
 } // namespace test
 } // namespace carbon
 
@@ -65,6 +85,24 @@ struct SerializationTraits<carbon::test::Timestamp> {
   }
 
   static bool isEmpty(const carbon::test::Timestamp& /*value*/) {
+    return false;
+  }
+};
+
+template <typename T1, typename T2>
+struct SerializationTraits<std::pair<T1, T2>> {
+  static constexpr carbon::FieldType kWireType =
+      SerializationTraits<std::pair<T1, T2>>::kWireType;
+
+  template <class Reader>
+  static std::pair<T1, T2> read(Reader&& /*reader*/) {
+    return {};
+  }
+
+  template <class Writer>
+  static void write(const std::pair<T1, T2>& /*value*/, Writer&& /*writer*/) {}
+
+  static bool isEmpty(const std::pair<T1, T2>& /*value*/) {
     return false;
   }
 };

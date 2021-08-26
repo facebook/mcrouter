@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <folly/io/IOBuf.h>
 #include <string>
 #include <vector>
 

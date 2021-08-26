@@ -10,6 +10,14 @@ thrift_namespace carbon.test.thrift;
 import "mcrouter/lib/network/Common.idl"
 cpp2_include "<mcrouter/lib/carbon/test/Timestamp.h>"
 
+thrift_typedef i64 (
+  cpp.adapter = "carbon::test::TimestampAdapter"
+) CustomAdapterTypeI64;
+
+thrift_typedef binary (
+  cpp.adapter = "::carbon::test::DummyPairAdapter<::carbon::test::Timestamp, uint32_t>",
+  cpp.type = "::folly::IOBuf"
+) CustomAdapterTypeBinary;
 
 enum MyEnum : int32_t {
   A = 0,
@@ -91,6 +99,8 @@ request CustomRequest {
   1: carbon::Keys<folly::IOBuf> key;
   2: int8_t testInt8;
   3: Timestamp timestamp thrift_cpp_indirection i64;
+  4: optional CustomAdapterTypeI64 customAdapterTypeI64 thrift_cpp_adapter;
+  5: CustomAdapterTypeBinary customAdapterTypeBinary thrift_cpp_adapter;
 };
 
 reply CustomReply {

@@ -20,6 +20,14 @@ cpp_include "<mcrouter/lib/carbon/CarbonProtocolReader.h>"
 cpp_include "<mcrouter/lib/carbon/test/Timestamp.h>"
 
 namespace cpp2 carbon.test.thrift
+typedef i64 (
+  cpp.adapter = "carbon::test::TimestampAdapter"
+) CustomAdapterTypeI64
+
+typedef binary (
+  cpp.adapter = "::carbon::test::DummyPairAdapter<::carbon::test::Timestamp,uint32_t>",
+  cpp.type = "::folly::IOBuf"
+) CustomAdapterTypeBinary
 
 enum MyEnum {
   A = 0,
@@ -187,6 +195,8 @@ struct CustomRequest {
   1: carbon.IOBufKey key
   2: byte testInt8
   3: i64 (cpp.type = "Timestamp", cpp.indirection) timestamp
+  4: optional CustomAdapterTypeI64 customAdapterTypeI64
+  5: CustomAdapterTypeBinary customAdapterTypeBinary
 }(cpp.methods = "
   template <class V>
   void visitFields(V&& v);
