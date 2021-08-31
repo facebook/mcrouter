@@ -259,5 +259,10 @@ bool ensureDirExistsAndWritable(const std::string& path);
  * Makes sure that a file or directory has the desired permissions.
  */
 bool ensureHasPermission(const std::string& path, mode_t mode);
+
+/**
+ * Determines if any two intervals are overlapping.
+ */
+bool intervalOverlap(std::vector<std::vector<size_t>>& intervals);
 } // namespace memcache
 } // namespace facebook

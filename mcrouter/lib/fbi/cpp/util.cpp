@@ -222,5 +222,27 @@ bool ensureHasPermission(const std::string& path, mode_t mode) {
 
   return true;
 }
+
+bool intervalOverlap(std::vector<std::vector<size_t>>& intervals) {
+  std::sort(
+      intervals.begin(),
+      intervals.end(),
+      [](const std::vector<size_t>& a, const std::vector<size_t>& b) {
+        return a[0] < b[0];
+      });
+  for (size_t i = 1; i < intervals.size(); ++i) {
+    assert(intervals[i - 1].size() == 1 || intervals[i - 1].size() == 2);
+    if ((intervals[i - 1].size() == 1) &&
+        (intervals[i][0] < intervals[i - 1][0])) {
+      return true;
+    } else if (
+        (intervals[i - 1].size() == 2) &&
+        (intervals[i][0] < intervals[i - 1][1])) {
+      return true;
+    }
+  }
+  return false;
+}
+
 } // namespace memcache
 } // namespace facebook

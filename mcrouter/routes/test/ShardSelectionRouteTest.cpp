@@ -52,6 +52,23 @@ class BasicShardSelector {
   const std::vector<uint16_t> shardsMap_;
 };
 
+class BasicShardFilter {
+ public:
+  explicit BasicShardFilter(std::vector<std::vector<size_t>> /* unused */) {}
+
+  std::string type() const {
+    return "basic-shard-filter";
+  }
+
+  template <class Request>
+  size_t select(const Request& req, size_t /* size */) const {
+    if (req.key_ref()->fullKey() == "match") {
+      return 0;
+    }
+    return 1;
+  }
+};
+
 class ShardSelectionRouteTest
     : public RouteHandleTestBase<HelloGoodbyeRouterInfo> {
  public:
@@ -68,6 +85,57 @@ class ShardSelectionRouteTest
     EXPECT_EQ("selection|basic-shard-selector", rh->routeName());
   }
 };
+
+class ShardFilterRouteTest
+    : public RouteHandleTestBase<HelloGoodbyeRouterInfo> {
+ public:
+  HelloGoodbyeRouterInfo::RouteHandlePtr getShardFilterRoute(
+      folly::StringPiece jsonStr) {
+    return createShardFilterRoute<HelloGoodbyeRouterInfo, BasicShardFilter>(
+        rhFactory_, folly::parseJson(jsonStr));
+  }
+
+  void testCreate(folly::StringPiece config) {
+    auto rh = getShardFilterRoute(config);
+    ASSERT_TRUE(rh);
+    EXPECT_EQ("selection|basic-shard-filter", rh->routeName());
+  }
+};
+
+TEST_F(ShardFilterRouteTest, create) {
+  constexpr folly::StringPiece kShardFilterRouteConfig = R"(
+  {
+    "match_child": {"type": "NullRoute"},
+    "default_child": {"type": "ErrorRoute"},
+    "shard_range": [
+      [1,2],
+      [3,4],
+      [5,6]
+    ]
+  }
+  )";
+
+  testCreate(kShardFilterRouteConfig);
+}
+
+TEST_F(ShardFilterRouteTest, noCreateOnOverlap) {
+  constexpr folly::StringPiece kShardFilterRouteConfig = R"(
+  {
+    "match_child": {"type": "NullRoute"},
+    "default_child": {"type": "ErrorRoute"},
+    "shard_range": [
+      [1,3],
+      [2,4]
+    ]
+  }
+  )";
+
+  try {
+    testCreate(kShardFilterRouteConfig);
+    FAIL() << "Configuration failed, overlaps not allowed.";
+  } catch (const std::exception&) {
+  }
+}
 
 TEST_F(ShardSelectionRouteTest, create) {
   constexpr folly::StringPiece kSelectionRouteConfig = R"(

@@ -7,12 +7,14 @@
 
 #pragma once
 
+#include <folly/DynamicConverter.h>
 #include <folly/Range.h>
 #include <folly/dynamic.h>
 
 #include "mcrouter/lib/DynamicUtil.h"
 #include "mcrouter/lib/SelectionRouteFactory.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/routes/ErrorRoute.h"
 #include "mcrouter/routes/LatestRoute.h"
 #include "mcrouter/routes/LoadBalancerRoute.h"
@@ -356,6 +358,47 @@ typename RouterInfo::RouteHandlePtr createShardSelectionRoute(
   }
 
   return createSelectionRoute<RouterInfo, ShardSelector>(
+      std::move(destinations),
+      std::move(selector),
+      std::move(outOfRangeDestination));
+}
+
+template <class RouterInfo, class ShardFilter>
+typename RouterInfo::RouteHandlePtr createShardFilterRoute(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json) {
+  checkLogic(json.isObject(), "ShardFilterRoute config should be an object");
+  auto jMatchChild = json.get_ptr("match_child");
+  checkLogic(
+      jMatchChild != nullptr,
+      "ShardFilterRoute: 'match_child' property is missing");
+  auto jDefaultChild = json.get_ptr("default_child");
+  checkLogic(
+      jMatchChild != nullptr,
+      "ShardFilterRoute: 'default_child' property is missing");
+  auto jShardRange = json.get_ptr("shard_range");
+  checkLogic(
+      jShardRange != nullptr,
+      "ShardFilterRoute: 'shard_range' property is missing");
+  auto allShards = detail::parseAllShardsJson(*jShardRange);
+  for (auto shard : allShards) {
+    checkLogic(
+        shard.size() == 1 || shard.size() == 2,
+        "Each shard_range member must be of format (int, int)");
+  }
+  // Check that shard ranges do not overlap
+  checkLogic(!intervalOverlap(allShards), "Ranges must not overlap");
+  auto selector = ShardFilter(std::move(allShards));
+
+  typename RouterInfo::RouteHandlePtr outOfRangeDestination = nullptr;
+  if (auto outOfRangeJson = json.get_ptr("out_of_range")) {
+    outOfRangeDestination = factory.create(*outOfRangeJson);
+  }
+  std::vector<typename RouterInfo::RouteHandlePtr> destinations;
+  destinations.reserve(2);
+  destinations.push_back(factory.create(*jMatchChild));
+  destinations.push_back(factory.create(*jDefaultChild));
+  return createSelectionRoute<RouterInfo, ShardFilter>(
       std::move(destinations),
       std::move(selector),
       std::move(outOfRangeDestination));
