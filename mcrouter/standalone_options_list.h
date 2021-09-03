@@ -134,14 +134,6 @@ MCROUTER_OPTION_INTEGER(
     no_short,
     "Maximum requests outstanding per client (0 to disable)")
 
-MCROUTER_OPTION_INTEGER(
-    size_t,
-    requests_per_read,
-    0,
-    "reqs-per-read",
-    no_short,
-    "DEPRECATED. Does nothing.")
-
 MCROUTER_OPTION_TOGGLE(
     retain_source_ip,
     false,
