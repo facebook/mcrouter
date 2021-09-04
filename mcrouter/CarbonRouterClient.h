@@ -207,13 +207,13 @@ class CarbonRouterClient : public CarbonRouterClientBase {
   template <class Request>
   typename std::enable_if<
       ListContains<typename RouterInfo::RoutableRequests, Request>::value,
-      uint64_t>::type
+      std::pair<uint64_t, uint64_t>>::type
   findAffinitizedProxyIdx(const Request& req) const;
 
   template <class Request>
   typename std::enable_if<
       !ListContains<typename RouterInfo::RoutableRequests, Request>::value,
-      uint64_t>::type
+      std::pair<uint64_t, uint64_t>>::type
   findAffinitizedProxyIdx(const Request& req) const;
 
   /**

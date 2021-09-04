@@ -196,13 +196,14 @@ template <class RouterInfo>
 template <class Request>
 typename std::enable_if<
     ListContains<typename RouterInfo::RoutableRequests, Request>::value,
-    uint64_t>::type
+    std::pair<uint64_t, uint64_t>>::type
 CarbonRouterClient<RouterInfo>::findAffinitizedProxyIdx(
     const Request& req) const {
   assert(mode_ == ThreadMode::AffinitizedRemoteThread);
 
   // Create a traverser
   uint64_t hash = 0;
+  uint64_t hint = 0;
   RouteHandleTraverser<typename RouterInfo::RouteHandleIf> t(
       /* start */ nullptr,
       /* end */ nullptr,
@@ -214,10 +215,14 @@ CarbonRouterClient<RouterInfo>::findAffinitizedProxyIdx(
         }
         return false;
       },
-      [&hash](const HostInfoPtr& host, const RequestClass& requestClass) {
+      [&hash, &hint](
+          const HostWithShard& hostWithShard,
+          const RequestClass& requestClass) {
+        auto& host = hostWithShard.first;
         if (!requestClass.is(RequestClass::kShadow) && host &&
             host->location().getTWTaskID()) {
           hash = *host->location().getTWTaskID();
+          hint = RoutingHintEncoder::encodeRoutingHint(hostWithShard);
           return true;
         }
         return false;
@@ -229,18 +234,18 @@ CarbonRouterClient<RouterInfo>::findAffinitizedProxyIdx(
     config.second.proxyRoute().traverse(req, t);
   }
 
-  return hash % proxies_.size();
+  return {hash % proxies_.size(), hint};
 }
 
 template <class RouterInfo>
 template <class Request>
 typename std::enable_if<
     !ListContains<typename RouterInfo::RoutableRequests, Request>::value,
-    uint64_t>::type
+    std::pair<uint64_t, uint64_t>>::type
 CarbonRouterClient<RouterInfo>::findAffinitizedProxyIdx(
     const Request& /* unused */) const {
   assert(mode_ == ThreadMode::AffinitizedRemoteThread);
-  return 0;
+  return {0, 0};
 }
 
 template <class RouterInfo>
@@ -346,8 +351,10 @@ CarbonRouterClient<RouterInfo>::makeProxyRequestContext(
     folly::StringPiece ipAddr,
     bool inBatch) {
   Proxy<RouterInfo>* proxy = proxies_[proxyIdx_];
+  uint64_t routingHint = 0;
   if (mode_ == ThreadMode::AffinitizedRemoteThread) {
-    size_t idx = findAffinitizedProxyIdx(req);
+    auto [idx, hint] = findAffinitizedProxyIdx(req);
+    routingHint = hint;
     proxy = proxies_[idx];
     if (inBatch) {
       proxiesToNotify_[idx] = true;
@@ -368,6 +375,10 @@ CarbonRouterClient<RouterInfo>::makeProxyRequestContext(
           cb(request, std::move(reply));
         }
       });
+
+  if (routingHint) {
+    proxyRequestContext->setRoutingHint(routingHint);
+  }
 
   proxyRequestContext->setRequester(self_);
   if (!ipAddr.empty()) {

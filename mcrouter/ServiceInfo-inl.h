@@ -87,7 +87,9 @@ class RouteHandlesCommandDispatcher {
         [&level]() { --level; },
         nullptr,
         [&tree, &level](
-            const HostInfoPtr& host, const RequestClass& /* unused */) {
+            const HostWithShard& hostWithShard,
+            const RequestClass& /* unused */) {
+          const auto& host = hostWithShard.first;
           bool haveHost = (host != nullptr);
           tree.append(
               std::string(level, ' ') + "host: " +
