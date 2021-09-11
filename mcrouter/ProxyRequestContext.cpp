@@ -19,8 +19,9 @@ namespace mcrouter {
 
 ProxyRequestContext::ProxyRequestContext(
     ProxyBase& pr,
-    ProxyRequestPriority priority__)
-    : proxyBase_(pr), priority_(priority__) {
+    ProxyRequestPriority priority__,
+    const void* ptr)
+    : ptr_(ptr), proxyBase_(pr), priority_(priority__) {
   proxyBase_.stats().incrementSafe(proxy_request_num_outstanding_stat);
 }
 

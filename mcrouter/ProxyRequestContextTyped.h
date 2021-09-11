@@ -200,8 +200,9 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
  protected:
   ProxyRequestContextWithInfo(
       Proxy<RouterInfo>& pr,
-      ProxyRequestPriority priority__)
-      : ProxyRequestContext(pr, priority__),
+      ProxyRequestPriority priority__,
+      const void* ptr = nullptr)
+      : ProxyRequestContext(pr, priority__, ptr),
         proxy_(pr),
         logger_(folly::in_place, pr),
         additionalLogger_(folly::in_place, *this) {}
@@ -281,13 +282,22 @@ class ProxyRequestContextTyped
       Proxy<RouterInfo>& pr,
       const Request& req,
       ProxyRequestPriority priority__)
-      : ProxyRequestContextWithInfo<RouterInfo>(pr, priority__), req_(&req) {}
+      : ProxyRequestContextWithInfo<RouterInfo>(
+            pr,
+            priority__,
+            (const void*)&req) {}
 
   std::shared_ptr<const ProxyConfig<RouterInfo>> config_;
 
   // It's guaranteed to point to an existing request until we call user callback
   // (i.e. replied_ changes to true), after that it's nullptr.
-  const Request* req_;
+  const Request* typedRequest() {
+    return static_cast<const Request*>(this->ptr_);
+  }
+
+  void clearTypedRequest() {
+    this->ptr_ = nullptr;
+  }
 
   virtual void sendReplyImpl(ReplyT<Request>&& reply) = 0;
 

@@ -169,11 +169,16 @@ class ProxyRequestContext {
   }
 
  protected:
+  // Keep on first cacheline. Used by ProxyRequestContextTyped
+  const void* ptr_{nullptr};
   carbon::Result finalResult_{carbon::Result::UNKNOWN};
   int32_t poolStatIndex_{-1};
   bool replied_{false};
 
-  ProxyRequestContext(ProxyBase& pr, ProxyRequestPriority priority__);
+  ProxyRequestContext(
+      ProxyBase& pr,
+      ProxyRequestPriority priority__,
+      const void* ptr = nullptr);
 
   enum RecordingT { Recording };
   ProxyRequestContext(
