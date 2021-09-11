@@ -169,12 +169,6 @@ class ProxyRequestContext {
   }
 
  protected:
-  /**
-   * The function that will be called when all replies (including async)
-   * come back.
-   * Guaranteed to be called after enqueueReply_ (right after in sync mode).
-   */
-  void (*reqComplete_)(ProxyRequestContext& preq){nullptr};
   carbon::Result finalResult_{carbon::Result::UNKNOWN};
   int32_t poolStatIndex_{-1};
   bool replied_{false};
@@ -231,26 +225,6 @@ class ProxyRequestContext {
   ProxyRequestContext(ProxyRequestContext&&) noexcept = delete;
   ProxyRequestContext& operator=(const ProxyRequestContext&) = delete;
   ProxyRequestContext& operator=(ProxyRequestContext&&) = delete;
-
- public:
-  /* Do not use for new code */
-  class LegacyPrivateAccessor {
-   public:
-    using ReqCompleteFunc = void (*)(ProxyRequestContext&);
-
-    static ReqCompleteFunc& reqComplete(ProxyRequestContext& preq) {
-      return preq.reqComplete_;
-    }
-
-    static void*& context(ProxyRequestContext& preq) {
-      assert(!preq.recording_);
-      return preq.context_;
-    }
-
-    static bool& failoverDisabled(ProxyRequestContext& preq) {
-      return preq.failoverDisabled_;
-    }
-  };
 
  private:
   friend class ProxyBase;

@@ -96,10 +96,6 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
           isErrorResult(finalResult_) ? 1 : 0);
       poolStats->addTotalDurationSample(nowUs() - startDurationUs_);
     }
-    if (reqComplete_) {
-      fiber_local<RouterInfo>::runWithoutLocals(
-          [this]() { reqComplete_(*this); });
-    }
   }
 
   /**
