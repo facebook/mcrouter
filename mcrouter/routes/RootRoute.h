@@ -100,8 +100,9 @@ class RootRoute {
       const Request& req,
       carbon::GetLikeT<Request> = 0) const {
     auto reply = doRoute(rh, req);
-    if (isErrorResult(*reply.result_ref()) && opts_.miss_on_get_errors &&
-        !rh.empty()) {
+    if (UNLIKELY(
+            isErrorResult(*reply.result_ref()) && opts_.miss_on_get_errors &&
+            !rh.empty())) {
       /* rh.empty() case: for backwards compatibility,
          always surface invalid routing errors */
       auto originalResult = *reply.result_ref();
@@ -147,13 +148,14 @@ class RootRoute {
   ReplyT<Request> doRoute(
       const std::vector<std::shared_ptr<RouteHandleIf>>& rh,
       const Request& req) const {
+    if (LIKELY(rh.size() == 1)) {
+      return rh[0]->route(req);
+    }
     if (!rh.empty()) {
-      if (rh.size() > 1) {
-        auto reqCopy = std::make_shared<const Request>(req);
-        for (size_t i = 1; i < rh.size(); ++i) {
-          auto r = rh[i];
-          folly::fibers::addTask([r, reqCopy]() { r->route(*reqCopy); });
-        }
+      auto reqCopy = std::make_shared<const Request>(req);
+      for (size_t i = 1; i < rh.size(); ++i) {
+        auto r = rh[i];
+        folly::fibers::addTask([r, reqCopy]() { r->route(*reqCopy); });
       }
       return rh[0]->route(req);
     }
