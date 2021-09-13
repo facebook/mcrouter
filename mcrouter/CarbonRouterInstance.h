@@ -142,7 +142,7 @@ class CarbonRouterInstance
    */
   void shutdown() noexcept;
 
-  ProxyBase* getProxyBase(size_t index) const override;
+  ProxyBase* getProxyBase(size_t index) const override final;
 
   /**
    * @return  nullptr if index is >= opts.num_proxies,

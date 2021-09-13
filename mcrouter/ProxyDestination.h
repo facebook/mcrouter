@@ -67,7 +67,7 @@ class ProxyDestination : public ProxyDestinationBase {
       std::chrono::milliseconds timeout,
       RpcStatsContext& rpcStatsContext);
 
-  void resetInactive() override;
+  void resetInactive() override final;
 
   /**
    * Gracefully closes the connection, allowing it to properly drain if
@@ -75,7 +75,7 @@ class ProxyDestination : public ProxyDestinationBase {
    */
   void closeGracefully();
 
-  RequestQueueStats getRequestStats() const override;
+  RequestQueueStats getRequestStats() const override final;
 
  protected:
   void updateTransportTimeoutsIfShorter(
