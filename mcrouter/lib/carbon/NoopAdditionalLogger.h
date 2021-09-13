@@ -45,4 +45,24 @@ class NoopAdditionalLogger {
   }
 };
 
+class NoopNoBeforeAdditionalLogger {
+ public:
+  explicit NoopNoBeforeAdditionalLogger(
+      const facebook::memcache::mcrouter::ProxyRequestContext&) {}
+
+  template <class Request>
+  void log(
+      const Request&,
+      const typename Request::reply_type&,
+      const facebook::memcache::mcrouter::RequestLoggerContext&) {}
+
+  bool mayLog(
+      uint32_t /* unused */,
+      const facebook::memcache::mcrouter::RequestClass& /* unused */,
+      const carbon::Result& /* unused */,
+      const int64_t /* unused */) const {
+    return false;
+  }
+};
+
 } // namespace carbon

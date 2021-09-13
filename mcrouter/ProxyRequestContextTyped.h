@@ -39,8 +39,19 @@ struct RouterAdditionalLogger<
     typename Void<typename RouterInfo::AdditionalLogger>::type> {
   using type = typename RouterInfo::AdditionalLogger;
 };
-
 } // namespace detail
+
+template <class Logger, class Request, typename = std::enable_if_t<true>>
+class HasLogBeforeRequestSent : public std::false_type {};
+
+template <class Logger, class Request>
+class HasLogBeforeRequestSent<
+    Logger,
+    Request,
+    std::void_t<
+        decltype(std::declval<std::decay_t<Logger>&>().logBeforeRequestSent(
+            std::declval<Request>(),
+            std::declval<RequestLoggerContext>()))>> : public std::true_type {};
 
 template <class RouterInfo>
 class ProxyRequestContextWithInfo : public ProxyRequestContext {
@@ -110,26 +121,28 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
       RequestClass requestClass,
       const int64_t startTimeUs,
       const RequestLoggerContextFlags flags = RequestLoggerContextFlags::NONE) {
-    if (recording()) {
-      return;
-    }
+    if constexpr (HasLogBeforeRequestSent<AdditionalLogger, Request>::value) {
+      if (recording()) {
+        return;
+      }
 
-    RpcStatsContext rpcStatsContext;
-    RequestLoggerContext loggerContext(
-        poolName,
-        ap,
-        strippedRoutingPrefix,
-        requestClass,
-        startTimeUs,
-        /* endTimeUs */ 0,
-        carbon::Result::UNKNOWN,
-        rpcStatsContext,
-        /* networkTransportTimeUs */ 0,
-        {},
-        flags,
-        0);
-    assert(additionalLogger_.hasValue());
-    additionalLogger_->logBeforeRequestSent(request, loggerContext);
+      RpcStatsContext rpcStatsContext;
+      RequestLoggerContext loggerContext(
+          poolName,
+          ap,
+          strippedRoutingPrefix,
+          requestClass,
+          startTimeUs,
+          /* endTimeUs */ 0,
+          carbon::Result::UNKNOWN,
+          rpcStatsContext,
+          /* networkTransportTimeUs */ 0,
+          {},
+          flags,
+          0);
+      assert(additionalLogger_.hasValue());
+      additionalLogger_->logBeforeRequestSent(request, loggerContext);
+    }
   }
 
   /**

@@ -17,6 +17,7 @@ namespace mcrouter {
 namespace {
 
 struct RouterInfoOne {};
+struct DummyRequest {};
 
 struct RouterInfoTwo {
   using AdditionalLogger = int;
@@ -33,6 +34,16 @@ static_assert(
         typename detail::RouterAdditionalLogger<RouterInfoTwo>::type,
         int>::value,
     "Expected int, as this RouterInfo has AdditionalLogger as int.");
+
+static_assert(
+    HasLogBeforeRequestSent<carbon::NoopAdditionalLogger, DummyRequest>::value,
+    "Expected logBeforeRequestSent to be implemented.");
+
+static_assert(
+    !HasLogBeforeRequestSent<
+        carbon::NoopNoBeforeAdditionalLogger,
+        DummyRequest>::value,
+    "Did not expect logBeforeRequestSent to be implemented.");
 
 } // anonymous namespace
 
