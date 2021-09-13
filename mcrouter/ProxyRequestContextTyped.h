@@ -222,9 +222,9 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
             std::move(shardSplitCallback)),
         proxy_(pr) {}
 
+  int64_t startDurationUs_{nowUs()};
   folly::Optional<ProxyRequestLogger<RouterInfo>> logger_;
   folly::Optional<AdditionalLogger> additionalLogger_;
-  int64_t startDurationUs_{nowUs()};
 };
 
 template <class RouterInfo, class Request>
