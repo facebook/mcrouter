@@ -190,13 +190,13 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
     additionalLogger_->log(request, reply, loggerContext);
   }
 
+  template <class KeyType>
   bool mayLog(
-      uint32_t routingKeyHash,
+      const carbon::Keys<KeyType>& key,
       const RequestClass& reqClass,
       const carbon::Result& replyResult,
       const int64_t durationUs) const {
-    return additionalLogger_->mayLog(
-        routingKeyHash, reqClass, replyResult, durationUs);
+    return additionalLogger_->mayLog(key, reqClass, replyResult, durationUs);
   }
 
  public:

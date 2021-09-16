@@ -47,7 +47,7 @@ bool determineIfSampleKeyForViolet(
     uint32_t routingKeyHash,
     uint32_t sample_period) {
   assert(sample_period > 0);
-  const uint32_t m = std::numeric_limits<uint32_t>::max();
+  constexpr uint32_t m = std::numeric_limits<uint32_t>::max();
   uint32_t keyHashMax = m / sample_period;
 
   return routingKeyHash <= keyHashMax;

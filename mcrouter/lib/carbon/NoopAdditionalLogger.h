@@ -36,8 +36,9 @@ class NoopAdditionalLogger {
       const typename Request::reply_type&,
       const facebook::memcache::mcrouter::RequestLoggerContext&) {}
 
+  template <class KeyType>
   bool mayLog(
-      uint32_t /* unused */,
+      const carbon::Keys<KeyType>& /* unused */,
       const facebook::memcache::mcrouter::RequestClass& /* unused */,
       const carbon::Result& /* unused */,
       const int64_t /* unused */) const {
@@ -56,8 +57,9 @@ class NoopNoBeforeAdditionalLogger {
       const typename Request::reply_type&,
       const facebook::memcache::mcrouter::RequestLoggerContext&) {}
 
+  template <class KeyType>
   bool mayLog(
-      uint32_t /* unused */,
+      const carbon::Keys<KeyType>& /* unused */,
       const facebook::memcache::mcrouter::RequestClass& /* unused */,
       const carbon::Result& /* unused */,
       const int64_t /* unused */) const {
