@@ -395,22 +395,22 @@ class TestCompactRequest : public carbon::RequestCommon {
 
  private:
   struct __isset {
-    bool key;
-    bool testEnum;
-    bool testBool;
-    bool testChar;
-    bool testInt8;
-    bool testInt16;
-    bool testInt32;
-    bool testInt64;
-    bool testUInt8;
-    bool testUInt16;
-    bool testUInt32;
-    bool testUInt64;
-    bool testShortString;
-    bool testLongString;
-    bool testIobuf;
-    bool testList;
+    uint8_t key;
+    uint8_t testEnum;
+    uint8_t testBool;
+    uint8_t testChar;
+    uint8_t testInt8;
+    uint8_t testInt16;
+    uint8_t testInt32;
+    uint8_t testInt64;
+    uint8_t testUInt8;
+    uint8_t testUInt16;
+    uint8_t testUInt32;
+    uint8_t testUInt64;
+    uint8_t testShortString;
+    uint8_t testLongString;
+    uint8_t testIobuf;
+    uint8_t testList;
   } __isset = {};
 
   carbon::Keys<std::string> key_;
@@ -514,9 +514,9 @@ class TestCompactReply : public carbon::ReplyCommon {
 
  private:
   struct __isset {
-    bool result;
-    bool valInt32;
-    bool valInt64;
+    uint8_t result;
+    uint8_t valInt32;
+    uint8_t valInt64;
   } __isset = {};
 
   int64_t valInt64_{0};

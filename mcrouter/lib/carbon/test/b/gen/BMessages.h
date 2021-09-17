@@ -76,7 +76,7 @@ class BaseStruct {
 
  private:
   struct __isset {
-    bool baseInt64Member;
+    uint8_t baseInt64Member;
   } __isset = {};
 
   int64_t baseInt64Member_{0};
@@ -208,11 +208,11 @@ class SimpleStruct {
 
  private:
   struct __isset {
-    bool _carbon_basestruct_;
-    bool int32Member;
-    bool stringMember;
-    bool enumMember;
-    bool vectorMember;
+    uint8_t _carbon_basestruct_;
+    uint8_t int32Member;
+    uint8_t stringMember;
+    uint8_t enumMember;
+    uint8_t vectorMember;
   } __isset = {};
 
   BaseStruct _carbon_basestruct_;

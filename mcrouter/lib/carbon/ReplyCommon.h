@@ -9,6 +9,7 @@
 
 #include <memory>
 
+#include <thrift/lib/cpp2/FieldRef.h>
 #include "mcrouter/lib/carbon/MessageCommon.h"
 #include "mcrouter/lib/carbon/gen-cpp2/carbon_result_types.h"
 
@@ -49,17 +50,19 @@ class ReplyCommonThrift : public ReplyCommon {
     return result_;
   }
 
-  apache::thrift::field_ref<const carbon::Result&> result_ref() const& {
-    return {this->result_, __isset.result};
+  auto result_ref() const& {
+    return apache::thrift::detail::make_field_ref(
+        this->result_, __isset.result);
   }
 
-  apache::thrift::field_ref<carbon::Result&> result_ref() & {
-    return {this->result_, __isset.result};
+  auto result_ref() & {
+    return apache::thrift::detail::make_field_ref(
+        this->result_, __isset.result);
   }
 
  private:
   struct __isset {
-    bool result;
+    uint8_t result;
   } __isset = {};
   carbon::Result result_{carbon::Result::UNKNOWN};
 };

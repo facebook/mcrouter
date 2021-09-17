@@ -816,46 +816,46 @@ class ManyFields {
 
  private:
   struct __isset {
-    bool buf1;
-    bool buf2;
-    bool buf3;
-    bool buf4;
-    bool buf5;
-    bool buf6;
-    bool buf7;
-    bool buf8;
-    bool buf9;
-    bool buf10;
-    bool buf11;
-    bool buf12;
-    bool buf13;
-    bool buf14;
-    bool buf15;
-    bool buf16;
-    bool buf17;
-    bool buf18;
-    bool buf19;
-    bool buf20;
-    bool buf21;
-    bool buf22;
-    bool buf23;
-    bool buf24;
-    bool buf25;
-    bool buf26;
-    bool buf27;
-    bool buf28;
-    bool buf29;
-    bool buf30;
-    bool buf31;
-    bool buf32;
-    bool buf33;
-    bool buf34;
-    bool buf35;
-    bool buf36;
-    bool buf37;
-    bool buf38;
-    bool buf39;
-    bool buf40;
+    uint8_t buf1;
+    uint8_t buf2;
+    uint8_t buf3;
+    uint8_t buf4;
+    uint8_t buf5;
+    uint8_t buf6;
+    uint8_t buf7;
+    uint8_t buf8;
+    uint8_t buf9;
+    uint8_t buf10;
+    uint8_t buf11;
+    uint8_t buf12;
+    uint8_t buf13;
+    uint8_t buf14;
+    uint8_t buf15;
+    uint8_t buf16;
+    uint8_t buf17;
+    uint8_t buf18;
+    uint8_t buf19;
+    uint8_t buf20;
+    uint8_t buf21;
+    uint8_t buf22;
+    uint8_t buf23;
+    uint8_t buf24;
+    uint8_t buf25;
+    uint8_t buf26;
+    uint8_t buf27;
+    uint8_t buf28;
+    uint8_t buf29;
+    uint8_t buf30;
+    uint8_t buf31;
+    uint8_t buf32;
+    uint8_t buf33;
+    uint8_t buf34;
+    uint8_t buf35;
+    uint8_t buf36;
+    uint8_t buf37;
+    uint8_t buf38;
+    uint8_t buf39;
+    uint8_t buf40;
   } __isset = {};
 
   folly::IOBuf buf1_;
@@ -983,9 +983,9 @@ class McExpTestRequest {
 
  private:
   struct __isset {
-    bool key;
-    bool flags;
-    bool deadlineMs;
+    uint8_t key;
+    uint8_t flags;
+    uint8_t deadlineMs;
   } __isset = {};
 
   carbon::Keys<folly::IOBuf> key_;

@@ -1053,52 +1053,52 @@ class TestRequest : public carbon::RequestCommon {
 
  private:
   struct __isset {
-    bool _carbon_simplestruct_;
-    bool key;
-    bool testEnum;
-    bool testBool;
-    bool testChar;
-    bool testInt8;
-    bool testInt16;
-    bool testInt32;
-    bool testInt64;
-    bool testUInt8;
-    bool testUInt16;
-    bool testUInt32;
-    bool testUInt64;
-    bool testFloat;
-    bool testDouble;
-    bool testShortString;
-    bool testLongString;
-    bool testIobuf;
-    bool testStruct;
-    bool testList;
-    bool testOptionalString;
-    bool testOptionalIobuf;
-    bool testEnumVec;
-    bool testUnion;
-    bool testNestedVec;
-    bool testUMap;
-    bool testMap;
-    bool testComplexMap;
-    bool testUSet;
-    bool testSet;
-    bool testOptionalBool;
-    bool testOptionalVec;
-    bool testIOBufList;
-    bool testF14FastMap;
-    bool testF14NodeMap;
-    bool testF14ValueMap;
-    bool testF14VectorMap;
-    bool testF14FastSet;
-    bool testF14NodeSet;
-    bool testF14ValueSet;
-    bool testF14VectorSet;
-    bool testOptionalKeywordString;
-    bool testOptionalKeywordIobuf;
-    bool testOptionalKeywordBool;
-    bool testCastable;
-    bool testType;
+    uint8_t _carbon_simplestruct_;
+    uint8_t key;
+    uint8_t testEnum;
+    uint8_t testBool;
+    uint8_t testChar;
+    uint8_t testInt8;
+    uint8_t testInt16;
+    uint8_t testInt32;
+    uint8_t testInt64;
+    uint8_t testUInt8;
+    uint8_t testUInt16;
+    uint8_t testUInt32;
+    uint8_t testUInt64;
+    uint8_t testFloat;
+    uint8_t testDouble;
+    uint8_t testShortString;
+    uint8_t testLongString;
+    uint8_t testIobuf;
+    uint8_t testStruct;
+    uint8_t testList;
+    uint8_t testOptionalString;
+    uint8_t testOptionalIobuf;
+    uint8_t testEnumVec;
+    uint8_t testUnion;
+    uint8_t testNestedVec;
+    uint8_t testUMap;
+    uint8_t testMap;
+    uint8_t testComplexMap;
+    uint8_t testUSet;
+    uint8_t testSet;
+    uint8_t testOptionalBool;
+    uint8_t testOptionalVec;
+    uint8_t testIOBufList;
+    uint8_t testF14FastMap;
+    uint8_t testF14NodeMap;
+    uint8_t testF14ValueMap;
+    uint8_t testF14VectorMap;
+    uint8_t testF14FastSet;
+    uint8_t testF14NodeSet;
+    uint8_t testF14ValueSet;
+    uint8_t testF14VectorSet;
+    uint8_t testOptionalKeywordString;
+    uint8_t testOptionalKeywordIobuf;
+    uint8_t testOptionalKeywordBool;
+    uint8_t testCastable;
+    uint8_t testType;
   } __isset = {};
 
   SimpleStruct _carbon_simplestruct_;
@@ -1232,9 +1232,9 @@ class TestReply : public carbon::ReplyCommon {
 
  private:
   struct __isset {
-    bool result;
-    bool valInt32;
-    bool valInt64;
+    uint8_t result;
+    uint8_t valInt32;
+    uint8_t valInt64;
   } __isset = {};
 
   int64_t valInt64_{0};
@@ -1295,7 +1295,7 @@ class TestRequestStringKey : public carbon::RequestCommon {
 
  private:
   struct __isset {
-    bool key;
+    uint8_t key;
   } __isset = {};
 
   carbon::Keys<std::string> key_;
@@ -1346,7 +1346,7 @@ class TestReplyStringKey : public carbon::ReplyCommon {
 
  private:
   struct __isset {
-    bool result;
+    uint8_t result;
   } __isset = {};
 
   carbon::Result result_{carbon::Result::UNKNOWN};
@@ -1380,7 +1380,7 @@ class TestOptionalBool {
 
  private:
   struct __isset {
-    bool optionalBool;
+    uint8_t optionalBool;
   } __isset = {};
 
   folly::Optional<bool> optionalBool_;
@@ -1828,14 +1828,14 @@ class TestF14Containers {
 
  private:
   struct __isset {
-    bool fastMap;
-    bool nodeMap;
-    bool valueMap;
-    bool vectorMap;
-    bool fastSet;
-    bool nodeSet;
-    bool valueSet;
-    bool vectorSet;
+    uint8_t fastMap;
+    uint8_t nodeMap;
+    uint8_t valueMap;
+    uint8_t vectorMap;
+    uint8_t fastSet;
+    uint8_t nodeSet;
+    uint8_t valueSet;
+    uint8_t vectorSet;
   } __isset = {};
 
   folly::F14FastMap<std::string, int64_t> fastMap_;
@@ -2022,14 +2022,14 @@ class TestStdContainers {
 
  private:
   struct __isset {
-    bool fastMap;
-    bool nodeMap;
-    bool valueMap;
-    bool vectorMap;
-    bool fastSet;
-    bool nodeSet;
-    bool valueSet;
-    bool vectorSet;
+    uint8_t fastMap;
+    uint8_t nodeMap;
+    uint8_t valueMap;
+    uint8_t vectorMap;
+    uint8_t fastSet;
+    uint8_t nodeSet;
+    uint8_t valueSet;
+    uint8_t vectorSet;
   } __isset = {};
 
   std::unordered_map<std::string, int64_t> fastMap_;
@@ -2147,7 +2147,7 @@ class StructWithEnumUInt64 {
 
  private:
   struct __isset {
-    bool testEnum;
+    uint8_t testEnum;
   } __isset = {};
 
   EnumUInt64 testEnum_{EnumUInt64::AAA};
@@ -2194,7 +2194,7 @@ class StructWithEnumUInt32 {
 
  private:
   struct __isset {
-    bool testEnum;
+    uint8_t testEnum;
   } __isset = {};
 
   EnumUInt32 testEnum_{EnumUInt32::AAA};
@@ -2241,7 +2241,7 @@ class StructWithEnumUInt16 {
 
  private:
   struct __isset {
-    bool testEnum;
+    uint8_t testEnum;
   } __isset = {};
 
   EnumUInt16 testEnum_{EnumUInt16::AAA};
@@ -2288,7 +2288,7 @@ class StructWithEnumUInt8 {
 
  private:
   struct __isset {
-    bool testEnum;
+    uint8_t testEnum;
   } __isset = {};
 
   EnumUInt8 testEnum_{EnumUInt8::AAA};
@@ -2335,7 +2335,7 @@ class StructWithEnumInt64 {
 
  private:
   struct __isset {
-    bool testEnum;
+    uint8_t testEnum;
   } __isset = {};
 
   EnumInt64 testEnum_{EnumInt64::AAA};
@@ -2382,7 +2382,7 @@ class StructWithEnumInt32 {
 
  private:
   struct __isset {
-    bool testEnum;
+    uint8_t testEnum;
   } __isset = {};
 
   EnumInt32 testEnum_{EnumInt32::AAA};
@@ -2429,7 +2429,7 @@ class StructWithEnumInt16 {
 
  private:
   struct __isset {
-    bool testEnum;
+    uint8_t testEnum;
   } __isset = {};
 
   EnumInt16 testEnum_{EnumInt16::AAA};
@@ -2476,7 +2476,7 @@ class StructWithEnumInt8 {
 
  private:
   struct __isset {
-    bool testEnum;
+    uint8_t testEnum;
   } __isset = {};
 
   EnumInt8 testEnum_{EnumInt8::AAA};
@@ -2550,8 +2550,8 @@ class StructWithOptionalEnumUInt64 {
 
  private:
   struct __isset {
-    bool testEnum;
-    bool testEmptyEnum;
+    uint8_t testEnum;
+    uint8_t testEmptyEnum;
   } __isset = {};
 
   EnumUInt64 testEnum_{EnumUInt64::AAA};
@@ -2626,8 +2626,8 @@ class StructWithOptionalEnumUInt32 {
 
  private:
   struct __isset {
-    bool testEnum;
-    bool testEmptyEnum;
+    uint8_t testEnum;
+    uint8_t testEmptyEnum;
   } __isset = {};
 
   EnumUInt32 testEnum_{EnumUInt32::AAA};
@@ -2702,8 +2702,8 @@ class StructWithOptionalEnumUInt16 {
 
  private:
   struct __isset {
-    bool testEnum;
-    bool testEmptyEnum;
+    uint8_t testEnum;
+    uint8_t testEmptyEnum;
   } __isset = {};
 
   EnumUInt16 testEnum_{EnumUInt16::AAA};
@@ -2778,8 +2778,8 @@ class StructWithOptionalEnumUInt8 {
 
  private:
   struct __isset {
-    bool testEnum;
-    bool testEmptyEnum;
+    uint8_t testEnum;
+    uint8_t testEmptyEnum;
   } __isset = {};
 
   EnumUInt8 testEnum_{EnumUInt8::AAA};
@@ -2854,8 +2854,8 @@ class StructWithOptionalEnumInt64 {
 
  private:
   struct __isset {
-    bool testEnum;
-    bool testEmptyEnum;
+    uint8_t testEnum;
+    uint8_t testEmptyEnum;
   } __isset = {};
 
   EnumInt64 testEnum_{EnumInt64::AAA};
@@ -2930,8 +2930,8 @@ class StructWithOptionalEnumInt32 {
 
  private:
   struct __isset {
-    bool testEnum;
-    bool testEmptyEnum;
+    uint8_t testEnum;
+    uint8_t testEmptyEnum;
   } __isset = {};
 
   EnumInt32 testEnum_{EnumInt32::AAA};
@@ -3006,8 +3006,8 @@ class StructWithOptionalEnumInt16 {
 
  private:
   struct __isset {
-    bool testEnum;
-    bool testEmptyEnum;
+    uint8_t testEnum;
+    uint8_t testEmptyEnum;
   } __isset = {};
 
   EnumInt16 testEnum_{EnumInt16::AAA};
@@ -3082,8 +3082,8 @@ class StructWithOptionalEnumInt8 {
 
  private:
   struct __isset {
-    bool testEnum;
-    bool testEmptyEnum;
+    uint8_t testEnum;
+    uint8_t testEmptyEnum;
   } __isset = {};
 
   EnumInt8 testEnum_{EnumInt8::AAA};

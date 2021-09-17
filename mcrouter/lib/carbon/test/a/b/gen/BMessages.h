@@ -84,7 +84,7 @@ class SimpleStruct {
 
  private:
   struct __isset {
-    bool member1;
+    uint8_t member1;
   } __isset = {};
 
   int64_t member1_{0};
@@ -275,7 +275,7 @@ class YetAnotherRequest : public carbon::RequestCommon {
 
  private:
   struct __isset {
-    bool key;
+    uint8_t key;
   } __isset = {};
 
   carbon::Keys<folly::IOBuf> key_;
@@ -326,7 +326,7 @@ class YetAnotherReply : public carbon::ReplyCommon {
 
  private:
   struct __isset {
-    bool result;
+    uint8_t result;
   } __isset = {};
 
   carbon::Result result_{carbon::Result::UNKNOWN};

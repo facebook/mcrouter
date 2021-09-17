@@ -88,7 +88,7 @@ class AnotherRequest : public carbon::RequestCommon {
 
  private:
   struct __isset {
-    bool key;
+    uint8_t key;
   } __isset = {};
 
   carbon::Keys<folly::IOBuf> key_;
@@ -139,7 +139,7 @@ class AnotherReply : public carbon::ReplyCommon {
 
  private:
   struct __isset {
-    bool result;
+    uint8_t result;
   } __isset = {};
 
   carbon::Result result_{carbon::Result::UNKNOWN};
