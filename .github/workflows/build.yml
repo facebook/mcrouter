@@ -3,11 +3,11 @@ name: build
 on:
   push:
     branches:
-      - master
+      - main
       - github_action
   pull_request:
     branches:
-      - master
+      - main
 
 jobs:
   build:
