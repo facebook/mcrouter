@@ -573,7 +573,7 @@ bool CarbonRouterInstance<RouterInfo>::reconfigurePartially() {
     return false;
   }
 
-  VLOG_IF(0, !opts_.constantly_reload_configs)
+  VLOG_IF(1, !opts_.constantly_reload_configs)
       << "Partially reconfigured " << opts_.num_proxies << " proxies";
   partialReconfigSuccess_.store(
       partialReconfigSuccess_.load(std::memory_order_relaxed) + numUpdates,
@@ -584,7 +584,7 @@ bool CarbonRouterInstance<RouterInfo>::reconfigurePartially() {
 template <class RouterInfo>
 folly::Expected<folly::Unit, std::string>
 CarbonRouterInstance<RouterInfo>::configure(const ProxyConfigBuilder& builder) {
-  VLOG_IF(0, !opts_.constantly_reload_configs) << "started reconfiguring";
+  VLOG_IF(1, !opts_.constantly_reload_configs) << "started reconfiguring";
   std::vector<std::shared_ptr<ProxyConfig<RouterInfo>>> newConfigs;
   newConfigs.reserve(opts_.num_proxies);
   try {
@@ -602,7 +602,7 @@ CarbonRouterInstance<RouterInfo>::configure(const ProxyConfigBuilder& builder) {
     proxy_config_swap(getProxy(i), newConfigs[i]);
   }
 
-  VLOG_IF(0, !opts_.constantly_reload_configs)
+  VLOG_IF(1, !opts_.constantly_reload_configs)
       << "reconfigured " << opts_.num_proxies << " proxies with "
       << newConfigs[0]->getPools().size() << " pools, "
       << newConfigs[0]->calcNumClients() << " clients "
@@ -614,7 +614,7 @@ CarbonRouterInstance<RouterInfo>::configure(const ProxyConfigBuilder& builder) {
 template <class RouterInfo>
 folly::Expected<ProxyConfigBuilder, std::string>
 CarbonRouterInstance<RouterInfo>::createConfigBuilder() {
-  VLOG_IF(0, !opts_.constantly_reload_configs) << "creating config builder";
+  VLOG_IF(1, !opts_.constantly_reload_configs) << "creating config builder";
   /* mark config attempt before, so that
      successful config is always >= last config attempt. */
   lastConfigAttempt_.store(time(nullptr), std::memory_order_relaxed);
