@@ -26,6 +26,8 @@ request HelloRequest {
   3: uint64_t deadlineMs;
   4: std::string message;
   5: EnumUInt32 priority;
+  6: uint64_t beforeLatencyUs;
+  7: uint64_t afterLatencyUs;
 };
 
 reply HelloReply {

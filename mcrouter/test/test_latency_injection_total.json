@@ -8,6 +8,6 @@
   "route": {
     "type": "LatencyInjectionRoute",
     "child": "PoolRoute|A",
-    "total_latency_ms": 1000
+    "total_latency_ms": 2000
   }
 }

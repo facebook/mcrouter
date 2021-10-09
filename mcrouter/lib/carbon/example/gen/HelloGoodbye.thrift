@@ -32,6 +32,8 @@ struct HelloRequest {
   3: i64 (cpp.type = "uint64_t") deadlineMs
   4: string message
   5: EnumUInt32 priority
+  6: i64 (cpp.type = "uint64_t") beforeLatencyUs
+  7: i64 (cpp.type = "uint64_t") afterLatencyUs
 }(cpp.methods = "
   template <class V>
   void visitFields(V&& v);

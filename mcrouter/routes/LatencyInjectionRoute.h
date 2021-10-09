@@ -13,6 +13,7 @@
 #include <folly/Format.h>
 #include <folly/fibers/Baton.h>
 
+#include "mcrouter/config.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
@@ -20,6 +21,25 @@
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
+
+// Latency helpers
+template <typename Message, typename = std::enable_if_t<true>>
+class HasBeforeLatencyUsTrait : public std::false_type {};
+template <typename Message>
+class HasBeforeLatencyUsTrait<
+    Message,
+    std::void_t<
+        decltype(std::declval<std::decay_t<Message>&>().beforeLatencyUs_ref())>>
+    : public std::true_type {};
+
+template <typename Message, typename = std::enable_if_t<true>>
+class HasAfterLatencyUsTrait : public std::false_type {};
+template <typename Message>
+class HasAfterLatencyUsTrait<
+    Message,
+    std::void_t<
+        decltype(std::declval<std::decay_t<Message>&>().afterLatencyUs_ref())>>
+    : public std::true_type {};
 
 /**
  * Injects latency before and/or after sending the request down to it's child.
@@ -41,23 +61,30 @@ class LatencyInjectionRoute {
       RouteHandlePtr rh,
       std::chrono::milliseconds beforeLatency,
       std::chrono::milliseconds afterLatency,
-      std::chrono::milliseconds totalLatency)
+      std::chrono::milliseconds totalLatency,
+      bool requestLatency,
+      std::chrono::microseconds maxRequestLatency)
       : rh_(std::move(rh)),
         beforeLatency_(beforeLatency),
         afterLatency_(afterLatency),
-        totalLatency_(totalLatency) {
+        totalLatency_(totalLatency),
+        requestLatency_(requestLatency),
+        maxRequestLatency_(maxRequestLatency) {
     assert(rh_);
     assert(
         beforeLatency_.count() > 0 || afterLatency_.count() > 0 ||
-        totalLatency_.count() > 0);
+        totalLatency_.count() > 0 || requestLatency_);
   }
 
   std::string routeName() const {
     return folly::sformat(
-        "latency-injection|before:{}ms|after:{}ms|total:{}ms",
+        "latency-injection|before:{}ms|after:{}ms|total:{}ms|"
+        "request_payload:{}|max_request_latency_us:{}",
         beforeLatency_.count(),
         afterLatency_.count(),
-        totalLatency_.count());
+        totalLatency_.count(),
+        requestLatency_ ? "true" : "false",
+        maxRequestLatency_.count());
   }
 
   template <class Request>
@@ -70,13 +97,58 @@ class LatencyInjectionRoute {
   template <class Request>
   ReplyT<Request> route(const Request& req) const {
     const auto before_ms = getCurrentTimeInMs();
+
     // Fixed latency added before request is sent.
     if (beforeLatency_.count() > 0) {
       folly::fibers::Baton beforeBaton;
       beforeBaton.try_wait_for(beforeLatency_);
     }
 
-    auto reply = rh_->route(req);
+    std::chrono::microseconds beforeReqLatency{0};
+    std::chrono::microseconds afterReqLatency{0};
+    // std::chrono::milliseconds beforeReqLatency{0};
+    std::optional<Request> newReq;
+
+    // Both beforeLatencyUs and afterLatencyUs fields have to be defined
+    // for request specific latency injection to happen.
+    if constexpr (
+        HasBeforeLatencyUsTrait<Request>::value &&
+        HasAfterLatencyUsTrait<Request>::value) {
+      if (requestLatency_) {
+        if (req.beforeLatencyUs_ref().has_value()) {
+          beforeReqLatency =
+              std::chrono::microseconds(*req.beforeLatencyUs_ref());
+        }
+        if (req.afterLatencyUs_ref().has_value()) {
+          afterReqLatency =
+              std::chrono::microseconds(*req.afterLatencyUs_ref());
+        }
+        // Reset request latencies to avoid downstream latency injection
+        if (beforeReqLatency.count() > 0 || afterReqLatency.count() > 0) {
+          newReq.emplace(req);
+          newReq->afterLatencyUs_ref() = 0;
+          newReq->beforeLatencyUs_ref() = 0;
+        }
+        // Inject per request latency if enabled
+        if (beforeReqLatency.count() > 0 &&
+            ((maxRequestLatency_.count() == 0) ||
+             (beforeReqLatency.count() <= maxRequestLatency_.count()))) {
+          folly::fibers::Baton beforeBaton;
+          beforeBaton.try_wait_for(beforeReqLatency);
+        }
+      }
+    }
+
+    auto& reqToSend = newReq ? *newReq : req;
+    auto reply = rh_->route(reqToSend);
+    if constexpr (HasAfterLatencyUsTrait<Request>::value) {
+      if (afterReqLatency.count() > 0 &&
+          ((maxRequestLatency_.count() == 0) ||
+           (afterReqLatency.count() <= maxRequestLatency_.count()))) {
+        folly::fibers::Baton beforeBaton;
+        beforeBaton.try_wait_for(afterReqLatency);
+      }
+    }
 
     // Fixed latency added after reply is received.
     if (afterLatency_.count() > 0) {
@@ -103,6 +175,8 @@ class LatencyInjectionRoute {
   const std::chrono::milliseconds beforeLatency_;
   const std::chrono::milliseconds afterLatency_;
   const std::chrono::milliseconds totalLatency_;
+  bool requestLatency_;
+  const std::chrono::microseconds maxRequestLatency_;
 };
 
 /**
@@ -130,10 +204,12 @@ typename RouterInfo::RouteHandlePtr makeLatencyInjectionRoute(
   auto jBeforeLatency = json.get_ptr("before_latency_ms");
   auto jAfterLatency = json.get_ptr("after_latency_ms");
   auto jTotalLatency = json.get_ptr("total_latency_ms");
+  auto jRequestLatency = json.get_ptr("request_payload_latency");
   checkLogic(
-      jBeforeLatency != nullptr || jAfterLatency != nullptr,
-      "LatencyInjectionRoute must specify either "
-      "'before_latency_ms' or 'after_latency_ms'");
+      jBeforeLatency != nullptr || jAfterLatency != nullptr ||
+          jTotalLatency != nullptr || jRequestLatency != nullptr,
+      "LatencyInjectionRoute must specify either 'before_latency_ms', "
+      "'after_latency_ms', 'total_latency_ms' or 'request_payload_latency'");
 
   std::chrono::milliseconds beforeLatency{0};
   std::chrono::milliseconds afterLatency{0};
@@ -152,19 +228,44 @@ typename RouterInfo::RouteHandlePtr makeLatencyInjectionRoute(
   }
   if (jTotalLatency) {
     checkLogic(
-        jTotalLatency->isInt() && jTotalLatency->getInt() > 0,
-        "LatencyInjectionRoute: 'total_latency_ms' must be an interger.");
+        jTotalLatency->isInt(),
+        "LatencyInjectionRoute: 'total_latency_ms' must be an integer.");
     totalLatency = std::chrono::milliseconds(jTotalLatency->asInt());
   }
 
+  bool requestLatency = false;
+  if (jRequestLatency) {
+    checkLogic(
+        jRequestLatency->isBool(),
+        "LatencyInjectionRoute: 'request_payload_latency' is not a bool");
+    if (jRequestLatency->getBool()) {
+      requestLatency = true;
+    }
+  }
+
+  // Note that maxRequestLatency is in usecs.
+  std::chrono::microseconds maxRequestLatency{0};
+  auto jMaxRequestLatency = json.get_ptr("max_request_latency_us");
+  if (jMaxRequestLatency) {
+    checkLogic(
+        jMaxRequestLatency->isInt(),
+        "LatencyInjectionRoute: 'max_request_latency_us' is not an int");
+    maxRequestLatency = std::chrono::microseconds(jMaxRequestLatency->asInt());
+  }
+
   if (beforeLatency.count() == 0 && afterLatency.count() == 0 &&
-      totalLatency.count() == 0) {
+      totalLatency.count() == 0 && !requestLatency) {
     // if we are not injecting any latency, optimize this rh away.
     return child;
   }
 
   return makeRouteHandleWithInfo<RouterInfo, LatencyInjectionRoute>(
-      std::move(child), beforeLatency, afterLatency, totalLatency);
+      std::move(child),
+      beforeLatency,
+      afterLatency,
+      totalLatency,
+      requestLatency,
+      maxRequestLatency);
 }
 
 } // namespace mcrouter

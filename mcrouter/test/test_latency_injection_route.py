@@ -12,8 +12,8 @@ from mcrouter.test.McrouterTestCase import McrouterTestCase
 
 class TestLatencyInjectionRoute(McrouterTestCase):
     config_latency_before = './mcrouter/test/test_latency_injection_before.json'
-    config_latency_after = './mcrouter/test/test_latency_injection_before.json'
-    config_latency_total = './mcrouter/test/test_latency_injection_before.json'
+    config_latency_after = './mcrouter/test/test_latency_injection_after.json'
+    config_latency_total = './mcrouter/test/test_latency_injection_total.json'
 
     def setUp(self) -> None:
         self.mc = self.add_server(Memcached())
