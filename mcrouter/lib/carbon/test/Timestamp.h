@@ -91,8 +91,7 @@ struct SerializationTraits<carbon::test::Timestamp> {
 
 template <typename T1, typename T2>
 struct SerializationTraits<std::pair<T1, T2>> {
-  static constexpr carbon::FieldType kWireType =
-      SerializationTraits<std::pair<T1, T2>>::kWireType;
+  static constexpr carbon::FieldType kWireType = carbon::FieldType::Binary;
 
   template <class Reader>
   static std::pair<T1, T2> read(Reader&& /*reader*/) {
