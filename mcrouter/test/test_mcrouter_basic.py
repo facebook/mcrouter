@@ -156,17 +156,6 @@ class TestMcrouterBasic(TestMcrouterBasicBase):
         self.assertTrue(mcr.set('key', 'value', exptime=-10))
         self.assertIsNone(mcr.get('key'))
 
-        # future: year 2033
-        self.assertTrue(mcr.set('key', 'value', exptime=2000000000))
-        self.assertEqual(mcr.get('key'), 'value')
-
-        # past
-        self.assertTrue(mcr.set('key', 'value', exptime=1432250000))
-        # items with past time may a second or two longer
-        time.sleep(2)
-        self.assertIsNone(mcr.get('key'))
-
-
 class TestMcrouterBasicTouch(TestMcrouterBasicBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
