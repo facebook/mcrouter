@@ -314,6 +314,7 @@ std::shared_ptr<SSLContext> createClientSSLContext(
   std::vector<std::string> cVec(ciphers.begin(), ciphers.end());
   // Explicitly disable TLS 1.3 because of assumption in codebase that
   // AsyncSSLSocket == TLS 1.2 (e.g. tls_to_plain).
+  // TODO: When enabling TLS 1.3, set TLS 1.3 ciphersuites from SSLCommonOptions
   context->disableTLS13();
 #if FOLLY_OPENSSL_HAS_ALPN
   if (mech == SecurityMech::TLS_TO_PLAINTEXT) {
