@@ -20,6 +20,7 @@ mock_mc_server_LDADD = \
 	-ltransport \
 	-lthriftprotocol \
 	-lrpcmetadata \
+	-lthriftmetadata \
 	-lasync \
 	-lconcurrency \
 	-lthrift-core \
