@@ -188,7 +188,7 @@ class ThriftTransportUtil {
 template <class RouterInfo>
 class ThriftTransportMethods : public ThriftTransportUtil {
  public:
-  ThriftTransportMethods() = default;
+  ThriftTransportMethods() {}
   virtual ~ThriftTransportMethods() override = default;
 };
 

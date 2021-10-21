@@ -18,6 +18,7 @@ enum EnumUInt32 : uint32_t {
 request HelloRequest {
   id: 1;
   name: "hello";
+  no_thrift_compression: true;
   thrift_headers: {shardId,message, priority};
   reply: HelloReply;
 
@@ -55,4 +56,5 @@ service {
     CarbonLookasideRoute @ "mcrouter/lib/carbon/example/CarbonLookasideRoute.h"
   ];
   gen_client_tool: true;
+  compression_by_type: true;
 };
