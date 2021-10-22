@@ -13,6 +13,8 @@
 #include <folly/Format.h>
 #include <folly/fibers/Baton.h>
 
+#include <folly/experimental/ThreadWheelTimekeeperHighRes.h>
+
 #include "mcrouter/config.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
@@ -109,6 +111,8 @@ class LatencyInjectionRoute {
     // std::chrono::milliseconds beforeReqLatency{0};
     std::optional<Request> newReq;
 
+    static folly::ThreadWheelTimekeeperHighRes timeKeeper;
+
     // Both beforeLatencyUs and afterLatencyUs fields have to be defined
     // for request specific latency injection to happen.
     if constexpr (
@@ -133,8 +137,7 @@ class LatencyInjectionRoute {
         if (beforeReqLatency.count() > 0 &&
             ((maxRequestLatency_.count() == 0) ||
              (beforeReqLatency.count() <= maxRequestLatency_.count()))) {
-          folly::fibers::Baton beforeBaton;
-          beforeBaton.try_wait_for(beforeReqLatency);
+          folly::futures::sleep(beforeReqLatency, &timeKeeper).get();
         }
       }
     }
@@ -145,8 +148,7 @@ class LatencyInjectionRoute {
       if (afterReqLatency.count() > 0 &&
           ((maxRequestLatency_.count() == 0) ||
            (afterReqLatency.count() <= maxRequestLatency_.count()))) {
-        folly::fibers::Baton beforeBaton;
-        beforeBaton.try_wait_for(afterReqLatency);
+        folly::futures::sleep(afterReqLatency, &timeKeeper).get();
       }
     }
 
