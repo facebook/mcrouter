@@ -45,6 +45,8 @@ ProxyConfig<RouterInfo>::ProxyConfig(
       }
     } else if (jNamedHandles->isObject()) {
       for (const auto& it : jNamedHandles->items()) {
+        // NOTE: addNamed causes `factory` to hold a reference to it.second.
+        // `factory` is local to this function, so the JSON value outlives it.
         factory.addNamed(it.first.stringPiece(), it.second);
       }
     } else {

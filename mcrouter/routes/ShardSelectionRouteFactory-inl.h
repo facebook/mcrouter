@@ -331,7 +331,7 @@ typename RouterInfo::RouteHandlePtr createShardSelectionRoute(
     const folly::dynamic& json) {
   checkLogic(json.isObject(), "ShardSelectionRoute config should be an object");
 
-  auto poolJson = detail::getPoolJson<RouterInfo>(factory, json);
+  const auto& poolJson = detail::getPoolJson<RouterInfo>(factory, json);
   auto destinations = factory.createList(poolJson);
   if (destinations.empty()) {
     LOG(WARNING) << "ShardSelectionRoute: Empty list of destinations found. "

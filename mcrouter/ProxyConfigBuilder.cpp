@@ -52,6 +52,21 @@ ProxyConfigBuilder::ProxyConfigBuilder(
       json_, configApi, std::move(configMetadataMap));
 
   configMd5Digest_ = Md5Hash(jsonC);
+
+  // We rely on consistent naming for named_handles overrides when we build
+  // these routes later. See the check in RouteHandleFactory::addNamed.
+  if (const auto jNamedHandles = json_.get_ptr("named_handles")) {
+    if (jNamedHandles->isObject()) {
+      for (auto& it : jNamedHandles->items()) {
+        if (it.second.isObject()) {
+          const auto jName = it.second.get_ptr("name");
+          if (!jName) {
+            it.second["name"] = it.first.stringPiece();
+          }
+        }
+      }
+    }
+  }
 }
 } // namespace mcrouter
 } // namespace memcache

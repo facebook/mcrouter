@@ -43,9 +43,12 @@ class RouteHandleFactory {
   /**
    * Adds a named route handle that may be used later.
    *
+   * NOTE: The caller must ensure that the provided JSON pointer outlives
+   * this factory, because we hold onto a reference to it for our lifetime.
+   *
    * @param json object that contains RouteHandle with (optional) children.
    */
-  void addNamed(folly::StringPiece name, folly::dynamic json);
+  void addNamed(const folly::StringPiece name, const folly::dynamic& json);
 
   /**
    * Creates single RouteHandle from JSON object.
@@ -100,7 +103,7 @@ class RouteHandleFactory {
   RouteHandleProviderIf<RouteHandleIf>& provider_;
 
   /// Registered named routes that are not parsed yet
-  folly::StringKeyedUnorderedMap<folly::dynamic> registered_;
+  folly::StringKeyedUnorderedMap<const folly::dynamic*> registered_;
   /// Named routes we've already parsed
   folly::StringKeyedUnorderedMap<std::vector<RouteHandlePtr>> seen_;
   /// Thread where route handles created by this factory will be used
@@ -110,6 +113,12 @@ class RouteHandleFactory {
   std::stack<std::vector<RouteHandlePtr>> childrenLists_;
 
   const std::vector<RouteHandlePtr>& createNamed(
+      folly::StringPiece name,
+      const folly::dynamic& json);
+
+  // Unlike createNamed, does not check for this name in the registered_ map,
+  // or in the seen_ values de-duplication cache.
+  const std::vector<RouteHandlePtr>& createNamedImpl(
       folly::StringPiece name,
       const folly::dynamic& json);
 };

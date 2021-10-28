@@ -21,20 +21,17 @@ RouteHandleFactory<RouteHandleIf>::RouteHandleFactory(
 
 template <class RouteHandleIf>
 void RouteHandleFactory<RouteHandleIf>::addNamed(
-    folly::StringPiece name,
-    folly::dynamic json) {
+    const folly::StringPiece name,
+    const folly::dynamic& json) {
   if (json.isObject()) {
-    if (auto jName = json.get_ptr("name")) {
-      checkLogic(
-          jName->isString() && jName->stringPiece() == name,
-          "Ambiguous RouteHandle name in object for {}",
-          name);
-    } else {
-      json["name"] = name;
-    }
+    const auto jName = json.get_ptr("name");
+    checkLogic(
+        jName && jName->isString() && jName->stringPiece() == name,
+        "Ambiguous RouteHandle name in object for {}",
+        name);
   }
   checkLogic(
-      registered_.emplace(name, std::move(json)).second,
+      registered_.emplace(name, &json).second,
       "Route handle '{}' was already registered",
       name);
 }
@@ -64,11 +61,19 @@ RouteHandleFactory<RouteHandleIf>::createNamed(
   // check if this name was registered
   auto registeredIt = registered_.find(name);
   if (registeredIt != registered_.end()) {
-    auto tmp = std::move(registeredIt->second);
+    auto const tmp = registeredIt->second;
     registered_.erase(registeredIt);
-    return createNamed(name, tmp);
+    return createNamedImpl(name, *tmp);
   }
 
+  return createNamedImpl(name, json);
+}
+
+template <class RouteHandleIf>
+const std::vector<std::shared_ptr<RouteHandleIf>>&
+RouteHandleFactory<RouteHandleIf>::createNamedImpl(
+    folly::StringPiece name,
+    const folly::dynamic& json) {
   if (json.isObject()) {
     auto jType = json.get_ptr("type");
     checkLogic(jType, "No type field in RouteHandle json object");
@@ -131,9 +136,9 @@ RouteHandleFactory<RouteHandleIf>::createList(const folly::dynamic& json) {
     // check if this name was registered
     auto registeredIt = registered_.find(handlePiece);
     if (registeredIt != registered_.end()) {
-      auto tmp = std::move(registeredIt->second);
+      auto const tmp = registeredIt->second;
       registered_.erase(registeredIt);
-      return createNamed(handlePiece, tmp);
+      return createNamedImpl(handlePiece, *tmp);
     }
 
     std::vector<RouteHandlePtr> ret;
