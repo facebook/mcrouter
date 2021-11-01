@@ -137,6 +137,7 @@ ShardSplitter::ShardSplitter(
   checkLogic(json.isObject(), "ShardSplitter: config is not an object");
 
   auto now = std::chrono::system_clock::now();
+  shardSplits_.reserve(json.size());
 
   for (const auto& it : json.items()) {
     checkLogic(
