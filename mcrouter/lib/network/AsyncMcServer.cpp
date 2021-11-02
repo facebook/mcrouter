@@ -407,7 +407,8 @@ class McServerThread {
         : mcServerThread_(mcServerThread), secure_(secure) {}
     void connectionAccepted(
         folly::NetworkSocket fdNetworkSocket,
-        const folly::SocketAddress& /* clientAddr */) noexcept final {
+        const folly::SocketAddress& /* clientAddr */,
+        AcceptInfo /* info */) noexcept final {
       int fd = fdNetworkSocket.toFd();
 
       if (secure_) {
