@@ -25,7 +25,7 @@ class ThriftObserver final : public apache::thrift::server::TServerObserver {
         router_(router),
         startedShutdown_(startedShutdown) {}
 
-  void connAccepted() override final {
+  void connAccepted(const wangle::TransportInfo& /* info */) override final {
     if (!startedShutdown_->load()) {
       auto proxy = router_.getProxy(tlsWorkerThreadId);
       proxy->stats().increment(num_client_connections_stat);
