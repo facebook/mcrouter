@@ -113,7 +113,9 @@ class FailoverInOrderPolicy {
     ChildProxy(RouteHandlePtr child) : child_(child) {}
 
     template <class Request>
-    ReplyT<Request> route(const Request& req, FailoverPolicyContext&) {
+    ReplyT<Request> route(
+        const Request& req,
+        std::shared_ptr<FailoverPolicyContext>&) {
       return child_->route(req);
     }
 
@@ -187,8 +189,8 @@ class FailoverInOrderPolicy {
   }
 
   template <class Request>
-  FailoverPolicyContext context(const Request&) const {
-    return FailoverPolicyContext();
+  std::shared_ptr<FailoverPolicyContext> context(const Request&) const {
+    return std::make_shared<FailoverPolicyContext>();
   }
 
   template <class Request>
@@ -308,7 +310,9 @@ class FailoverDeterministicOrderPolicy {
     ChildProxy(RouteHandlePtr child) : child_(child) {}
 
     template <class Request>
-    ReplyT<Request> route(const Request& req, FailoverPolicyContext&) {
+    ReplyT<Request> route(
+        const Request& req,
+        std::shared_ptr<FailoverPolicyContext>&) {
       return child_->route(req);
     }
 
@@ -547,8 +551,8 @@ class FailoverDeterministicOrderPolicy {
   }
 
   template <class Request>
-  FailoverPolicyContext context(const Request&) const {
-    return FailoverPolicyContext();
+  std::shared_ptr<FailoverPolicyContext> context(const Request&) const {
+    return std::make_shared<FailoverPolicyContext>();
   }
 
   // Returns the stat to increment when failover occurs.
@@ -619,7 +623,9 @@ class FailoverRendezvousPolicy {
     ChildProxy(RouteHandlePtr child) : child_(child) {}
 
     template <class Request>
-    ReplyT<Request> route(const Request& req, FailoverPolicyContext&) {
+    ReplyT<Request> route(
+        const Request& req,
+        std::shared_ptr<FailoverPolicyContext>&) {
       return child_->route(req);
     }
 
@@ -734,8 +740,8 @@ class FailoverRendezvousPolicy {
   }
 
   template <class Request>
-  FailoverPolicyContext context(const Request&) const {
-    return FailoverPolicyContext();
+  std::shared_ptr<FailoverPolicyContext> context(const Request&) const {
+    return std::make_shared<FailoverPolicyContext>();
   }
 
   // Returns the stat to increment when failover occurs.
@@ -794,7 +800,9 @@ class FailoverLeastFailuresPolicy {
         : failoverPolicy_(failoverPolicy), index_(index) {}
 
     template <class Request>
-    ReplyT<Request> route(const Request& req, FailoverPolicyContext&) {
+    ReplyT<Request> route(
+        const Request& req,
+        std::shared_ptr<FailoverPolicyContext>&) {
       auto& child = failoverPolicy_.children_[index_];
       auto reply = child->route(req);
       if (isErrorResult(*reply.result_ref())) {
@@ -880,8 +888,8 @@ class FailoverLeastFailuresPolicy {
   }
 
   template <class Request>
-  FailoverPolicyContext context(const Request&) const {
-    return FailoverPolicyContext();
+  std::shared_ptr<FailoverPolicyContext> context(const Request&) const {
+    return std::make_shared<FailoverPolicyContext>();
   }
 
   template <class Request>

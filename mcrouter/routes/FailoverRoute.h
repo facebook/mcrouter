@@ -264,7 +264,7 @@ class FailoverRoute {
       setFailoverHopCount(normalReply, getFailoverHopCount(req));
     }
     if (LIKELY(processReply(
-            normalReply, req, conditionalFailover, iter, policyCtx))) {
+            normalReply, req, conditionalFailover, iter, *policyCtx))) {
       return normalReply;
     }
     if (++iter == failoverPolicy_.end(req)) {
@@ -328,16 +328,16 @@ class FailoverRoute {
 
       ReplyT<Request> failoverReply;
       for (++nx; nx != failoverPolicy_.end(req) &&
-           policyCtx.numTries_ < failoverPolicy_.maxErrorTries();
+           policyCtx->numTries_ < failoverPolicy_.maxErrorTries();
            ++cur, ++nx) {
         failoverReply = doFailover(cur);
         incFailureDomainStat(normalReply, failoverReply);
         if (LIKELY(processReply(
-                failoverReply, req, conditionalFailover, cur, policyCtx))) {
+                failoverReply, req, conditionalFailover, cur, *policyCtx))) {
           return failoverReply;
         }
       }
-      if (policyCtx.numTries_ < failoverPolicy_.maxErrorTries()) {
+      if (policyCtx->numTries_ < failoverPolicy_.maxErrorTries()) {
         failoverReply = doFailover(cur);
         incFailureDomainStat(normalReply, failoverReply);
         if (isErrorResult(*failoverReply.result_ref())) {
