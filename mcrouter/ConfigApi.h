@@ -138,6 +138,12 @@ class ConfigApi : public ConfigApiIf {
    */
   void enableReadingFromBackupFiles();
 
+  // Add counter to track number of reconfigurations skipped because of same smc
+  // version
+  uint64_t getSkipReconfigCount() const {
+    return skipReconfigCount_.load(std::memory_order_relaxed);
+  }
+
   struct PartialUpdate {
     std::string tierName;
     std::string oldApString;
@@ -153,6 +159,7 @@ class ConfigApi : public ConfigApiIf {
   const McrouterOptions& opts_;
   CallbackPool<> callbacks_;
   std::atomic<bool> tracking_;
+  std::atomic<uint64_t> skipReconfigCount_{0};
 
   /**
    * Informs whether this is the first time mcrouter is being configured.

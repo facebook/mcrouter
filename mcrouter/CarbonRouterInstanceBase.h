@@ -228,6 +228,10 @@ class CarbonRouterInstanceBase {
     metadata_ = std::move(metadata);
   }
 
+  uint64_t configSkipReconfigCount() const {
+    return configApi_.get() ? configApi_->getSkipReconfigCount() : 0;
+  }
+
  protected:
   void resetMetadata() {
     metadata_.reset();
