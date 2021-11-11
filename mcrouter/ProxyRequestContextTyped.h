@@ -183,7 +183,9 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
         networkTransportTimeUs,
         extraDataCallbacks,
         flags,
-        fiber_local<RouterInfo>::getFailoverCount());
+        fiber_local<RouterInfo>::getFailoverCount(),
+        fiber_local<RouterInfo>::getAccumulatedInjectedBeforeReqLatencyUs(),
+        fiber_local<RouterInfo>::getAccumulatedInjectedAfterReqLatencyUs());
     assert(logger_.hasValue());
     logger_->template log<Request>(loggerContext);
     assert(additionalLogger_.hasValue());

@@ -99,8 +99,21 @@ class LatencyInjectionRoute {
 
   template <class Request>
   ReplyT<Request> route(const Request& req) const {
-    const auto before_ms = getCurrentTimeInMs();
     auto& proxy = fiber_local<RouterInfo>::getSharedCtx()->proxy();
+    const auto before_ms = getCurrentTimeInMs();
+    SCOPE_EXIT {
+      if (totalLatency_.count() > 0) {
+        auto elapsed =
+            std::chrono::milliseconds(getCurrentTimeInMs() - before_ms);
+
+        // Pad latency out to total latency configured.
+        if (totalLatency_ > elapsed) {
+          proxy.stats().increment(mcrouter::total_latency_injected_stat);
+          folly::fibers::Baton totalBaton;
+          totalBaton.try_wait_for(totalLatency_ - elapsed);
+        }
+      }
+    };
 
     // Fixed latency added before request is sent.
     if (beforeLatency_.count() > 0) {
@@ -141,6 +154,8 @@ class LatencyInjectionRoute {
              (beforeReqLatency.count() <= maxRequestLatency_.count()))) {
           proxy.stats().increment(
               mcrouter::before_request_latency_injected_stat);
+          fiber_local<RouterInfo>::accumulateBeforeReqInjectedLatencyUs(
+              beforeReqLatency.count());
           folly::futures::sleep(beforeReqLatency, &timeKeeper).get();
         }
       }
@@ -153,6 +168,8 @@ class LatencyInjectionRoute {
           ((maxRequestLatency_.count() == 0) ||
            (afterReqLatency.count() <= maxRequestLatency_.count()))) {
         proxy.stats().increment(mcrouter::after_request_latency_injected_stat);
+        fiber_local<RouterInfo>::accumulateAfterReqInjectedLatencyUs(
+            afterReqLatency.count());
         folly::futures::sleep(afterReqLatency, &timeKeeper).get();
       }
     }
@@ -162,18 +179,6 @@ class LatencyInjectionRoute {
       proxy.stats().increment(mcrouter::after_latency_injected_stat);
       folly::fibers::Baton afterBaton;
       afterBaton.try_wait_for(afterLatency_);
-    }
-
-    if (totalLatency_.count() > 0) {
-      auto elapsed =
-          std::chrono::milliseconds(getCurrentTimeInMs() - before_ms);
-
-      // Pad latency out to total latency configured.
-      if (totalLatency_ > elapsed) {
-        proxy.stats().increment(mcrouter::total_latency_injected_stat);
-        folly::fibers::Baton totalBaton;
-        totalBaton.try_wait_for(totalLatency_ - elapsed);
-      }
     }
 
     return reply;

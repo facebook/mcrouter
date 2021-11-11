@@ -71,6 +71,8 @@ class fiber_local {
     std::bitset<NUM_FLAGS> featureFlags;
     int32_t selectedIndex{-1};
     uint32_t failoverCount{0};
+    int64_t accumulatedBeforeReqInjectedLatencyUs{0};
+    int64_t accumulatedAfterReqInjectedLatencyUs{0};
     RequestClass requestClass;
     folly::StringPiece asynclogName;
     int64_t networkTransportTimeUs{0};
@@ -187,6 +189,46 @@ class fiber_local {
    */
   static uint32_t getFailoverCount() {
     return folly::fibers::local<McrouterFiberContext>().failoverCount;
+  }
+
+  /**
+   * Accumulate latency injected before request for current fiber and return the
+   * new value
+   */
+  static int64_t accumulateBeforeReqInjectedLatencyUs(
+      uint64_t additionalInjectedUs) {
+    folly::fibers::local<McrouterFiberContext>()
+        .accumulatedBeforeReqInjectedLatencyUs += additionalInjectedUs;
+    return folly::fibers::local<McrouterFiberContext>()
+        .accumulatedBeforeReqInjectedLatencyUs;
+  }
+
+  /**
+   * Get accumulated latency injected for current fiber before request
+   */
+  static int64_t getAccumulatedInjectedBeforeReqLatencyUs() {
+    return folly::fibers::local<McrouterFiberContext>()
+        .accumulatedBeforeReqInjectedLatencyUs;
+  }
+
+  /**
+   * Accumulate latency injected after request for current fiber and return the
+   * new value
+   */
+  static int64_t accumulateAfterReqInjectedLatencyUs(
+      uint64_t additionalInjectedUs) {
+    folly::fibers::local<McrouterFiberContext>()
+        .accumulatedAfterReqInjectedLatencyUs += additionalInjectedUs;
+    return folly::fibers::local<McrouterFiberContext>()
+        .accumulatedAfterReqInjectedLatencyUs;
+  }
+
+  /**
+   * Get accumulated latency injected for current fiber after request
+   */
+  static int64_t getAccumulatedInjectedAfterReqLatencyUs() {
+    return folly::fibers::local<McrouterFiberContext>()
+        .accumulatedAfterReqInjectedLatencyUs;
   }
 
   /**
