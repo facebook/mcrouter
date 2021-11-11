@@ -19,6 +19,7 @@
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
+#include "mcrouter/stats.h"
 
 namespace facebook {
 namespace memcache {
@@ -99,16 +100,17 @@ class LatencyInjectionRoute {
   template <class Request>
   ReplyT<Request> route(const Request& req) const {
     const auto before_ms = getCurrentTimeInMs();
+    auto& proxy = fiber_local<RouterInfo>::getSharedCtx()->proxy();
 
     // Fixed latency added before request is sent.
     if (beforeLatency_.count() > 0) {
+      proxy.stats().increment(mcrouter::before_latency_injected_stat);
       folly::fibers::Baton beforeBaton;
       beforeBaton.try_wait_for(beforeLatency_);
     }
 
     std::chrono::microseconds beforeReqLatency{0};
     std::chrono::microseconds afterReqLatency{0};
-    // std::chrono::milliseconds beforeReqLatency{0};
     std::optional<Request> newReq;
 
     static folly::ThreadWheelTimekeeperHighRes timeKeeper;
@@ -137,6 +139,8 @@ class LatencyInjectionRoute {
         if (beforeReqLatency.count() > 0 &&
             ((maxRequestLatency_.count() == 0) ||
              (beforeReqLatency.count() <= maxRequestLatency_.count()))) {
+          proxy.stats().increment(
+              mcrouter::before_request_latency_injected_stat);
           folly::futures::sleep(beforeReqLatency, &timeKeeper).get();
         }
       }
@@ -148,12 +152,14 @@ class LatencyInjectionRoute {
       if (afterReqLatency.count() > 0 &&
           ((maxRequestLatency_.count() == 0) ||
            (afterReqLatency.count() <= maxRequestLatency_.count()))) {
+        proxy.stats().increment(mcrouter::after_request_latency_injected_stat);
         folly::futures::sleep(afterReqLatency, &timeKeeper).get();
       }
     }
 
     // Fixed latency added after reply is received.
     if (afterLatency_.count() > 0) {
+      proxy.stats().increment(mcrouter::after_latency_injected_stat);
       folly::fibers::Baton afterBaton;
       afterBaton.try_wait_for(afterLatency_);
     }
@@ -164,6 +170,7 @@ class LatencyInjectionRoute {
 
       // Pad latency out to total latency configured.
       if (totalLatency_ > elapsed) {
+        proxy.stats().increment(mcrouter::total_latency_injected_stat);
         folly::fibers::Baton totalBaton;
         totalBaton.try_wait_for(totalLatency_ - elapsed);
       }

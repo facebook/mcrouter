@@ -24,6 +24,14 @@ class LatencyInjectionRouteTest
  public:
   HelloGoodbyeRouterInfo::RouteHandlePtr getLatencyInjectionRoute(
       folly::StringPiece jsonStr) {
+    McrouterOptions opts = defaultTestOptions();
+    opts.config = "{ \"route\": \"NullRoute\" }";
+    std::shared_ptr<ProxyRequestContextWithInfo<HelloGoodbyeRouterInfo>> ctx{
+        ProxyRequestContextWithInfo<HelloGoodbyeRouterInfo>::createRecording(
+            *CarbonRouterInstance<HelloGoodbyeRouterInfo>::init("test", opts)
+                 ->getProxy(0),
+            nullptr)};
+    fiber_local<HelloGoodbyeRouterInfo>::setSharedCtx(std::move(ctx));
     return makeLatencyInjectionRoute<HelloGoodbyeRouterInfo>(
         rhFactory_, folly::parseJson(jsonStr));
   }
