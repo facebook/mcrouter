@@ -41,5 +41,8 @@ enum Result {
   REMOTE_ERROR = 30,
   WAITING = 31,
   DEADLINE_EXCEEDED = 32,
-  NUM_RESULTS = 33,
+  PERMISSION_DENIED = 33,
+  // Result::NUM_RESULTS indicates the size of the results array and should
+  // always be updated to the end of the list
+  NUM_RESULTS = 34,
 }

@@ -167,7 +167,8 @@ typedef enum mc_res_e {
   /* in progress -- */
   mc_res_waiting,
   mc_res_deadline_exceeded,
-  mc_nres // placeholder
+  mc_res_permission_denied,
+  mc_nres, // placeholder
 } mc_res_t;
 
 static inline const char* mc_res_to_string(const mc_res_t result) {
@@ -236,6 +237,8 @@ static inline const char* mc_res_to_string(const mc_res_t result) {
       return "mc_res_local_error";
     case mc_res_remote_error:
       return "mc_res_remote_error";
+    case mc_res_permission_denied:
+      return "mc_res_permission_denied";
     /* in progress -- */
     case mc_res_waiting:
       return "mc_res_waiting";

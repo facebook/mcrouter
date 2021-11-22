@@ -81,6 +81,8 @@ inline const char* resultToString(const Result result) {
       return "mc_res_waiting";
     case Result::DEADLINE_EXCEEDED:
       return "mc_res_deadline_exceeded";
+    case Result::PERMISSION_DENIED:
+      return "mc_res_permission_denied";
     case Result::NUM_RESULTS:
       return "mc_res_unknown";
   }
