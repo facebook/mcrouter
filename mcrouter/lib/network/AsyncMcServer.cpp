@@ -8,6 +8,7 @@
 #include "AsyncMcServer.h"
 
 #include <signal.h>
+#include <sys/eventfd.h>
 #include <sys/resource.h>
 #include <sys/time.h>
 
@@ -26,7 +27,6 @@
 #include <folly/String.h>
 #include <folly/io/async/AsyncServerSocket.h>
 #include <folly/io/async/EventBase.h>
-#include <folly/io/async/EventFDWrapper.h>
 #include <folly/io/async/SSLContext.h>
 #include <folly/io/async/ScopedEventBaseThread.h>
 #include <folly/io/async/VirtualEventBase.h>

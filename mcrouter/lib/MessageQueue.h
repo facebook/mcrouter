@@ -10,10 +10,11 @@
 #include <chrono>
 #include <memory>
 
+#include <sys/eventfd.h>
+
 #include <folly/FileUtil.h>
 #include <folly/MPMCQueue.h>
 #include <folly/Random.h>
-#include <folly/io/async/EventFDWrapper.h>
 #include <folly/io/async/EventHandler.h>
 #include <folly/io/async/VirtualEventBase.h>
 
