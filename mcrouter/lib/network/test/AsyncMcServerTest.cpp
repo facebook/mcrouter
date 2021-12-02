@@ -442,7 +442,7 @@ TEST(AsyncMcServer, onAccepted_RejectBasedOnCert) {
     EXPECT_EQ(SecurityMech::TLS_TO_PLAINTEXT, session.securityMech());
     auto peerCert = session.getTransport()->getPeerCertificate();
     EXPECT_TRUE(peerCert);
-    auto x509 = peerCert->getX509();
+    auto x509 = folly::OpenSSLTransportCertificate::tryExtractX509(peerCert);
     EXPECT_TRUE(x509);
 
     // we just trust certs from the "The Cool Company"

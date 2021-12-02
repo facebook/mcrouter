@@ -41,6 +41,27 @@ ConnectionFifo getDebugFifo(
   return ConnectionFifo();
 }
 
+folly::Optional<std::string> getCN(
+    const folly::AsyncTransportCertificate* cert) {
+  auto x509 = folly::OpenSSLTransportCertificate::tryExtractX509(cert);
+  if (!x509) {
+    return folly::none;
+  }
+
+  auto sub = X509_get_subject_name(x509.get());
+  if (!sub) {
+    return folly::none;
+  }
+
+  std::array<char, ub_common_name + 1> cn{};
+  const auto res =
+      X509_NAME_get_text_by_NID(sub, NID_commonName, cn.data(), ub_common_name);
+  if (res <= 0) {
+    return folly::none;
+  }
+
+  return std::string(cn.data(), res);
+}
 } // anonymous namespace
 
 constexpr size_t kIovecVectorSize = 64;
@@ -624,20 +645,11 @@ void McServerSession::handshakeSuc(folly::AsyncSSLSocket* sock) noexcept {
   DestructorGuard dg(this);
 
   negotiatedMech_ = SecurityMech::TLS;
-  auto cert = sock->getPeerCertificate();
-  if (cert) {
-    if (auto x509 = cert->getX509()) {
-      auto sub = X509_get_subject_name(x509.get());
-      if (sub != nullptr) {
-        char cn[ub_common_name + 1];
-        const auto res =
-            X509_NAME_get_text_by_NID(sub, NID_commonName, cn, ub_common_name);
-        if (res > 0) {
-          clientCommonName_.assign(std::string(cn, res));
-        }
-      }
-    }
+  auto maybeCN = getCN(sock->getPeerCertificate());
+  if (maybeCN.hasValue()) {
+    clientCommonName_.assign(*maybeCN);
   }
+
   if (McSSLUtil::negotiatedPlaintextFallback(*sock)) {
     auto fallback = McSSLUtil::moveToPlaintext(*sock);
     CHECK(fallback);
@@ -683,19 +695,9 @@ void McServerSession::fizzHandshakeSuccess(
   DestructorGuard dg(this);
 
   negotiatedMech_ = SecurityMech::TLS13_FIZZ;
-  auto cert = transport->getPeerCertificate();
-  if (cert) {
-    if (auto x509 = cert->getX509()) {
-      auto sub = X509_get_subject_name(x509.get());
-      if (sub != nullptr) {
-        std::array<char, ub_common_name + 1> cn{};
-        const auto res = X509_NAME_get_text_by_NID(
-            sub, NID_commonName, cn.data(), ub_common_name);
-        if (res > 0) {
-          clientCommonName_.assign(std::string(cn.data(), res));
-        }
-      }
-    }
+  auto maybeCN = getCN(transport->getPeerCertificate());
+  if (maybeCN.hasValue()) {
+    clientCommonName_.assign(*maybeCN);
   }
   onAccepted();
 }
