@@ -188,7 +188,8 @@ bool configureServerSSLContext(
 
   // Load client CA list.
   try {
-    sslContext.loadClientCAList(pemCaPath.begin());
+    sslContext.setSupportedClientCertificateAuthorityNamesFromFile(
+        pemCaPath.begin());
   } catch (const std::exception& ex) {
     logCertFailure("client CA list", pemCaPath, ex);
     return false;
