@@ -20,6 +20,35 @@ namespace facebook {
 namespace memcache {
 namespace thrift {
 
+void MemcacheRequestCommon::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readField(beforeLatencyUs_ref(), fieldType);
+        break;
+      }
+      case 2: {
+        reader.readField(afterLatencyUs_ref(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
 void McGetRequest::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructBegin();
   while (true) {
@@ -32,6 +61,10 @@ void McGetRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
 
     switch (fieldId) {
+      case -1: {
+        reader.readField(memcacheRequestCommon, fieldType);
+        break;
+      }
       case 1: {
         reader.readField(key_ref(), fieldType);
         break;
@@ -102,6 +135,10 @@ void McSetRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
 
     switch (fieldId) {
+      case -1: {
+        reader.readField(memcacheRequestCommon, fieldType);
+        break;
+      }
       case 1: {
         reader.readField(key_ref(), fieldType);
         break;
@@ -180,6 +217,10 @@ void McDeleteRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
 
     switch (fieldId) {
+      case -1: {
+        reader.readField(memcacheRequestCommon, fieldType);
+        break;
+      }
       case 1: {
         reader.readField(key_ref(), fieldType);
         break;
@@ -262,6 +303,10 @@ void McLeaseGetRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
 
     switch (fieldId) {
+      case -1: {
+        reader.readField(memcacheRequestCommon, fieldType);
+        break;
+      }
       case 1: {
         reader.readField(key_ref(), fieldType);
         break;
@@ -336,6 +381,10 @@ void McLeaseSetRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
 
     switch (fieldId) {
+      case -1: {
+        reader.readField(memcacheRequestCommon, fieldType);
+        break;
+      }
       case 1: {
         reader.readField(key_ref(), fieldType);
         break;
@@ -410,6 +459,10 @@ void McAddRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
 
     switch (fieldId) {
+      case -1: {
+        reader.readField(memcacheRequestCommon, fieldType);
+        break;
+      }
       case 1: {
         reader.readField(key_ref(), fieldType);
         break;
@@ -480,6 +533,10 @@ void McReplaceRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
 
     switch (fieldId) {
+      case -1: {
+        reader.readField(memcacheRequestCommon, fieldType);
+        break;
+      }
       case 1: {
         reader.readField(key_ref(), fieldType);
         break;
@@ -550,6 +607,10 @@ void McGetsRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
 
     switch (fieldId) {
+      case -1: {
+        reader.readField(memcacheRequestCommon, fieldType);
+        break;
+      }
       case 1: {
         reader.readField(key_ref(), fieldType);
         break;
@@ -624,6 +685,10 @@ void McCasRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
 
     switch (fieldId) {
+      case -1: {
+        reader.readField(memcacheRequestCommon, fieldType);
+        break;
+      }
       case 1: {
         reader.readField(key_ref(), fieldType);
         break;
@@ -698,6 +763,10 @@ void McIncrRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
 
     switch (fieldId) {
+      case -1: {
+        reader.readField(memcacheRequestCommon, fieldType);
+        break;
+      }
       case 1: {
         reader.readField(key_ref(), fieldType);
         break;
@@ -764,6 +833,10 @@ void McDecrRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
 
     switch (fieldId) {
+      case -1: {
+        reader.readField(memcacheRequestCommon, fieldType);
+        break;
+      }
       case 1: {
         reader.readField(key_ref(), fieldType);
         break;
@@ -830,6 +903,10 @@ void McMetagetRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
 
     switch (fieldId) {
+      case -1: {
+        reader.readField(memcacheRequestCommon, fieldType);
+        break;
+      }
       case 1: {
         reader.readField(key_ref(), fieldType);
         break;
@@ -904,6 +981,10 @@ void McAppendRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
 
     switch (fieldId) {
+      case -1: {
+        reader.readField(memcacheRequestCommon, fieldType);
+        break;
+      }
       case 1: {
         reader.readField(key_ref(), fieldType);
         break;
@@ -974,6 +1055,10 @@ void McPrependRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
 
     switch (fieldId) {
+      case -1: {
+        reader.readField(memcacheRequestCommon, fieldType);
+        break;
+      }
       case 1: {
         reader.readField(key_ref(), fieldType);
         break;
@@ -1044,6 +1129,10 @@ void McTouchRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
 
     switch (fieldId) {
+      case -1: {
+        reader.readField(memcacheRequestCommon, fieldType);
+        break;
+      }
       case 1: {
         reader.readField(key_ref(), fieldType);
         break;
@@ -1106,6 +1195,10 @@ void McFlushReRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
 
     switch (fieldId) {
+      case -1: {
+        reader.readField(memcacheRequestCommon, fieldType);
+        break;
+      }
       case 1: {
         reader.readField(key_ref(), fieldType);
         break;
@@ -1164,6 +1257,10 @@ void McFlushAllRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
 
     switch (fieldId) {
+      case -1: {
+        reader.readField(memcacheRequestCommon, fieldType);
+        break;
+      }
       case 1: {
         reader.readField(key_ref(), fieldType);
         break;
@@ -1226,6 +1323,10 @@ void McGatRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
 
     switch (fieldId) {
+      case -1: {
+        reader.readField(memcacheRequestCommon, fieldType);
+        break;
+      }
       case 1: {
         reader.readField(exptime_ref(), fieldType);
         break;
@@ -1296,6 +1397,10 @@ void McGatsRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
 
     switch (fieldId) {
+      case -1: {
+        reader.readField(memcacheRequestCommon, fieldType);
+        break;
+      }
       case 1: {
         reader.readField(exptime_ref(), fieldType);
         break;

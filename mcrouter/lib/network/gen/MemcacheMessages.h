@@ -37,6 +37,8 @@
 namespace facebook {
 namespace memcache {
 
+using MemcacheRequestCommon = facebook::memcache::thrift::MemcacheRequestCommon;
+
 class McGetReply;
 
 class McGetRequest : public carbon::RequestCommon, public facebook::memcache::thrift::McGetRequest {

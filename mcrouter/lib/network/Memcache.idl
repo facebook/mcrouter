@@ -9,7 +9,16 @@ thrift_namespace facebook.memcache.thrift;
 
 import "mcrouter/lib/network/Common.idl"
 
-request McGetRequest {
+struct MemcacheRequestCommon {
+  # Latency to be injected on this request prior to forwarding the request to
+  # a remote host.
+  1: optional uint64_t beforeLatencyUs;
+  # Latency to be injected on this request after receiving a reply for the
+  # request from a remote host
+  2: optional uint64_t afterLatencyUs;
+};
+
+request McGetRequest with 1: MemcacheRequestCommon {
   id: 1;
   name: "get";
   thrift_method: mcGet;
@@ -27,7 +36,7 @@ reply McGetReply {
   5: int16_t appSpecificErrorCode;
 };
 
-request McSetRequest {
+request McSetRequest with 1: MemcacheRequestCommon {
   id: 2;
   name: "set";
   thrift_method: mcSet;
@@ -47,7 +56,7 @@ reply McSetReply {
   5: int16_t appSpecificErrorCode;
 };
 
-request McDeleteRequest {
+request McDeleteRequest with 1: MemcacheRequestCommon {
   id: 3;
   name: "delete";
   thrift_method: mcDelete;
@@ -68,7 +77,7 @@ reply McDeleteReply {
   5: int16_t appSpecificErrorCode;
 };
 
-request McLeaseGetRequest {
+request McLeaseGetRequest with 1: MemcacheRequestCommon {
   id: 4;
   name: "lease-get";
   thrift_method: mcLeaseGet;
@@ -87,7 +96,7 @@ reply McLeaseGetReply {
   6: int16_t appSpecificErrorCode;
 };
 
-request McLeaseSetRequest {
+request McLeaseSetRequest with 1: MemcacheRequestCommon {
   id: 5;
   name: "lease-set";
   thrift_method: mcLeaseSet;
@@ -106,7 +115,7 @@ reply McLeaseSetReply {
   3: int16_t appSpecificErrorCode;
 };
 
-request McAddRequest {
+request McAddRequest with 1: MemcacheRequestCommon {
   id: 6;
   name: "add";
   thrift_method: mcAdd;
@@ -124,7 +133,7 @@ reply McAddReply {
   3: int16_t appSpecificErrorCode;
 };
 
-request McReplaceRequest {
+request McReplaceRequest with 1: MemcacheRequestCommon {
   id: 7;
   name: "replace";
   thrift_method: mcReplace;
@@ -142,7 +151,7 @@ reply McReplaceReply {
   3: int16_t appSpecificErrorCode;
 };
 
-request McGetsRequest {
+request McGetsRequest with 1: MemcacheRequestCommon {
   id: 8;
   name: "gets";
   thrift_method: mcGets;
@@ -161,7 +170,7 @@ reply McGetsReply {
   6: int16_t appSpecificErrorCode;
 };
 
-request McCasRequest {
+request McCasRequest with 1: MemcacheRequestCommon {
   id: 9;
   name: "cas";
   thrift_method: mcCas;
@@ -180,7 +189,7 @@ reply McCasReply {
   3: int16_t appSpecificErrorCode;
 };
 
-request McIncrRequest {
+request McIncrRequest with 1: MemcacheRequestCommon {
   id: 10;
   name: "incr";
   thrift_method: mcIncr;
@@ -197,7 +206,7 @@ reply McIncrReply {
   4: int16_t appSpecificErrorCode;
 };
 
-request McDecrRequest {
+request McDecrRequest with 1: MemcacheRequestCommon {
   id: 11;
   name: "decr";
   thrift_method: mcDecr;
@@ -214,7 +223,7 @@ reply McDecrReply {
   4: int16_t appSpecificErrorCode;
 };
 
-request McMetagetRequest {
+request McMetagetRequest with 1: MemcacheRequestCommon {
   id: 12;
   name: "metaget";
   thrift_method: mcMetaget;
@@ -233,7 +242,7 @@ reply McMetagetReply {
   7: int16_t appSpecificErrorCode;
 };
 
-request McAppendRequest {
+request McAppendRequest with 1: MemcacheRequestCommon {
   id: 14;
   name: "append";
   thrift_method: mcAppend;
@@ -251,7 +260,7 @@ reply McAppendReply {
   3: int16_t appSpecificErrorCode;
 };
 
-request McPrependRequest {
+request McPrependRequest with 1: MemcacheRequestCommon {
   id: 15;
   name: "prepend";
   thrift_method: mcPrepend;
@@ -269,7 +278,7 @@ reply McPrependReply {
   3: int16_t appSpecificErrorCode;
 };
 
-request McTouchRequest {
+request McTouchRequest with 1: MemcacheRequestCommon {
   id: 16;
   name: "touch";
   thrift_method: mcTouch;
@@ -285,7 +294,7 @@ reply McTouchReply {
   3: int16_t appSpecificErrorCode;
 };
 
-request McFlushReRequest {
+request McFlushReRequest with 1: MemcacheRequestCommon {
   id: 21;
   name: "flushre";
   thrift_method: mcFlushRe;
@@ -300,7 +309,7 @@ reply McFlushReReply {
   3: int16_t appSpecificErrorCode;
 };
 
-request McFlushAllRequest {
+request McFlushAllRequest with 1: MemcacheRequestCommon {
   id: 22;
   name: "flushall";
   thrift_method: mcFlushAll;
@@ -316,7 +325,7 @@ reply McFlushAllReply {
   3: int16_t appSpecificErrorCode;
 };
 
-request McGatRequest {
+request McGatRequest with 1: MemcacheRequestCommon {
   id: 23;
   name: "gat";
   thrift_method: mcGat;
@@ -334,7 +343,7 @@ reply McGatReply {
   5: int16_t appSpecificErrorCode;
 };
 
-request McGatsRequest {
+request McGatsRequest with 1: MemcacheRequestCommon {
   id: 24;
   name: "gats";
   thrift_method: mcGats;

@@ -20,7 +20,23 @@ cpp_include "<mcrouter/lib/carbon/CarbonProtocolReader.h>"
 
 namespace cpp2 facebook.memcache.thrift
 
+struct MemcacheRequestCommon {
+  1: optional i64 (cpp.type = "uint64_t") beforeLatencyUs
+  2: optional i64 (cpp.type = "uint64_t") afterLatencyUs
+}(cpp.methods = "
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+  template <class Writer>
+  void serialize(Writer&& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+")
 struct McGetRequest {
+  -1: MemcacheRequestCommon memcacheRequestCommon (cpp.mixin)
   1: carbon.IOBufKey key
   2: i64 (cpp.type = "uint64_t") flags
 }(cpp.methods = "
@@ -58,6 +74,7 @@ struct McGetReply {
 cpp.virtual
 )
 struct McSetRequest {
+  -1: MemcacheRequestCommon memcacheRequestCommon (cpp.mixin)
   1: carbon.IOBufKey key
   2: i32 exptime
   3: i64 (cpp.type = "uint64_t") flags
@@ -97,6 +114,7 @@ struct McSetReply {
 cpp.virtual
 )
 struct McDeleteRequest {
+  -1: MemcacheRequestCommon memcacheRequestCommon (cpp.mixin)
   1: carbon.IOBufKey key
   2: i64 (cpp.type = "uint64_t") flags
   3: i32 exptime
@@ -137,6 +155,7 @@ struct McDeleteReply {
 cpp.virtual
 )
 struct McLeaseGetRequest {
+  -1: MemcacheRequestCommon memcacheRequestCommon (cpp.mixin)
   1: carbon.IOBufKey key
   2: i64 (cpp.type = "uint64_t") flags
 }(cpp.methods = "
@@ -175,6 +194,7 @@ struct McLeaseGetReply {
 cpp.virtual
 )
 struct McLeaseSetRequest {
+  -1: MemcacheRequestCommon memcacheRequestCommon (cpp.mixin)
   1: carbon.IOBufKey key
   2: i32 exptime
   3: i64 (cpp.type = "uint64_t") flags
@@ -213,6 +233,7 @@ struct McLeaseSetReply {
 cpp.virtual
 )
 struct McAddRequest {
+  -1: MemcacheRequestCommon memcacheRequestCommon (cpp.mixin)
   1: carbon.IOBufKey key
   2: i32 exptime
   3: i64 (cpp.type = "uint64_t") flags
@@ -250,6 +271,7 @@ struct McAddReply {
 cpp.virtual
 )
 struct McReplaceRequest {
+  -1: MemcacheRequestCommon memcacheRequestCommon (cpp.mixin)
   1: carbon.IOBufKey key
   2: i32 exptime
   3: i64 (cpp.type = "uint64_t") flags
@@ -287,6 +309,7 @@ struct McReplaceReply {
 cpp.virtual
 )
 struct McGetsRequest {
+  -1: MemcacheRequestCommon memcacheRequestCommon (cpp.mixin)
   1: carbon.IOBufKey key
   2: i64 (cpp.type = "uint64_t") flags
 }(cpp.methods = "
@@ -325,6 +348,7 @@ struct McGetsReply {
 cpp.virtual
 )
 struct McCasRequest {
+  -1: MemcacheRequestCommon memcacheRequestCommon (cpp.mixin)
   1: carbon.IOBufKey key
   2: i32 exptime
   3: i64 (cpp.type = "uint64_t") flags
@@ -363,6 +387,7 @@ struct McCasReply {
 cpp.virtual
 )
 struct McIncrRequest {
+  -1: MemcacheRequestCommon memcacheRequestCommon (cpp.mixin)
   1: carbon.IOBufKey key
   2: i64 delta
 }(cpp.methods = "
@@ -399,6 +424,7 @@ struct McIncrReply {
 cpp.virtual
 )
 struct McDecrRequest {
+  -1: MemcacheRequestCommon memcacheRequestCommon (cpp.mixin)
   1: carbon.IOBufKey key
   2: i64 delta
 }(cpp.methods = "
@@ -435,6 +461,7 @@ struct McDecrReply {
 cpp.virtual
 )
 struct McMetagetRequest {
+  -1: MemcacheRequestCommon memcacheRequestCommon (cpp.mixin)
   1: carbon.IOBufKey key
 }(cpp.methods = "
   template <class V>
@@ -473,6 +500,7 @@ struct McMetagetReply {
 cpp.virtual
 )
 struct McAppendRequest {
+  -1: MemcacheRequestCommon memcacheRequestCommon (cpp.mixin)
   1: carbon.IOBufKey key
   2: i32 exptime
   3: i64 (cpp.type = "uint64_t") flags
@@ -510,6 +538,7 @@ struct McAppendReply {
 cpp.virtual
 )
 struct McPrependRequest {
+  -1: MemcacheRequestCommon memcacheRequestCommon (cpp.mixin)
   1: carbon.IOBufKey key
   2: i32 exptime
   3: i64 (cpp.type = "uint64_t") flags
@@ -547,6 +576,7 @@ struct McPrependReply {
 cpp.virtual
 )
 struct McTouchRequest {
+  -1: MemcacheRequestCommon memcacheRequestCommon (cpp.mixin)
   1: carbon.IOBufKey key
   2: i32 exptime
 }(cpp.methods = "
@@ -582,6 +612,7 @@ struct McTouchReply {
 cpp.virtual
 )
 struct McFlushReRequest {
+  -1: MemcacheRequestCommon memcacheRequestCommon (cpp.mixin)
   1: carbon.IOBufKey key
 }(cpp.methods = "
   template <class V>
@@ -616,6 +647,7 @@ struct McFlushReReply {
 cpp.virtual
 )
 struct McFlushAllRequest {
+  -1: MemcacheRequestCommon memcacheRequestCommon (cpp.mixin)
   1: carbon.IOBufKey key
   2: i32 delay
 }(cpp.methods = "
@@ -651,6 +683,7 @@ struct McFlushAllReply {
 cpp.virtual
 )
 struct McGatRequest {
+  -1: MemcacheRequestCommon memcacheRequestCommon (cpp.mixin)
   1: i32 exptime
   2: carbon.IOBufKey key
 }(cpp.methods = "
@@ -688,6 +721,7 @@ struct McGatReply {
 cpp.virtual
 )
 struct McGatsRequest {
+  -1: MemcacheRequestCommon memcacheRequestCommon (cpp.mixin)
   1: i32 exptime
   2: carbon.IOBufKey key
 }(cpp.methods = "

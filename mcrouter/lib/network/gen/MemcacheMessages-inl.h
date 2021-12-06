@@ -18,8 +18,38 @@ namespace memcache {
 namespace thrift {
 
 template <class Writer>
+void MemcacheRequestCommon::serialize(Writer&& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, beforeLatencyUs_ref());
+  writer.writeField(2 /* field id */, afterLatencyUs_ref());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void MemcacheRequestCommon::visitFields(V&& v) {
+  if (!v.visitField(1, "beforeLatencyUs", this->beforeLatencyUs_ref())) {
+    return;
+  }
+  if (!v.visitField(2, "afterLatencyUs", this->afterLatencyUs_ref())) {
+    return;
+  }
+}
+
+template <class V>
+void MemcacheRequestCommon::visitFields(V&& v) const {
+  if (!v.visitField(1, "beforeLatencyUs", this->beforeLatencyUs_ref())) {
+    return;
+  }
+  if (!v.visitField(2, "afterLatencyUs", this->afterLatencyUs_ref())) {
+    return;
+  }
+}
+
+template <class Writer>
 void McGetRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, memcacheRequestCommon_ref());
   writer.writeField(1 /* field id */, key_ref());
   writer.writeField(2 /* field id */, flags_ref());
   writer.writeFieldStop();
@@ -28,6 +58,12 @@ void McGetRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void McGetRequest::visitFields(V&& v) {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -38,6 +74,12 @@ void McGetRequest::visitFields(V&& v) {
 
 template <class V>
 void McGetRequest::visitFields(V&& v) const {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -99,6 +141,7 @@ void McGetReply::visitFields(V&& v) const {
 template <class Writer>
 void McSetRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, memcacheRequestCommon_ref());
   writer.writeField(1 /* field id */, key_ref());
   writer.writeField(2 /* field id */, exptime_ref());
   writer.writeField(3 /* field id */, flags_ref());
@@ -109,6 +152,12 @@ void McSetRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void McSetRequest::visitFields(V&& v) {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -125,6 +174,12 @@ void McSetRequest::visitFields(V&& v) {
 
 template <class V>
 void McSetRequest::visitFields(V&& v) const {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -192,6 +247,7 @@ void McSetReply::visitFields(V&& v) const {
 template <class Writer>
 void McDeleteRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, memcacheRequestCommon_ref());
   writer.writeField(1 /* field id */, key_ref());
   writer.writeField(2 /* field id */, flags_ref());
   writer.writeField(3 /* field id */, exptime_ref());
@@ -203,6 +259,12 @@ void McDeleteRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void McDeleteRequest::visitFields(V&& v) {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -222,6 +284,12 @@ void McDeleteRequest::visitFields(V&& v) {
 
 template <class V>
 void McDeleteRequest::visitFields(V&& v) const {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -292,6 +360,7 @@ void McDeleteReply::visitFields(V&& v) const {
 template <class Writer>
 void McLeaseGetRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, memcacheRequestCommon_ref());
   writer.writeField(1 /* field id */, key_ref());
   writer.writeField(2 /* field id */, flags_ref());
   writer.writeFieldStop();
@@ -300,6 +369,12 @@ void McLeaseGetRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void McLeaseGetRequest::visitFields(V&& v) {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -310,6 +385,12 @@ void McLeaseGetRequest::visitFields(V&& v) {
 
 template <class V>
 void McLeaseGetRequest::visitFields(V&& v) const {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -378,6 +459,7 @@ void McLeaseGetReply::visitFields(V&& v) const {
 template <class Writer>
 void McLeaseSetRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, memcacheRequestCommon_ref());
   writer.writeField(1 /* field id */, key_ref());
   writer.writeField(2 /* field id */, exptime_ref());
   writer.writeField(3 /* field id */, flags_ref());
@@ -389,6 +471,12 @@ void McLeaseSetRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void McLeaseSetRequest::visitFields(V&& v) {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -408,6 +496,12 @@ void McLeaseSetRequest::visitFields(V&& v) {
 
 template <class V>
 void McLeaseSetRequest::visitFields(V&& v) const {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -464,6 +558,7 @@ void McLeaseSetReply::visitFields(V&& v) const {
 template <class Writer>
 void McAddRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, memcacheRequestCommon_ref());
   writer.writeField(1 /* field id */, key_ref());
   writer.writeField(2 /* field id */, exptime_ref());
   writer.writeField(3 /* field id */, flags_ref());
@@ -474,6 +569,12 @@ void McAddRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void McAddRequest::visitFields(V&& v) {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -490,6 +591,12 @@ void McAddRequest::visitFields(V&& v) {
 
 template <class V>
 void McAddRequest::visitFields(V&& v) const {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -543,6 +650,7 @@ void McAddReply::visitFields(V&& v) const {
 template <class Writer>
 void McReplaceRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, memcacheRequestCommon_ref());
   writer.writeField(1 /* field id */, key_ref());
   writer.writeField(2 /* field id */, exptime_ref());
   writer.writeField(3 /* field id */, flags_ref());
@@ -553,6 +661,12 @@ void McReplaceRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void McReplaceRequest::visitFields(V&& v) {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -569,6 +683,12 @@ void McReplaceRequest::visitFields(V&& v) {
 
 template <class V>
 void McReplaceRequest::visitFields(V&& v) const {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -622,6 +742,7 @@ void McReplaceReply::visitFields(V&& v) const {
 template <class Writer>
 void McGetsRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, memcacheRequestCommon_ref());
   writer.writeField(1 /* field id */, key_ref());
   writer.writeField(2 /* field id */, flags_ref());
   writer.writeFieldStop();
@@ -630,6 +751,12 @@ void McGetsRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void McGetsRequest::visitFields(V&& v) {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -640,6 +767,12 @@ void McGetsRequest::visitFields(V&& v) {
 
 template <class V>
 void McGetsRequest::visitFields(V&& v) const {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -708,6 +841,7 @@ void McGetsReply::visitFields(V&& v) const {
 template <class Writer>
 void McCasRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, memcacheRequestCommon_ref());
   writer.writeField(1 /* field id */, key_ref());
   writer.writeField(2 /* field id */, exptime_ref());
   writer.writeField(3 /* field id */, flags_ref());
@@ -719,6 +853,12 @@ void McCasRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void McCasRequest::visitFields(V&& v) {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -738,6 +878,12 @@ void McCasRequest::visitFields(V&& v) {
 
 template <class V>
 void McCasRequest::visitFields(V&& v) const {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -794,6 +940,7 @@ void McCasReply::visitFields(V&& v) const {
 template <class Writer>
 void McIncrRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, memcacheRequestCommon_ref());
   writer.writeField(1 /* field id */, key_ref());
   writer.writeField(2 /* field id */, delta_ref());
   writer.writeFieldStop();
@@ -802,6 +949,12 @@ void McIncrRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void McIncrRequest::visitFields(V&& v) {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -812,6 +965,12 @@ void McIncrRequest::visitFields(V&& v) {
 
 template <class V>
 void McIncrRequest::visitFields(V&& v) const {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -866,6 +1025,7 @@ void McIncrReply::visitFields(V&& v) const {
 template <class Writer>
 void McDecrRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, memcacheRequestCommon_ref());
   writer.writeField(1 /* field id */, key_ref());
   writer.writeField(2 /* field id */, delta_ref());
   writer.writeFieldStop();
@@ -874,6 +1034,12 @@ void McDecrRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void McDecrRequest::visitFields(V&& v) {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -884,6 +1050,12 @@ void McDecrRequest::visitFields(V&& v) {
 
 template <class V>
 void McDecrRequest::visitFields(V&& v) const {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -938,6 +1110,7 @@ void McDecrReply::visitFields(V&& v) const {
 template <class Writer>
 void McMetagetRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, memcacheRequestCommon_ref());
   writer.writeField(1 /* field id */, key_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
@@ -945,6 +1118,12 @@ void McMetagetRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void McMetagetRequest::visitFields(V&& v) {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -952,6 +1131,12 @@ void McMetagetRequest::visitFields(V&& v) {
 
 template <class V>
 void McMetagetRequest::visitFields(V&& v) const {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -1024,6 +1209,7 @@ void McMetagetReply::visitFields(V&& v) const {
 template <class Writer>
 void McAppendRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, memcacheRequestCommon_ref());
   writer.writeField(1 /* field id */, key_ref());
   writer.writeField(2 /* field id */, exptime_ref());
   writer.writeField(3 /* field id */, flags_ref());
@@ -1034,6 +1220,12 @@ void McAppendRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void McAppendRequest::visitFields(V&& v) {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -1050,6 +1242,12 @@ void McAppendRequest::visitFields(V&& v) {
 
 template <class V>
 void McAppendRequest::visitFields(V&& v) const {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -1103,6 +1301,7 @@ void McAppendReply::visitFields(V&& v) const {
 template <class Writer>
 void McPrependRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, memcacheRequestCommon_ref());
   writer.writeField(1 /* field id */, key_ref());
   writer.writeField(2 /* field id */, exptime_ref());
   writer.writeField(3 /* field id */, flags_ref());
@@ -1113,6 +1312,12 @@ void McPrependRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void McPrependRequest::visitFields(V&& v) {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -1129,6 +1334,12 @@ void McPrependRequest::visitFields(V&& v) {
 
 template <class V>
 void McPrependRequest::visitFields(V&& v) const {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -1182,6 +1393,7 @@ void McPrependReply::visitFields(V&& v) const {
 template <class Writer>
 void McTouchRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, memcacheRequestCommon_ref());
   writer.writeField(1 /* field id */, key_ref());
   writer.writeField(2 /* field id */, exptime_ref());
   writer.writeFieldStop();
@@ -1190,6 +1402,12 @@ void McTouchRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void McTouchRequest::visitFields(V&& v) {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -1200,6 +1418,12 @@ void McTouchRequest::visitFields(V&& v) {
 
 template <class V>
 void McTouchRequest::visitFields(V&& v) const {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -1247,6 +1471,7 @@ void McTouchReply::visitFields(V&& v) const {
 template <class Writer>
 void McFlushReRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, memcacheRequestCommon_ref());
   writer.writeField(1 /* field id */, key_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
@@ -1254,6 +1479,12 @@ void McFlushReRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void McFlushReRequest::visitFields(V&& v) {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -1261,6 +1492,12 @@ void McFlushReRequest::visitFields(V&& v) {
 
 template <class V>
 void McFlushReRequest::visitFields(V&& v) const {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -1305,6 +1542,7 @@ void McFlushReReply::visitFields(V&& v) const {
 template <class Writer>
 void McFlushAllRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, memcacheRequestCommon_ref());
   writer.writeField(1 /* field id */, key_ref());
   writer.writeField(2 /* field id */, delay_ref());
   writer.writeFieldStop();
@@ -1313,6 +1551,12 @@ void McFlushAllRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void McFlushAllRequest::visitFields(V&& v) {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -1323,6 +1567,12 @@ void McFlushAllRequest::visitFields(V&& v) {
 
 template <class V>
 void McFlushAllRequest::visitFields(V&& v) const {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
@@ -1370,6 +1620,7 @@ void McFlushAllReply::visitFields(V&& v) const {
 template <class Writer>
 void McGatRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, memcacheRequestCommon_ref());
   writer.writeField(1 /* field id */, exptime_ref());
   writer.writeField(2 /* field id */, key_ref());
   writer.writeFieldStop();
@@ -1378,6 +1629,12 @@ void McGatRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void McGatRequest::visitFields(V&& v) {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "exptime", *this->exptime_ref())) {
     return;
   }
@@ -1388,6 +1645,12 @@ void McGatRequest::visitFields(V&& v) {
 
 template <class V>
 void McGatRequest::visitFields(V&& v) const {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "exptime", *this->exptime_ref())) {
     return;
   }
@@ -1449,6 +1712,7 @@ void McGatReply::visitFields(V&& v) const {
 template <class Writer>
 void McGatsRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, memcacheRequestCommon_ref());
   writer.writeField(1 /* field id */, exptime_ref());
   writer.writeField(2 /* field id */, key_ref());
   writer.writeFieldStop();
@@ -1457,6 +1721,12 @@ void McGatsRequest::serialize(Writer&& writer) const {
 
 template <class V>
 void McGatsRequest::visitFields(V&& v) {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "exptime", *this->exptime_ref())) {
     return;
   }
@@ -1467,6 +1737,12 @@ void McGatsRequest::visitFields(V&& v) {
 
 template <class V>
 void McGatsRequest::visitFields(V&& v) const {
+  if (v.enterMixin(1, "MemcacheRequestCommon", memcacheRequestCommon)) {
+    this->memcacheRequestCommon.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
   if (!v.visitField(1, "exptime", *this->exptime_ref())) {
     return;
   }
@@ -1537,6 +1813,31 @@ void McGatsReply::visitFields(V&& v) const {
 
 namespace apache {
 namespace thrift {
+template <>
+class Cpp2Ops<facebook::memcache::MemcacheRequestCommon> {
+ public:
+  typedef facebook::memcache::MemcacheRequestCommon Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
 template <>
 class Cpp2Ops<facebook::memcache::McGetRequest> {
  public:
