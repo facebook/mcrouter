@@ -210,6 +210,10 @@ class MCProcess(ProcessBase):
                 return
             except Exception as e:
                 self.disconnect()
+                if not self.is_alive():
+                    print("Process exited unexpectedly!")
+                    self.terminate()  # This will print logs as well
+                    raise
                 retry_count += 1
                 # If we defined a retry count, retry until that's exceeded.
                 # Otherwise, retry forever
