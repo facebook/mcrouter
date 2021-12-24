@@ -238,7 +238,9 @@ class DestinationRoute {
   ReplyT<Request> doRoute(
       const Request& req,
       ProxyRequestContextWithInfo<RouterInfo>& ctx) const {
-    DestinationRequestCtx dctx(nowUs());
+    DestinationRequestCtx dctx(
+        fiber_local<RouterInfo>::getRequestClass(),
+        nowUs());
     folly::Optional<Request> newReq;
     folly::StringPiece strippedRoutingPrefix;
     if (!keepRoutingPrefix_ && !req.key_ref()->routingPrefix().empty()) {

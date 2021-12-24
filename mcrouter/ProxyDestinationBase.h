@@ -67,6 +67,8 @@ class ProxyDestinationBase {
 
     // last time this connection was closed due to inactivity
     uint64_t inactiveConnectionClosedTimestampUs{0};
+    uint64_t failoverRequests{0};
+    uint64_t shadowRequests{0};
   };
 
   ProxyDestinationBase(
