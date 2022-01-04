@@ -229,7 +229,7 @@ class Transport : public folly::DelayedDestruction {
   virtual void setFlushList(FlushList* flushList) = 0;
 
  protected:
-  ~Transport() = default;
+  ~Transport() override = default;
 };
 
 } // namespace memcache
