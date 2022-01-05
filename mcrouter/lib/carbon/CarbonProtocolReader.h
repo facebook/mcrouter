@@ -75,7 +75,7 @@ class CarbonProtocolReader {
   void readField(apache::thrift::field_ref<T&> data, FieldType fieldType) {
     T d;
     readField(d, fieldType);
-    data = d;
+    data = std::move(d);
   }
 
   template <class T>
@@ -154,7 +154,7 @@ class CarbonProtocolReader {
       decltype(std::declval<CarbonProtocolWriter>().writeRaw(
           std::declval<T>()))* = nullptr>
   T readRaw() {
-    T t = T();
+    T t;
     readRawInto(t);
     return t;
   }
