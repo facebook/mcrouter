@@ -19,6 +19,8 @@ std::vector<double> WeightedChHashFuncBase::parseWeights(
     const folly::dynamic& json,
     size_t n) {
   std::vector<double> weights;
+  weights.reserve(n);
+
   checkLogic(
       json.isObject() && json.count("weights"),
       "WeightedChHashFunc: not an object or no weights");
