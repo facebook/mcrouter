@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -70,10 +70,12 @@ void vlogErrorImpl(
     folly::StringPiece category,
     folly::StringPiece msg,
     const std::map<std::string, std::string>& contexts) {
-  bool logPrefixSaved = FLAGS_log_prefix;
-  FLAGS_log_prefix = false;
-  VLOG(1) << createMessage(file, line, service, category, msg, contexts);
-  FLAGS_log_prefix = logPrefixSaved;
+  if (VLOG_IS_ON(1)) {
+    google::LogMessage(
+        __FILE__, google::LogMessage::kNoLogPrefix, google::GLOG_INFO)
+            .stream()
+        << createMessage(file, line, service, category, msg, contexts);
+  }
 }
 
 void logToStdErrorImpl(
@@ -83,10 +85,10 @@ void logToStdErrorImpl(
     folly::StringPiece category,
     folly::StringPiece msg,
     const std::map<std::string, std::string>& contexts) {
-  bool logPrefixSaved = FLAGS_log_prefix;
-  FLAGS_log_prefix = false;
-  LOG(ERROR) << createMessage(file, line, service, category, msg, contexts);
-  FLAGS_log_prefix = logPrefixSaved;
+  google::LogMessage(
+      __FILE__, google::LogMessage::kNoLogPrefix, google::GLOG_ERROR)
+          .stream()
+      << createMessage(file, line, service, category, msg, contexts);
 }
 
 template <class Error>
