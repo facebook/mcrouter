@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -39,7 +39,7 @@ __BEGIN_DECLS
  * This is adapted from the fbomb source, which included the
  * following copyright notice:
  *
- * Copyright (c) 2009- Facebook -- All Rights Reserved
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  */
 
 uint32_t furc_hash(const char* const key, const size_t len, const uint32_t m);
