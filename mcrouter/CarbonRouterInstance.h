@@ -161,6 +161,10 @@ class CarbonRouterInstance
     proxyThreads_ = std::move(ioThreadPool);
   }
 
+  const folly::IOThreadPoolExecutor& getIOThreadPool() const {
+    return *proxyThreads_;
+  }
+
   CarbonRouterInstance(const CarbonRouterInstance&) = delete;
   CarbonRouterInstance& operator=(const CarbonRouterInstance&) = delete;
   CarbonRouterInstance(CarbonRouterInstance&&) noexcept = delete;
