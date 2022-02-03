@@ -131,8 +131,19 @@ class StoreServer(MockServer):
 
 class DeadServer(MockServer):
     """ Simple server that hard fails all the time """
+
+    secondaryPort = None
+
+    def __init__(self, secondaryPort = None):
+        self.secondaryPort = secondaryPort
+        super().__init__()
+
     def runServer(self, client_socket, client_address):
         client_socket.close()
+
+    def get_secondary_port(self):
+        return self.secondaryPort
+
 
 class TkoServer(MockServer):
     def __init__(self, period, phase=0, tmo=0.5, hitcmd='hit'):
