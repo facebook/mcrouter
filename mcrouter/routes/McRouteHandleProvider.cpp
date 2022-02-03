@@ -240,6 +240,7 @@ McRouteHandleProvider<MemcacheRouterInfo>::createSRRoute(
     auto route = makeSRRoute(factory, json, proxy_);
 
     bool needAsynclog = true;
+    bool needAxonlog = false;
     if (json.isObject()) {
       if (auto* jNeedAsynclog = json.get_ptr("asynclog")) {
         needAsynclog = parseBool(*jNeedAsynclog, "asynclog");
@@ -254,7 +255,36 @@ McRouteHandleProvider<MemcacheRouterInfo>::createSRRoute(
           throwLogic(
               "AsynclogRoute over SRRoute: 'service_name' property is missing");
         }
-        return createAsynclogRoute(std::move(route), asynclogName.toString());
+        route = createAsynclogRoute(std::move(route), asynclogName.toString());
+      }
+
+      if (auto* jNeedAxonlog = json.get_ptr("axonlog")) {
+        needAxonlog = parseBool(*jNeedAxonlog, "axonlog");
+      }
+      if (needAxonlog) {
+        if (!makeAxonLogRoute) {
+          throwLogic("AxonLogRoute is not implented for this router");
+        }
+        folly::StringPiece axonlogTier;
+        int64_t axonlogBaseId;
+        if (auto* jAxonLogTier = json.get_ptr("axonlog_tier")) {
+          axonlogTier = parseString(*jAxonLogTier, "axonlog_tier");
+        } else {
+          throwLogic(
+              "AxonLogRoute over SRRoute: 'axonlog_tier' property is missing");
+        }
+        if (auto* jAxonlogBaseId = json.get_ptr("axonlog_base_id")) {
+          axonlogBaseId = parseInt(
+              *jAxonlogBaseId,
+              "axonlog_base_id",
+              1,
+              std::numeric_limits<int64_t>::max());
+        } else {
+          throwLogic(
+              "AxonLogRoute over SRRoute: 'axonlog_base_id' property is missing");
+        }
+        route = makeAxonLogRoute(
+            std::move(route), axonlogTier, axonlogBaseId, proxy_);
       }
       return route;
     }

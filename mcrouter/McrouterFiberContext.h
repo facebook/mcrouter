@@ -16,6 +16,7 @@
 #include <folly/ScopeGuard.h>
 #include <folly/container/F14Map.h>
 #include <folly/fibers/FiberManager.h>
+#include <folly/io/IOBuf.h>
 #include <folly/lang/Aligned.h>
 
 #include "mcrouter/lib/network/ServerLoad.h"
@@ -56,6 +57,7 @@ class RequestClass {
 
 using ExtraDataMap = folly::F14FastMap<std::string, std::string>;
 using ExtraDataCallbackT = std::function<ExtraDataMap()>;
+using AxonLogWriteFn = std::function<bool(uint16_t, folly::IOBuf)>;
 
 template <class RouterInfo>
 class fiber_local {
@@ -78,6 +80,7 @@ class fiber_local {
     int64_t networkTransportTimeUs{0};
     ServerLoad load{0};
     std::vector<ExtraDataCallbackT> extraDataCallbacks;
+    std::optional<AxonLogWriteFn> axonLogWriteFn{std::nullopt};
   };
 
  public:
@@ -316,6 +319,14 @@ class fiber_local {
    */
   static const std::vector<ExtraDataCallbackT>& getExtraDataCallbacks() {
     return folly::fibers::local<McrouterFiberContext>().extraDataCallbacks;
+  }
+
+  static void setAxonLogWriteFn(AxonLogWriteFn fn) {
+    folly::fibers::local<McrouterFiberContext>().axonLogWriteFn = std::move(fn);
+  }
+
+  static std::optional<AxonLogWriteFn>& getAxonLogWriteFn() {
+    return folly::fibers::local<McrouterFiberContext>().axonLogWriteFn;
   }
 };
 

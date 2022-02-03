@@ -562,6 +562,10 @@ void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
         stats,
         asynclog_duration_us_stat,
         pr->stats().asyncLogDurationUs().value());
+    stat_incr(
+        stats,
+        axonlog_duration_us_stat,
+        pr->stats().axonLogDurationUs().value());
     stat_set(
         stats,
         proxy_queue_full_stat,
@@ -586,6 +590,7 @@ void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
         router.opts().num_proxies);
     stat_div(stats, client_queue_notify_period_stat, router.opts().num_proxies);
     stat_div(stats, asynclog_duration_us_stat, router.opts().num_proxies);
+    stat_div(stats, axonlog_duration_us_stat, router.opts().num_proxies);
   }
 
   for (int i = 0; i < num_stats; i++) {

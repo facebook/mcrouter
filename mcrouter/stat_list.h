@@ -145,6 +145,16 @@ STUI(asynclog_requests, 0, 1)
 STUI(asynclog_spool_success, 0, 1)
 // avg time spent for asynclog spooling
 STAT(asynclog_duration_us, stat_double, 0, .dbl = 0.0)
+// number of requests that were appended to axon log
+STUI(axonlog_append_success, 0, 1)
+// number of requests that were failed to append to axon log
+STUI(axonlog_append_fail, 0, 1)
+// number of requests that were committed to axon log
+STUI(axonlog_commit_success, 0, 1)
+// number of requests that were failed to commit to axon log
+STUI(axonlog_commit_fail, 0, 1)
+// avg time spent for axonlog append
+STAT(axonlog_duration_us, stat_double, 0, .dbl = 0.0)
 // Proxy requests that are currently being routed.
 STUI(proxy_reqs_processing, 0, 1)
 // Proxy requests queued up and not routed yet

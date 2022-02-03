@@ -283,6 +283,15 @@ CarbonRouterInstance<RouterInfo>::spinUp() {
       return folly::makeUnexpected(std::string("Failed to create proxy"));
     }
 
+    if (opts_.enable_axonlog && mcrouter::gAxonInitHook &&
+        mcrouter::gAxonInitHookForProxy) {
+      setAxonClientManager(mcrouter::gAxonInitHook());
+      for (size_t i = 0; i < opts_.num_proxies; i++) {
+        proxies_[i]->setAxonWriterMap(
+            mcrouter::gAxonInitHookForProxy(getAxonClientManager<void>()));
+      }
+    }
+
     auto configResult = configure(builder.value());
     if (configResult.hasValue()) {
       configApi_->subscribeToTrackedSources();
@@ -352,6 +361,7 @@ void CarbonRouterInstance<RouterInfo>::shutdownImpl() noexcept {
     proxyThreads_->join();
   }
   proxyThreads_.reset();
+  resetAxonClientManager();
 }
 
 template <class RouterInfo>

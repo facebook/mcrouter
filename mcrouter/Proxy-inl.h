@@ -287,6 +287,8 @@ Proxy<RouterInfo>::~Proxy() {
   if (messageQueue_) {
     messageQueue_->drain();
   }
+
+  resetAxonWriterMap();
 }
 
 template <class RouterInfo>

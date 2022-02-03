@@ -863,6 +863,13 @@ MCROUTER_OPTION_INTEGER(
     "Payloads >= thriftCompressionTreshold will be compressed "
     "iff thriftCompression is enabled.")
 
+MCROUTER_OPTION_TOGGLE(
+    enable_axonlog,
+    false,
+    "enable-axonlog",
+    no_short,
+    "Enable Axon log features")
+
 #ifdef ADDITIONAL_OPTIONS_FILE
 #include ADDITIONAL_OPTIONS_FILE
 #endif

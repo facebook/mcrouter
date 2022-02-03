@@ -228,9 +228,22 @@ class CarbonRouterInstanceBase {
     metadata_ = std::move(metadata);
   }
 
+  template <class T>
+  auto getAxonClientManager() {
+    return std::static_pointer_cast<T>(axonClientManager_);
+  }
+
+  void setAxonClientManager(std::shared_ptr<void> axonClientManager) {
+    axonClientManager_ = std::move(axonClientManager);
+  }
+
  protected:
   void resetMetadata() {
     metadata_.reset();
+  }
+
+  void resetAxonClientManager() {
+    axonClientManager_.reset();
   }
 
   /**
@@ -309,6 +322,8 @@ class CarbonRouterInstanceBase {
    * Opaque metadata used by SRRoute, to avoid circular dependency
    */
   std::shared_ptr<void> metadata_;
+
+  std::shared_ptr<void> axonClientManager_;
 };
 
 } // namespace mcrouter

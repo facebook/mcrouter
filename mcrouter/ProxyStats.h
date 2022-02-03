@@ -60,6 +60,10 @@ class ProxyStats {
     return asyncLogDurationUs_;
   }
 
+  ExponentialSmoothData<64>& axonLogDurationUs() {
+    return axonLogDurationUs_;
+  }
+
   size_t numBinsUsed() const {
     return numBinsUsed_;
   }
@@ -193,6 +197,9 @@ class ProxyStats {
 
   // Time spent for asynclog spooling
   ExponentialSmoothData<64> asyncLogDurationUs_;
+
+  // Time spent for axonlog writing
+  ExponentialSmoothData<64> axonLogDurationUs_;
 
   // we are wasting some memory here to get faster mapping from stat name to
   // statsBin_[] and statsNumWithinWindow_[] entry. i.e., the statsBin_[]
