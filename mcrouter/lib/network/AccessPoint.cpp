@@ -72,13 +72,15 @@ AccessPoint::AccessPoint(
     SecurityMech mech,
     bool compressed,
     bool unixDomainSocket,
-    uint32_t failureDomain)
+    uint32_t failureDomain,
+    std::optional<uint16_t> taskId)
     : port_(port),
       protocol_(protocol),
       securityMech_(mech),
       compressed_(compressed),
       unixDomainSocket_(unixDomainSocket),
-      failureDomain_(failureDomain) {
+      failureDomain_(failureDomain),
+      taskId_(taskId) {
   auto const maybe_ip = folly::IPAddress::tryFromString(host);
   if (maybe_ip.hasError()) {
     // host is not an IP address (e.g. 'localhost')
@@ -96,8 +98,12 @@ AccessPoint::AccessPoint(
     const folly::IPAddress& ip,
     uint16_t port,
     uint32_t failureDomain,
-    mc_protocol_t protocol)
-    : port_(port), protocol_(protocol), failureDomain_(failureDomain) {
+    mc_protocol_t protocol,
+    std::optional<uint16_t> taskId)
+    : port_(port),
+      protocol_(protocol),
+      failureDomain_(failureDomain),
+      taskId_(taskId) {
   host_ = ip.toFullyQualified();
   hash_ = folly::hash_value(ip);
   isV6_ = ip.isV6();
@@ -106,8 +112,12 @@ AccessPoint::AccessPoint(
 AccessPoint::AccessPoint(
     HostOnlyTag,
     const folly::IPAddress& addr,
-    mc_protocol_t protocol)
-    : host_(addr.toFullyQualified()), port_(0), protocol_(protocol) {}
+    mc_protocol_t protocol,
+    std::optional<uint16_t> taskId)
+    : host_(addr.toFullyQualified()),
+      port_(0),
+      protocol_(protocol),
+      taskId_(taskId) {}
 
 std::shared_ptr<AccessPoint> AccessPoint::create(
     folly::StringPiece apString,
@@ -115,7 +125,8 @@ std::shared_ptr<AccessPoint> AccessPoint::create(
     SecurityMech defaultMech,
     uint16_t portOverride,
     bool defaultCompressed,
-    uint32_t failureDomain) {
+    uint32_t failureDomain,
+    std::optional<uint16_t> taskId) {
   if (apString.empty()) {
     return nullptr;
   }
@@ -170,7 +181,8 @@ std::shared_ptr<AccessPoint> AccessPoint::create(
         encr.empty() ? defaultMech : parseSecurityMech(encr),
         comp.empty() ? defaultCompressed : parseCompressed(comp),
         unixDomainSocket,
-        failureDomain);
+        failureDomain,
+        taskId);
   } catch (const std::exception&) {
     return nullptr;
   }

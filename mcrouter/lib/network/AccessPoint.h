@@ -8,6 +8,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include <folly/Range.h>
@@ -52,13 +53,15 @@ struct AccessPoint {
       SecurityMech mech = SecurityMech::NONE,
       bool compressed = false,
       bool unixDomainSocket = false,
-      uint32_t failureDomain = 0);
+      uint32_t failureDomain = 0,
+      std::optional<uint16_t> taskId = std::nullopt);
 
   AccessPoint(
       const folly::IPAddress& addr,
       uint16_t port,
       uint32_t failureDomain = 0,
-      mc_protocol_t protocol = mc_unknown_protocol);
+      mc_protocol_t protocol = mc_unknown_protocol,
+      std::optional<uint16_t> taskId = std::nullopt);
 
   /**
    * Constructor used by SRRoute where AccessPoints need to be
@@ -69,7 +72,8 @@ struct AccessPoint {
   AccessPoint(
       HostOnlyTag,
       const folly::IPAddress& addr,
-      mc_protocol_t protocol = mc_unknown_protocol);
+      mc_protocol_t protocol = mc_unknown_protocol,
+      std::optional<uint16_t> taskId = std::nullopt);
 
   /**
    * @param apString accepts host:port, host:port:protocol and
@@ -90,7 +94,8 @@ struct AccessPoint {
       SecurityMech defaultMech = SecurityMech::NONE,
       uint16_t portOverride = 0,
       bool defaultCompressed = false,
-      uint32_t failureDomain = 0);
+      uint32_t failureDomain = 0,
+      std::optional<uint16_t> taskId = std::nullopt);
 
   const std::string& getHost() const {
     return host_;
@@ -114,6 +119,10 @@ struct AccessPoint {
 
   uint32_t getFailureDomain() const {
     return failureDomain_;
+  }
+
+  std::optional<uint16_t> getTaskId() const {
+    return taskId_;
   }
 
   bool useSsl() const {
@@ -158,6 +167,7 @@ struct AccessPoint {
   bool isV6_{false};
   bool unixDomainSocket_{false};
   uint32_t failureDomain_{0};
+  std::optional<uint16_t> taskId_{std::nullopt};
 };
 
 } // namespace memcache
