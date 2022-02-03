@@ -23,7 +23,8 @@ FOLLY_ATTR_WEAK std::shared_ptr<void> gSRInitHook(
     const std::string& /* threadPrefix */,
     const McrouterOptions&);
 
-FOLLY_ATTR_WEAK std::shared_ptr<void> gAxonInitHook();
+FOLLY_ATTR_WEAK std::shared_ptr<void> gAxonInitHook(
+    const McrouterOptions& opts);
 
 FOLLY_ATTR_WEAK std::shared_ptr<void> gAxonInitHookForProxy(
     std::shared_ptr<void> axonClientManager);

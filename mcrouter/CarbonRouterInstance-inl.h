@@ -285,7 +285,7 @@ CarbonRouterInstance<RouterInfo>::spinUp() {
 
     if (opts_.enable_axonlog && mcrouter::gAxonInitHook &&
         mcrouter::gAxonInitHookForProxy) {
-      setAxonClientManager(mcrouter::gAxonInitHook());
+      setAxonClientManager(mcrouter::gAxonInitHook(opts_));
       for (size_t i = 0; i < opts_.num_proxies; i++) {
         proxies_[i]->setAxonWriterMap(
             mcrouter::gAxonInitHookForProxy(getAxonClientManager<void>()));
