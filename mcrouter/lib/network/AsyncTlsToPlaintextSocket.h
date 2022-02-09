@@ -104,6 +104,7 @@ class AsyncTlsToPlaintextSocket final : public folly::AsyncTransportWrapper {
   }
   bool isDetachable() const override {
     LOG(FATAL) << "Unimplemented";
+    return false;
   }
 
   void setSendTimeout(uint32_t sendTimeoutMs) override {
