@@ -133,8 +133,10 @@ class MCProcess(ProcessBase):
             max_retries=None,
             junk_fill=False,
             pass_fds=(),
-            use_ssl=False):
+            use_ssl=False,
+            versionPing=False):
         self.fd = None
+        self.versionPing = versionPing
         if cmd is not None and '-s' in cmd:
             if os.path.exists(addr):
                 raise Exception('file path {} already exists'.format(addr))
@@ -204,10 +206,11 @@ class MCProcess(ProcessBase):
 
     def ensure_connected(self):
         retry_count = 0
+        # First, try to connect
         while True:
             try:
                 self.connect()
-                return
+                break
             except Exception as e:
                 self.disconnect()
                 if not self.is_alive():
@@ -222,6 +225,19 @@ class MCProcess(ProcessBase):
                     time.sleep(1)
                     continue
                 raise
+
+        # Then, verify Memcache is ready for traffic
+        if self.versionPing:
+            self._sendall("version\r\n")
+            while True:
+                fds = select.select([self.fd], [], [], 5.0)
+                if len(fds[0]) > 0:
+                    line = self._fdreadline()
+                    if line.startswith("VERSION"):
+                        return
+                retry_count += 1
+                if self.max_retries and retry_count >= self.max_retries:
+                    raise RuntimeError("MCProcess connected but did not respond to ping")
 
     def disconnect(self):
         try:
@@ -573,7 +589,8 @@ class MCProcess(ProcessBase):
         line = None
         fds = select.select([self.fd], [], [], 20.0)
         if len(fds[0]) == 0:
-            return None
+            self.terminate()
+            raise RuntimeError("MCProcess failed to return stats")
         while line != 'END':
             line = self._fdreadline().strip()
             a = line.split(None, 1)
