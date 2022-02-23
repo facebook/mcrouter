@@ -126,6 +126,7 @@ MessageHeader buildMsgHeader(
       address.getAddressStr(
           header.peerAddressModifiable(), MessageHeader::kAddressMaxSize);
       header.setPeerPort(address.getPort());
+      header.setLocalPort(address.getPort());
     } else if (address.getFamily() == AF_UNIX) {
       // For unix sockets, just localAddress has the path.
       transport->getLocalAddress(&address);
@@ -138,7 +139,6 @@ MessageHeader buildMsgHeader(
     }
 
     transport->getLocalAddress(&address);
-    header.setLocalPort(address.getPort());
   } catch (const std::exception& e) {
     VLOG(2) << "Error getting host/port to write to debug fifo: " << e.what();
   }
