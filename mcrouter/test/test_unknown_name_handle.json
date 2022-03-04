@@ -2,46 +2,6 @@
   "named_handles": [
     {
       "hash": {
-        "salt": "tst.texas2"
-      },
-      "name" : "C",
-      "pool": {
-        "name" : "C1",
-        "inherit" : "smc:twmemcache.tst.texas",
-        "protocol": "thrift",
-        "security_mech": "tls_to_plain",
-        "port_override": 11322,
-        "port_override_cross_dc": 11322,
-        "qos": {
-          "class": 2,
-          "path": 2
-        },
-        "port_override_within_dc": 11322
-      },
-      "type": "PoolRoute"
-    },
-    {
-      "hash": {
-        "salt": "tst.texas"
-      },
-      "name" : "A",
-      "pool": {
-        "name" : "A1",
-        "inherit" : "smc:twmemcache.tst.texas",
-        "protocol": "thrift",
-        "security_mech": "tls_to_plain",
-        "port_override": 11322,
-        "port_override_cross_dc": 11322,
-        "qos": {
-          "class": 2,
-          "path": 2
-        },
-        "port_override_within_dc": 11322
-      },
-      "type": "PoolRoute"
-    },
-    {
-      "hash": {
         "salt": "gut.texas"
       },
       "name" : "B",
