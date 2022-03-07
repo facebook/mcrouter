@@ -28,11 +28,11 @@ class TestRoutingGroupRoute(McrouterTestCase):
 
     def test_get(self):
         self.assertTrue(self.memcached_get.set('key_get', 'val_get'))
-        self.assertEquals('val_get', self.mcrouter.get('key_get'))
+        self.assertEqual('val_get', self.mcrouter.get('key_get'))
 
     def test_set(self):
         self.assertTrue(self.mcrouter.set('key_set', 'val_set'))
-        self.assertEquals('val_set', self.memcached_set.get('key_set'))
+        self.assertEqual('val_set', self.memcached_set.get('key_set'))
 
     def test_delete(self):
         self.assertTrue(self.memcached_delete.set('key_del', 'val_del'))
@@ -42,7 +42,7 @@ class TestRoutingGroupRoute(McrouterTestCase):
     def test_arith(self):
         self.assertTrue(self.memcached_arithmetic.set('key_arith', '5'))
         self.assertTrue(self.mcrouter.incr('key_arith', 2))
-        self.assertEquals(self.memcached_arithmetic.get('key_arith'), '7')
+        self.assertEqual(self.memcached_arithmetic.get('key_arith'), '7')
 
 
 class TestRoutingGroupRouteIncomplete(McrouterTestCase):
@@ -64,8 +64,8 @@ class TestRoutingGroupRouteIncomplete(McrouterTestCase):
 
     def test_set_get(self):
         self.assertTrue(self.mcrouter.set('key0', 'val0'))
-        self.assertEquals('val0', self.memcached_B.get('key0'))
-        self.assertEquals('val0', self.mcrouter.get('key0'))
+        self.assertEqual('val0', self.memcached_B.get('key0'))
+        self.assertEqual('val0', self.mcrouter.get('key0'))
 
     def test_delete(self):
         self.assertTrue(self.memcached_A.set('key0', 'val0'))
@@ -75,4 +75,4 @@ class TestRoutingGroupRouteIncomplete(McrouterTestCase):
     def test_arith(self):
         self.assertTrue(self.memcached_A.set('key0', '2'))
         self.mcrouter.incr('key0', 1)
-        self.assertEquals('3', self.memcached_A.get('key0'))
+        self.assertEqual('3', self.memcached_A.get('key0'))

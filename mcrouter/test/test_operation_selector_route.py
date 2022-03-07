@@ -23,11 +23,11 @@ class TestOperationSelectorRoute(McrouterTestCase):
 
     def test_get(self):
         self.assertTrue(self.memcached_get.set('key_get', 'val_get'))
-        self.assertEquals('val_get', self.mcrouter.get('key_get'))
+        self.assertEqual('val_get', self.mcrouter.get('key_get'))
 
     def test_set(self):
         self.assertTrue(self.mcrouter.set('key_set', 'val_set'))
-        self.assertEquals('val_set', self.memcached_set.get('key_set'))
+        self.assertEqual('val_set', self.memcached_set.get('key_set'))
 
     def test_delete(self):
         self.assertTrue(self.memcached_delete.set('key_del', 'val_del'))

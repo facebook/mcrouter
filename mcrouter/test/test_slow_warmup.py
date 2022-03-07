@@ -26,8 +26,8 @@ class TestSlowWarmUp(McrouterTestCase):
                 misses += 1
             else:
                 hits += 1
-        self.assertEquals(0, misses)
-        self.assertEquals(10, hits)
+        self.assertEqual(0, misses)
+        self.assertEqual(10, hits)
 
         # Let's make this box cold
         for _ in range(0, 100):
@@ -43,4 +43,4 @@ class TestSlowWarmUp(McrouterTestCase):
                 hits += 1
         self.assertTrue(misses > 0)
         self.assertTrue(hits > 0)
-        self.assertEquals(30, hits + misses)
+        self.assertEqual(30, hits + misses)

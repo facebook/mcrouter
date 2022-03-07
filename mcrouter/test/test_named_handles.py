@@ -20,15 +20,15 @@ class TestLargeObj(McrouterTestCase):
         mcrouter = self.add_mcrouter(self.config_list)
         # NullRoute returns NOT_STORED
         self.assertFalse(mcrouter.set('test', 'value'))
-        self.assertEquals(self.mc1.get('test'), 'value')
-        self.assertEquals(self.mc2.get('test'), 'value')
+        self.assertEqual(self.mc1.get('test'), 'value')
+        self.assertEqual(self.mc2.get('test'), 'value')
 
     def test_named_handles_obj(self):
         mcrouter = self.add_mcrouter(self.config_obj)
         # NullRoute returns NOT_STORED
         self.assertFalse(mcrouter.set('test2', 'value'))
-        self.assertEquals(self.mc1.get('test2'), 'value')
-        self.assertEquals(self.mc2.get('test2'), 'value')
+        self.assertEqual(self.mc1.get('test2'), 'value')
+        self.assertEqual(self.mc2.get('test2'), 'value')
 
 
 class TestUnknownNamedHandle(McrouterTestCase):

@@ -35,8 +35,8 @@ class TestDisableMissOnErrorArithOps(McrouterTestCase):
 
     def test_incr_error(self):
         reply = self.mcrouter.incr(self.key, 1)
-        self.assertEquals(self.error, reply.rstrip())
+        self.assertEqual(self.error, reply.rstrip())
 
     def test_decr_error(self):
         reply = self.mcrouter.decr(self.key, 2)
-        self.assertEquals(self.error, reply.rstrip())
+        self.assertEqual(self.error, reply.rstrip())

@@ -17,4 +17,4 @@ class TestAdditionalFields(McrouterTestCase):
 
     def test_basic(self):
         self.assertTrue(self.mcrouter.set("abc", "def"))
-        self.assertEquals(self.mcrouter.get("abc"), "def")
+        self.assertEqual(self.mcrouter.get("abc"), "def")
