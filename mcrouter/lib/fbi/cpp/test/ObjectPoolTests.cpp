@@ -14,14 +14,14 @@ using namespace facebook::memcache;
 template <typename T>
 struct TestAllocator : public std::allocator<T> {
  public:
-  typedef typename std::allocator<T>::size_type size_type;
-  typedef typename std::allocator<T>::pointer pointer;
-  typedef typename std::allocator<T>::const_pointer const_pointer;
-  typedef typename std::allocator<T>::value_type value_type;
+  using size_type = std::size_t;
+  using pointer = T*;
+  using const_pointer = const T*;
+  using value_type = T;
 
-  pointer allocate(size_type n, const_pointer hint = 0) {
+  pointer allocate(size_type n) {
     TestAllocator<T>::nAllocations++;
-    return std::allocator<T>::allocate(n, hint);
+    return std::allocator<T>::allocate(n);
   }
 
   void deallocate(pointer p, size_type n) {
