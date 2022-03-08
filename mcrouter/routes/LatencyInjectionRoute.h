@@ -59,6 +59,13 @@ class LatencyInjectionRoute {
    * @param rh              The child route handle
    * @param beforeLatency   Latency to inject before sending the request to "rh"
    * @param afterLatency    Latency to inject after sending the request to "rh"
+   * @param totalLatency    The target  total latency in "rh", if set, pad
+   * latency to this value if the total latency after injection is still under
+   * this value
+   * @param requestLatency  Boolean, inject latency before/after sending the
+   * request using values from the request payload
+   * @param maxRequestLatency  if not 0, the max amount of "requestLatency"
+   * that is allowed to inject before or after sending the request
    */
   LatencyInjectionRoute(
       RouteHandlePtr rh,
@@ -163,6 +170,8 @@ class LatencyInjectionRoute {
 
     auto& reqToSend = newReq ? *newReq : req;
     auto reply = rh_->route(reqToSend);
+    // Optimize out the logic that is related to request level latency injection
+    // for protocols that does not support it
     if constexpr (HasAfterLatencyUsTrait<Request>::value) {
       if (afterReqLatency.count() > 0 &&
           ((maxRequestLatency_.count() == 0) ||
