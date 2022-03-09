@@ -241,6 +241,7 @@ McRouteHandleProvider<MemcacheRouterInfo>::createSRRoute(
 
     bool needAsynclog = true;
     bool needAxonlog = false;
+    bool needAxonAllDelete = false;
     if (json.isObject()) {
       if (auto* jNeedAsynclog = json.get_ptr("asynclog")) {
         needAsynclog = parseBool(*jNeedAsynclog, "asynclog");
@@ -261,9 +262,12 @@ McRouteHandleProvider<MemcacheRouterInfo>::createSRRoute(
       if (auto* jNeedAxonlog = json.get_ptr("axonlog")) {
         needAxonlog = parseBool(*jNeedAxonlog, "axonlog");
       }
+      if (auto* jNeedAxonAllDelete = json.get_ptr("all_delete")) {
+        needAxonAllDelete = parseBool(*jNeedAxonAllDelete, "all_delete");
+      }
       if (needAxonlog) {
         if (!makeAxonLogRoute) {
-          throwLogic("AxonLogRoute is not implented for this router");
+          throwLogic("AxonLogRoute is not implemented for this router");
         }
         folly::StringPiece axonlogTier;
         int64_t axonlogBaseId;
@@ -284,7 +288,11 @@ McRouteHandleProvider<MemcacheRouterInfo>::createSRRoute(
               "AxonLogRoute over SRRoute: 'axonlog_base_id' property is missing");
         }
         route = makeAxonLogRoute(
-            std::move(route), axonlogTier, axonlogBaseId, proxy_);
+            std::move(route),
+            axonlogTier,
+            axonlogBaseId,
+            proxy_,
+            needAxonAllDelete);
       }
       return route;
     }

@@ -77,6 +77,7 @@ class fiber_local {
     int64_t accumulatedAfterReqInjectedLatencyUs{0};
     RequestClass requestClass;
     folly::StringPiece asynclogName;
+    bool isAxonAllDeleteEnabled{false};
     int64_t networkTransportTimeUs{0};
     ServerLoad load{0};
     std::vector<ExtraDataCallbackT> extraDataCallbacks;
@@ -327,6 +328,22 @@ class fiber_local {
 
   static std::optional<AxonLogWriteFn>& getAxonLogWriteFn() {
     return folly::fibers::local<McrouterFiberContext>().axonLogWriteFn;
+  }
+
+  /**
+   * Update isAxonAllDeleteEnabled for current fiber (thread, if we're not on
+   * fiber)
+   */
+  static void setIsAxonAllDeleteEnabled(bool isAxonAllDeleteEnabled) {
+    folly::fibers::local<McrouterFiberContext>().isAxonAllDeleteEnabled =
+        isAxonAllDeleteEnabled;
+  }
+
+  /**
+   * Get isAxonAllDeleteEnabled of current fiber (thread, if we're not on fiber)
+   */
+  static bool getIsAxonAllDeleteEnabled() {
+    return folly::fibers::local<McrouterFiberContext>().isAxonAllDeleteEnabled;
   }
 };
 
