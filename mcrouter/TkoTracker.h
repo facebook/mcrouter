@@ -30,24 +30,24 @@ class TkoTrackerMap;
 
 class PoolTkoTracker {
  public:
-  PoolTkoTracker(
-      uint32_t failOpenEnterNumSoftTkos,
-      uint32_t failOpenExitNumSoftTkos)
-      : failOpenEnterNumSoftTkos_(failOpenEnterNumSoftTkos),
-        failOpenExitNumSoftTkos_(failOpenExitNumSoftTkos) {}
+  PoolTkoTracker(uint32_t failOpenEnterNumTkos, uint32_t failOpenExitNumTkos)
+      : failOpenEnterNumTkos_(failOpenEnterNumTkos),
+        failOpenExitNumTkos_(failOpenExitNumTkos) {}
 
-  // returns pair with first one is true if number of numDestinationsSoftTko_
-  //        is incremented, false, otherwise. And the second one is true
-  //        if the fail open state has entered, false otherwise
+  /**
+   * Returns pair with first one is true if number of numDestinationsTko_
+   * is incremented, false, otherwise. And the second one is true
+   * if the fail open state has entered, false otherwise
+   */
   std::pair<bool, bool> incNumDestinationsSoftTko();
 
   bool decNumDestinationsSoftTko();
 
  private:
-  const uint32_t failOpenEnterNumSoftTkos_;
-  const uint32_t failOpenExitNumSoftTkos_;
+  const uint32_t failOpenEnterNumTkos_;
+  const uint32_t failOpenExitNumTkos_;
   bool failOpen_{false};
-  std::atomic<size_t> numDestinationsSoftTko_{0};
+  std::atomic<size_t> numDestinationsTko_{0};
 };
 
 /**
@@ -239,8 +239,8 @@ class TkoTrackerMap {
 
   std::shared_ptr<PoolTkoTracker> createPoolTkoTracker(
       std::string poolName,
-      uint32_t numEnterSoftTkos,
-      uint32_t numExitSoftTkos);
+      uint32_t numEnterTkos,
+      uint32_t numExitTkos);
   /**
    * Creates/updates TkoTracker for `pdstn` and updates `pdstn->tko` pointer.
    */

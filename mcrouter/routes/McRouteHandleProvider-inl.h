@@ -216,38 +216,38 @@ McRouteHandleProvider<RouterInfo>::makePool(
     auto jservers = json.get_ptr("servers");
     checkLogic(jservers, "servers not found");
     checkLogic(jservers->isArray(), "servers is not an array");
-    uint32_t numSoftTkoThresholdUpper = 0;
-    uint32_t numSoftTkoThresholdLower = 0;
+    uint32_t numTkoThresholdUpper = 0;
+    uint32_t numTkoThresholdLower = 0;
     std::shared_ptr<PoolTkoTracker> poolTkoTracker;
     if (auto poolTkoTrackerConfig = json.get_ptr("tko_tracker")) {
-      if (auto jNumSoftTkoThresholdUpper =
-              poolTkoTrackerConfig->get_ptr("num_soft_tko_threshold_upper")) {
-        numSoftTkoThresholdUpper = jNumSoftTkoThresholdUpper->asInt();
+      if (auto jNumTkoThresholdUpper =
+              poolTkoTrackerConfig->get_ptr("num_tko_threshold_upper")) {
+        numTkoThresholdUpper = jNumTkoThresholdUpper->asInt();
       } else if (
-          auto jPercentSoftTkoThresholdUpper = poolTkoTrackerConfig->get_ptr(
-              "percent_soft_tko_threshold_upper")) {
-        numSoftTkoThresholdUpper =
-            (jPercentSoftTkoThresholdUpper->asInt() * jservers->size()) / 100;
+          auto jPercentTkoThresholdUpper =
+              poolTkoTrackerConfig->get_ptr("percent_tko_threshold_upper")) {
+        numTkoThresholdUpper =
+            (jPercentTkoThresholdUpper->asInt() * jservers->size()) / 100;
       }
 
-      if (auto jNumSoftTkoThresholdLower =
-              poolTkoTrackerConfig->get_ptr("num_soft_tko_threshold_lower")) {
-        numSoftTkoThresholdLower = jNumSoftTkoThresholdLower->asInt();
+      if (auto jNumTkoThresholdLower =
+              poolTkoTrackerConfig->get_ptr("num_tko_threshold_lower")) {
+        numTkoThresholdLower = jNumTkoThresholdLower->asInt();
       } else if (
-          auto jPercentSoftTkoThresholdLower = poolTkoTrackerConfig->get_ptr(
-              "percent_soft_tko_threshold_lower")) {
-        numSoftTkoThresholdLower =
-            (jPercentSoftTkoThresholdLower->asInt() * jservers->size()) / 100;
+          auto jPercentTkoThresholdLower =
+              poolTkoTrackerConfig->get_ptr("percent_tko_threshold_lower")) {
+        numTkoThresholdLower =
+            (jPercentTkoThresholdLower->asInt() * jservers->size()) / 100;
       }
       checkLogic(
-          numSoftTkoThresholdUpper > 0 && numSoftTkoThresholdLower > 0,
-          "Both soft tko threshold upper and lower must be configured");
+          numTkoThresholdUpper > 0 && numTkoThresholdLower > 0,
+          "Both tko threshold upper and lower must be configured");
       checkLogic(
-          numSoftTkoThresholdLower <= numSoftTkoThresholdUpper,
-          "soft tko upper threshold must be greater than or equal to lower"
+          numTkoThresholdLower <= numTkoThresholdUpper,
+          "tko upper threshold must be greater than or equal to lower"
           " threshold");
       poolTkoTracker = proxy_.destinationMap()->createPoolTkoTracker(
-          name, numSoftTkoThresholdUpper, numSoftTkoThresholdLower);
+          name, numTkoThresholdUpper, numTkoThresholdLower);
     }
 
     // servers

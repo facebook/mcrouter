@@ -25,28 +25,28 @@ std::pair<bool, bool> PoolTkoTracker::incNumDestinationsSoftTko() {
   if (failOpen_) {
     return {failOpen_, false};
   }
-  auto& curVal = numDestinationsSoftTko_;
+  auto& curVal = numDestinationsTko_;
   size_t oldVal = curVal;
   bool stateChanged = false;
   do {
-    if (oldVal == failOpenEnterNumSoftTkos_) {
+    if (oldVal == failOpenEnterNumTkos_) {
       failOpen_ = true;
       stateChanged = true;
       break;
     }
-  } while (!numDestinationsSoftTko_.compare_exchange_weak(oldVal, oldVal + 1));
+  } while (!numDestinationsTko_.compare_exchange_weak(oldVal, oldVal + 1));
   return {failOpen_, stateChanged};
 }
 
 bool PoolTkoTracker::decNumDestinationsSoftTko() {
-  auto& curVal = numDestinationsSoftTko_;
+  auto& curVal = numDestinationsTko_;
   size_t oldVal = curVal;
   do {
-    if (failOpen_ && oldVal == failOpenExitNumSoftTkos_) {
+    if (failOpen_ && oldVal == failOpenExitNumTkos_) {
       failOpen_ = false;
       return true;
     }
-  } while (!numDestinationsSoftTko_.compare_exchange_weak(oldVal, oldVal - 1));
+  } while (!numDestinationsTko_.compare_exchange_weak(oldVal, oldVal - 1));
   return false;
 }
 
@@ -237,15 +237,15 @@ TkoTracker::~TkoTracker() {
 
 std::shared_ptr<PoolTkoTracker> TkoTrackerMap::createPoolTkoTracker(
     std::string poolName,
-    uint32_t numEnterSoftTkos,
-    uint32_t numExitSoftTkos) {
+    uint32_t numEnterTkos,
+    uint32_t numExitTkos) {
   std::shared_ptr<PoolTkoTracker> poolTracker;
 
   std::lock_guard<std::mutex> lock(mx_);
   auto it = poolTrackers_.find(poolName);
   if (it == poolTrackers_.end() ||
       (poolTracker = it->second.lock()) == nullptr) {
-    poolTracker.reset(new PoolTkoTracker(numEnterSoftTkos, numExitSoftTkos));
+    poolTracker.reset(new PoolTkoTracker(numEnterTkos, numExitTkos));
     auto trackerIt = poolTrackers_.emplace(poolName, poolTracker);
     if (!trackerIt.second) {
       trackerIt.first->second = poolTracker;

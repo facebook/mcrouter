@@ -76,8 +76,8 @@ class ProxyDestinationMap {
 
   std::shared_ptr<PoolTkoTracker> createPoolTkoTracker(
       std::string poolName,
-      uint32_t numEnterSoftTkos,
-      uint32_t numExitSoftTkos);
+      uint32_t numTkosFailOpenEnter,
+      uint32_t numTkosFailOpenExit);
 
   /**
    * Remove destination from both active and inactive lists

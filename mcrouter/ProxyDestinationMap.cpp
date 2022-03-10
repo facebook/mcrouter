@@ -48,10 +48,10 @@ bool ProxyDestinationMap::DestEq::operator()(
 
 std::shared_ptr<PoolTkoTracker> ProxyDestinationMap::createPoolTkoTracker(
     std::string poolName,
-    uint32_t numEnterSoftTkos,
-    uint32_t numExitSoftTkos) {
+    uint32_t numTkosFailOpenEnter,
+    uint32_t numTkosFailOpenExit) {
   return proxy_->router().tkoTrackerMap().createPoolTkoTracker(
-      poolName, numEnterSoftTkos, numExitSoftTkos);
+      poolName, numTkosFailOpenEnter, numTkosFailOpenExit);
 }
 
 struct ProxyDestinationMap::StateList {
