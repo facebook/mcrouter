@@ -22,6 +22,7 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/network/AccessPoint.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
+#include "mcrouter/lib/network/FailureDomains.h"
 #include "mcrouter/lib/network/SecurityOptions.h"
 #include "mcrouter/lib/network/ThriftTransport.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
@@ -287,9 +288,13 @@ McRouteHandleProvider<RouterInfo>::makePool(
         continue;
       }
 
-      uint32_t failureDomain =
-          jfailureDomains ? jfailureDomains->at(i).asInt() : 0;
-      if (failureDomain == 0) {
+      uint32_t failureDomain = 0;
+
+      if (jfailureDomains && jfailureDomains->at(i).isInt()) {
+        failureDomain = jfailureDomains->at(i).asInt();
+      } else if (jfailureDomains && jfailureDomains->at(i).isString()) {
+        failureDomain = getFailureDomainHash(jfailureDomains->at(i).asString());
+      } else {
         proxy_.stats().increment(dest_with_no_failure_domain_count_stat);
       }
 

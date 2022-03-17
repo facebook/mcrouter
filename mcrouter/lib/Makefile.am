@@ -174,6 +174,8 @@ libmcrouter_a_SOURCES = \
   network/ConnectionTracker.h \
   network/CpuController.cpp \
   network/CpuController.h \
+  network/FailureDomains.cpp \
+  network/FailureDomains.h \
   network/gen/CommonMessages-inl.h \
   network/gen/CommonMessages.cpp \
   network/gen/CommonMessagesThrift.cpp \
