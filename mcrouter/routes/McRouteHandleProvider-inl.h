@@ -438,9 +438,12 @@ McRouteHandleProvider<RouterInfo>::createDestinationRoute(
 template <class RouterInfo>
 std::shared_ptr<typename RouterInfo::RouteHandleIf>
 McRouteHandleProvider<RouterInfo>::createSRRoute(
-    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& /* unused */,
-    const folly::dynamic& /* unused */) {
-  throwLogic("SRRoute is not implemented for this router");
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json) {
+  checkLogic(makeSRRoute, "SRRoute is not implemented for this router");
+  checkLogic(json.isObject(), "SRRoute should be object");
+  auto route = makeSRRoute(factory, json, proxy_);
+  return route;
 }
 
 template <>

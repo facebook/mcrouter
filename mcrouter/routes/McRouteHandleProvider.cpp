@@ -225,6 +225,49 @@ McrouterRouteHandlePtr makeWarmUpRoute(
     McRouteHandleFactory& factory,
     const folly::dynamic& json);
 
+MemcacheRouterInfo::RouteHandlePtr wrapAxonLogRoute(
+    MemcacheRouterInfo::RouteHandlePtr route,
+    ProxyBase& proxy,
+    const folly::dynamic& json) {
+  bool needAxonlog = false;
+  bool needAxonAllDelete = false;
+  if (auto* jNeedAxonlog = json.get_ptr("axonlog")) {
+    needAxonlog = parseBool(*jNeedAxonlog, "axonlog");
+  }
+  if (auto* jNeedAxonAllDelete = json.get_ptr("all_delete")) {
+    needAxonAllDelete = parseBool(*jNeedAxonAllDelete, "all_delete");
+  }
+
+  if (needAxonlog) {
+    if (!makeAxonLogRoute) {
+      throwLogic("AxonLogRoute is not implemented for this router");
+    }
+    folly::StringPiece axonlogTier;
+    int64_t axonlogBaseId;
+    if (auto* jAxonLogTier = json.get_ptr("axonlog_tier")) {
+      axonlogTier = parseString(*jAxonLogTier, "axonlog_tier");
+    } else {
+      throwLogic(
+          "AxonLogRoute over {}: 'axonlog_tier' property is missing",
+          route->routeName());
+    }
+    if (auto* jAxonlogBaseId = json.get_ptr("axonlog_base_id")) {
+      axonlogBaseId = parseInt(
+          *jAxonlogBaseId,
+          "axonlog_base_id",
+          1,
+          std::numeric_limits<int64_t>::max());
+    } else {
+      throwLogic(
+          "AxonLogRoute over {}: 'axonlog_base_id' property is missing",
+          route->routeName());
+    }
+    return makeAxonLogRoute(
+        std::move(route), axonlogTier, axonlogBaseId, proxy, needAxonAllDelete);
+  }
+  return route;
+}
+
 template <>
 std::unique_ptr<ExtraRouteHandleProviderIf<MemcacheRouterInfo>>
 McRouteHandleProvider<MemcacheRouterInfo>::buildExtraProvider() {
@@ -236,69 +279,29 @@ std::shared_ptr<MemcacheRouterInfo::RouteHandleIf>
 McRouteHandleProvider<MemcacheRouterInfo>::createSRRoute(
     RouteHandleFactory<MemcacheRouterInfo::RouteHandleIf>& factory,
     const folly::dynamic& json) {
-  if (makeSRRoute) {
-    auto route = makeSRRoute(factory, json, proxy_);
+  checkLogic(makeSRRoute, "SRRoute is not implemented for this router");
+  checkLogic(json.isObject(), "SRRoute should be object");
+  auto route = makeSRRoute(factory, json, proxy_);
 
-    bool needAsynclog = true;
-    bool needAxonlog = false;
-    bool needAxonAllDelete = false;
-    if (json.isObject()) {
-      if (auto* jNeedAsynclog = json.get_ptr("asynclog")) {
-        needAsynclog = parseBool(*jNeedAsynclog, "asynclog");
-      }
-      if (needAsynclog) {
-        folly::StringPiece asynclogName;
-        if (auto jAsynclogName = json.get_ptr("asynclog_name")) {
-          asynclogName = parseString(*jAsynclogName, "asynclog_name");
-        } else if (auto jServiceName = json.get_ptr("service_name")) {
-          asynclogName = parseString(*jServiceName, "service_name");
-        } else {
-          throwLogic(
-              "AsynclogRoute over SRRoute: 'service_name' property is missing");
-        }
-        route = createAsynclogRoute(std::move(route), asynclogName.toString());
-      }
-
-      if (auto* jNeedAxonlog = json.get_ptr("axonlog")) {
-        needAxonlog = parseBool(*jNeedAxonlog, "axonlog");
-      }
-      if (auto* jNeedAxonAllDelete = json.get_ptr("all_delete")) {
-        needAxonAllDelete = parseBool(*jNeedAxonAllDelete, "all_delete");
-      }
-      if (needAxonlog) {
-        if (!makeAxonLogRoute) {
-          throwLogic("AxonLogRoute is not implemented for this router");
-        }
-        folly::StringPiece axonlogTier;
-        int64_t axonlogBaseId;
-        if (auto* jAxonLogTier = json.get_ptr("axonlog_tier")) {
-          axonlogTier = parseString(*jAxonLogTier, "axonlog_tier");
-        } else {
-          throwLogic(
-              "AxonLogRoute over SRRoute: 'axonlog_tier' property is missing");
-        }
-        if (auto* jAxonlogBaseId = json.get_ptr("axonlog_base_id")) {
-          axonlogBaseId = parseInt(
-              *jAxonlogBaseId,
-              "axonlog_base_id",
-              1,
-              std::numeric_limits<int64_t>::max());
-        } else {
-          throwLogic(
-              "AxonLogRoute over SRRoute: 'axonlog_base_id' property is missing");
-        }
-        route = makeAxonLogRoute(
-            std::move(route),
-            axonlogTier,
-            axonlogBaseId,
-            proxy_,
-            needAxonAllDelete);
-      }
-      return route;
+  bool needAsynclog = true;
+  if (auto* jNeedAsynclog = json.get_ptr("asynclog")) {
+    needAsynclog = parseBool(*jNeedAsynclog, "asynclog");
+  }
+  if (needAsynclog) {
+    folly::StringPiece asynclogName;
+    if (auto jAsynclogName = json.get_ptr("asynclog_name")) {
+      asynclogName = parseString(*jAsynclogName, "asynclog_name");
+    } else if (auto jServiceName = json.get_ptr("service_name")) {
+      asynclogName = parseString(*jServiceName, "service_name");
+    } else {
+      throwLogic(
+          "AsynclogRoute over SRRoute: 'service_name' property is missing");
     }
+    route = createAsynclogRoute(std::move(route), asynclogName.toString());
   }
 
-  throwLogic("SRRoute is not implemented for this router");
+  route = wrapAxonLogRoute(std::move(route), proxy_, json);
+  return route;
 }
 
 template <>
