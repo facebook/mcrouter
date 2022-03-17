@@ -444,6 +444,17 @@ McRouteHandleProvider<RouterInfo>::createSRRoute(
   checkLogic(json.isObject(), "SRRoute should be object");
   auto route = makeSRRoute(factory, json, proxy_);
 
+  if (auto maxOutstandingJson = json.get_ptr("max_outstanding")) {
+    auto v = parseInt(
+        *maxOutstandingJson,
+        "max_outstanding",
+        0,
+        std::numeric_limits<int64_t>::max());
+    if (v) {
+      route = makeOutstandingLimitRoute<RouterInfo>(std::move(route), v);
+    }
+  }
+
   if (!(proxy_.router().opts().disable_shard_split_route)) {
     if (auto jsplits = json.get_ptr("shard_splits")) {
       route = makeShardSplitRoute<RouterInfo>(
