@@ -98,6 +98,14 @@ class RouteHandlesCommandDispatcher {
                         : "unknown") +
               '\n');
           return false;
+        },
+        [&tree, &level](
+            const SRHost& srHost, const RequestClass& /* unused */) {
+          tree.append(
+              std::string(level + 1, ' ') +
+              "host: " + folly::to<std::string>(srHost.getIp()) +
+              " port:" + folly::to<std::string>(srHost.getPort()) + '\n');
+          return false;
         });
     if (!key.empty() && key[0] == '{' && key[key.size() - 1] == '}') {
       carbon::convertFromFollyDynamic(folly::parseJson(key), request);

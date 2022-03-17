@@ -226,6 +226,14 @@ CarbonRouterClient<RouterInfo>::findAffinitizedProxyIdx(
           return true;
         }
         return false;
+      },
+      [&hash](const SRHost& srHost, const RequestClass& requestClass) {
+        if (!requestClass.is(RequestClass::kShadow) &&
+            srHost.getTwTaskId().has_value()) {
+          hash = srHost.getTwTaskId().value();
+          return true;
+        }
+        return false;
       });
 
   // Traverse the routing tree.
