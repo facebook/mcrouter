@@ -443,6 +443,13 @@ McRouteHandleProvider<RouterInfo>::createSRRoute(
   checkLogic(makeSRRoute, "SRRoute is not implemented for this router");
   checkLogic(json.isObject(), "SRRoute should be object");
   auto route = makeSRRoute(factory, json, proxy_);
+
+  if (!(proxy_.router().opts().disable_shard_split_route)) {
+    if (auto jsplits = json.get_ptr("shard_splits")) {
+      route = makeShardSplitRoute<RouterInfo>(
+          std::move(route), ShardSplitter(*jsplits));
+    }
+  }
   return route;
 }
 

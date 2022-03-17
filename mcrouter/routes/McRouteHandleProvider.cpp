@@ -283,6 +283,13 @@ McRouteHandleProvider<MemcacheRouterInfo>::createSRRoute(
   checkLogic(json.isObject(), "SRRoute should be object");
   auto route = makeSRRoute(factory, json, proxy_);
 
+  if (!(proxy_.router().opts().disable_shard_split_route)) {
+    if (auto jsplits = json.get_ptr("shard_splits")) {
+      route = makeShardSplitRoute<MemcacheRouterInfo>(
+          std::move(route), ShardSplitter(*jsplits));
+    }
+  }
+
   bool needAsynclog = true;
   if (auto* jNeedAsynclog = json.get_ptr("asynclog")) {
     needAsynclog = parseBool(*jNeedAsynclog, "asynclog");
