@@ -325,7 +325,8 @@ std::shared_ptr<SSLContext> createClientSSLContext(
     // used by OpenSSL prohibits weak ciphers from being sent in the
     // ClientHello.
     cVec.insert(cVec.begin(), "ECDHE-RSA-NULL-SHA");
-    context->setAdvertisedNextProtocols({kMcSecurityTlsToPlaintextProto.str()});
+    context->setAdvertisedNextProtocols(
+        {kMcSecurityTlsToPlaintextProto.str(), "rs"});
 #if FOLLY_OPENSSL_IS_110
     SSL_CTX_set_security_level(context->getSSLCtx(), 0);
 #endif
