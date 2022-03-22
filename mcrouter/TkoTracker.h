@@ -35,13 +35,16 @@ class PoolTkoTracker {
         failOpenExitNumTkos_(failOpenExitNumTkos) {}
 
   /**
-   * Returns pair with first one is true if number of numDestinationsTko_
-   * is incremented, false, otherwise. And the second one is true
-   * if the fail open state has entered, false otherwise
+   * Returns pair with first one is true if we are in the fail-open state,
+   * false, otherwise. The second bool is true
+   * if we enter the fail-open state after this call.
    */
-  std::pair<bool, bool> incNumDestinationsSoftTko();
+  std::pair<bool, bool> incNumDestinationsTko();
 
-  bool decNumDestinationsSoftTko();
+  /**
+   * Return true if we exited fail-open state after this call.
+   */
+  bool decNumDestinationsTko();
 
  private:
   const uint32_t failOpenEnterNumTkos_;
@@ -209,6 +212,16 @@ class TkoTracker {
    * Increment the global counter of current soft TKOs.
    */
   bool incrementSoftTkoCount(ProxyDestinationBase* pdstn);
+
+  /**
+   * Decrement the global counter of current hard TKOs
+   */
+  void decrementHardTkoCount(ProxyDestinationBase* pdstn);
+
+  /**
+   * Increment the global counter of current hard TKOs.
+   */
+  bool incrementHardTkoCount(ProxyDestinationBase* pdstn);
 
   /* Modifies the value of sumFailures atomically. Fails only
      in the case that another proxy takes responsibility, in which case all

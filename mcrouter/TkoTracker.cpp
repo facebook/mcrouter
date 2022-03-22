@@ -21,7 +21,7 @@ namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
-std::pair<bool, bool> PoolTkoTracker::incNumDestinationsSoftTko() {
+std::pair<bool, bool> PoolTkoTracker::incNumDestinationsTko() {
   if (failOpen_) {
     return {failOpen_, false};
   }
@@ -38,7 +38,7 @@ std::pair<bool, bool> PoolTkoTracker::incNumDestinationsSoftTko() {
   return {failOpen_, stateChanged};
 }
 
-bool PoolTkoTracker::decNumDestinationsSoftTko() {
+bool PoolTkoTracker::decNumDestinationsTko() {
   auto& curVal = numDestinationsTko_;
   size_t oldVal = curVal;
   do {
@@ -69,18 +69,16 @@ const TkoCounters& TkoTracker::globalTkos() const {
 
 bool TkoTracker::incrementSoftTkoCount(ProxyDestinationBase* pdstn) {
   if (poolTracker_) {
-    auto result = poolTracker_->incNumDestinationsSoftTko();
+    auto result = poolTracker_->incNumDestinationsTko();
     if (result.first) {
       if (result.second) {
-        pdstn->updateSoftTkoStats(GlobalSoftTkoUpdateType::ENTER_FAIL_OPEN);
+        pdstn->updateTkoStats(GlobalTkoUpdateType::ENTER_FAIL_OPEN);
       }
       return false;
     }
+    pdstn->updateTkoStats(GlobalTkoUpdateType::INC_SOFT_TKOS);
   }
   trackerMap_.globalTkos_.softTkos++;
-  if (poolTracker_) {
-    pdstn->updateSoftTkoStats(GlobalSoftTkoUpdateType::INC_SOFT_TKOS);
-  }
   return true;
 }
 
@@ -90,10 +88,38 @@ void TkoTracker::decrementSoftTkoCount(ProxyDestinationBase* pdstn) {
   (void)oldSoftTkos;
   assert(oldSoftTkos != 0);
   if (poolTracker_) {
-    if (poolTracker_->decNumDestinationsSoftTko()) {
-      pdstn->updateSoftTkoStats(GlobalSoftTkoUpdateType::EXIT_FAIL_OPEN);
+    if (poolTracker_->decNumDestinationsTko()) {
+      pdstn->updateTkoStats(GlobalTkoUpdateType::EXIT_FAIL_OPEN);
     }
-    pdstn->updateSoftTkoStats(GlobalSoftTkoUpdateType::DEC_SOFT_TKOS);
+    pdstn->updateTkoStats(GlobalTkoUpdateType::DEC_SOFT_TKOS);
+  }
+}
+
+bool TkoTracker::incrementHardTkoCount(ProxyDestinationBase* pdstn) {
+  if (poolTracker_) {
+    auto result = poolTracker_->incNumDestinationsTko();
+    if (result.first) {
+      if (result.second) {
+        pdstn->updateTkoStats(GlobalTkoUpdateType::ENTER_FAIL_OPEN);
+      }
+      return false;
+    }
+    pdstn->updateTkoStats(GlobalTkoUpdateType::INC_HARD_TKOS);
+  }
+  trackerMap_.globalTkos_.hardTkos++;
+  return true;
+}
+
+void TkoTracker::decrementHardTkoCount(ProxyDestinationBase* pdstn) {
+  // Decrement the counter and ensure we haven't gone below 0
+  size_t oldHardTkos = trackerMap_.globalTkos_.hardTkos.fetch_sub(1);
+  (void)oldHardTkos;
+  assert(oldHardTkos != 0);
+  if (poolTracker_) {
+    if (poolTracker_->decNumDestinationsTko()) {
+      pdstn->updateTkoStats(GlobalTkoUpdateType::EXIT_FAIL_OPEN);
+    }
+    pdstn->updateTkoStats(GlobalTkoUpdateType::DEC_HARD_TKOS);
   }
 }
 
@@ -174,19 +200,38 @@ bool TkoTracker::recordHardFailure(
   if (isResponsible(pdstn)) {
     // convert to hard failure
     sumFailures_ |= 1;
-    decrementSoftTkoCount(pdstn);
     ++trackerMap_.globalTkos_.hardTkos;
+    --trackerMap_.globalTkos_.softTkos;
+    if (poolTracker_) {
+      pdstn->updateTkoStats(GlobalTkoUpdateType::DEC_SOFT_TKOS);
+      pdstn->updateTkoStats(GlobalTkoUpdateType::INC_HARD_TKOS);
+    }
     // We've already been marked responsible
     return false;
   }
 
-  // If the call below succeeds we marked the box TKO and took responsibility.
-  bool success = setSumFailures(reinterpret_cast<uintptr_t>(pdstn) | 1);
-  if (success) {
-    ++trackerMap_.globalTkos_.hardTkos;
-    tkoReason_.store(result, std::memory_order_relaxed);
-  }
-  return success;
+  uintptr_t curSumFailures = sumFailures_;
+  uintptr_t hardTkoVal = reinterpret_cast<uintptr_t>(pdstn) | 1;
+  bool incremented = false;
+  do {
+    // we incremented the hard tko count in the prev iteration,
+    // we need to decrement it back:
+    if (incremented) {
+      decrementHardTkoCount(pdstn);
+    }
+    // the pdstn is tko but we are not responsible:
+    if (curSumFailures > tkoThreshold_) {
+      return false;
+    }
+    // if we are in fail-open, the call returns false:
+    if (!incrementHardTkoCount(pdstn)) {
+      return false;
+    }
+    incremented = true;
+  } while (!sumFailures_.compare_exchange_weak(curSumFailures, hardTkoVal));
+
+  tkoReason_.store(result, std::memory_order_relaxed);
+  return true;
 }
 
 bool TkoTracker::isResponsible(ProxyDestinationBase* pdstn) const {
@@ -202,7 +247,7 @@ bool TkoTracker::recordSuccess(ProxyDestinationBase* pdstn) {
       decrementSoftTkoCount(pdstn);
     }
     if (isHardTko()) {
-      --trackerMap_.globalTkos_.hardTkos;
+      decrementHardTkoCount(pdstn);
     }
     sumFailures_ = 0;
     consecutiveFailureCount_ = 0;

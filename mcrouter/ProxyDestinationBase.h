@@ -34,11 +34,13 @@ namespace mcrouter {
 class ProxyBase;
 class TkoTracker;
 
-enum class GlobalSoftTkoUpdateType : uint32_t {
+enum class GlobalTkoUpdateType : uint32_t {
   INC_SOFT_TKOS = 1,
   DEC_SOFT_TKOS = 2,
-  ENTER_FAIL_OPEN = 4,
-  EXIT_FAIL_OPEN = 8,
+  INC_HARD_TKOS = 4,
+  DEC_HARD_TKOS = 8,
+  ENTER_FAIL_OPEN = 16,
+  EXIT_FAIL_OPEN = 32,
 };
 
 class ProxyDestinationBase {
@@ -127,9 +129,9 @@ class ProxyDestinationBase {
   }
 
   /**
-   * Update some global soft tko related stats based on type
+   * Update some global tko related stats based on type
    */
-  void updateSoftTkoStats(GlobalSoftTkoUpdateType type);
+  void updateTkoStats(GlobalTkoUpdateType type);
 
   void setPoolStatsIndex(int32_t index);
   void updatePoolStatConnections(bool connected);

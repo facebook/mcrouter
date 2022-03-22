@@ -182,3 +182,31 @@ class TkoServer(MockServer):
                 client_socket.send(msg.encode())
             elif cmd.startswith('get'):
                 client_socket.send(b'END\r\n')
+
+class HardTkoRestoringServer(MockServer):
+    def __init__(self, tko_responses = 1):
+        """Simple server stub that initially responds to requests
+        with server error, causing it to hard tko.
+        The number of times to respond as error = tkoResponses.
+        """
+        super().__init__()
+        self.tko_responses = tko_responses
+
+    def runServer(self, client_socket, client_address):
+        f = client_socket.makefile(mode='rb')
+        cmd = f.readline().decode()
+        f.close()
+        if not cmd:
+            return
+        if cmd == 'version\r\n':
+            client_socket.send(b'VERSION TKO_SERVER\r\n')
+            return
+        if self.tko_responses > 0:
+            self.tko_responses -= 1
+            error_message = 'hard_tko\r\n' # the content doesn't really matter
+            if type(error_message) is not bytes:
+                error_message = error_message.encode()
+            client_socket.send(error_message)
+            return
+        if cmd.startswith('get'):
+            client_socket.send(b'END\r\n')
