@@ -22,6 +22,7 @@ void MemcacheRequestCommon::serialize(Writer&& writer) const {
   writer.writeStructBegin();
   writer.writeField(1 /* field id */, beforeLatencyUs_ref());
   writer.writeField(2 /* field id */, afterLatencyUs_ref());
+  writer.writeField(3 /* field id */, bucketId_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
@@ -34,6 +35,9 @@ void MemcacheRequestCommon::visitFields(V&& v) {
   if (!v.visitField(2, "afterLatencyUs", this->afterLatencyUs_ref())) {
     return;
   }
+  if (!v.visitField(3, "bucketId", this->bucketId_ref())) {
+    return;
+  }
 }
 
 template <class V>
@@ -42,6 +46,9 @@ void MemcacheRequestCommon::visitFields(V&& v) const {
     return;
   }
   if (!v.visitField(2, "afterLatencyUs", this->afterLatencyUs_ref())) {
+    return;
+  }
+  if (!v.visitField(3, "bucketId", this->bucketId_ref())) {
     return;
   }
 }

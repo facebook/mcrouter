@@ -16,6 +16,9 @@ struct MemcacheRequestCommon {
   # Latency to be injected on this request after receiving a reply for the
   # request from a remote host
   2: optional uint64_t afterLatencyUs;
+  # when the request is routed using bucketized routing
+  # this bucketId serves as the routing key
+  3: optional std::string bucketId;
 };
 
 request McGetRequest with 1: MemcacheRequestCommon {

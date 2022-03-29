@@ -40,6 +40,10 @@ void MemcacheRequestCommon::deserialize(carbon::CarbonProtocolReader& reader) {
         reader.readField(afterLatencyUs_ref(), fieldType);
         break;
       }
+      case 3: {
+        reader.readField(bucketId_ref(), fieldType);
+        break;
+      }
       default: {
         reader.skip(fieldType);
         break;

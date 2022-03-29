@@ -23,6 +23,7 @@ namespace cpp2 facebook.memcache.thrift
 struct MemcacheRequestCommon {
   1: optional i64 (cpp.type = "uint64_t") beforeLatencyUs
   2: optional i64 (cpp.type = "uint64_t") afterLatencyUs
+  3: optional string bucketId
 }(cpp.methods = "
   template <class V>
   void visitFields(V&& v);
