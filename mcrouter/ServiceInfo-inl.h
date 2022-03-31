@@ -102,7 +102,7 @@ class RouteHandlesCommandDispatcher {
         [&tree, &level](
             const SRHost& srHost, const RequestClass& /* unused */) {
           tree.append(
-              std::string(level + 1, ' ') +
+              std::string(level, ' ') +
               "host: " + folly::to<std::string>(srHost.getIp()) +
               " port:" + folly::to<std::string>(srHost.getPort()) + '\n');
           return false;
