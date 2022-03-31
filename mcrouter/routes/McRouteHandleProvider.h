@@ -38,10 +38,11 @@ FOLLY_ATTR_WEAK MemcacheRouterInfo::RouteHandlePtr makeSRRoute(
 
 FOLLY_ATTR_WEAK MemcacheRouterInfo::RouteHandlePtr makeAxonLogRoute(
     MemcacheRouterInfo::RouteHandlePtr rh,
+    ProxyBase& proxy,
     folly::StringPiece axonlogTier,
     int64_t baseId,
-    ProxyBase& proxy,
-    bool isAxonAllDeleteEnabled);
+    bool isAxonAllDeleteEnabled,
+    int64_t maxTask);
 
 template <class RouteHandleIf>
 class ExtraRouteHandleProviderIf;

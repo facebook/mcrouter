@@ -59,6 +59,12 @@ using ExtraDataMap = folly::F14FastMap<std::string, std::string>;
 using ExtraDataCallbackT = std::function<ExtraDataMap()>;
 using AxonLogWriteFn = std::function<bool(uint16_t, folly::IOBuf)>;
 
+struct AxonContext {
+  AxonLogWriteFn logWriteFn;
+  int64_t maxTask{-1};
+  bool isAxonAllDeleteEnabled{false};
+};
+
 template <class RouterInfo>
 class fiber_local {
  private:
@@ -77,11 +83,10 @@ class fiber_local {
     int64_t accumulatedAfterReqInjectedLatencyUs{0};
     RequestClass requestClass;
     folly::StringPiece asynclogName;
-    bool isAxonAllDeleteEnabled{false};
     int64_t networkTransportTimeUs{0};
     ServerLoad load{0};
     std::vector<ExtraDataCallbackT> extraDataCallbacks;
-    std::optional<AxonLogWriteFn> axonLogWriteFn{std::nullopt};
+    std::shared_ptr<AxonContext> axonCtx{nullptr};
   };
 
  public:
@@ -322,28 +327,19 @@ class fiber_local {
     return folly::fibers::local<McrouterFiberContext>().extraDataCallbacks;
   }
 
-  static void setAxonLogWriteFn(AxonLogWriteFn fn) {
-    folly::fibers::local<McrouterFiberContext>().axonLogWriteFn = std::move(fn);
-  }
-
-  static std::optional<AxonLogWriteFn>& getAxonLogWriteFn() {
-    return folly::fibers::local<McrouterFiberContext>().axonLogWriteFn;
-  }
-
   /**
-   * Update isAxonAllDeleteEnabled for current fiber (thread, if we're not on
+   * Update AxonContext for current fiber (thread, if we're not on
    * fiber)
    */
-  static void setIsAxonAllDeleteEnabled(bool isAxonAllDeleteEnabled) {
-    folly::fibers::local<McrouterFiberContext>().isAxonAllDeleteEnabled =
-        isAxonAllDeleteEnabled;
+  static void setAxonCtx(std::shared_ptr<AxonContext> ctx) {
+    folly::fibers::local<McrouterFiberContext>().axonCtx = std::move(ctx);
   }
 
   /**
-   * Get isAxonAllDeleteEnabled of current fiber (thread, if we're not on fiber)
+   * Get AxonContext of current fiber (thread, if we're not on fiber)
    */
-  static bool getIsAxonAllDeleteEnabled() {
-    return folly::fibers::local<McrouterFiberContext>().isAxonAllDeleteEnabled;
+  static std::shared_ptr<AxonContext>& getAxonCtx() {
+    return folly::fibers::local<McrouterFiberContext>().axonCtx;
   }
 };
 
