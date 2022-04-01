@@ -30,6 +30,7 @@
 #include "mcrouter/routes/LatestRoute.h"
 #include "mcrouter/routes/LoadBalancerRoute.h"
 #include "mcrouter/routes/LoggingRoute.h"
+#include "mcrouter/routes/McBucketRoute.h"
 #include "mcrouter/routes/McExtraRouteHandleProvider.h"
 #include "mcrouter/routes/MigrateRouteFactory.h"
 #include "mcrouter/routes/MissFailoverRoute.h"
@@ -279,6 +280,19 @@ MemcacheRouterInfo::RouteHandlePtr wrapAxonLogRoute(
   return route;
 }
 
+MemcacheRouterInfo::RouteHandlePtr bucketize(
+    MemcacheRouterInfo::RouteHandlePtr route,
+    const folly::dynamic& json) {
+  bool bucketize = false;
+  if (auto* jNeedBucketization = json.get_ptr("bucketize")) {
+    bucketize = parseBool(*jNeedBucketization, "bucketize");
+  }
+  if (bucketize) {
+    return makeMcBucketRoute(std::move(route), json);
+  }
+  return route;
+}
+
 template <>
 std::unique_ptr<ExtraRouteHandleProviderIf<MemcacheRouterInfo>>
 McRouteHandleProvider<MemcacheRouterInfo>::buildExtraProvider() {
@@ -331,6 +345,7 @@ McRouteHandleProvider<MemcacheRouterInfo>::createSRRoute(
   }
 
   route = wrapAxonLogRoute(std::move(route), proxy_, json);
+  route = bucketize(std::move(route), json);
   return route;
 }
 

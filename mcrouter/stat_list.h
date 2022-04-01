@@ -164,6 +164,8 @@ STUI(proxy_reqs_waiting, 0, 1)
 STUI(proxy_queue_full, 0, 1)
 // All MPMC queues between clients and proxies are full
 STUI(proxy_queues_all_full, 0, 1)
+// number of request routed using McBucketRoute
+STUI(bucketized_routing, 0, 1)
 STAT(client_queue_notify_period, stat_double, 0, .dbl = 0.0)
 #undef GROUP
 #define GROUP ods_stats | detailed_stats
