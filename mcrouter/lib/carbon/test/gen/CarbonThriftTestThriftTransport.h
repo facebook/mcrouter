@@ -48,6 +48,7 @@ folly::Try<apache::thrift::RpcResponseComplete<carbon::test::CustomReply>> sendS
     rpcOptions.setWriteHeader(
         std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, request.getCryptoAuthToken().value());
   }
+  rpcOptions.setContextPropMask(0);
 
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
@@ -83,6 +84,7 @@ folly::Try<apache::thrift::RpcResponseComplete<carbon::test::DummyThriftReply>> 
     rpcOptions.setWriteHeader(
         std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, request.getCryptoAuthToken().value());
   }
+  rpcOptions.setContextPropMask(0);
 
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
@@ -118,6 +120,7 @@ folly::Try<apache::thrift::RpcResponseComplete<carbon::test::ThriftTestReply>> s
     rpcOptions.setWriteHeader(
         std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, request.getCryptoAuthToken().value());
   }
+  rpcOptions.setContextPropMask(0);
 
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
@@ -153,6 +156,7 @@ folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> sendSyncHelper(
     rpcOptions.setWriteHeader(
         std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, request.getCryptoAuthToken().value());
   }
+  rpcOptions.setContextPropMask(0);
 
 #ifndef LIBMC_FBTRACE_DISABLE
   traceRequest(request, rpcOptions);
