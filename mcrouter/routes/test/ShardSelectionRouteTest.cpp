@@ -54,7 +54,9 @@ class BasicShardSelector {
 
 class BasicShardFilter {
  public:
-  explicit BasicShardFilter(std::vector<std::vector<size_t>> /* unused */) {}
+  explicit BasicShardFilter(
+      std::vector<std::vector<size_t>> /* unused */,
+      double /* unused */) {}
 
   std::string type() const {
     return "basic-shard-filter";

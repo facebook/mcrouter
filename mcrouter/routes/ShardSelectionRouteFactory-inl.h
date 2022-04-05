@@ -386,9 +386,21 @@ typename RouterInfo::RouteHandlePtr createShardFilterRoute(
         shard.size() == 1 || shard.size() == 2,
         "Each shard_range member must be of format (int, int)");
   }
+  double weightThreshold = 0.0;
+  if (auto jWeightThreshold = json.get_ptr("weight_threshold")) {
+    checkLogic(
+        jWeightThreshold->isDouble(), "weight_threshold is not a double");
+    checkLogic(
+        jWeightThreshold->asDouble() <= 1.0,
+        "weight_threshold must be within [0.0, 1.0]");
+    checkLogic(
+        jWeightThreshold->asDouble() >= 0.0,
+        "weight_threshold must be within [0.0, 1.0]");
+    weightThreshold = jWeightThreshold->asDouble();
+  }
   // Check that shard ranges do not overlap
   checkLogic(!intervalOverlap(allShards), "Ranges must not overlap");
-  auto selector = ShardFilter(std::move(allShards));
+  auto selector = ShardFilter(std::move(allShards), weightThreshold);
 
   typename RouterInfo::RouteHandlePtr outOfRangeDestination = nullptr;
   if (auto outOfRangeJson = json.get_ptr("out_of_range")) {
