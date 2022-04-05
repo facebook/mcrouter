@@ -15,6 +15,7 @@ namespace mcrouter {
 
 RuntimeVarsData::RuntimeVarsData(folly::StringPiece json) {
   auto data = parseJsonString(json);
+  configData_.reserve(data.size());
   for (const auto& jiter : data.items()) {
     auto& key = jiter.first;
     auto& value = jiter.second;
