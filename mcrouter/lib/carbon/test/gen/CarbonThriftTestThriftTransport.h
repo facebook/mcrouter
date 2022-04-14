@@ -180,7 +180,7 @@ folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> sendSyncHelper(
 }
 
  protected:
-  std::optional<carbon::test::thrift::CarbonThriftTestAsyncClient> thriftClient_;
+  std::optional<apache::thrift::Client<carbon::test::thrift::CarbonThriftTest>> thriftClient_;
 };
 
 template <>
@@ -283,9 +283,9 @@ class ThriftTransport<carbon::test::CarbonThriftTestRouterInfo> : public ThriftT
  private:
   FlushList* flushList_{nullptr};
 
-  carbon::test::thrift::CarbonThriftTestAsyncClient* getThriftClient() {
+  apache::thrift::Client<carbon::test::thrift::CarbonThriftTest>* getThriftClient() {
     if (UNLIKELY(!thriftClient_)) {
-      thriftClient_ = createThriftClient<carbon::test::thrift::CarbonThriftTestAsyncClient>();
+      thriftClient_ = createThriftClient<apache::thrift::Client<carbon::test::thrift::CarbonThriftTest>>();
       if (flushList_) {
         auto* channel = static_cast<apache::thrift::RocketClientChannel*>(
             thriftClient_->getChannel());

@@ -34,7 +34,7 @@ class VirtualEventBase;
 namespace facebook {
 namespace memcache {
 namespace thrift {
-class MemcacheAsyncClient;
+class Memcache;
 } // namespace thrift
 } // namespace memcache
 } // namespace facebook
@@ -89,7 +89,7 @@ using MemcacheRoutableRequests = carbon::List<
 struct MemcacheRouterInfo {
   using RouteHandleIf = MemcacheRouteHandleIf;
   using RouteHandlePtr = std::shared_ptr<RouteHandleIf>;
-  using RouteHandleAsyncClient = thrift::MemcacheAsyncClient;
+  using RouteHandleAsyncClient = apache::thrift::Client<facebook::memcache::thrift::Memcache>;
 
   static constexpr const char* name = "Memcache";
 

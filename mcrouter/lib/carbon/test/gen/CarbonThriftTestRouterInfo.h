@@ -33,7 +33,7 @@ class VirtualEventBase;
 namespace carbon {
 namespace test {
 namespace thrift {
-class CarbonThriftTestAsyncClient;
+class CarbonThriftTest;
 } // namespace thrift
 } // namespace test
 } // namespace carbon
@@ -64,7 +64,7 @@ using CarbonThriftTestRoutableRequests = carbon::List<
 struct CarbonThriftTestRouterInfo {
   using RouteHandleIf = CarbonThriftTestRouteHandleIf;
   using RouteHandlePtr = std::shared_ptr<RouteHandleIf>;
-  using RouteHandleAsyncClient = thrift::CarbonThriftTestAsyncClient;
+  using RouteHandleAsyncClient = apache::thrift::Client<carbon::test::thrift::CarbonThriftTest>;
 
   static constexpr const char* name = "CarbonThriftTest";
 

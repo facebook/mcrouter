@@ -147,7 +147,7 @@ folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> sendSyncHelper(
 }
 
  protected:
-  std::optional<hellogoodbye::thrift::HelloGoodbyeAsyncClient> thriftClient_;
+  std::optional<apache::thrift::Client<hellogoodbye::thrift::HelloGoodbye>> thriftClient_;
 };
 
 template <>
@@ -254,9 +254,9 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
  private:
   FlushList* flushList_{nullptr};
 
-  hellogoodbye::thrift::HelloGoodbyeAsyncClient* getThriftClient() {
+  apache::thrift::Client<hellogoodbye::thrift::HelloGoodbye>* getThriftClient() {
     if (UNLIKELY(!thriftClient_)) {
-      thriftClient_ = createThriftClient<hellogoodbye::thrift::HelloGoodbyeAsyncClient>();
+      thriftClient_ = createThriftClient<apache::thrift::Client<hellogoodbye::thrift::HelloGoodbye>>();
       if (flushList_) {
         auto* channel = static_cast<apache::thrift::RocketClientChannel*>(
             thriftClient_->getChannel());

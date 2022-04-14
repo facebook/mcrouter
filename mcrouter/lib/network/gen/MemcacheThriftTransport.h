@@ -756,7 +756,7 @@ folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> sendSyncHelper(
 }
 
  protected:
-  std::optional<thrift::MemcacheAsyncClient> thriftClient_;
+  std::optional<apache::thrift::Client<facebook::memcache::thrift::Memcache>> thriftClient_;
 };
 
 template <>
@@ -1163,9 +1163,9 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
  private:
   FlushList* flushList_{nullptr};
 
-  thrift::MemcacheAsyncClient* getThriftClient() {
+  apache::thrift::Client<facebook::memcache::thrift::Memcache>* getThriftClient() {
     if (UNLIKELY(!thriftClient_)) {
-      thriftClient_ = createThriftClient<thrift::MemcacheAsyncClient>();
+      thriftClient_ = createThriftClient<apache::thrift::Client<facebook::memcache::thrift::Memcache>>();
       if (flushList_) {
         auto* channel = static_cast<apache::thrift::RocketClientChannel*>(
             thriftClient_->getChannel());

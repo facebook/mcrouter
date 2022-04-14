@@ -32,7 +32,7 @@ class VirtualEventBase;
 } // namespace folly
 namespace hellogoodbye {
 namespace thrift {
-class HelloGoodbyeAsyncClient;
+class HelloGoodbye;
 } // namespace thrift
 } // namespace hellogoodbye
 
@@ -60,7 +60,7 @@ using HelloGoodbyeRoutableRequests = carbon::List<
 struct HelloGoodbyeRouterInfo {
   using RouteHandleIf = HelloGoodbyeRouteHandleIf;
   using RouteHandlePtr = std::shared_ptr<RouteHandleIf>;
-  using RouteHandleAsyncClient = thrift::HelloGoodbyeAsyncClient;
+  using RouteHandleAsyncClient = apache::thrift::Client<hellogoodbye::thrift::HelloGoodbye>;
 
   static constexpr const char* name = "HelloGoodbye";
 
