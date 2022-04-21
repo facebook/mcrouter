@@ -14,13 +14,13 @@ PKG_DIR="$1"
 INSTALL_DIR="$2"
 INSTALL_AUX_DIR="$3"
 shift $#
-MAKE_ARGS="$@"
+MAKE_ARGS="$@ -j$(nproc)"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 mkdir -p "$PKG_DIR" "$INSTALL_DIR" 
 
 if [ -n "$3" ]; then
-	mkdir -p "$INSTALL_AUX_DIR"
+  mkdir -p "$INSTALL_AUX_DIR"
 fi
 
 cd "$PKG_DIR" || die "cd fail"
