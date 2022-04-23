@@ -33,8 +33,43 @@ namespace mcrouter {
 using TestHandle = TestHandleImpl<MemcacheRouteHandleIf>;
 using RouteHandle = McrouterRouteHandle<KeySplitRoute>;
 
-class KeySplitRouteTest : public RouteHandleTestBase<HelloGoodbyeRouterInfo> {
+class KeySplitRouteTest : public RouteHandleTestBase<MemcacheRouterInfo> {
  public:
+  std::shared_ptr<MemcacheRouteHandleIf>
+  getKeySplitRoute(size_t numReplicas, bool allSync, bool firstHit = false) {
+    const auto jsonStr = fmt::format(
+        R"TMPL(
+{{
+  "replicas": {numReplicas},
+  "all_sync": {allSync},
+  "first_hit": {firstHit},
+  "destination": "NullRoute"
+}}
+)TMPL",
+        fmt::arg(
+            "numReplicas",
+            folly::to<std::string>(static_cast<int>(numReplicas))),
+        fmt::arg("allSync", allSync),
+        fmt::arg("firstHit", firstHit));
+    return makeKeySplitRoute(rhFactory_, folly::parseJson(jsonStr));
+  }
+
+  // This helper function is used to test `makeKeySplitRoute` and that the route
+  // can be initialized
+  bool testCreateForNumReplicas(
+      size_t numReplicas,
+      bool allSync,
+      bool firstHit = false) {
+    if (testRh_)
+      testRh_.reset();
+    try {
+      testRh_ = getKeySplitRoute(numReplicas, allSync, firstHit);
+    } catch (const std::exception&) {
+      return false;
+    }
+    return true;
+  }
+
   void testCreate(size_t numReplicas, bool allSync, bool firstHit = false) {
     // set up the route handle under test
     if (th_)
@@ -118,6 +153,7 @@ class KeySplitRouteTest : public RouteHandleTestBase<HelloGoodbyeRouterInfo> {
   static constexpr folly::StringPiece kMemcacheReplicaSeparator = "::";
   std::shared_ptr<TestHandle> th_;
   std::shared_ptr<RouteHandle> rh_;
+  std::shared_ptr<MemcacheRouteHandleIf> testRh_;
   folly::StringPiece key_;
   size_t replicas_;
   bool allSync_;
@@ -293,17 +329,13 @@ TEST_F(KeySplitRouteTest, FirstHitWorstCaseTest) {
 }
 
 TEST_F(KeySplitRouteTest, TestReplicaCounts) {
-  testCreate(2, false);
-  testCreate(999, false);
-  testCreate(1000, false);
+  EXPECT_TRUE(testCreateForNumReplicas(2, false));
+  EXPECT_TRUE(testCreateForNumReplicas(999, false));
+  EXPECT_TRUE(testCreateForNumReplicas(1000, false));
 
-  // Skip the rest of the test if running in TSAN mode
-  if (folly::kIsSanitizeThread) {
-    return;
-  }
-  ASSERT_DEATH(testCreate(0, false), "Assertion .* failed.");
-  ASSERT_DEATH(testCreate(1, false), "Assertion .* failed.");
-  ASSERT_DEATH(testCreate(1001, false), "Assertion .* failed.");
+  EXPECT_FALSE(testCreateForNumReplicas(0, false));
+  EXPECT_FALSE(testCreateForNumReplicas(1, false));
+  EXPECT_FALSE(testCreateForNumReplicas(1001, false));
 }
 
 TEST_F(KeySplitRouteTest, TestLongKey) {
