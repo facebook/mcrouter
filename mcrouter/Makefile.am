@@ -134,6 +134,8 @@ libmcroutercore_a_SOURCES = \
   routes/L1L2CacheRouteFactory.h \
   routes/L1L2SizeSplitRoute.cpp \
   routes/L1L2SizeSplitRoute.h \
+  routes/LatencyInjectionRoute.h \
+  routes/LatencyInjectionRoute.cpp \
   routes/LatestRoute.h \
   routes/McBucketRoute.cpp \
   routes/McBucketRoute.h \

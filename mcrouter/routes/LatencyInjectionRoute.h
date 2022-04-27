@@ -44,6 +44,9 @@ class HasAfterLatencyUsTrait<
         decltype(std::declval<std::decay_t<Message>&>().afterLatencyUs_ref())>>
     : public std::true_type {};
 
+namespace detail {
+folly::ReadMostlySharedPtr<folly::Timekeeper> getTimekeeperHighResSingleton();
+}
 /**
  * Injects latency before and/or after sending the request down to it's child.
  */
@@ -133,8 +136,6 @@ class LatencyInjectionRoute {
     std::chrono::microseconds afterReqLatency{0};
     std::optional<Request> newReq;
 
-    static folly::ThreadWheelTimekeeperHighRes timeKeeper;
-
     // Both beforeLatencyUs and afterLatencyUs fields have to be defined
     // for request specific latency injection to happen.
     if constexpr (
@@ -163,7 +164,9 @@ class LatencyInjectionRoute {
               mcrouter::before_request_latency_injected_stat);
           fiber_local<RouterInfo>::accumulateBeforeReqInjectedLatencyUs(
               beforeReqLatency.count());
-          folly::futures::sleep(beforeReqLatency, &timeKeeper).get();
+          folly::futures::sleep(
+              beforeReqLatency, detail::getTimekeeperHighResSingleton().get())
+              .get();
         }
       }
     }
@@ -179,7 +182,9 @@ class LatencyInjectionRoute {
         proxy.stats().increment(mcrouter::after_request_latency_injected_stat);
         fiber_local<RouterInfo>::accumulateAfterReqInjectedLatencyUs(
             afterReqLatency.count());
-        folly::futures::sleep(afterReqLatency, &timeKeeper).get();
+        folly::futures::sleep(
+            afterReqLatency, detail::getTimekeeperHighResSingleton().get())
+            .get();
       }
     }
 
