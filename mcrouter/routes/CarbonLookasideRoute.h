@@ -241,7 +241,7 @@ class CarbonLookasideRoute {
       bool retry = false;
       client_->send(
           cacheRequest,
-          [&baton, &ret, &retry, &leaseToken](
+          [this, &key, &baton, &ret, &retry, &leaseToken](
               const McLeaseGetRequest&, McLeaseGetReply&& cacheReply) {
             retry = false;
             if (isHitResult(*cacheReply.result_ref()) &&
@@ -249,7 +249,25 @@ class CarbonLookasideRoute {
               folly::io::Cursor cur(&cacheReply.value_ref().value());
               carbon::CarbonProtocolReader reader(cur);
               ReplyT<Request> reply;
-              reply.deserialize(reader);
+              try {
+                reply.deserialize(reader);
+              } catch (const std::exception& e) {
+                folly::fibers::addTask([this, &key]() {
+                  // Deserialization of item threw, invalidate in cache
+                  auto invalidateReq = std::make_shared<McSetRequest>(key);
+                  invalidateReq->exptime_ref() = -1;
+                  // Best effort cleanup mechanism without blocking the main
+                  // send
+                  client_->send(
+                      *invalidateReq.get(),
+                      [req = invalidateReq](const McSetRequest&, McSetReply&&) {
+                      });
+                });
+                reply.message_ref() = fmt::format(
+                    "Error in CarbonLookasideRoute: Corrupted item in cache. Message: {}",
+                    e.what());
+                reply.result_ref() = carbon::Result::LOCAL_ERROR;
+              }
               ret.assign(std::move(reply));
             } else if (isMissResult(*cacheReply.result_ref())) {
               // Hot miss will retry using an expoential backoff.
