@@ -13,6 +13,7 @@
 #include "mcrouter/PoolFactory.h"
 #include "mcrouter/Proxy.h"
 #include "mcrouter/ProxyConfig.h"
+#include "mcrouter/TargetHooks.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/config/ConfigPreprocessor.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"
@@ -29,13 +30,19 @@ ProxyConfigBuilder::ProxyConfigBuilder(
     folly::StringPiece jsonC)
     : json_(nullptr) {
   McImportResolver importResolver(configApi);
+  int sr_linked = 0;
+  if (opts.enable_service_router && mcrouter::gSRInitHook) {
+    sr_linked = 1;
+  }
   folly::StringKeyedUnorderedMap<folly::dynamic> globalParams{
       {"default-route", opts.default_route.str()},
       {"default-region", opts.default_route.getRegion().str()},
       {"default-cluster", opts.default_route.getCluster().str()},
       {"hostid", globals::hostid()},
       {"router-name", opts.router_name},
-      {"service-name", opts.service_name}};
+      {"service-name", opts.service_name},
+      {"service-router-capable", sr_linked}};
+
   auto additionalParams = additionalConfigParams();
   folly::json::metadata_map configMetadataMap;
   for (auto& it : additionalParams) {
