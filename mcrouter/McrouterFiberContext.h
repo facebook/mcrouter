@@ -81,6 +81,7 @@ class fiber_local {
     uint32_t failoverCount{0};
     int64_t accumulatedBeforeReqInjectedLatencyUs{0};
     int64_t accumulatedAfterReqInjectedLatencyUs{0};
+    std::optional<uint64_t> bucketId;
     RequestClass requestClass;
     folly::StringPiece asynclogName;
     int64_t networkTransportTimeUs{0};
@@ -340,6 +341,18 @@ class fiber_local {
    */
   static std::shared_ptr<AxonContext>& getAxonCtx() {
     return folly::fibers::local<McrouterFiberContext>().axonCtx;
+  }
+
+  /**
+   * When bucketized routing is enabled, McBucketRoute will propagate
+   * the calculated bucket id down the routing tree via this context.
+   */
+  static void setBucketId(uint64_t bucketId) {
+    folly::fibers::local<McrouterFiberContext>().bucketId = bucketId;
+  }
+
+  static std::optional<uint64_t> getBucketId() {
+    return folly::fibers::local<McrouterFiberContext>().bucketId;
   }
 };
 

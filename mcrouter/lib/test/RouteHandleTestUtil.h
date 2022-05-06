@@ -17,6 +17,7 @@
 #include <folly/fibers/SimpleLoopController.h>
 #include <folly/fibers/WhenN.h>
 
+#include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
@@ -25,6 +26,7 @@
 #include "mcrouter/lib/config/RouteHandleProviderIf.h"
 #include "mcrouter/lib/network/MessageHelpers.h"
 #include "mcrouter/lib/network/gen/MemcacheMessages.h"
+#include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 
 namespace facebook {
@@ -151,6 +153,8 @@ struct TestHandleImpl {
 
   std::vector<uint64_t> sawFlags;
 
+  std::vector<uint64_t> sawBucketIds;
+
   bool isTko;
 
   bool isPaused;
@@ -254,17 +258,20 @@ struct HasShadowId<
     std::void_t<decltype(std::declval<Request>().shadowId_ref())>>
     : public std::true_type {};
 
+template <class Request, typename = std::void_t<>>
+struct HasBucketId : public std::false_type {};
+
+template <class Request>
+struct HasBucketId<
+    Request,
+    std::void_t<decltype(std::declval<Request>().bucketId_ref())>>
+    : public std::true_type {};
+
 /* Records all the keys we saw */
 template <class RouteHandleIf>
 struct RecordingRoute {
   static std::string routeName() {
     return "test";
-  }
-
-  template <class Request>
-  bool traverse(const Request&, const RouteHandleTraverser<RouteHandleIf>&)
-      const {
-    return false;
   }
 
   GetRouteTestData dataGet_;
@@ -299,6 +306,26 @@ struct RecordingRoute {
   template <class Request>
   std::enable_if_t<!HasShadowId<Request>::value, void> recordShadowId(
       const Request&) {}
+
+  template <class Request>
+  std::enable_if_t<HasBucketId<Request>::value, void> recordBucketId(
+      const Request&) const {
+    if (mcrouter::fiber_local<MemcacheRouterInfo>::getBucketId().has_value()) {
+      h_->sawBucketIds.push_back(
+          mcrouter::fiber_local<MemcacheRouterInfo>::getBucketId().value());
+    }
+  }
+
+  template <class Request>
+  std::enable_if_t<!HasBucketId<Request>::value, void> recordBucketId(
+      const Request&) const {}
+
+  template <class Request>
+  bool traverse(const Request& req, const RouteHandleTraverser<RouteHandleIf>&)
+      const {
+    recordBucketId(req);
+    return false;
+  }
 
   template <typename T, typename = void>
   struct has_app_error : std::false_type {};
@@ -340,6 +367,7 @@ struct RecordingRoute {
     h_->sawOperations.push_back(Request::name);
     h_->sawExptimes.push_back(getExptimeIfExist(req));
     h_->sawFlags.push_back(getFlagsIfExist(req));
+    recordBucketId(req);
     recordShadowId(req);
     if (carbon::GetLike<Request>::value) {
       reply.result_ref() = h_->resultGenerator_.hasValue()

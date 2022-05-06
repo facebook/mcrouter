@@ -14,6 +14,17 @@
 
 namespace facebook::memcache::mcrouter {
 
+/*
+ *   McBucketRoute Config:
+ * - bucketize(bool)        - enable the bucketization
+ * - total_buckets(int)     - total number of buckets
+ * - bucketize_until(int)   - enable the handle for buckets until (exclusive)
+ *                            this number. Must be less than total_buckets.
+ *                            Needed for gradual migration.
+ * - bucketization_keyspace - can be used to separate into multiple
+ *                            bucketization domains decoupled from each other,
+ *                            e.g. one keyspace for each Memache pool.
+ */
 std::shared_ptr<MemcacheRouteHandleIf> makeMcBucketRoute(
     std::shared_ptr<MemcacheRouteHandleIf> rh,
     const folly::dynamic& json) {
@@ -29,10 +40,17 @@ std::shared_ptr<MemcacheRouteHandleIf> makeMcBucketRoute(
   auto bucketizeUntil = 0;
   if (json.count("bucketize_until")) {
     bucketizeUntil = parseInt(
-        *json.get_ptr("bucketize_until"),
-        "bucketize_until",
-        0,
-        totalBuckets - 1);
+        *json.get_ptr("bucketize_until"), "bucketize_until", 0, totalBuckets);
+  }
+
+  auto* bucketizationKeyspacePtr = json.get_ptr("bucketization_keyspace");
+  checkLogic(
+      bucketizationKeyspacePtr && bucketizationKeyspacePtr->isString(),
+      "McBucketRoute: must have bucketization_keyspace");
+
+  if (auto jSalt = json.get_ptr("salt")) {
+    checkLogic(jSalt->isString(), "McBucketRoute: salt is not a string");
+    settings.salt = jSalt->getString();
   }
 
   settings.totalBuckets = totalBuckets;

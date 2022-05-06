@@ -74,6 +74,25 @@ static ToRequest createRequestFromMessage(
   return newReq;
 }
 
+/**
+ * The function to extract the routing key from the request
+ * and add the salt if it is not empty.
+ *
+ * @param(req)          - the request to extract the routing key from
+ * @param(salt)         - salt to add to the end of the routing key, can be
+ *                        empty string
+ *
+ * @return(std::string) - the resulting routing key
+ */
+template <class Request>
+static std::string getRoutingKey(const Request& req, const std::string& salt) {
+  auto routingKey = req.key_ref()->routingKey().str();
+  if (!salt.empty()) {
+    routingKey += salt;
+  }
+  return routingKey;
+}
+
 } // namespace mcrouter
 } // namespace memcache
 } // namespace facebook
