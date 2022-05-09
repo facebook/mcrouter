@@ -251,24 +251,21 @@ class CarbonLookasideRoute {
               ReplyT<Request> reply;
               try {
                 reply.deserialize(reader);
-              } catch (const std::exception& e) {
+                ret.assign(std::move(reply));
+              } catch (const std::exception&) {
                 folly::fibers::addTask([this, &key]() {
                   // Deserialization of item threw, invalidate in cache
                   auto invalidateReq = std::make_shared<McSetRequest>(key);
                   invalidateReq->exptime_ref() = -1;
                   // Best effort cleanup mechanism without blocking the main
-                  // send
+                  // send. Return folly::None back to client so that client will
+                  // fetch from backend while not increasing error rate
                   client_->send(
                       *invalidateReq.get(),
                       [req = invalidateReq](const McSetRequest&, McSetReply&&) {
                       });
                 });
-                reply.message_ref() = fmt::format(
-                    "Error in CarbonLookasideRoute: Corrupted item in cache. Message: {}",
-                    e.what());
-                reply.result_ref() = carbon::Result::LOCAL_ERROR;
               }
-              ret.assign(std::move(reply));
             } else if (isMissResult(*cacheReply.result_ref())) {
               // Hot miss will retry using an expoential backoff.
               // A miss will return with the lease token set.
