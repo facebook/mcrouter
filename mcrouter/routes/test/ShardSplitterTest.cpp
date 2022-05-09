@@ -98,7 +98,7 @@ void migrationTest(folly::dynamic config, double migrationPoint) {
     }
   }
   double migrated = numNew / (double)kNumHostIds;
-  EXPECT_GT(migrationPoint + 0.01, migrated);
+  EXPECT_GT(migrationPoint + 0.02, migrated);
   EXPECT_LT(migrationPoint - 0.01, migrated);
 }
 
