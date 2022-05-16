@@ -32,6 +32,11 @@ request McGetRequest with 1: MemcacheRequestCommon {
 };
 
 reply McGetReply {
+  throws: {
+    1: facebook::memcache::CarbonResultBusy carbonResultBusy;
+    2: facebook::memcache::CarbonResultRemoteError carbonResultRemoteError;
+  };
+
   1: Result result;
   2: optional folly::IOBuf value;
   3: uint64_t flags;
@@ -52,6 +57,11 @@ request McSetRequest with 1: MemcacheRequestCommon {
 };
 
 reply McSetReply {
+  throws: {
+    1: facebook::memcache::CarbonResultBusy carbonResultBusy;
+    2: facebook::memcache::CarbonResultRemoteError carbonResultRemoteError;
+  };
+
   1: Result result;
   2: uint64_t flags;
   3: folly::IOBuf value;
@@ -73,6 +83,11 @@ request McDeleteRequest with 1: MemcacheRequestCommon {
 };
 
 reply McDeleteReply {
+  throws: {
+    1: facebook::memcache::CarbonResultBusy carbonResultBusy;
+    2: facebook::memcache::CarbonResultRemoteError carbonResultRemoteError;
+  };
+
   1: Result result;
   2: uint64_t flags;
   3: folly::IOBuf value;
@@ -91,6 +106,11 @@ request McLeaseGetRequest with 1: MemcacheRequestCommon {
 };
 
 reply McLeaseGetReply {
+  throws: {
+    1: facebook::memcache::CarbonResultBusy carbonResultBusy;
+    2: facebook::memcache::CarbonResultRemoteError carbonResultRemoteError;
+  };
+
   1: Result result;
   2: int64_t leaseToken;
   3: optional folly::IOBuf value;
@@ -113,6 +133,11 @@ request McLeaseSetRequest with 1: MemcacheRequestCommon {
 };
 
 reply McLeaseSetReply {
+  throws: {
+    1: facebook::memcache::CarbonResultBusy carbonResultBusy;
+    2: facebook::memcache::CarbonResultRemoteError carbonResultRemoteError;
+  };
+
   1: Result result;
   2: std::string message;
   3: int16_t appSpecificErrorCode;
@@ -131,6 +156,11 @@ request McAddRequest with 1: MemcacheRequestCommon {
 };
 
 reply McAddReply {
+  throws: {
+    1: facebook::memcache::CarbonResultBusy carbonResultBusy;
+    2: facebook::memcache::CarbonResultRemoteError carbonResultRemoteError;
+  };
+
   1: Result result;
   2: std::string message;
   3: int16_t appSpecificErrorCode;
@@ -149,6 +179,11 @@ request McReplaceRequest with 1: MemcacheRequestCommon {
 };
 
 reply McReplaceReply {
+  throws: {
+    1: facebook::memcache::CarbonResultBusy carbonResultBusy;
+    2: facebook::memcache::CarbonResultRemoteError carbonResultRemoteError;
+  };
+
   1: Result result;
   2: std::string message;
   3: int16_t appSpecificErrorCode;
@@ -165,6 +200,11 @@ request McGetsRequest with 1: MemcacheRequestCommon {
 };
 
 reply McGetsReply {
+  throws: {
+    1: facebook::memcache::CarbonResultBusy carbonResultBusy;
+    2: facebook::memcache::CarbonResultRemoteError carbonResultRemoteError;
+  };
+
   1: Result result;
   2: uint64_t casToken;
   3: optional folly::IOBuf value;
@@ -187,6 +227,11 @@ request McCasRequest with 1: MemcacheRequestCommon {
 };
 
 reply McCasReply {
+  throws: {
+    1: facebook::memcache::CarbonResultBusy carbonResultBusy;
+    2: facebook::memcache::CarbonResultRemoteError carbonResultRemoteError;
+  };
+
   1: Result result;
   2: std::string message;
   3: int16_t appSpecificErrorCode;
@@ -203,6 +248,11 @@ request McIncrRequest with 1: MemcacheRequestCommon {
 };
 
 reply McIncrReply {
+  throws: {
+    1: facebook::memcache::CarbonResultBusy carbonResultBusy;
+    2: facebook::memcache::CarbonResultRemoteError carbonResultRemoteError;
+  };
+
   1: Result result;
   2: int64_t delta;
   3: std::string message;
@@ -220,6 +270,11 @@ request McDecrRequest with 1: MemcacheRequestCommon {
 };
 
 reply McDecrReply {
+  throws: {
+    1: facebook::memcache::CarbonResultBusy carbonResultBusy;
+    2: facebook::memcache::CarbonResultRemoteError carbonResultRemoteError;
+  };
+
   1: Result result;
   2: int64_t delta;
   3: std::string message;
@@ -236,6 +291,11 @@ request McMetagetRequest with 1: MemcacheRequestCommon {
 };
 
 reply McMetagetReply {
+  throws: {
+    1: facebook::memcache::CarbonResultBusy carbonResultBusy;
+    2: facebook::memcache::CarbonResultRemoteError carbonResultRemoteError;
+  };
+
   1: Result result;
   2: int32_t age; # can be -1
   3: int32_t exptime;
@@ -258,6 +318,11 @@ request McAppendRequest with 1: MemcacheRequestCommon {
 };
 
 reply McAppendReply {
+  throws: {
+    1: facebook::memcache::CarbonResultBusy carbonResultBusy;
+    2: facebook::memcache::CarbonResultRemoteError carbonResultRemoteError;
+  };
+
   1: Result result;
   2: std::string message;
   3: int16_t appSpecificErrorCode;
@@ -276,6 +341,11 @@ request McPrependRequest with 1: MemcacheRequestCommon {
 };
 
 reply McPrependReply {
+  throws: {
+    1: facebook::memcache::CarbonResultBusy carbonResultBusy;
+    2: facebook::memcache::CarbonResultRemoteError carbonResultRemoteError;
+  };
+
   1: Result result;
   2: std::string message;
   3: int16_t appSpecificErrorCode;
@@ -292,6 +362,11 @@ request McTouchRequest with 1: MemcacheRequestCommon {
 };
 
 reply McTouchReply {
+  throws: {
+    1: facebook::memcache::CarbonResultBusy carbonResultBusy;
+    2: facebook::memcache::CarbonResultRemoteError carbonResultRemoteError;
+  };
+
   1: Result result;
   2: std::string message;
   3: int16_t appSpecificErrorCode;
@@ -307,6 +382,11 @@ request McFlushReRequest with 1: MemcacheRequestCommon {
 };
 
 reply McFlushReReply {
+  throws: {
+    1: facebook::memcache::CarbonResultBusy carbonResultBusy;
+    2: facebook::memcache::CarbonResultRemoteError carbonResultRemoteError;
+  };
+
   1: Result result;
   2: std::string message;
   3: int16_t appSpecificErrorCode;
@@ -323,6 +403,11 @@ request McFlushAllRequest with 1: MemcacheRequestCommon {
 };
 
 reply McFlushAllReply {
+  throws: {
+    1: facebook::memcache::CarbonResultBusy carbonResultBusy;
+    2: facebook::memcache::CarbonResultRemoteError carbonResultRemoteError;
+  };
+
   1: Result result;
   2: std::string message;
   3: int16_t appSpecificErrorCode;
@@ -339,6 +424,11 @@ request McGatRequest with 1: MemcacheRequestCommon {
 };
 
 reply McGatReply {
+  throws: {
+    1: facebook::memcache::CarbonResultBusy carbonResultBusy;
+    2: facebook::memcache::CarbonResultRemoteError carbonResultRemoteError;
+  };
+
   1: Result result;
   2: optional folly::IOBuf value;
   3: uint64_t flags;
@@ -357,6 +447,11 @@ request McGatsRequest with 1: MemcacheRequestCommon {
 };
 
 reply McGatsReply {
+  throws: {
+    1: facebook::memcache::CarbonResultBusy carbonResultBusy;
+    2: facebook::memcache::CarbonResultRemoteError carbonResultRemoteError;
+  };
+
   1: Result result;
   2: uint64_t casToken;
   3: optional folly::IOBuf value;
