@@ -20,6 +20,14 @@ cpp_include "<mcrouter/lib/carbon/CarbonProtocolReader.h>"
 
 namespace cpp2 facebook.memcache.thrift
 
+exception CarbonResultBusy {
+  1: string message
+}
+
+exception CarbonResultRemoteError {
+  1: string message
+}
+
 struct McVersionRequest {
   1: carbon.IOBufKey key
 }(cpp.methods = "

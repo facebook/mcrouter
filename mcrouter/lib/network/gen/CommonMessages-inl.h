@@ -376,6 +376,7 @@ void GoAwayRequest::visitFields(V&& v) const {
 
 namespace apache {
 namespace thrift {
+
 template <>
 class Cpp2Ops<facebook::memcache::McVersionRequest> {
  public:

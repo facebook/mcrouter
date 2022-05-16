@@ -7,6 +7,14 @@
 namespace facebook::memcache;
 thrift_namespace facebook.memcache.thrift;
 
+exception CarbonResultBusy {
+  1: std::string message;
+};
+
+exception CarbonResultRemoteError {
+  1: std::string message;
+};
+
 request McVersionRequest {
   id: 13;
   name: "version";

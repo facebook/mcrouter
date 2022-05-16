@@ -32,6 +32,11 @@ request HelloRequest {
 };
 
 reply HelloReply {
+  throws: {
+    1: facebook::memcache::CarbonResultBusy carbonResultBusy;
+    2: facebook::memcache::CarbonResultRemoteError carbonResultRemoteError;
+  };
+
   1: Result result;
   2: std::string message;
 };
