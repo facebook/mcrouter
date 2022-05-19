@@ -29,6 +29,11 @@ class McThriftCallback {
     ctx.underlying_.reset();
   }
 
+  template <class E>
+  static void exception(McThriftCallback<Reply>&& ctx, E&& ex) {
+    ctx.underlying_->exception(std::move(ex));
+  }
+
   folly::Optional<std::string> getPeerSocketAddressStr() {
     folly::Optional<std::string> peerAddressStr;
     auto connectionCxt = underlying_->getConnectionContext();
