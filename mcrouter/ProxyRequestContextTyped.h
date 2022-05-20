@@ -120,7 +120,9 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
       const Request& request,
       RequestClass requestClass,
       const int64_t startTimeUs,
-      const RequestLoggerContextFlags flags = RequestLoggerContextFlags::NONE) {
+      const RequestLoggerContextFlags flags = RequestLoggerContextFlags::NONE,
+      const std::optional<std::string> bucketId = std::nullopt) {
+    (void)bucketId; // todo log bucket id
     if constexpr (HasLogBeforeRequestSent<AdditionalLogger, Request>::value) {
       if (recording()) {
         return;
@@ -162,10 +164,12 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
       const RpcStatsContext rpcStatsContext,
       const int64_t networkTransportTimeUs,
       const std::vector<ExtraDataCallbackT>& extraDataCallbacks,
-      const RequestLoggerContextFlags flags = RequestLoggerContextFlags::NONE) {
+      const RequestLoggerContextFlags flags = RequestLoggerContextFlags::NONE,
+      const std::optional<std::string> bucketId = std::nullopt) {
     if (recording()) {
       return;
     }
+    (void)bucketId; // todo log bucket id
 
     if (auto poolStats = proxy_.stats().getPoolStats(poolStatIndex)) {
       poolStats->incrementRequestCount(1);

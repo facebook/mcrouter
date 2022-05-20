@@ -10,6 +10,8 @@
 #include <folly/Optional.h>
 #include <folly/io/IOBuf.h>
 #include <thrift/lib/cpp2/FieldRef.h>
+#include <optional>
+#include <type_traits>
 
 namespace facebook {
 namespace memcache {
@@ -52,6 +54,18 @@ void setValueImpl(std::true_type, Message& message, folly::IOBuf&& buf) {
 }
 template <class Message>
 void setValueImpl(std::false_type, Message&, folly::IOBuf&&) {}
+
+template <typename Message>
+std::optional<std::string> getBucketIdImpl(std::true_type, Message& message) {
+  if (message.bucketId_ref()) {
+    return *message.bucketId_ref();
+  }
+  return std::nullopt;
+}
+template <typename Message>
+std::optional<std::string> getBucketIdImpl(std::false_type, Message&) {
+  return std::nullopt;
+}
 } // namespace detail
 
 // Flags helpers
@@ -140,6 +154,20 @@ folly::Optional<std::remove_const_t<T>> toFollyOptional(
     return folly::Optional<std::remove_const_t<T>>(ref.value());
   }
   return folly::none;
+}
+
+template <typename Message, typename = std::enable_if_t<true>>
+class HasBucketIdTrait : public std::false_type {};
+template <typename Message>
+class HasBucketIdTrait<
+    Message,
+    std::void_t<
+        decltype(std::declval<std::decay_t<Message>&>().bucketId_ref())>>
+    : public std::true_type {};
+
+template <typename Message>
+std::optional<std::string> getBucketId(Message& message) {
+  return detail::getBucketIdImpl(HasBucketIdTrait<Message>{}, message);
 }
 } // namespace memcache
 } // namespace facebook
