@@ -19,6 +19,7 @@ class TestAsyncFiles(McrouterTestCase):
     config_hash = '837ae7d82f2fe7cb785b941dae505811'
     extra_args = ['--stats-logging-interval', '100', '--use-asynclog-version2']
     mock_smc_config = None
+    asynclog_name = 'foo'
 
     def check_stats(self, stats_dir, retries=20, sleep_interval=1):
         file_stat = os.path.join(stats_dir, self.stat_prefix + 'stats')
@@ -81,10 +82,9 @@ class TestAsyncFiles(McrouterTestCase):
         self.assertEqual(len(asynclog_files), 1)
         foundPool = False
 
-        # asynclog v2 should have pool name
         with open(asynclog_files[0], 'r') as f:
             for line in f.readlines():
-                if 'foo' in line:
+                if self.asynclog_name in line:
                     foundPool = True
                     break
 
