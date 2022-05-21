@@ -855,7 +855,7 @@ class Mcrouter(McrouterBase):
             (_, sr_mock_smc_config) = tempfile.mkstemp(dir=base_dir.path)
             with open(sr_mock_smc_config, 'w') as config_file:
                 config_file.write(replaced_config)
-            self.sr_mock_smc_config = sr_mock_smc_config
+            self.sr_mock_smc_config = "file:" +sr_mock_smc_config
             args.extend(['--debug-sr-host-list', self.sr_mock_smc_config])
 
         McrouterBase.__init__(self, args, port, base_dir)
