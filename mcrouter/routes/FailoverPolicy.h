@@ -169,12 +169,12 @@ class FailoverInOrderPolicy {
   using ConstIterator = Iter<Request const>;
 
   template <class Request>
-  ConstIterator<Request> cbegin(Request&, FailoverPolicyContext&) const {
+  ConstIterator<Request> cbegin(Request&, const FailoverPolicyContext&) const {
     return ConstIterator<Request>(children_, 0);
   }
 
   template <class Request>
-  ConstIterator<Request> cend(Request&, FailoverPolicyContext&) const {
+  ConstIterator<Request> cend(Request&, const FailoverPolicyContext&) const {
     return ConstIterator<Request>(children_, children_.size());
   }
 
@@ -187,17 +187,17 @@ class FailoverInOrderPolicy {
   }
 
   template <class Request>
-  std::shared_ptr<FailoverPolicyContext> context(const Request&) const {
-    return std::make_shared<FailoverPolicyContext>();
+  FailoverPolicyContext context(const Request&) const {
+    return FailoverPolicyContext();
   }
 
   template <class Request>
-  Iterator<Request> begin(Request&, FailoverPolicyContext&) {
+  Iterator<Request> begin(Request&, const FailoverPolicyContext&) {
     return Iterator<Request>(children_, 0);
   }
 
   template <class Request>
-  Iterator<Request> end(Request&, FailoverPolicyContext&) const {
+  Iterator<Request> end(Request&, const FailoverPolicyContext&) const {
     return Iterator<Request>(children_, children_.size());
   }
 
@@ -518,22 +518,24 @@ class FailoverDeterministicOrderPolicy {
       std::string const>;
 
   template <class Request>
-  Iterator<Request> begin(Request& req, FailoverPolicyContext&) {
+  Iterator<Request> begin(Request& req, const FailoverPolicyContext&) {
     return Iterator<Request>(*this, config_, funcType_, salt_, 0, req);
   }
 
   template <class Request>
-  Iterator<Request> end(Request& req, FailoverPolicyContext&) {
+  Iterator<Request> end(Request& req, const FailoverPolicyContext&) {
     return Iterator<Request>(*this, config_, funcType_, salt_, maxTries_, req);
   }
 
   template <class Request>
-  ConstIterator<Request> cbegin(Request& req, FailoverPolicyContext&) const {
+  ConstIterator<Request> cbegin(Request& req, const FailoverPolicyContext&)
+      const {
     return ConstIterator<Request>(*this, config_, funcType_, salt_, 0, req);
   }
 
   template <class Request>
-  ConstIterator<Request> cend(Request& req, FailoverPolicyContext&) const {
+  ConstIterator<Request> cend(Request& req, const FailoverPolicyContext&)
+      const {
     return ConstIterator<Request>(
         *this, config_, funcType_, salt_, maxTries_, req);
   }
@@ -547,8 +549,8 @@ class FailoverDeterministicOrderPolicy {
   }
 
   template <class Request>
-  std::shared_ptr<FailoverPolicyContext> context(const Request&) const {
-    return std::make_shared<FailoverPolicyContext>();
+  FailoverPolicyContext context(const Request&) const {
+    return FailoverPolicyContext();
   }
 
   // Returns the stat to increment when failover occurs.
@@ -706,22 +708,22 @@ class FailoverRendezvousPolicy {
   };
 
   template <class Request>
-  Iterator begin(Request& req, FailoverPolicyContext&) {
+  Iterator begin(Request& req, const FailoverPolicyContext&) {
     return Iterator(*this, req);
   }
 
   template <class Request>
-  Iterator end(Request&, FailoverPolicyContext&) {
+  Iterator end(Request&, const FailoverPolicyContext&) {
     return Iterator(*this);
   }
 
   template <class Request>
-  Iterator cbegin(Request& req, FailoverPolicyContext&) const {
+  Iterator cbegin(Request& req, const FailoverPolicyContext&) const {
     return Iterator(*this, req);
   }
 
   template <class Request>
-  Iterator cend(Request&, FailoverPolicyContext&) const {
+  Iterator cend(Request&, const FailoverPolicyContext&) const {
     return Iterator(*this);
   }
 
@@ -734,8 +736,8 @@ class FailoverRendezvousPolicy {
   }
 
   template <class Request>
-  std::shared_ptr<FailoverPolicyContext> context(const Request&) const {
-    return std::make_shared<FailoverPolicyContext>();
+  FailoverPolicyContext context(const Request&) const {
+    return FailoverPolicyContext();
   }
 
   // Returns the stat to increment when failover occurs.
@@ -862,12 +864,12 @@ class FailoverLeastFailuresPolicy {
       Iter<Request const, FailoverLeastFailuresPolicy<RouteHandleIf> const>;
 
   template <class Request>
-  ConstIterator<Request> cbegin(Request&, FailoverPolicyContext&) const {
+  ConstIterator<Request> cbegin(Request&, const FailoverPolicyContext&) const {
     return ConstIterator<Request>(*this, 0);
   }
 
   template <class Request>
-  ConstIterator<Request> cend(Request&, FailoverPolicyContext&) const {
+  ConstIterator<Request> cend(Request&, const FailoverPolicyContext&) const {
     return ConstIterator<Request>(*this, maxTries_);
   }
 
@@ -880,17 +882,17 @@ class FailoverLeastFailuresPolicy {
   }
 
   template <class Request>
-  std::shared_ptr<FailoverPolicyContext> context(const Request&) const {
-    return std::make_shared<FailoverPolicyContext>();
+  FailoverPolicyContext context(const Request&) const {
+    return FailoverPolicyContext();
   }
 
   template <class Request>
-  Iterator<Request> begin(Request&, FailoverPolicyContext&) {
+  Iterator<Request> begin(Request&, const FailoverPolicyContext&) {
     return Iterator<Request>(*this, 0);
   }
 
   template <class Request>
-  Iterator<Request> end(Request&, FailoverPolicyContext&) {
+  Iterator<Request> end(Request&, const FailoverPolicyContext&) {
     return Iterator<Request>(*this, maxTries_);
   }
 

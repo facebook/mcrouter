@@ -81,7 +81,7 @@ class FailoverRoute {
       return t(*targets_[0], req); // normal route
     }
     auto policyCtx = failoverPolicy_.context(req);
-    auto iter = failoverPolicy_.cbegin(req, *policyCtx);
+    auto iter = failoverPolicy_.cbegin(req, policyCtx);
     // normal route
     // This must be called here so that selectedIndex is set and the failover
     // iterator below does not select the index from normal route.
@@ -90,7 +90,7 @@ class FailoverRoute {
     }
     std::vector<std::shared_ptr<RouteHandleIf>> failovers;
     ++iter;
-    while (iter != failoverPolicy_.cend(req, *policyCtx)) {
+    while (iter != failoverPolicy_.cend(req, policyCtx)) {
       std::shared_ptr<RouteHandleIf> rh = targets_[iter.getTrueIndex()];
       failovers.push_back(rh);
       ++iter;
@@ -253,7 +253,7 @@ class FailoverRoute {
     };
 
     auto policyCtx = failoverPolicy_.context(req);
-    auto iter = failoverPolicy_.begin(req, *policyCtx);
+    auto iter = failoverPolicy_.begin(req, policyCtx);
     auto normalReply = iter->route(req);
     if (rateLimiter_) {
       rateLimiter_->bumpTotalReqs();
@@ -265,10 +265,10 @@ class FailoverRoute {
       setFailoverHopCount(normalReply, getFailoverHopCount(req));
     }
     if (LIKELY(processReply(
-            normalReply, req, conditionalFailover, iter, *policyCtx))) {
+            normalReply, req, conditionalFailover, iter, policyCtx))) {
       return normalReply;
     }
-    if (++iter == failoverPolicy_.end(req, *policyCtx)) {
+    if (++iter == failoverPolicy_.end(req, policyCtx)) {
       if (isErrorResult(*normalReply.result_ref())) {
         allFailed = true;
       }
@@ -327,17 +327,17 @@ class FailoverRoute {
           };
 
       ReplyT<Request> failoverReply;
-      for (++nx; nx != failoverPolicy_.end(req, *policyCtx) &&
-           policyCtx->numTries_ < failoverPolicy_.maxErrorTries();
+      for (++nx; nx != failoverPolicy_.end(req, policyCtx) &&
+           policyCtx.numTries_ < failoverPolicy_.maxErrorTries();
            ++cur, ++nx) {
         failoverReply = doFailover(cur);
         incFailureDomainStat(normalReply, failoverReply);
         if (LIKELY(processReply(
-                failoverReply, req, conditionalFailover, cur, *policyCtx))) {
+                failoverReply, req, conditionalFailover, cur, policyCtx))) {
           return failoverReply;
         }
       }
-      if (policyCtx->numTries_ < failoverPolicy_.maxErrorTries()) {
+      if (policyCtx.numTries_ < failoverPolicy_.maxErrorTries()) {
         failoverReply = doFailover(cur);
         incFailureDomainStat(normalReply, failoverReply);
         if (isErrorResult(*failoverReply.result_ref())) {
