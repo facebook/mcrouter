@@ -113,9 +113,7 @@ class FailoverInOrderPolicy {
     ChildProxy(RouteHandlePtr child) : child_(child) {}
 
     template <class Request>
-    ReplyT<Request> route(
-        const Request& req,
-        std::shared_ptr<FailoverPolicyContext>&) {
+    ReplyT<Request> route(const Request& req) {
       return child_->route(req);
     }
 
@@ -171,12 +169,12 @@ class FailoverInOrderPolicy {
   using ConstIterator = Iter<Request const>;
 
   template <class Request>
-  ConstIterator<Request> cbegin(Request&) const {
+  ConstIterator<Request> cbegin(Request&, FailoverPolicyContext&) const {
     return ConstIterator<Request>(children_, 0);
   }
 
   template <class Request>
-  ConstIterator<Request> cend(Request&) const {
+  ConstIterator<Request> cend(Request&, FailoverPolicyContext&) const {
     return ConstIterator<Request>(children_, children_.size());
   }
 
@@ -194,12 +192,12 @@ class FailoverInOrderPolicy {
   }
 
   template <class Request>
-  Iterator<Request> begin(Request&) {
+  Iterator<Request> begin(Request&, FailoverPolicyContext&) {
     return Iterator<Request>(children_, 0);
   }
 
   template <class Request>
-  Iterator<Request> end(Request&) const {
+  Iterator<Request> end(Request&, FailoverPolicyContext&) const {
     return Iterator<Request>(children_, children_.size());
   }
 
@@ -310,9 +308,7 @@ class FailoverDeterministicOrderPolicy {
     ChildProxy(RouteHandlePtr child) : child_(child) {}
 
     template <class Request>
-    ReplyT<Request> route(
-        const Request& req,
-        std::shared_ptr<FailoverPolicyContext>&) {
+    ReplyT<Request> route(const Request& req) {
       return child_->route(req);
     }
 
@@ -522,22 +518,22 @@ class FailoverDeterministicOrderPolicy {
       std::string const>;
 
   template <class Request>
-  Iterator<Request> begin(Request& req) {
+  Iterator<Request> begin(Request& req, FailoverPolicyContext&) {
     return Iterator<Request>(*this, config_, funcType_, salt_, 0, req);
   }
 
   template <class Request>
-  Iterator<Request> end(Request& req) {
+  Iterator<Request> end(Request& req, FailoverPolicyContext&) {
     return Iterator<Request>(*this, config_, funcType_, salt_, maxTries_, req);
   }
 
   template <class Request>
-  ConstIterator<Request> cbegin(Request& req) const {
+  ConstIterator<Request> cbegin(Request& req, FailoverPolicyContext&) const {
     return ConstIterator<Request>(*this, config_, funcType_, salt_, 0, req);
   }
 
   template <class Request>
-  ConstIterator<Request> cend(Request& req) const {
+  ConstIterator<Request> cend(Request& req, FailoverPolicyContext&) const {
     return ConstIterator<Request>(
         *this, config_, funcType_, salt_, maxTries_, req);
   }
@@ -623,9 +619,7 @@ class FailoverRendezvousPolicy {
     ChildProxy(RouteHandlePtr child) : child_(child) {}
 
     template <class Request>
-    ReplyT<Request> route(
-        const Request& req,
-        std::shared_ptr<FailoverPolicyContext>&) {
+    ReplyT<Request> route(const Request& req) {
       return child_->route(req);
     }
 
@@ -712,22 +706,22 @@ class FailoverRendezvousPolicy {
   };
 
   template <class Request>
-  Iterator begin(Request& req) {
+  Iterator begin(Request& req, FailoverPolicyContext&) {
     return Iterator(*this, req);
   }
 
   template <class Request>
-  Iterator end(Request&) {
+  Iterator end(Request&, FailoverPolicyContext&) {
     return Iterator(*this);
   }
 
   template <class Request>
-  Iterator cbegin(Request& req) const {
+  Iterator cbegin(Request& req, FailoverPolicyContext&) const {
     return Iterator(*this, req);
   }
 
   template <class Request>
-  Iterator cend(Request&) const {
+  Iterator cend(Request&, FailoverPolicyContext&) const {
     return Iterator(*this);
   }
 
@@ -800,9 +794,7 @@ class FailoverLeastFailuresPolicy {
         : failoverPolicy_(failoverPolicy), index_(index) {}
 
     template <class Request>
-    ReplyT<Request> route(
-        const Request& req,
-        std::shared_ptr<FailoverPolicyContext>&) {
+    ReplyT<Request> route(const Request& req) {
       auto& child = failoverPolicy_.children_[index_];
       auto reply = child->route(req);
       if (isErrorResult(*reply.result_ref())) {
@@ -870,12 +862,12 @@ class FailoverLeastFailuresPolicy {
       Iter<Request const, FailoverLeastFailuresPolicy<RouteHandleIf> const>;
 
   template <class Request>
-  ConstIterator<Request> cbegin(Request&) const {
+  ConstIterator<Request> cbegin(Request&, FailoverPolicyContext&) const {
     return ConstIterator<Request>(*this, 0);
   }
 
   template <class Request>
-  ConstIterator<Request> cend(Request&) const {
+  ConstIterator<Request> cend(Request&, FailoverPolicyContext&) const {
     return ConstIterator<Request>(*this, maxTries_);
   }
 
@@ -893,12 +885,12 @@ class FailoverLeastFailuresPolicy {
   }
 
   template <class Request>
-  Iterator<Request> begin(Request&) {
+  Iterator<Request> begin(Request&, FailoverPolicyContext&) {
     return Iterator<Request>(*this, 0);
   }
 
   template <class Request>
-  Iterator<Request> end(Request&) {
+  Iterator<Request> end(Request&, FailoverPolicyContext&) {
     return Iterator<Request>(*this, maxTries_);
   }
 

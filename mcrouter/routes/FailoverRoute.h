@@ -80,7 +80,8 @@ class FailoverRoute {
     if (fiber_local<RouterInfo>::getFailoverDisabled()) {
       return t(*targets_[0], req); // normal route
     }
-    auto iter = failoverPolicy_.cbegin(req);
+    auto policyCtx = failoverPolicy_.context(req);
+    auto iter = failoverPolicy_.cbegin(req, *policyCtx);
     // normal route
     // This must be called here so that selectedIndex is set and the failover
     // iterator below does not select the index from normal route.
@@ -89,7 +90,7 @@ class FailoverRoute {
     }
     std::vector<std::shared_ptr<RouteHandleIf>> failovers;
     ++iter;
-    while (iter != failoverPolicy_.cend(req)) {
+    while (iter != failoverPolicy_.cend(req, *policyCtx)) {
       std::shared_ptr<RouteHandleIf> rh = targets_[iter.getTrueIndex()];
       failovers.push_back(rh);
       ++iter;
@@ -252,8 +253,8 @@ class FailoverRoute {
     };
 
     auto policyCtx = failoverPolicy_.context(req);
-    auto iter = failoverPolicy_.begin(req);
-    auto normalReply = iter->route(req, policyCtx);
+    auto iter = failoverPolicy_.begin(req, *policyCtx);
+    auto normalReply = iter->route(req);
     if (rateLimiter_) {
       rateLimiter_->bumpTotalReqs();
     }
@@ -267,7 +268,7 @@ class FailoverRoute {
             normalReply, req, conditionalFailover, iter, *policyCtx))) {
       return normalReply;
     }
-    if (++iter == failoverPolicy_.end(req)) {
+    if (++iter == failoverPolicy_.end(req, *policyCtx)) {
       if (isErrorResult(*normalReply.result_ref())) {
         allFailed = true;
       }
@@ -288,11 +289,10 @@ class FailoverRoute {
                                                    &allFailed,
                                                    &conditionalFailover]() {
       fiber_local<RouterInfo>::addRequestClass(RequestClass::kFailover);
-      auto doFailover = [this, &req, &proxy, &normalReply, &policyCtx](
-                            auto& child) {
+      auto doFailover = [this, &req, &proxy, &normalReply](auto& child) {
         uint32_t cnt =
             failoverTagging_ ? fiber_local<RouterInfo>::incFailoverCount() : 0;
-        auto failoverReply = child->route(req, policyCtx);
+        auto failoverReply = child->route(req);
         if (failoverTagging_) {
           setFailoverHopCount(failoverReply, getFailoverHopCount(req) + cnt);
         }
@@ -327,7 +327,7 @@ class FailoverRoute {
           };
 
       ReplyT<Request> failoverReply;
-      for (++nx; nx != failoverPolicy_.end(req) &&
+      for (++nx; nx != failoverPolicy_.end(req, *policyCtx) &&
            policyCtx->numTries_ < failoverPolicy_.maxErrorTries();
            ++cur, ++nx) {
         failoverReply = doFailover(cur);
