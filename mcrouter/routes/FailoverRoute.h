@@ -326,7 +326,7 @@ class FailoverRoute {
             }
           };
 
-      ReplyT<Request> failoverReply;
+      ReplyT<Request> failoverReply = normalReply;
       for (++nx; nx != failoverPolicy_.end(req, policyCtx) &&
            policyCtx.numTries_ < failoverPolicy_.maxErrorTries();
            ++cur, ++nx) {
