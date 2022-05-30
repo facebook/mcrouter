@@ -244,7 +244,7 @@ void buildChildrenLatestRoutes(
   destinations.reserve(shardMap.size());
   std::for_each(shardMap.begin(), shardMap.end(), [&](auto& item) {
     auto shardId = item.first;
-    auto childrenRouteHandles = std::move(item.second);
+    auto childrenRouteHandles = folly::copy(item.second);
     size_t numChildren = childrenRouteHandles.size();
     if (customFn) {
       customFn(shardId, childrenRouteHandles);
@@ -271,7 +271,7 @@ void buildChildrenLoadBalancerRoutes(
   destinations.reserve(shardMap.size());
   std::for_each(shardMap.begin(), shardMap.end(), [&](auto& item) {
     auto shardId = item.first;
-    auto childrenRouteHandles = std::move(item.second);
+    auto childrenRouteHandles = folly::copy(item.second);
     if (customFn) {
       customFn(shardId, childrenRouteHandles);
     }
@@ -293,7 +293,7 @@ void buildChildrenCustomRoutesFromMap(
   destinations.reserve(shardMap.size());
   std::for_each(shardMap.begin(), shardMap.end(), [&](auto& item) {
     auto shardId = item.first;
-    auto childrenRouteHandles = std::move(item.second);
+    auto childrenRouteHandles = folly::copy(item.second);
     if (customFn) {
       customFn(shardId, childrenRouteHandles);
     }
@@ -313,7 +313,7 @@ void buildChildrenCustomJsonmRoutes(
   destinations.reserve(shardMap.size());
   std::for_each(shardMap.begin(), shardMap.end(), [&](auto& item) {
     auto shardId = item.first;
-    auto childrenList = std::move(item.second);
+    auto childrenList = folly::copy(item.second);
     // push children to factory. Factory will use when it sees "$children_list$"
     factory.pushChildrenList(std::move(childrenList));
     destinations.push_back(factory.create(json));
