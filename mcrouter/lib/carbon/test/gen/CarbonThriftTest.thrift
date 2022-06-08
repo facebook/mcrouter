@@ -14,20 +14,18 @@
  */
 include "mcrouter/lib/carbon/carbon.thrift"
 include "mcrouter/lib/carbon/carbon_result.thrift"
+include "thrift/annotation/cpp.thrift"
 include "mcrouter/lib/network/gen/Common.thrift"
 
 cpp_include "<mcrouter/lib/carbon/CarbonProtocolReader.h>"
 cpp_include "<mcrouter/lib/carbon/test/Timestamp.h>"
 
 namespace cpp2 carbon.test.thrift
-typedef i64 (
-  cpp.adapter = "carbon::test::TimestampAdapter"
-) CustomAdapterTypeI64
+@cpp.Adapter{name = "carbon::test::TimestampAdapter"}
+typedef i64 CustomAdapterTypeI64
 
-typedef binary (
-  cpp.adapter = "::carbon::test::DummyPairAdapter<::carbon::test::Timestamp,uint32_t>",
-  cpp.type = "::folly::IOBuf"
-) CustomAdapterTypeBinary
+@cpp.Adapter{name = "::carbon::test::DummyPairAdapter<::carbon::test::Timestamp,uint32_t>"}
+typedef binary (cpp.type = "::folly::IOBuf") CustomAdapterTypeBinary
 
 enum MyEnum {
   A = 0,
