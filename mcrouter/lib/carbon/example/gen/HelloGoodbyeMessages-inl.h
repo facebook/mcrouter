@@ -26,6 +26,7 @@ void HelloRequest::serialize(Writer&& writer) const {
   writer.writeField(5 /* field id */, priority_ref());
   writer.writeField(6 /* field id */, beforeLatencyUs_ref());
   writer.writeField(7 /* field id */, afterLatencyUs_ref());
+  writer.writeField(8 /* field id */, clientVersion_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
@@ -53,6 +54,9 @@ void HelloRequest::visitFields(V&& v) {
   if (!v.visitField(7, "afterLatencyUs", *this->afterLatencyUs_ref())) {
     return;
   }
+  if (!v.visitField(8, "clientVersion", *this->clientVersion_ref())) {
+    return;
+  }
 }
 
 template <class V>
@@ -76,6 +80,9 @@ void HelloRequest::visitFields(V&& v) const {
     return;
   }
   if (!v.visitField(7, "afterLatencyUs", *this->afterLatencyUs_ref())) {
+    return;
+  }
+  if (!v.visitField(8, "clientVersion", *this->clientVersion_ref())) {
     return;
   }
 }

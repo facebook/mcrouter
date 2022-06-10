@@ -29,6 +29,7 @@ request HelloRequest {
   5: EnumUInt32 priority;
   6: uint64_t beforeLatencyUs;
   7: uint64_t afterLatencyUs;
+  8: uint32_t clientVersion;
 };
 
 reply HelloReply {

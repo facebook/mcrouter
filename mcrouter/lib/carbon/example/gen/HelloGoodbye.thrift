@@ -34,6 +34,7 @@ struct HelloRequest {
   5: EnumUInt32 priority
   6: i64 (cpp.type = "uint64_t") beforeLatencyUs
   7: i64 (cpp.type = "uint64_t") afterLatencyUs
+  8: i32 (cpp.type = "uint32_t") clientVersion
 }(cpp.methods = "
   template <class V>
   void visitFields(V&& v);

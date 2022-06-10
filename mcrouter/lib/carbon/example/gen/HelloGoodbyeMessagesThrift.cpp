@@ -59,6 +59,10 @@ void HelloRequest::deserialize(carbon::CarbonProtocolReader& reader) {
         reader.readField(afterLatencyUs_ref(), fieldType);
         break;
       }
+      case 8: {
+        reader.readField(clientVersion_ref(), fieldType);
+        break;
+      }
       default: {
         reader.skip(fieldType);
         break;
