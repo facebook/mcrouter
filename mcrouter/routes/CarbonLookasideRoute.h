@@ -253,18 +253,19 @@ class CarbonLookasideRoute {
                 reply.deserialize(reader);
                 ret.assign(std::move(reply));
               } catch (const std::exception&) {
-                folly::fibers::addTask([this, &key]() {
-                  // Deserialization of item threw, invalidate in cache
-                  auto invalidateReq = std::make_shared<McSetRequest>(key);
-                  invalidateReq->exptime_ref() = -1;
-                  // Best effort cleanup mechanism without blocking the main
-                  // send. Return folly::None back to client so that client will
-                  // fetch from backend while not increasing error rate
-                  client_->send(
-                      *invalidateReq.get(),
-                      [req = invalidateReq](const McSetRequest&, McSetReply&&) {
-                      });
-                });
+                folly::fibers::addTask(
+                    [this,
+                     invalidateReq = std::make_shared<McSetRequest>(key)]() {
+                      // Deserialization of item threw, invalidate in cache
+                      invalidateReq->exptime_ref() = -1;
+                      // Best effort cleanup mechanism without blocking the main
+                      // send. Return folly::None back to client so that client
+                      // will fetch from backend while not increasing error rate
+                      client_->send(
+                          *invalidateReq.get(),
+                          [req = invalidateReq](
+                              const McSetRequest&, McSetReply&&) {});
+                    });
               }
             } else if (isMissResult(*cacheReply.result_ref())) {
               // Hot miss will retry using an expoential backoff.
