@@ -244,6 +244,9 @@ mcrouter_LDADD = \
   lib/libmcrouter.a \
   -lthriftcpp2 \
   -ltransport \
+  -lthrifttype \
+  -lthrifttyperep \
+  -lthriftanyrep \
   -lthriftprotocol \
   -lrpcmetadata \
   -lthriftmetadata \
