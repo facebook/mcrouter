@@ -333,7 +333,7 @@ class DestinationRoute {
     if (auto asyncWriter = proxy->router().asyncWriter()) {
       res = asyncWriter->run([&b, &ap, &attr, proxy, key, asynclogName]() {
         if (proxy->asyncLog().writeDelete(ap, key, asynclogName, attr)) {
-          proxy->stats().increment(asynclog_spool_success_stat);
+          proxy->stats().increment(asynclog_spool_success_rate_stat);
         }
         b.post();
       });
@@ -350,7 +350,7 @@ class DestinationRoute {
       b.wait();
       const auto asyncWriteDurationUs = nowUs() - asyncWriteStartUs;
       proxy->stats().asyncLogDurationUs().insertSample(asyncWriteDurationUs);
-      proxy->stats().increment(asynclog_requests_stat);
+      proxy->stats().increment(asynclog_requests_rate_stat);
     }
     return true;
   }

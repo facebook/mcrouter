@@ -91,6 +91,18 @@ STUI(retrans_closed_connections, 0, 1)
 // Number of requests/second that couldn't be processed immediately in OLR
 STUI(outstanding_route_get_reqs_queued, 0, 1)
 STUI(outstanding_route_update_reqs_queued, 0, 1)
+// number of requests that were attempted to be spooled to disk
+STUI(asynclog_requests_rate, 0, 1)
+// number of requests that were spooled successfully
+STUI(asynclog_spool_success_rate, 0, 1)
+// number of requests that were appended to axon log
+STUI(axonlog_append_success_rate, 0, 1)
+// number of requests that were failed to append to axon log
+STUI(axonlog_append_fail_rate, 0, 1)
+// number of requests that were committed to axon log
+STUI(axonlog_commit_success_rate, 0, 1)
+// number of requests that were failed to commit to axon log
+STUI(axonlog_commit_fail_rate, 0, 1)
 #undef GROUP
 #define GROUP ods_stats | basic_stats
 // Average number of requests waiting in OLR at any given time
@@ -140,20 +152,8 @@ STUI(fibers_stack_high_watermark, 0, 0)
  * Stats about routing
  */
 #define GROUP ods_stats | basic_stats
-// number of requests that were attempted to be spooled to disk
-STUI(asynclog_requests, 0, 1)
-// number of requests that were spooled successfully
-STUI(asynclog_spool_success, 0, 1)
 // avg time spent for asynclog spooling
 STAT(asynclog_duration_us, stat_double, 0, .dbl = 0.0)
-// number of requests that were appended to axon log
-STUI(axonlog_append_success, 0, 1)
-// number of requests that were failed to append to axon log
-STUI(axonlog_append_fail, 0, 1)
-// number of requests that were committed to axon log
-STUI(axonlog_commit_success, 0, 1)
-// number of requests that were failed to commit to axon log
-STUI(axonlog_commit_fail, 0, 1)
 // avg time spent for axonlog append
 STAT(axonlog_duration_us, stat_double, 0, .dbl = 0.0)
 // Proxy requests that are currently being routed.
