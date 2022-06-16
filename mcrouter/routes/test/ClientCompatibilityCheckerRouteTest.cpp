@@ -59,7 +59,7 @@ TEST_F(ClientCompatibilityCheckerRouteTest, basic) {
 
   req.clientVersion_ref() = 10;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::TKO, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::CLIENT_ERROR, *reply.result_ref());
   EXPECT_EQ(
       "Requests from newer client with version 10 are not supported. "
       "Maximum supported client version is 9",
@@ -67,7 +67,7 @@ TEST_F(ClientCompatibilityCheckerRouteTest, basic) {
 
   req.clientVersion_ref() = 11;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::TKO, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::CLIENT_ERROR, *reply.result_ref());
   EXPECT_EQ(
       "Requests from newer client with version 11 are not supported. "
       "Maximum supported client version is 9",

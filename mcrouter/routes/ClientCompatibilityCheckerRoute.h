@@ -67,7 +67,8 @@ class ClientCompatibilityCheckerRoute {
     if (static_cast<uint32_t>(*req.clientVersion_ref()) >=
         maxSupportedClientVersion_) {
       return createReply<Request>(
-          TkoReply,
+          ErrorReply,
+          carbon::Result::CLIENT_ERROR,
           folly::sformat(
               "Requests from newer client with version {} are not supported. "
               "Maximum supported client version is {}",
