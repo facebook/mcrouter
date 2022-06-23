@@ -121,6 +121,10 @@ class McRouteHandleProvider
     return std::move(asyncLogRoutes_);
   }
 
+  folly::StringKeyedUnorderedMap<RouteHandlePtr> releaseSRRoutes() {
+    return std::move(srRoutes_);
+  }
+
   folly::StringKeyedUnorderedMap<std::vector<RouteHandlePtr>> releasePools() {
     return std::move(pools_);
   }
@@ -148,6 +152,9 @@ class McRouteHandleProvider
 
   // poolName -> AsynclogRoute
   folly::StringKeyedUnorderedMap<RouteHandlePtr> asyncLogRoutes_;
+
+  // poolName -> SRRoute
+  folly::StringKeyedUnorderedMap<RouteHandlePtr> srRoutes_;
 
   // pool source name -> (allow_partial_reconfig, [(pool_config,[pool_names])])
   folly::StringKeyedUnorderedMap<std::pair<

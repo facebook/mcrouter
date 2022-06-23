@@ -100,6 +100,7 @@ ProxyConfig<RouterInfo>::ProxyConfig(
   }
 
   asyncLogRoutes_ = provider.releaseAsyncLogRoutes();
+  srRoutes_ = provider.releaseSRRoutes();
   pools_ = provider.releasePools();
   if (index == 0) {
     // only need to keep partial config info in one proxy
@@ -116,6 +117,14 @@ ProxyConfig<RouterInfo>::getRouteHandleForAsyncLog(
     folly::StringPiece asyncLogName) const {
   auto it = asyncLogRoutes_.find(asyncLogName);
   return it != asyncLogRoutes_.end() ? it->second : nullptr;
+}
+
+template <class RouterInfo>
+std::shared_ptr<typename RouterInfo::RouteHandleIf>
+ProxyConfig<RouterInfo>::getRouteHandleForSRRoute(
+    folly::StringPiece poolName) const {
+  auto it = srRoutes_.find(poolName);
+  return it != srRoutes_.end() ? it->second : nullptr;
 }
 
 template <class RouterInfo>

@@ -307,6 +307,8 @@ McRouteHandleProvider<MemcacheRouterInfo>::createSRRoute(
   checkLogic(makeSRRoute, "SRRoute is not implemented for this router");
   checkLogic(json.isObject(), "SRRoute should be object");
   auto route = makeSRRoute(factory, json, proxy_);
+  // Track the SRRoute created so that we can save it to SRRoute map later
+  auto srRoute = route;
 
   if (auto maxOutstandingJson = json.get_ptr("max_outstanding")) {
     auto v = parseInt(
@@ -346,6 +348,12 @@ McRouteHandleProvider<MemcacheRouterInfo>::createSRRoute(
 
   route = wrapAxonLogRoute(std::move(route), proxy_, json);
   route = bucketize(std::move(route), json);
+
+  if (auto jSRRouteName = json.get_ptr("service_name")) {
+    auto srRouteName = parseString(*jSRRouteName, "service_name");
+    srRoutes_.emplace(srRouteName, srRoute);
+  }
+
   return route;
 }
 
