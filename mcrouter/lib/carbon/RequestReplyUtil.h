@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <optional>
 #include <ostream>
 #include <type_traits>
 
@@ -117,6 +118,24 @@ typename std::enable_if_t<
     folly::StringPiece>
 getFullKey(const Request&) {
   return "";
+}
+
+template <class Request>
+typename std::enable_if_t<
+    facebook::memcache::HasBucketIdTrait<Request>::value,
+    std::optional<std::string>>
+getBucketId(const Request& req) {
+  if (req.bucketId_ref().has_value()) {
+    return std::make_optional(*req.bucketId_ref());
+  }
+  return std::nullopt;
+}
+template <class Request>
+typename std::enable_if_t<
+    !facebook::memcache::HasBucketIdTrait<Request>::value,
+    std::optional<std::string>>
+getBucketId(const Request&) {
+  return std::nullopt;
 }
 
 template <typename Reply>
