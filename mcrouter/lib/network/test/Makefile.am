@@ -18,6 +18,9 @@ mock_mc_server_LDADD = \
 	$(top_builddir)/lib/libmcrouter.a \
 	-lthriftcpp2 \
 	-ltransport \
+	-lthrifttype \
+	-lthrifttyperep \
+	-lthriftanyrep \
 	-lthriftprotocol \
 	-lrpcmetadata \
 	-lthriftmetadata \
