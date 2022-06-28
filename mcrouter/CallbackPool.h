@@ -56,6 +56,11 @@ class CallbackPool {
    */
   void notify(Args... args);
 
+  /**
+   * Return true if no callback subscribed in the CallbackPool
+   */
+  bool empty();
+
  private:
   std::shared_ptr<Data> data_;
 };

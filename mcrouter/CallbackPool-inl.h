@@ -70,6 +70,13 @@ typename CallbackPool<Args...>::CallbackHandle CallbackPool<Args...>::subscribe(
   return std::unique_ptr<CallbackHandleImpl>(
       new CallbackHandleImpl(data_, std::move(callback)));
 }
+
+template <typename... Args>
+bool CallbackPool<Args...>::empty() {
+  folly::SharedMutex::ReadHolder lck(data_->callbackLock);
+  return data_->callbacks.empty();
+}
+
 } // namespace mcrouter
 } // namespace memcache
 } // namespace facebook

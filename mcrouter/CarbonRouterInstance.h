@@ -190,6 +190,7 @@ class CarbonRouterInstance
   FileObserverHandle runtimeVarsObserverHandle_;
 
   ConfigApi::CallbackHandle configUpdateHandle_;
+  ConfigApi::CallbackHandle configAdditionalUpdateHandle_;
 
   /**
    * Both these vectors will contain opts.num_proxies elements.
@@ -258,6 +259,9 @@ class CarbonRouterInstance
 
     static CallbackPool<>& onReconfigureSuccess(
         CarbonRouterInstance<RouterInfo>& mcrouter) {
+      mcrouter.configAdditionalUpdateHandle_ =
+          mcrouter.configApi_->subscribeAdditionalCallback(
+              [&mcrouter]() { mcrouter.onReconfigureSuccess_.notify(); });
       return mcrouter.onReconfigureSuccess_;
     }
   };

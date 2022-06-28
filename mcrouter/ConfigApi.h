@@ -54,6 +54,17 @@ class ConfigApi : public ConfigApiIf {
   CallbackHandle subscribe(Callback callback);
 
   /**
+   * Subscribe an additional callback to run in config thread loop when
+   * it is scheduled.
+   */
+  CallbackHandle subscribeAdditionalCallback(Callback callback);
+
+  /**
+   * Schedule to run additional callbacks in next config thread loop
+   */
+  void scheduleAdditionalCallback();
+
+  /**
    * Reads config from 'path'.
    *
    * @return true on success, false otherwise
@@ -224,6 +235,9 @@ class ConfigApi : public ConfigApiIf {
   std::condition_variable finishCV_;
   std::atomic<bool> finish_;
 
+  std::atomic<bool> additionalCallbacksScheduled_{false};
+  CallbackPool<> additionalCallbacks_;
+
   // file path -> md5
   std::unordered_map<std::string, std::string> backupFiles_;
 
@@ -235,6 +249,8 @@ class ConfigApi : public ConfigApiIf {
   void configThreadRun();
 
   bool readFile(const std::string& path, std::string& contents);
+
+  void sleepForPostReconfiguration();
 };
 } // namespace mcrouter
 } // namespace memcache

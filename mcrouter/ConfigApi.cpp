@@ -121,6 +121,15 @@ ConfigApi::CallbackHandle ConfigApi::subscribe(Callback callback) {
   return callbacks_.subscribe(std::move(callback));
 }
 
+ConfigApi::CallbackHandle ConfigApi::subscribeAdditionalCallback(
+    Callback callback) {
+  return additionalCallbacks_.subscribe(std::move(callback));
+}
+
+void ConfigApi::scheduleAdditionalCallback() {
+  additionalCallbacksScheduled_ = true;
+}
+
 void ConfigApi::startObserving() {
   assert(!finish_);
   if (!opts_.disable_reload_configs) {
@@ -232,17 +241,27 @@ void ConfigApi::configThreadRun() {
       callbacks_.notify();
 
       // waits before checking for config updates again.
-      if (opts_.post_reconfiguration_delay_ms > 0) {
-        std::unique_lock<std::mutex> lk(finishMutex_);
-        finishCV_.wait_for(
-            lk,
-            std::chrono::milliseconds(opts_.post_reconfiguration_delay_ms),
-            [this] { return finish_.load(); });
-      }
+      sleepForPostReconfiguration();
+    }
+
+    if (additionalCallbacksScheduled_.exchange(false) &&
+        !additionalCallbacks_.empty()) {
+      additionalCallbacks_.notify();
+      sleepForPostReconfiguration();
     }
 
     // Otherwise there was nothing to read, so check that we aren't shutting
     // down, and wait on the FD again.
+  }
+}
+
+void ConfigApi::sleepForPostReconfiguration() {
+  if (opts_.post_reconfiguration_delay_ms > 0) {
+    std::unique_lock<std::mutex> lk(finishMutex_);
+    finishCV_.wait_for(
+        lk,
+        std::chrono::milliseconds(opts_.post_reconfiguration_delay_ms),
+        [this] { return finish_.load(); });
   }
 }
 
