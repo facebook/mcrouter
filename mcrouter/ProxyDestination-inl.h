@@ -10,6 +10,7 @@
 
 #include <folly/io/async/AsyncSSLSocket.h>
 
+#include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/OptionsUtil.h"
 #include "mcrouter/ProxyBase.h"
 #include "mcrouter/ProxyDestinationMap.h"
@@ -160,6 +161,12 @@ void ProxyDestination<Transport>::onReply(
   }
   ++(*stats().results)[static_cast<size_t>(result)];
   destreqCtx.endTime = nowUs();
+
+  if (destreqCtx.requestClass.is(RequestClass::kFailover)) {
+    ++stats().failoverRequests;
+  } else if (destreqCtx.requestClass.is(RequestClass::kShadow)) {
+    ++stats().shadowRequests;
+  }
 
   int64_t latency = destreqCtx.endTime - destreqCtx.startTime;
   stats().avgLatency.insertSample(latency);

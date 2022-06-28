@@ -73,6 +73,8 @@ struct ServerStat {
   size_t cntLatencies{0};
   size_t pendingRequestsCount{0};
   size_t inflightRequestsCount{0};
+  size_t failoverRequestsCount{0};
+  size_t shadowRequestsCount{0};
   double sumRetransPerKByte{0.0};
   size_t cntRetransPerKByte{0};
   double maxRetransPerKByte{0.0};
@@ -83,6 +85,8 @@ struct ServerStat {
     auto res = folly::format("avg_latency_us:{:.3f}", avgLatency).str();
     folly::format(" pending_reqs:{}", pendingRequestsCount).appendTo(res);
     folly::format(" inflight_reqs:{}", inflightRequestsCount).appendTo(res);
+    folly::format(" failover_reqs:{}", failoverRequestsCount).appendTo(res);
+    folly::format(" shadow_reqs:{}", shadowRequestsCount).appendTo(res);
     if (isHardTko) {
       res.append(" hard_tko; ");
     } else if (isSoftTko) {
@@ -749,6 +753,8 @@ McStatsReply stats_reply(ProxyBase* proxy, folly::StringPiece group_str) {
             auto reqStats = pdstn.getRequestStats();
             stat.pendingRequestsCount += reqStats.numPending;
             stat.inflightRequestsCount += reqStats.numInflight;
+            stat.failoverRequestsCount += pdstn.stats().failoverRequests;
+            stat.shadowRequestsCount += pdstn.stats().shadowRequests;
           });
     }
     for (const auto& it : serverStats) {

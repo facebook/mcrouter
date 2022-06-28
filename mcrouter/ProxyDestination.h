@@ -14,6 +14,7 @@
 #include <folly/Range.h>
 #include <folly/SpinLock.h>
 
+#include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyDestinationBase.h"
 #include "mcrouter/TkoLog.h"
 #include "mcrouter/config.h"
@@ -34,10 +35,15 @@ class ProxyDestinationMap;
 class TkoTracker;
 
 struct DestinationRequestCtx {
+  RequestClass requestClass;
   int64_t startTime{0};
   int64_t endTime{0};
 
-  explicit DestinationRequestCtx(int64_t now) : startTime(now) {}
+  explicit DestinationRequestCtx(
+      RequestClass requestClass,
+      int64_t now)
+      : requestClass(requestClass),
+        startTime(now) {}
 };
 
 template <class Transport>
