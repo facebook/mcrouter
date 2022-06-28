@@ -9,6 +9,8 @@
 
 #include <memory>
 
+#include "mcrouter/config.h"
+#include "mcrouter/mcrouter_config.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/lib/network/gen/MemcacheServer.h"
 #include "mcrouter/tools/mcpiper/MessagePrinter.h"
@@ -30,7 +32,7 @@ constexpr const char* MatchingRequest<Reply>::name() {
 } // namespace detail
 
 std::string getDefaultFifoRoot() {
-  return "/var/mcrouter/fifos";
+  return DEBUG_FIFO_ROOT_DEFAULT;
 }
 
 std::unique_ptr<ValueFormatter> createValueFormatter() {
@@ -38,7 +40,7 @@ std::unique_ptr<ValueFormatter> createValueFormatter() {
 }
 
 std::string getVersion() {
-  return "mcpiper 1.0";
+  return MCPIPER_PACKAGE_STRING;
 }
 
 bool initCompression() {
