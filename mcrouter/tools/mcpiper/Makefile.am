@@ -38,9 +38,9 @@ mcpiper_LDADD = \
 	$(top_srcdir)/lib/libmcrouter.a \
 	-lthriftcpp2 \
 	-ltransport \
+	-lthriftanyrep \
 	-lthrifttype \
 	-lthrifttyperep \
-	-lthriftanyrep \
 	-lthriftprotocol \
 	-lrpcmetadata \
 	-lasync \
