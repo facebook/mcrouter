@@ -72,7 +72,7 @@ class McrouterTestCase(unittest.TestCase):
 
     def add_mcrouter(self, config, route=None, extra_args=None,
                      replace_map=None, bg_mcrouter=False, replace_ports=True,
-                     flavor=None, sr_mock_smc_config=None):
+                     flavor=None, sr_mock_smc_config=None, base_dir=None):
         self.ensureClassVariables()
         substitute_ports = None
         if replace_ports:
@@ -87,7 +87,8 @@ class McrouterTestCase(unittest.TestCase):
                             extra_args=extra_args,
                             replace_map=replace_map,
                             flavor=flavor,
-                            sr_mock_smc_config=sr_mock_smc_config)
+                            sr_mock_smc_config=sr_mock_smc_config,
+                            base_dir=base_dir)
         mcrouter.ensure_connected()
 
         if bg_mcrouter:
