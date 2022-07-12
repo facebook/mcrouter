@@ -8,6 +8,7 @@
 #pragma once
 
 #include <folly/Utility.h>
+#include <string_view>
 
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/ProxyRequestLogger.h"
@@ -120,9 +121,8 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
       const Request& request,
       RequestClass requestClass,
       const int64_t startTimeUs,
-      const RequestLoggerContextFlags flags = RequestLoggerContextFlags::NONE,
-      const std::optional<std::string> bucketId = std::nullopt) {
-    (void)bucketId; // todo log bucket id
+      const std::string_view bucketId = std::string_view(),
+      const RequestLoggerContextFlags flags = RequestLoggerContextFlags::NONE) {
     if constexpr (HasLogBeforeRequestSent<AdditionalLogger, Request>::value) {
       if (recording()) {
         return;
@@ -139,9 +139,12 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
           carbon::Result::UNKNOWN,
           rpcStatsContext,
           /* networkTransportTimeUs */ 0,
-          {},
+          /* extraDataCallbacks */ {},
+          bucketId,
           flags,
-          0);
+          /* numFailovers */ 0,
+          /* beforeReqLatencyInjectedUs */ 0,
+          /* afterReqLatencyInjectedUs */ 0);
       assert(additionalLogger_.hasValue());
       additionalLogger_->logBeforeRequestSent(request, loggerContext);
     }
@@ -164,12 +167,11 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
       const RpcStatsContext rpcStatsContext,
       const int64_t networkTransportTimeUs,
       const std::vector<ExtraDataCallbackT>& extraDataCallbacks,
-      const RequestLoggerContextFlags flags = RequestLoggerContextFlags::NONE,
-      const std::optional<std::string> bucketId = std::nullopt) {
+      const std::string_view bucketId = std::string_view(),
+      const RequestLoggerContextFlags flags = RequestLoggerContextFlags::NONE) {
     if (recording()) {
       return;
     }
-    (void)bucketId; // todo log bucket id
 
     if (auto poolStats = proxy_.stats().getPoolStats(poolStatIndex)) {
       poolStats->incrementRequestCount(1);
@@ -186,6 +188,7 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
         rpcStatsContext,
         networkTransportTimeUs,
         extraDataCallbacks,
+        bucketId,
         flags,
         fiber_local<RouterInfo>::getFailoverCount(),
         fiber_local<RouterInfo>::getAccumulatedInjectedBeforeReqLatencyUs(),

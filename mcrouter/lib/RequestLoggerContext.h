@@ -7,7 +7,9 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
+#include <string_view>
 
 #include <folly/Range.h>
 
@@ -109,6 +111,7 @@ struct RequestLoggerContext {
       const RpcStatsContext rpcStatsContext_,
       const int64_t networkTransportTimeUs_,
       const std::vector<ExtraDataCallbackT>& extraDataCallbacks_,
+      const std::string_view bucketId_,
       const RequestLoggerContextFlags flags_ = RequestLoggerContextFlags::NONE,
       const uint32_t numFailovers_ = 0,
       int64_t beforeReqLatencyInjectedUs_ = 0,
@@ -123,6 +126,7 @@ struct RequestLoggerContext {
         rpcStatsContext(rpcStatsContext_),
         networkTransportTimeUs(networkTransportTimeUs_),
         extraDataCallbacks(extraDataCallbacks_),
+        bucketId(bucketId_),
         flags(flags_),
         numFailovers(numFailovers_),
         beforeReqLatencyInjectedUs(beforeReqLatencyInjectedUs_),
@@ -141,6 +145,7 @@ struct RequestLoggerContext {
   const RpcStatsContext rpcStatsContext;
   const int64_t networkTransportTimeUs;
   const std::vector<ExtraDataCallbackT>& extraDataCallbacks;
+  const std::string_view bucketId;
   const RequestLoggerContextFlags flags;
   const uint32_t numFailovers;
   const int64_t beforeReqLatencyInjectedUs;
