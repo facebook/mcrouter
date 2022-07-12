@@ -58,6 +58,8 @@ const char* errorResultStr(const carbon::Result result) {
       return "SERVER_ERROR remote error\r\n";
     case carbon::Result::PERMISSION_DENIED:
       return "SERVER_ERROR permission denied\r\n";
+    case carbon::Result::HOT_KEY:
+      return "SERVER_ERROR hot key\r\n";
     default:
       return "SERVER_ERROR unknown result\r\n";
   }

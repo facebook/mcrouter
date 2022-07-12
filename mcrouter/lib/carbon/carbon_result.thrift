@@ -42,7 +42,8 @@ enum Result {
   WAITING = 31,
   DEADLINE_EXCEEDED = 32,
   PERMISSION_DENIED = 33,
+  HOT_KEY = 34,
   // Result::NUM_RESULTS indicates the size of the results array and should
   // always be updated to the end of the list
-  NUM_RESULTS = 34,
+  NUM_RESULTS = 35,
 }

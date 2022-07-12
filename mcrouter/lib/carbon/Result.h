@@ -83,6 +83,8 @@ inline const char* resultToString(const Result result) {
       return "mc_res_deadline_exceeded";
     case Result::PERMISSION_DENIED:
       return "mc_res_permission_denied";
+    case Result::HOT_KEY:
+      return "mc_res_hot_key";
     case Result::NUM_RESULTS:
       return "mc_res_unknown";
   }
