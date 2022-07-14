@@ -127,6 +127,21 @@ class McrouterTestCase(unittest.TestCase):
             retries -= 1
         return False
 
+    def assert_eventually_true(self, condition):
+        retry = 0
+        max_retry = 6 # don't increase too much, at worst with 6 it takes ~1 minute
+        sleep_time = 1
+        result = False
+        while retry < max_retry:
+            if (condition):
+                result = True
+                break
+            retry += 1
+            time.sleep(sleep_time)
+            sleep_time *= 2
+        self.assertTrue(result)
+
+
     def _is_mcrouter_running(self, mcrouter):
         try:
             return bool(mcrouter.stats())
