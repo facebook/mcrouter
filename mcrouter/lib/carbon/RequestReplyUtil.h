@@ -153,6 +153,22 @@ getAppSpecificErrorCode(const Reply&) {
   return folly::none;
 }
 
+template <class Message>
+typename std::enable_if_t<
+    facebook::memcache::HasExptimeTrait<Message>::value,
+    std::optional<int32_t>>
+getExptime(const Message& message) {
+  return std::make_optional(*message.exptime_ref());
+}
+
+template <class Message>
+typename std::enable_if_t<
+    !facebook::memcache::HasExptimeTrait<Message>::value,
+    std::optional<int32_t>>
+getExptime(const Message& /* message */) {
+  return std::nullopt;
+}
+
 namespace detail {
 
 inline folly::IOBuf* bufPtr(folly::Optional<folly::IOBuf>& buf) {
