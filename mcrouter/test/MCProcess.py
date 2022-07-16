@@ -1004,11 +1004,20 @@ class Memcached(MCProcess):
             else:
                 args.extend(['-p', str(port)])
 
+            # Create a listen thrift socket to avoid port collision.
+            # Not used in actual ASCII tests
+            thrift_listen_sock = create_listen_socket()
+            thrift_listen_sock_fd = thrift_listen_sock.fileno()
+            args.extend(['--thrift_listen_sock_fd', str(thrift_listen_sock_fd)])
+            pass_fds.append(thrift_listen_sock_fd)
+
             if ssl_port:
                 self.ssl_port = ssl_port
                 args.extend(['--ssl_port', str(self.ssl_port)])
 
             MCProcess.__init__(self, args, port, pass_fds=pass_fds)
+
+            thrift_listen_sock.close()
 
             if listen_sock is not None:
                 listen_sock.close()
