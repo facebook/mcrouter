@@ -11,7 +11,6 @@
 
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/carbon/test/gen/CarbonTest.h"
-#include "mcrouter/lib/carbon/test/gen/CompactTest.h"
 
 using facebook::memcache::coalesceAndGetRange;
 
@@ -25,8 +24,8 @@ std::string longString() {
 
 namespace {
 void compareOptionalIobuf(
-    const folly::Optional<folly::IOBuf>& a,
-    const folly::Optional<folly::IOBuf>& b) {
+    const std::optional<folly::IOBuf> a,
+    const std::optional<folly::IOBuf> b) {
   EXPECT_EQ(a.has_value(), b.has_value());
   if (a.has_value()) {
     folly::IOBuf aCopy = *a;
@@ -36,105 +35,61 @@ void compareOptionalIobuf(
 }
 } // namespace
 
-void expectEqSimpleStruct(const SimpleStruct& a, const SimpleStruct& b) {
-  EXPECT_EQ(a.int32Member(), b.int32Member());
-  EXPECT_EQ(a.stringMember(), b.stringMember());
-  EXPECT_EQ(a.enumMember(), b.enumMember());
-}
-
 void expectEqTestRequest(const TestRequest& a, const TestRequest& b) {
   EXPECT_EQ(a.key_ref()->fullKey(), b.key_ref()->fullKey());
 
-  EXPECT_EQ(a.testBool(), b.testBool());
-  EXPECT_EQ(a.testChar(), b.testChar());
-  EXPECT_EQ(a.testEnum(), b.testEnum());
+  EXPECT_EQ(*a.testBool_ref(), *b.testBool_ref());
+  EXPECT_EQ(*a.testChar_ref(), *b.testChar_ref());
 
-  EXPECT_EQ(a.testInt8(), b.testInt8());
-  EXPECT_EQ(a.testInt16(), b.testInt16());
-  EXPECT_EQ(a.testInt32(), b.testInt32());
-  EXPECT_EQ(a.testInt64(), b.testInt64());
+  EXPECT_EQ(*a.testInt8_ref(), *b.testInt8_ref());
+  EXPECT_EQ(*a.testInt16_ref(), *b.testInt16_ref());
+  EXPECT_EQ(*a.testInt32_ref(), *b.testInt32_ref());
+  EXPECT_EQ(*a.testInt64_ref(), *b.testInt64_ref());
 
-  EXPECT_EQ(a.testUInt8(), b.testUInt8());
-  EXPECT_EQ(a.testUInt16(), b.testUInt16());
-  EXPECT_EQ(a.testUInt32(), b.testUInt32());
-  EXPECT_EQ(a.testUInt64(), b.testUInt64());
+  EXPECT_EQ(*a.testUInt8_ref(), *b.testUInt8_ref());
+  EXPECT_EQ(*a.testUInt16_ref(), *b.testUInt16_ref());
+  EXPECT_EQ(*a.testUInt32_ref(), *b.testUInt32_ref());
+  EXPECT_EQ(*a.testUInt64_ref(), *b.testUInt64_ref());
 
-  EXPECT_FLOAT_EQ(a.testFloat(), b.testFloat());
-  EXPECT_DOUBLE_EQ(a.testDouble(), b.testDouble());
+  EXPECT_FLOAT_EQ(*a.testFloat_ref(), *b.testFloat_ref());
+  EXPECT_DOUBLE_EQ(*a.testDouble_ref(), *b.testDouble_ref());
 
-  EXPECT_EQ(a.testShortString(), b.testShortString());
-  EXPECT_EQ(a.testLongString(), b.testLongString());
-
-  EXPECT_EQ(
-      coalesceAndGetRange(const_cast<folly::IOBuf&>(a.testIobuf())),
-      coalesceAndGetRange(const_cast<folly::IOBuf&>(b.testIobuf())));
-
-  // Mixed-in structure
-  EXPECT_EQ(a.int32Member(), b.int32Member());
-  EXPECT_EQ(a.stringMember(), b.stringMember());
-  EXPECT_EQ(a.enumMember(), b.enumMember());
-  expectEqSimpleStruct(a.asBase(), b.asBase());
-
-  // Member structure
-  expectEqSimpleStruct(a.testStruct(), b.testStruct());
-
-  EXPECT_EQ(a.testList(), b.testList());
-
-  EXPECT_EQ(a.testNestedVec(), b.testNestedVec());
-
-  EXPECT_EQ(a.testEnumVec(), b.testEnumVec());
-
-  EXPECT_EQ(a.testUMap(), b.testUMap());
-  EXPECT_EQ(a.testMap(), b.testMap());
-  EXPECT_EQ(a.testF14FastMap(), b.testF14FastMap());
-  EXPECT_EQ(a.testF14NodeMap(), b.testF14NodeMap());
-  EXPECT_EQ(a.testF14ValueMap(), b.testF14ValueMap());
-  EXPECT_EQ(a.testF14VectorMap(), b.testF14VectorMap());
-  EXPECT_EQ(a.testComplexMap(), b.testComplexMap());
-
-  EXPECT_EQ(a.testUSet(), b.testUSet());
-  EXPECT_EQ(a.testSet(), b.testSet());
-  EXPECT_EQ(a.testF14FastSet(), b.testF14FastSet());
-  EXPECT_EQ(a.testF14NodeSet(), b.testF14NodeSet());
-  EXPECT_EQ(a.testF14ValueSet(), b.testF14ValueSet());
-  EXPECT_EQ(a.testF14VectorSet(), b.testF14VectorSet());
-
-  EXPECT_EQ(a.testOptionalString(), b.testOptionalString());
-  compareOptionalIobuf(a.testOptionalIobuf(), b.testOptionalIobuf());
-
-  EXPECT_EQ(a.testType().name, b.testType().name);
-  EXPECT_EQ(a.testType().points, b.testType().points);
-
-  EXPECT_EQ(a.testOptionalBool(), b.testOptionalBool());
-  EXPECT_EQ(a.testOptionalVec(), b.testOptionalVec());
-}
-
-void expectEqTestCompactRequest(
-    const TestCompactRequest& a,
-    const TestCompactRequest& b) {
-  EXPECT_EQ(a.key_ref()->fullKey(), b.key_ref()->fullKey());
-
-  EXPECT_EQ(a.testBool(), b.testBool());
-  EXPECT_EQ(a.testChar(), b.testChar());
-  EXPECT_EQ(a.testEnum(), b.testEnum());
-
-  EXPECT_EQ(a.testInt8(), b.testInt8());
-  EXPECT_EQ(a.testInt16(), b.testInt16());
-  EXPECT_EQ(a.testInt32(), b.testInt32());
-  EXPECT_EQ(a.testInt64(), b.testInt64());
-
-  EXPECT_EQ(a.testUInt8(), b.testUInt8());
-  EXPECT_EQ(a.testUInt16(), b.testUInt16());
-  EXPECT_EQ(a.testUInt32(), b.testUInt32());
-  EXPECT_EQ(a.testUInt64(), b.testUInt64());
-
-  EXPECT_EQ(a.testShortString(), b.testShortString());
-  EXPECT_EQ(a.testLongString(), b.testLongString());
+  EXPECT_EQ(*a.testShortString_ref(), *b.testShortString_ref());
+  EXPECT_EQ(*a.testLongString_ref(), *b.testLongString_ref());
 
   EXPECT_EQ(
-      coalesceAndGetRange(const_cast<folly::IOBuf&>(a.testIobuf())),
-      coalesceAndGetRange(const_cast<folly::IOBuf&>(b.testIobuf())));
-  EXPECT_EQ(a.testList(), b.testList());
+      coalesceAndGetRange(const_cast<folly::IOBuf&>(*a.testIobuf_ref())),
+      coalesceAndGetRange(const_cast<folly::IOBuf&>(*b.testIobuf_ref())));
+
+  EXPECT_EQ(*a.testList_ref(), *b.testList_ref());
+
+  EXPECT_EQ(*a.testNestedVec_ref(), *b.testNestedVec_ref());
+
+  EXPECT_EQ(*a.testUMap_ref(), *b.testUMap_ref());
+  EXPECT_EQ(*a.testMap_ref(), *b.testMap_ref());
+  EXPECT_EQ(*a.testF14FastMap_ref(), *b.testF14FastMap_ref());
+  EXPECT_EQ(*a.testF14NodeMap_ref(), *b.testF14NodeMap_ref());
+  EXPECT_EQ(*a.testF14ValueMap_ref(), *b.testF14ValueMap_ref());
+  EXPECT_EQ(*a.testF14VectorMap_ref(), *b.testF14VectorMap_ref());
+  EXPECT_EQ(*a.testComplexMap_ref(), *b.testComplexMap_ref());
+
+  EXPECT_EQ(*a.testUSet_ref(), *b.testUSet_ref());
+  EXPECT_EQ(*a.testSet_ref(), *b.testSet_ref());
+  EXPECT_EQ(*a.testF14FastSet_ref(), *b.testF14FastSet_ref());
+  EXPECT_EQ(*a.testF14NodeSet_ref(), *b.testF14NodeSet_ref());
+  EXPECT_EQ(*a.testF14ValueSet_ref(), *b.testF14ValueSet_ref());
+  EXPECT_EQ(*a.testF14VectorSet_ref(), *b.testF14VectorSet_ref());
+
+  EXPECT_EQ(
+      a.testOptionalString_ref().value_or(""),
+      b.testOptionalString_ref().value_or(""));
+  compareOptionalIobuf(
+      a.testOptionalIobuf_ref().to_optional(),
+      b.testOptionalIobuf_ref().to_optional());
+
+  EXPECT_EQ(
+      a.testOptionalBool_ref().value_or(false),
+      b.testOptionalBool_ref().value_or(false));
 }
 
 } // namespace util

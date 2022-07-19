@@ -25,15 +25,13 @@ namespace test {
 namespace detail {
 
 using CarbonTestRequestList = carbon::List<
-    AnotherRequest,
     TestRequest,
     TestRequestStringKey,
     facebook::memcache::McExecRequest,
     facebook::memcache::McQuitRequest,
     facebook::memcache::McShutdownRequest,
     facebook::memcache::McStatsRequest,
-    facebook::memcache::McVersionRequest,
-    test2::util::YetAnotherRequest>;
+    facebook::memcache::McVersionRequest>;
 } // namespace detail
 
 template <class OnRequest>

@@ -37,30 +37,18 @@ class CarbonTestConnection {
   virtual ~CarbonTestConnection() = default;
 
   virtual void sendRequestOne(
-      const AnotherRequest&,
-      carbon::RequestCb<AnotherRequest>) = 0;
-  virtual void sendRequestOne(
       const TestRequest&,
       carbon::RequestCb<TestRequest>) = 0;
   virtual void sendRequestOne(
       const TestRequestStringKey&,
       carbon::RequestCb<TestRequestStringKey>) = 0;
-  virtual void sendRequestOne(
-      const test2::util::YetAnotherRequest&,
-      carbon::RequestCb<test2::util::YetAnotherRequest>) = 0;
 
-  virtual void sendRequestMulti(
-      std::vector<std::reference_wrapper<const AnotherRequest>>&&,
-      carbon::RequestCb<AnotherRequest>) = 0;
   virtual void sendRequestMulti(
       std::vector<std::reference_wrapper<const TestRequest>>&&,
       carbon::RequestCb<TestRequest>) = 0;
   virtual void sendRequestMulti(
       std::vector<std::reference_wrapper<const TestRequestStringKey>>&&,
       carbon::RequestCb<TestRequestStringKey>) = 0;
-  virtual void sendRequestMulti(
-      std::vector<std::reference_wrapper<const test2::util::YetAnotherRequest>>&&,
-      carbon::RequestCb<test2::util::YetAnotherRequest>) = 0;
 
   virtual facebook::memcache::CacheClientCounters getStatCounters() const noexcept = 0;
   virtual std::unordered_map<std::string, std::string> getConfigOptions() = 0;
@@ -94,11 +82,6 @@ class CarbonTestConnectionImpl : public CarbonTestConnection {
   }
 
   void sendRequestOne(
-      const AnotherRequest& req,
-      carbon::RequestCb<AnotherRequest> cb) {
-    return impl_.sendRequestOne(req, std::move(cb));
-  }
-  void sendRequestOne(
       const TestRequest& req,
       carbon::RequestCb<TestRequest> cb) {
     return impl_.sendRequestOne(req, std::move(cb));
@@ -108,17 +91,7 @@ class CarbonTestConnectionImpl : public CarbonTestConnection {
       carbon::RequestCb<TestRequestStringKey> cb) {
     return impl_.sendRequestOne(req, std::move(cb));
   }
-  void sendRequestOne(
-      const test2::util::YetAnotherRequest& req,
-      carbon::RequestCb<test2::util::YetAnotherRequest> cb) {
-    return impl_.sendRequestOne(req, std::move(cb));
-  }
 
-  void sendRequestMulti(
-      std::vector<std::reference_wrapper<const AnotherRequest>>&& reqs,
-      carbon::RequestCb<AnotherRequest> cb) {
-    return impl_.sendRequestMulti(std::move(reqs), std::move(cb));
-  }
   void sendRequestMulti(
       std::vector<std::reference_wrapper<const TestRequest>>&& reqs,
       carbon::RequestCb<TestRequest> cb) {
@@ -127,11 +100,6 @@ class CarbonTestConnectionImpl : public CarbonTestConnection {
   void sendRequestMulti(
       std::vector<std::reference_wrapper<const TestRequestStringKey>>&& reqs,
       carbon::RequestCb<TestRequestStringKey> cb) {
-    return impl_.sendRequestMulti(std::move(reqs), std::move(cb));
-  }
-  void sendRequestMulti(
-      std::vector<std::reference_wrapper<const test2::util::YetAnotherRequest>>&& reqs,
-      carbon::RequestCb<test2::util::YetAnotherRequest> cb) {
     return impl_.sendRequestMulti(std::move(reqs), std::move(cb));
   }
 

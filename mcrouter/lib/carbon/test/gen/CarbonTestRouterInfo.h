@@ -30,6 +30,13 @@ namespace folly {
 struct dynamic;
 class VirtualEventBase;
 } // namespace folly
+namespace carbon {
+namespace test {
+namespace thrift {
+class CarbonTest;
+} // namespace thrift
+} // namespace test
+} // namespace carbon
 
 namespace facebook {
 namespace memcache {
@@ -49,15 +56,14 @@ namespace test {
 namespace detail {
 
 using CarbonTestRoutableRequests = carbon::List<
-    AnotherRequest,
     TestRequest,
-    TestRequestStringKey,
-    test2::util::YetAnotherRequest>;
+    TestRequestStringKey>;
 } // namespace detail
 
 struct CarbonTestRouterInfo {
   using RouteHandleIf = CarbonTestRouteHandleIf;
   using RouteHandlePtr = std::shared_ptr<RouteHandleIf>;
+  using RouteHandleAsyncClient = apache::thrift::Client<carbon::test::thrift::CarbonTest>;
 
   static constexpr const char* name = "CarbonTest";
 
@@ -91,3 +97,5 @@ struct CarbonTestRouterInfo {
 };
 } // namespace test
 } // namespace carbon
+
+#include "mcrouter/lib/carbon/test/gen/CarbonTestThriftTransport.h"

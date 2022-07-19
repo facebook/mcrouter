@@ -15,346 +15,313 @@
 
 namespace carbon {
 namespace test {
+namespace thrift {
 
 template <class Writer>
 void TestRequest::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(-1 /* field id */, asBase());
-  writer.writeField(1 /* field id */, key());
-  writer.writeField(2 /* field id */, testEnum());
-  writer.writeField(3 /* field id */, testBool());
-  writer.writeField(4 /* field id */, testChar());
-  writer.writeField(5 /* field id */, testInt8());
-  writer.writeField(6 /* field id */, testInt16());
-  writer.writeField(7 /* field id */, testInt32());
-  writer.writeField(8 /* field id */, testInt64());
-  writer.writeField(9 /* field id */, testUInt8());
-  writer.writeField(10 /* field id */, testUInt16());
-  writer.writeField(11 /* field id */, testUInt32());
-  writer.writeField(12 /* field id */, testUInt64());
-  writer.writeField(13 /* field id */, testFloat());
-  writer.writeField(14 /* field id */, testDouble());
-  writer.writeField(15 /* field id */, testShortString());
-  writer.writeField(16 /* field id */, testLongString());
-  writer.writeField(17 /* field id */, testIobuf());
-  writer.writeField(18 /* field id */, testStruct());
-  writer.writeField(19 /* field id */, testList());
-  writer.writeField(20 /* field id */, testOptionalString());
-  writer.writeField(21 /* field id */, testOptionalIobuf());
-  writer.writeField(22 /* field id */, testEnumVec());
-  writer.writeField(23 /* field id */, testUnion());
-  writer.writeField(24 /* field id */, testNestedVec());
-  writer.writeField(25 /* field id */, testUMap());
-  writer.writeField(26 /* field id */, testMap());
-  writer.writeField(27 /* field id */, testComplexMap());
-  writer.writeField(28 /* field id */, testUSet());
-  writer.writeField(29 /* field id */, testSet());
-  writer.writeField(30 /* field id */, testOptionalBool());
-  writer.writeField(31 /* field id */, testOptionalVec());
-  writer.writeField(32 /* field id */, testIOBufList());
-  writer.writeField(33 /* field id */, testF14FastMap());
-  writer.writeField(34 /* field id */, testF14NodeMap());
-  writer.writeField(35 /* field id */, testF14ValueMap());
-  writer.writeField(36 /* field id */, testF14VectorMap());
-  writer.writeField(37 /* field id */, testF14FastSet());
-  writer.writeField(38 /* field id */, testF14NodeSet());
-  writer.writeField(39 /* field id */, testF14ValueSet());
-  writer.writeField(40 /* field id */, testF14VectorSet());
-  writer.writeField(41 /* field id */, testOptionalKeywordString());
-  writer.writeField(42 /* field id */, testOptionalKeywordIobuf());
-  writer.writeField(43 /* field id */, testOptionalKeywordBool());
-  writer.writeField(44 /* field id */, testCastable());
-  writer.writeField(100 /* field id */, testType());
+  writer.writeField(1 /* field id */, key_ref());
+  writer.writeField(2 /* field id */, dummy2_ref());
+  writer.writeField(3 /* field id */, testBool_ref());
+  writer.writeField(4 /* field id */, testChar_ref());
+  writer.writeField(5 /* field id */, testInt8_ref());
+  writer.writeField(6 /* field id */, testInt16_ref());
+  writer.writeField(7 /* field id */, testInt32_ref());
+  writer.writeField(8 /* field id */, testInt64_ref());
+  writer.writeField(9 /* field id */, testUInt8_ref());
+  writer.writeField(10 /* field id */, testUInt16_ref());
+  writer.writeField(11 /* field id */, testUInt32_ref());
+  writer.writeField(12 /* field id */, testUInt64_ref());
+  writer.writeField(13 /* field id */, testFloat_ref());
+  writer.writeField(14 /* field id */, testDouble_ref());
+  writer.writeField(15 /* field id */, testShortString_ref());
+  writer.writeField(16 /* field id */, testLongString_ref());
+  writer.writeField(17 /* field id */, testIobuf_ref());
+  writer.writeField(19 /* field id */, testList_ref());
+  writer.writeField(20 /* field id */, testOptionalString_ref());
+  writer.writeField(21 /* field id */, testOptionalIobuf_ref());
+  writer.writeField(22 /* field id */, dummy22_ref());
+  writer.writeField(23 /* field id */, dummy23_ref());
+  writer.writeField(24 /* field id */, testNestedVec_ref());
+  writer.writeField(25 /* field id */, testUMap_ref());
+  writer.writeField(26 /* field id */, testMap_ref());
+  writer.writeField(27 /* field id */, testComplexMap_ref());
+  writer.writeField(28 /* field id */, testUSet_ref());
+  writer.writeField(29 /* field id */, testSet_ref());
+  writer.writeField(30 /* field id */, testOptionalBool_ref());
+  writer.writeField(31 /* field id */, dummy31_ref());
+  writer.writeField(32 /* field id */, testIOBufList_ref());
+  writer.writeField(33 /* field id */, testF14FastMap_ref());
+  writer.writeField(34 /* field id */, testF14NodeMap_ref());
+  writer.writeField(35 /* field id */, testF14ValueMap_ref());
+  writer.writeField(36 /* field id */, testF14VectorMap_ref());
+  writer.writeField(37 /* field id */, testF14FastSet_ref());
+  writer.writeField(38 /* field id */, testF14NodeSet_ref());
+  writer.writeField(39 /* field id */, testF14ValueSet_ref());
+  writer.writeField(40 /* field id */, testF14VectorSet_ref());
+  writer.writeField(41 /* field id */, testOptionalKeywordString_ref());
+  writer.writeField(42 /* field id */, testOptionalKeywordIobuf_ref());
+  writer.writeField(43 /* field id */, testOptionalKeywordBool_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void TestRequest::visitFields(V&& v) {
-  if (v.enterMixin(1, "Base", _carbon_simplestruct_)) {
-    this->_carbon_simplestruct_.visitFields(std::forward<V>(v));
-  }
-  if (!v.leaveMixin()) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(2, "dummy2", *this->dummy2_ref())) {
     return;
   }
-  if (!v.visitField(2, "testEnum", this->testEnum())) {
+  if (!v.visitField(3, "testBool", *this->testBool_ref())) {
     return;
   }
-  if (!v.visitField(3, "testBool", this->testBool())) {
+  if (!v.visitField(4, "testChar", *this->testChar_ref())) {
     return;
   }
-  if (!v.visitField(4, "testChar", this->testChar())) {
+  if (!v.visitField(5, "testInt8", *this->testInt8_ref())) {
     return;
   }
-  if (!v.visitField(5, "testInt8", this->testInt8())) {
+  if (!v.visitField(6, "testInt16", *this->testInt16_ref())) {
     return;
   }
-  if (!v.visitField(6, "testInt16", this->testInt16())) {
+  if (!v.visitField(7, "testInt32", *this->testInt32_ref())) {
     return;
   }
-  if (!v.visitField(7, "testInt32", this->testInt32())) {
+  if (!v.visitField(8, "testInt64", *this->testInt64_ref())) {
     return;
   }
-  if (!v.visitField(8, "testInt64", this->testInt64())) {
+  if (!v.visitField(9, "testUInt8", *this->testUInt8_ref())) {
     return;
   }
-  if (!v.visitField(9, "testUInt8", this->testUInt8())) {
+  if (!v.visitField(10, "testUInt16", *this->testUInt16_ref())) {
     return;
   }
-  if (!v.visitField(10, "testUInt16", this->testUInt16())) {
+  if (!v.visitField(11, "testUInt32", *this->testUInt32_ref())) {
     return;
   }
-  if (!v.visitField(11, "testUInt32", this->testUInt32())) {
+  if (!v.visitField(12, "testUInt64", *this->testUInt64_ref())) {
     return;
   }
-  if (!v.visitField(12, "testUInt64", this->testUInt64())) {
+  if (!v.visitField(13, "testFloat", *this->testFloat_ref())) {
     return;
   }
-  if (!v.visitField(13, "testFloat", this->testFloat())) {
+  if (!v.visitField(14, "testDouble", *this->testDouble_ref())) {
     return;
   }
-  if (!v.visitField(14, "testDouble", this->testDouble())) {
+  if (!v.visitField(15, "testShortString", *this->testShortString_ref())) {
     return;
   }
-  if (!v.visitField(15, "testShortString", this->testShortString())) {
+  if (!v.visitField(16, "testLongString", *this->testLongString_ref())) {
     return;
   }
-  if (!v.visitField(16, "testLongString", this->testLongString())) {
+  if (!v.visitField(17, "testIobuf", *this->testIobuf_ref())) {
     return;
   }
-  if (!v.visitField(17, "testIobuf", this->testIobuf())) {
+  if (!v.visitField(19, "testList", *this->testList_ref())) {
     return;
   }
-  if (!v.visitField(18, "testStruct", this->testStruct())) {
+  if (!v.visitField(20, "testOptionalString", this->testOptionalString_ref())) {
     return;
   }
-  if (!v.visitField(19, "testList", this->testList())) {
+  if (!v.visitField(21, "testOptionalIobuf", this->testOptionalIobuf_ref())) {
     return;
   }
-  if (!v.visitField(20, "testOptionalString", this->testOptionalString())) {
+  if (!v.visitField(22, "dummy22", *this->dummy22_ref())) {
     return;
   }
-  if (!v.visitField(21, "testOptionalIobuf", this->testOptionalIobuf())) {
+  if (!v.visitField(23, "dummy23", *this->dummy23_ref())) {
     return;
   }
-  if (!v.visitField(22, "testEnumVec", this->testEnumVec())) {
+  if (!v.visitField(24, "testNestedVec", *this->testNestedVec_ref())) {
     return;
   }
-  if (!v.visitField(23, "testUnion", this->testUnion())) {
+  if (!v.visitField(25, "testUMap", *this->testUMap_ref())) {
     return;
   }
-  if (!v.visitField(24, "testNestedVec", this->testNestedVec())) {
+  if (!v.visitField(26, "testMap", *this->testMap_ref())) {
     return;
   }
-  if (!v.visitField(25, "testUMap", this->testUMap())) {
+  if (!v.visitField(27, "testComplexMap", *this->testComplexMap_ref())) {
     return;
   }
-  if (!v.visitField(26, "testMap", this->testMap())) {
+  if (!v.visitField(28, "testUSet", *this->testUSet_ref())) {
     return;
   }
-  if (!v.visitField(27, "testComplexMap", this->testComplexMap())) {
+  if (!v.visitField(29, "testSet", *this->testSet_ref())) {
     return;
   }
-  if (!v.visitField(28, "testUSet", this->testUSet())) {
+  if (!v.visitField(30, "testOptionalBool", this->testOptionalBool_ref())) {
     return;
   }
-  if (!v.visitField(29, "testSet", this->testSet())) {
+  if (!v.visitField(31, "dummy31", *this->dummy31_ref())) {
     return;
   }
-  if (!v.visitField(30, "testOptionalBool", this->testOptionalBool())) {
+  if (!v.visitField(32, "testIOBufList", *this->testIOBufList_ref())) {
     return;
   }
-  if (!v.visitField(31, "testOptionalVec", this->testOptionalVec())) {
+  if (!v.visitField(33, "testF14FastMap", *this->testF14FastMap_ref())) {
     return;
   }
-  if (!v.visitField(32, "testIOBufList", this->testIOBufList())) {
+  if (!v.visitField(34, "testF14NodeMap", *this->testF14NodeMap_ref())) {
     return;
   }
-  if (!v.visitField(33, "testF14FastMap", this->testF14FastMap())) {
+  if (!v.visitField(35, "testF14ValueMap", *this->testF14ValueMap_ref())) {
     return;
   }
-  if (!v.visitField(34, "testF14NodeMap", this->testF14NodeMap())) {
+  if (!v.visitField(36, "testF14VectorMap", *this->testF14VectorMap_ref())) {
     return;
   }
-  if (!v.visitField(35, "testF14ValueMap", this->testF14ValueMap())) {
+  if (!v.visitField(37, "testF14FastSet", *this->testF14FastSet_ref())) {
     return;
   }
-  if (!v.visitField(36, "testF14VectorMap", this->testF14VectorMap())) {
+  if (!v.visitField(38, "testF14NodeSet", *this->testF14NodeSet_ref())) {
     return;
   }
-  if (!v.visitField(37, "testF14FastSet", this->testF14FastSet())) {
+  if (!v.visitField(39, "testF14ValueSet", *this->testF14ValueSet_ref())) {
     return;
   }
-  if (!v.visitField(38, "testF14NodeSet", this->testF14NodeSet())) {
+  if (!v.visitField(40, "testF14VectorSet", *this->testF14VectorSet_ref())) {
     return;
   }
-  if (!v.visitField(39, "testF14ValueSet", this->testF14ValueSet())) {
+  if (!v.visitField(41, "testOptionalKeywordString", this->testOptionalKeywordString_ref())) {
     return;
   }
-  if (!v.visitField(40, "testF14VectorSet", this->testF14VectorSet())) {
+  if (!v.visitField(42, "testOptionalKeywordIobuf", this->testOptionalKeywordIobuf_ref())) {
     return;
   }
-  if (!v.visitField(41, "testOptionalKeywordString", this->testOptionalKeywordString())) {
-    return;
-  }
-  if (!v.visitField(42, "testOptionalKeywordIobuf", this->testOptionalKeywordIobuf())) {
-    return;
-  }
-  if (!v.visitField(43, "testOptionalKeywordBool", this->testOptionalKeywordBool())) {
-    return;
-  }
-  if (!v.visitField(44, "testCastable", this->testCastable())) {
-    return;
-  }
-  if (!v.visitField(100, "testType", this->testType())) {
+  if (!v.visitField(43, "testOptionalKeywordBool", this->testOptionalKeywordBool_ref())) {
     return;
   }
 }
 
 template <class V>
 void TestRequest::visitFields(V&& v) const {
-  if (v.enterMixin(1, "Base", _carbon_simplestruct_)) {
-    this->_carbon_simplestruct_.visitFields(std::forward<V>(v));
-  }
-  if (!v.leaveMixin()) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(2, "dummy2", *this->dummy2_ref())) {
     return;
   }
-  if (!v.visitField(2, "testEnum", this->testEnum())) {
+  if (!v.visitField(3, "testBool", *this->testBool_ref())) {
     return;
   }
-  if (!v.visitField(3, "testBool", this->testBool())) {
+  if (!v.visitField(4, "testChar", *this->testChar_ref())) {
     return;
   }
-  if (!v.visitField(4, "testChar", this->testChar())) {
+  if (!v.visitField(5, "testInt8", *this->testInt8_ref())) {
     return;
   }
-  if (!v.visitField(5, "testInt8", this->testInt8())) {
+  if (!v.visitField(6, "testInt16", *this->testInt16_ref())) {
     return;
   }
-  if (!v.visitField(6, "testInt16", this->testInt16())) {
+  if (!v.visitField(7, "testInt32", *this->testInt32_ref())) {
     return;
   }
-  if (!v.visitField(7, "testInt32", this->testInt32())) {
+  if (!v.visitField(8, "testInt64", *this->testInt64_ref())) {
     return;
   }
-  if (!v.visitField(8, "testInt64", this->testInt64())) {
+  if (!v.visitField(9, "testUInt8", *this->testUInt8_ref())) {
     return;
   }
-  if (!v.visitField(9, "testUInt8", this->testUInt8())) {
+  if (!v.visitField(10, "testUInt16", *this->testUInt16_ref())) {
     return;
   }
-  if (!v.visitField(10, "testUInt16", this->testUInt16())) {
+  if (!v.visitField(11, "testUInt32", *this->testUInt32_ref())) {
     return;
   }
-  if (!v.visitField(11, "testUInt32", this->testUInt32())) {
+  if (!v.visitField(12, "testUInt64", *this->testUInt64_ref())) {
     return;
   }
-  if (!v.visitField(12, "testUInt64", this->testUInt64())) {
+  if (!v.visitField(13, "testFloat", *this->testFloat_ref())) {
     return;
   }
-  if (!v.visitField(13, "testFloat", this->testFloat())) {
+  if (!v.visitField(14, "testDouble", *this->testDouble_ref())) {
     return;
   }
-  if (!v.visitField(14, "testDouble", this->testDouble())) {
+  if (!v.visitField(15, "testShortString", *this->testShortString_ref())) {
     return;
   }
-  if (!v.visitField(15, "testShortString", this->testShortString())) {
+  if (!v.visitField(16, "testLongString", *this->testLongString_ref())) {
     return;
   }
-  if (!v.visitField(16, "testLongString", this->testLongString())) {
+  if (!v.visitField(17, "testIobuf", *this->testIobuf_ref())) {
     return;
   }
-  if (!v.visitField(17, "testIobuf", this->testIobuf())) {
+  if (!v.visitField(19, "testList", *this->testList_ref())) {
     return;
   }
-  if (!v.visitField(18, "testStruct", this->testStruct())) {
+  if (!v.visitField(20, "testOptionalString", this->testOptionalString_ref())) {
     return;
   }
-  if (!v.visitField(19, "testList", this->testList())) {
+  if (!v.visitField(21, "testOptionalIobuf", this->testOptionalIobuf_ref())) {
     return;
   }
-  if (!v.visitField(20, "testOptionalString", this->testOptionalString())) {
+  if (!v.visitField(22, "dummy22", *this->dummy22_ref())) {
     return;
   }
-  if (!v.visitField(21, "testOptionalIobuf", this->testOptionalIobuf())) {
+  if (!v.visitField(23, "dummy23", *this->dummy23_ref())) {
     return;
   }
-  if (!v.visitField(22, "testEnumVec", this->testEnumVec())) {
+  if (!v.visitField(24, "testNestedVec", *this->testNestedVec_ref())) {
     return;
   }
-  if (!v.visitField(23, "testUnion", this->testUnion())) {
+  if (!v.visitField(25, "testUMap", *this->testUMap_ref())) {
     return;
   }
-  if (!v.visitField(24, "testNestedVec", this->testNestedVec())) {
+  if (!v.visitField(26, "testMap", *this->testMap_ref())) {
     return;
   }
-  if (!v.visitField(25, "testUMap", this->testUMap())) {
+  if (!v.visitField(27, "testComplexMap", *this->testComplexMap_ref())) {
     return;
   }
-  if (!v.visitField(26, "testMap", this->testMap())) {
+  if (!v.visitField(28, "testUSet", *this->testUSet_ref())) {
     return;
   }
-  if (!v.visitField(27, "testComplexMap", this->testComplexMap())) {
+  if (!v.visitField(29, "testSet", *this->testSet_ref())) {
     return;
   }
-  if (!v.visitField(28, "testUSet", this->testUSet())) {
+  if (!v.visitField(30, "testOptionalBool", this->testOptionalBool_ref())) {
     return;
   }
-  if (!v.visitField(29, "testSet", this->testSet())) {
+  if (!v.visitField(31, "dummy31", *this->dummy31_ref())) {
     return;
   }
-  if (!v.visitField(30, "testOptionalBool", this->testOptionalBool())) {
+  if (!v.visitField(32, "testIOBufList", *this->testIOBufList_ref())) {
     return;
   }
-  if (!v.visitField(31, "testOptionalVec", this->testOptionalVec())) {
+  if (!v.visitField(33, "testF14FastMap", *this->testF14FastMap_ref())) {
     return;
   }
-  if (!v.visitField(32, "testIOBufList", this->testIOBufList())) {
+  if (!v.visitField(34, "testF14NodeMap", *this->testF14NodeMap_ref())) {
     return;
   }
-  if (!v.visitField(33, "testF14FastMap", this->testF14FastMap())) {
+  if (!v.visitField(35, "testF14ValueMap", *this->testF14ValueMap_ref())) {
     return;
   }
-  if (!v.visitField(34, "testF14NodeMap", this->testF14NodeMap())) {
+  if (!v.visitField(36, "testF14VectorMap", *this->testF14VectorMap_ref())) {
     return;
   }
-  if (!v.visitField(35, "testF14ValueMap", this->testF14ValueMap())) {
+  if (!v.visitField(37, "testF14FastSet", *this->testF14FastSet_ref())) {
     return;
   }
-  if (!v.visitField(36, "testF14VectorMap", this->testF14VectorMap())) {
+  if (!v.visitField(38, "testF14NodeSet", *this->testF14NodeSet_ref())) {
     return;
   }
-  if (!v.visitField(37, "testF14FastSet", this->testF14FastSet())) {
+  if (!v.visitField(39, "testF14ValueSet", *this->testF14ValueSet_ref())) {
     return;
   }
-  if (!v.visitField(38, "testF14NodeSet", this->testF14NodeSet())) {
+  if (!v.visitField(40, "testF14VectorSet", *this->testF14VectorSet_ref())) {
     return;
   }
-  if (!v.visitField(39, "testF14ValueSet", this->testF14ValueSet())) {
+  if (!v.visitField(41, "testOptionalKeywordString", this->testOptionalKeywordString_ref())) {
     return;
   }
-  if (!v.visitField(40, "testF14VectorSet", this->testF14VectorSet())) {
+  if (!v.visitField(42, "testOptionalKeywordIobuf", this->testOptionalKeywordIobuf_ref())) {
     return;
   }
-  if (!v.visitField(41, "testOptionalKeywordString", this->testOptionalKeywordString())) {
-    return;
-  }
-  if (!v.visitField(42, "testOptionalKeywordIobuf", this->testOptionalKeywordIobuf())) {
-    return;
-  }
-  if (!v.visitField(43, "testOptionalKeywordBool", this->testOptionalKeywordBool())) {
-    return;
-  }
-  if (!v.visitField(44, "testCastable", this->testCastable())) {
-    return;
-  }
-  if (!v.visitField(100, "testType", this->testType())) {
+  if (!v.visitField(43, "testOptionalKeywordBool", this->testOptionalKeywordBool_ref())) {
     return;
   }
 }
@@ -362,35 +329,35 @@ void TestRequest::visitFields(V&& v) const {
 template <class Writer>
 void TestReply::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, valInt32());
-  writer.writeField(3 /* field id */, valInt64());
+  writer.writeField(1 /* field id */, result_ref());
+  writer.writeField(2 /* field id */, valInt32_ref());
+  writer.writeField(3 /* field id */, valInt64_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void TestReply::visitFields(V&& v) {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "valInt32", this->valInt32())) {
+  if (!v.visitField(2, "valInt32", *this->valInt32_ref())) {
     return;
   }
-  if (!v.visitField(3, "valInt64", this->valInt64())) {
+  if (!v.visitField(3, "valInt64", *this->valInt64_ref())) {
     return;
   }
 }
 
 template <class V>
 void TestReply::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
-  if (!v.visitField(2, "valInt32", this->valInt32())) {
+  if (!v.visitField(2, "valInt32", *this->valInt32_ref())) {
     return;
   }
-  if (!v.visitField(3, "valInt64", this->valInt64())) {
+  if (!v.visitField(3, "valInt64", *this->valInt64_ref())) {
     return;
   }
 }
@@ -398,21 +365,21 @@ void TestReply::visitFields(V&& v) const {
 template <class Writer>
 void TestRequestStringKey::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
+  writer.writeField(1 /* field id */, key_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void TestRequestStringKey::visitFields(V&& v) {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
 }
 
 template <class V>
 void TestRequestStringKey::visitFields(V&& v) const {
-  if (!v.visitField(1, "key", this->key())) {
+  if (!v.visitField(1, "key", *this->key_ref())) {
     return;
   }
 }
@@ -420,21 +387,21 @@ void TestRequestStringKey::visitFields(V&& v) const {
 template <class Writer>
 void TestReplyStringKey::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
+  writer.writeField(1 /* field id */, result_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void TestReplyStringKey::visitFields(V&& v) {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
 }
 
 template <class V>
 void TestReplyStringKey::visitFields(V&& v) const {
-  if (!v.visitField(1, "result", this->result())) {
+  if (!v.visitField(1, "result", *this->result_ref())) {
     return;
   }
 }
@@ -442,91 +409,21 @@ void TestReplyStringKey::visitFields(V&& v) const {
 template <class Writer>
 void TestOptionalBool::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, optionalBool());
+  writer.writeField(1 /* field id */, optionalBool_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void TestOptionalBool::visitFields(V&& v) {
-  if (!v.visitField(1, "optionalBool", this->optionalBool())) {
+  if (!v.visitField(1, "optionalBool", this->optionalBool_ref())) {
     return;
   }
 }
 
 template <class V>
 void TestOptionalBool::visitFields(V&& v) const {
-  if (!v.visitField(1, "optionalBool", this->optionalBool())) {
-    return;
-  }
-}
-
-template <class Writer>
-void TestOptionalUnion::serialize(Writer&& writer) const {
-  writer.writeStructBegin();
-  switch (_which_) {
-    case 1: {
-      writer.writeFieldAlways(1 /* field id */, umember1());
-      break;
-    }
-    case 2: {
-      writer.writeFieldAlways(2 /* field id */, umember2());
-      break;
-    }
-    case 3: {
-      writer.writeFieldAlways(3 /* field id */, umember3());
-      break;
-    }
-    default:
-      break;
-  }
-  writer.writeFieldStop();
-  writer.writeStructEnd();
-}
-
-template <class V>
-void TestOptionalUnion::visitFields(V&& v) {
-  switch (_which_) {
-    case 1:
-      v.visitField(1, "umember1", umember1());
-      break;
-    case 2:
-      v.visitField(2, "umember2", umember2());
-      break;
-    case 3:
-      v.visitField(3, "umember3", umember3());
-      break;
-    default:
-      break;
-  }
-}
-
-template <class V>
-void TestOptionalUnion::visitFields(V&& v) const {
-  switch (_which_) {
-    case 1:
-      v.visitField(1, "umember1", umember1());
-      break;
-    case 2:
-      v.visitField(2, "umember2", umember2());
-      break;
-    case 3:
-      v.visitField(3, "umember3", umember3());
-      break;
-    default:
-      break;
-  }
-}
-
-template <class V>
-void TestOptionalUnion::foreachMember(V&& v) {
-  if (!v.template visitUnionMember<folly::Optional<int64_t>>("umember1", [this]() -> folly::Optional<int64_t>& {return this->emplace<1>();})) {
-    return;
-  }
-  if (!v.template visitUnionMember<folly::Optional<bool>>("umember2", [this]() -> folly::Optional<bool>& {return this->emplace<2>();})) {
-    return;
-  }
-  if (!v.template visitUnionMember<folly::Optional<std::string>>("umember3", [this]() -> folly::Optional<std::string>& {return this->emplace<3>();})) {
+  if (!v.visitField(1, "optionalBool", this->optionalBool_ref())) {
     return;
   }
 }
@@ -534,17 +431,17 @@ void TestOptionalUnion::foreachMember(V&& v) {
 template <class Writer>
 void TestUnion::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  switch (_which_) {
+  switch (getType()) {
     case 1: {
-      writer.writeFieldAlways(1 /* field id */, a());
+      writer.writeFieldAlways(1 /* field id */, *a_ref());
       break;
     }
     case 2: {
-      writer.writeFieldAlways(2 /* field id */, b());
+      writer.writeFieldAlways(2 /* field id */, *b_ref());
       break;
     }
     case 3: {
-      writer.writeFieldAlways(3 /* field id */, c());
+      writer.writeFieldAlways(3 /* field id */, *c_ref());
       break;
     }
     default:
@@ -556,15 +453,15 @@ void TestUnion::serialize(Writer&& writer) const {
 
 template <class V>
 void TestUnion::visitFields(V&& v) {
-  switch (_which_) {
+  switch (getType()) {
     case 1:
-      v.visitField(1, "a", a());
+      v.visitField(1, "a", *a_ref());
       break;
     case 2:
-      v.visitField(2, "b", b());
+      v.visitField(2, "b", *b_ref());
       break;
     case 3:
-      v.visitField(3, "c", c());
+      v.visitField(3, "c", *c_ref());
       break;
     default:
       break;
@@ -573,15 +470,15 @@ void TestUnion::visitFields(V&& v) {
 
 template <class V>
 void TestUnion::visitFields(V&& v) const {
-  switch (_which_) {
+  switch (getType()) {
     case 1:
-      v.visitField(1, "a", a());
+      v.visitField(1, "a", *a_ref());
       break;
     case 2:
-      v.visitField(2, "b", b());
+      v.visitField(2, "b", *b_ref());
       break;
     case 3:
-      v.visitField(3, "c", c());
+      v.visitField(3, "c", *c_ref());
       break;
     default:
       break;
@@ -590,13 +487,13 @@ void TestUnion::visitFields(V&& v) const {
 
 template <class V>
 void TestUnion::foreachMember(V&& v) {
-  if (!v.template visitUnionMember<uint64_t>("a", [this]() -> uint64_t& {return this->emplace<1>();})) {
+  if (!v.template visitUnionMember<uint64_t>("a", [this]() -> uint64_t& {return this->a_ref().emplace();})) {
     return;
   }
-  if (!v.template visitUnionMember<uint32_t>("b", [this]() -> uint32_t& {return this->emplace<2>();})) {
+  if (!v.template visitUnionMember<uint32_t>("b", [this]() -> uint32_t& {return this->b_ref().emplace();})) {
     return;
   }
-  if (!v.template visitUnionMember<uint16_t>("c", [this]() -> uint16_t& {return this->emplace<3>();})) {
+  if (!v.template visitUnionMember<uint16_t>("c", [this]() -> uint16_t& {return this->c_ref().emplace();})) {
     return;
   }
 }
@@ -604,70 +501,70 @@ void TestUnion::foreachMember(V&& v) {
 template <class Writer>
 void TestF14Containers::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, fastMap());
-  writer.writeField(2 /* field id */, nodeMap());
-  writer.writeField(3 /* field id */, valueMap());
-  writer.writeField(4 /* field id */, vectorMap());
-  writer.writeField(5 /* field id */, fastSet());
-  writer.writeField(6 /* field id */, nodeSet());
-  writer.writeField(7 /* field id */, valueSet());
-  writer.writeField(8 /* field id */, vectorSet());
+  writer.writeField(1 /* field id */, fastMap_ref());
+  writer.writeField(2 /* field id */, nodeMap_ref());
+  writer.writeField(3 /* field id */, valueMap_ref());
+  writer.writeField(4 /* field id */, vectorMap_ref());
+  writer.writeField(5 /* field id */, fastSet_ref());
+  writer.writeField(6 /* field id */, nodeSet_ref());
+  writer.writeField(7 /* field id */, valueSet_ref());
+  writer.writeField(8 /* field id */, vectorSet_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void TestF14Containers::visitFields(V&& v) {
-  if (!v.visitField(1, "fastMap", this->fastMap())) {
+  if (!v.visitField(1, "fastMap", *this->fastMap_ref())) {
     return;
   }
-  if (!v.visitField(2, "nodeMap", this->nodeMap())) {
+  if (!v.visitField(2, "nodeMap", *this->nodeMap_ref())) {
     return;
   }
-  if (!v.visitField(3, "valueMap", this->valueMap())) {
+  if (!v.visitField(3, "valueMap", *this->valueMap_ref())) {
     return;
   }
-  if (!v.visitField(4, "vectorMap", this->vectorMap())) {
+  if (!v.visitField(4, "vectorMap", *this->vectorMap_ref())) {
     return;
   }
-  if (!v.visitField(5, "fastSet", this->fastSet())) {
+  if (!v.visitField(5, "fastSet", *this->fastSet_ref())) {
     return;
   }
-  if (!v.visitField(6, "nodeSet", this->nodeSet())) {
+  if (!v.visitField(6, "nodeSet", *this->nodeSet_ref())) {
     return;
   }
-  if (!v.visitField(7, "valueSet", this->valueSet())) {
+  if (!v.visitField(7, "valueSet", *this->valueSet_ref())) {
     return;
   }
-  if (!v.visitField(8, "vectorSet", this->vectorSet())) {
+  if (!v.visitField(8, "vectorSet", *this->vectorSet_ref())) {
     return;
   }
 }
 
 template <class V>
 void TestF14Containers::visitFields(V&& v) const {
-  if (!v.visitField(1, "fastMap", this->fastMap())) {
+  if (!v.visitField(1, "fastMap", *this->fastMap_ref())) {
     return;
   }
-  if (!v.visitField(2, "nodeMap", this->nodeMap())) {
+  if (!v.visitField(2, "nodeMap", *this->nodeMap_ref())) {
     return;
   }
-  if (!v.visitField(3, "valueMap", this->valueMap())) {
+  if (!v.visitField(3, "valueMap", *this->valueMap_ref())) {
     return;
   }
-  if (!v.visitField(4, "vectorMap", this->vectorMap())) {
+  if (!v.visitField(4, "vectorMap", *this->vectorMap_ref())) {
     return;
   }
-  if (!v.visitField(5, "fastSet", this->fastSet())) {
+  if (!v.visitField(5, "fastSet", *this->fastSet_ref())) {
     return;
   }
-  if (!v.visitField(6, "nodeSet", this->nodeSet())) {
+  if (!v.visitField(6, "nodeSet", *this->nodeSet_ref())) {
     return;
   }
-  if (!v.visitField(7, "valueSet", this->valueSet())) {
+  if (!v.visitField(7, "valueSet", *this->valueSet_ref())) {
     return;
   }
-  if (!v.visitField(8, "vectorSet", this->vectorSet())) {
+  if (!v.visitField(8, "vectorSet", *this->vectorSet_ref())) {
     return;
   }
 }
@@ -675,92 +572,70 @@ void TestF14Containers::visitFields(V&& v) const {
 template <class Writer>
 void TestStdContainers::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, fastMap());
-  writer.writeField(2 /* field id */, nodeMap());
-  writer.writeField(3 /* field id */, valueMap());
-  writer.writeField(4 /* field id */, vectorMap());
-  writer.writeField(5 /* field id */, fastSet());
-  writer.writeField(6 /* field id */, nodeSet());
-  writer.writeField(7 /* field id */, valueSet());
-  writer.writeField(8 /* field id */, vectorSet());
+  writer.writeField(1 /* field id */, fastMap_ref());
+  writer.writeField(2 /* field id */, nodeMap_ref());
+  writer.writeField(3 /* field id */, valueMap_ref());
+  writer.writeField(4 /* field id */, vectorMap_ref());
+  writer.writeField(5 /* field id */, fastSet_ref());
+  writer.writeField(6 /* field id */, nodeSet_ref());
+  writer.writeField(7 /* field id */, valueSet_ref());
+  writer.writeField(8 /* field id */, vectorSet_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void TestStdContainers::visitFields(V&& v) {
-  if (!v.visitField(1, "fastMap", this->fastMap())) {
+  if (!v.visitField(1, "fastMap", *this->fastMap_ref())) {
     return;
   }
-  if (!v.visitField(2, "nodeMap", this->nodeMap())) {
+  if (!v.visitField(2, "nodeMap", *this->nodeMap_ref())) {
     return;
   }
-  if (!v.visitField(3, "valueMap", this->valueMap())) {
+  if (!v.visitField(3, "valueMap", *this->valueMap_ref())) {
     return;
   }
-  if (!v.visitField(4, "vectorMap", this->vectorMap())) {
+  if (!v.visitField(4, "vectorMap", *this->vectorMap_ref())) {
     return;
   }
-  if (!v.visitField(5, "fastSet", this->fastSet())) {
+  if (!v.visitField(5, "fastSet", *this->fastSet_ref())) {
     return;
   }
-  if (!v.visitField(6, "nodeSet", this->nodeSet())) {
+  if (!v.visitField(6, "nodeSet", *this->nodeSet_ref())) {
     return;
   }
-  if (!v.visitField(7, "valueSet", this->valueSet())) {
+  if (!v.visitField(7, "valueSet", *this->valueSet_ref())) {
     return;
   }
-  if (!v.visitField(8, "vectorSet", this->vectorSet())) {
+  if (!v.visitField(8, "vectorSet", *this->vectorSet_ref())) {
     return;
   }
 }
 
 template <class V>
 void TestStdContainers::visitFields(V&& v) const {
-  if (!v.visitField(1, "fastMap", this->fastMap())) {
+  if (!v.visitField(1, "fastMap", *this->fastMap_ref())) {
     return;
   }
-  if (!v.visitField(2, "nodeMap", this->nodeMap())) {
+  if (!v.visitField(2, "nodeMap", *this->nodeMap_ref())) {
     return;
   }
-  if (!v.visitField(3, "valueMap", this->valueMap())) {
+  if (!v.visitField(3, "valueMap", *this->valueMap_ref())) {
     return;
   }
-  if (!v.visitField(4, "vectorMap", this->vectorMap())) {
+  if (!v.visitField(4, "vectorMap", *this->vectorMap_ref())) {
     return;
   }
-  if (!v.visitField(5, "fastSet", this->fastSet())) {
+  if (!v.visitField(5, "fastSet", *this->fastSet_ref())) {
     return;
   }
-  if (!v.visitField(6, "nodeSet", this->nodeSet())) {
+  if (!v.visitField(6, "nodeSet", *this->nodeSet_ref())) {
     return;
   }
-  if (!v.visitField(7, "valueSet", this->valueSet())) {
+  if (!v.visitField(7, "valueSet", *this->valueSet_ref())) {
     return;
   }
-  if (!v.visitField(8, "vectorSet", this->vectorSet())) {
-    return;
-  }
-}
-
-template <class Writer>
-void StructWithEnumUInt64::serialize(Writer&& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, testEnum());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
-}
-
-template <class V>
-void StructWithEnumUInt64::visitFields(V&& v) {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
-    return;
-  }
-}
-
-template <class V>
-void StructWithEnumUInt64::visitFields(V&& v) const {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
+  if (!v.visitField(8, "vectorSet", *this->vectorSet_ref())) {
     return;
   }
 }
@@ -768,21 +643,21 @@ void StructWithEnumUInt64::visitFields(V&& v) const {
 template <class Writer>
 void StructWithEnumUInt32::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, testEnum());
+  writer.writeField(1 /* field id */, testEnum_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void StructWithEnumUInt32::visitFields(V&& v) {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
+  if (!v.visitField(1, "testEnum", *this->testEnum_ref())) {
     return;
   }
 }
 
 template <class V>
 void StructWithEnumUInt32::visitFields(V&& v) const {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
+  if (!v.visitField(1, "testEnum", *this->testEnum_ref())) {
     return;
   }
 }
@@ -790,21 +665,21 @@ void StructWithEnumUInt32::visitFields(V&& v) const {
 template <class Writer>
 void StructWithEnumUInt16::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, testEnum());
+  writer.writeField(1 /* field id */, testEnum_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void StructWithEnumUInt16::visitFields(V&& v) {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
+  if (!v.visitField(1, "testEnum", *this->testEnum_ref())) {
     return;
   }
 }
 
 template <class V>
 void StructWithEnumUInt16::visitFields(V&& v) const {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
+  if (!v.visitField(1, "testEnum", *this->testEnum_ref())) {
     return;
   }
 }
@@ -812,43 +687,21 @@ void StructWithEnumUInt16::visitFields(V&& v) const {
 template <class Writer>
 void StructWithEnumUInt8::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, testEnum());
+  writer.writeField(1 /* field id */, testEnum_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void StructWithEnumUInt8::visitFields(V&& v) {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
+  if (!v.visitField(1, "testEnum", *this->testEnum_ref())) {
     return;
   }
 }
 
 template <class V>
 void StructWithEnumUInt8::visitFields(V&& v) const {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
-    return;
-  }
-}
-
-template <class Writer>
-void StructWithEnumInt64::serialize(Writer&& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, testEnum());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
-}
-
-template <class V>
-void StructWithEnumInt64::visitFields(V&& v) {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
-    return;
-  }
-}
-
-template <class V>
-void StructWithEnumInt64::visitFields(V&& v) const {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
+  if (!v.visitField(1, "testEnum", *this->testEnum_ref())) {
     return;
   }
 }
@@ -856,21 +709,21 @@ void StructWithEnumInt64::visitFields(V&& v) const {
 template <class Writer>
 void StructWithEnumInt32::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, testEnum());
+  writer.writeField(1 /* field id */, testEnum_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void StructWithEnumInt32::visitFields(V&& v) {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
+  if (!v.visitField(1, "testEnum", *this->testEnum_ref())) {
     return;
   }
 }
 
 template <class V>
 void StructWithEnumInt32::visitFields(V&& v) const {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
+  if (!v.visitField(1, "testEnum", *this->testEnum_ref())) {
     return;
   }
 }
@@ -878,21 +731,21 @@ void StructWithEnumInt32::visitFields(V&& v) const {
 template <class Writer>
 void StructWithEnumInt16::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, testEnum());
+  writer.writeField(1 /* field id */, testEnum_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void StructWithEnumInt16::visitFields(V&& v) {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
+  if (!v.visitField(1, "testEnum", *this->testEnum_ref())) {
     return;
   }
 }
 
 template <class V>
 void StructWithEnumInt16::visitFields(V&& v) const {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
+  if (!v.visitField(1, "testEnum", *this->testEnum_ref())) {
     return;
   }
 }
@@ -900,50 +753,21 @@ void StructWithEnumInt16::visitFields(V&& v) const {
 template <class Writer>
 void StructWithEnumInt8::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, testEnum());
+  writer.writeField(1 /* field id */, testEnum_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void StructWithEnumInt8::visitFields(V&& v) {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
+  if (!v.visitField(1, "testEnum", *this->testEnum_ref())) {
     return;
   }
 }
 
 template <class V>
 void StructWithEnumInt8::visitFields(V&& v) const {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
-    return;
-  }
-}
-
-template <class Writer>
-void StructWithOptionalEnumUInt64::serialize(Writer&& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, testEnum());
-  writer.writeField(2 /* field id */, testEmptyEnum());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
-}
-
-template <class V>
-void StructWithOptionalEnumUInt64::visitFields(V&& v) {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
-    return;
-  }
-  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
-    return;
-  }
-}
-
-template <class V>
-void StructWithOptionalEnumUInt64::visitFields(V&& v) const {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
-    return;
-  }
-  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+  if (!v.visitField(1, "testEnum", *this->testEnum_ref())) {
     return;
   }
 }
@@ -951,28 +775,28 @@ void StructWithOptionalEnumUInt64::visitFields(V&& v) const {
 template <class Writer>
 void StructWithOptionalEnumUInt32::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, testEnum());
-  writer.writeField(2 /* field id */, testEmptyEnum());
+  writer.writeField(1 /* field id */, testEnum_ref());
+  writer.writeField(2 /* field id */, testEmptyEnum_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void StructWithOptionalEnumUInt32::visitFields(V&& v) {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
+  if (!v.visitField(1, "testEnum", this->testEnum_ref())) {
     return;
   }
-  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum_ref())) {
     return;
   }
 }
 
 template <class V>
 void StructWithOptionalEnumUInt32::visitFields(V&& v) const {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
+  if (!v.visitField(1, "testEnum", this->testEnum_ref())) {
     return;
   }
-  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum_ref())) {
     return;
   }
 }
@@ -980,28 +804,28 @@ void StructWithOptionalEnumUInt32::visitFields(V&& v) const {
 template <class Writer>
 void StructWithOptionalEnumUInt16::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, testEnum());
-  writer.writeField(2 /* field id */, testEmptyEnum());
+  writer.writeField(1 /* field id */, testEnum_ref());
+  writer.writeField(2 /* field id */, testEmptyEnum_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void StructWithOptionalEnumUInt16::visitFields(V&& v) {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
+  if (!v.visitField(1, "testEnum", this->testEnum_ref())) {
     return;
   }
-  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum_ref())) {
     return;
   }
 }
 
 template <class V>
 void StructWithOptionalEnumUInt16::visitFields(V&& v) const {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
+  if (!v.visitField(1, "testEnum", this->testEnum_ref())) {
     return;
   }
-  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum_ref())) {
     return;
   }
 }
@@ -1009,57 +833,28 @@ void StructWithOptionalEnumUInt16::visitFields(V&& v) const {
 template <class Writer>
 void StructWithOptionalEnumUInt8::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, testEnum());
-  writer.writeField(2 /* field id */, testEmptyEnum());
+  writer.writeField(1 /* field id */, testEnum_ref());
+  writer.writeField(2 /* field id */, testEmptyEnum_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void StructWithOptionalEnumUInt8::visitFields(V&& v) {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
+  if (!v.visitField(1, "testEnum", this->testEnum_ref())) {
     return;
   }
-  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum_ref())) {
     return;
   }
 }
 
 template <class V>
 void StructWithOptionalEnumUInt8::visitFields(V&& v) const {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
+  if (!v.visitField(1, "testEnum", this->testEnum_ref())) {
     return;
   }
-  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
-    return;
-  }
-}
-
-template <class Writer>
-void StructWithOptionalEnumInt64::serialize(Writer&& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, testEnum());
-  writer.writeField(2 /* field id */, testEmptyEnum());
-  writer.writeFieldStop();
-  writer.writeStructEnd();
-}
-
-template <class V>
-void StructWithOptionalEnumInt64::visitFields(V&& v) {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
-    return;
-  }
-  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
-    return;
-  }
-}
-
-template <class V>
-void StructWithOptionalEnumInt64::visitFields(V&& v) const {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
-    return;
-  }
-  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum_ref())) {
     return;
   }
 }
@@ -1067,28 +862,28 @@ void StructWithOptionalEnumInt64::visitFields(V&& v) const {
 template <class Writer>
 void StructWithOptionalEnumInt32::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, testEnum());
-  writer.writeField(2 /* field id */, testEmptyEnum());
+  writer.writeField(1 /* field id */, testEnum_ref());
+  writer.writeField(2 /* field id */, testEmptyEnum_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void StructWithOptionalEnumInt32::visitFields(V&& v) {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
+  if (!v.visitField(1, "testEnum", this->testEnum_ref())) {
     return;
   }
-  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum_ref())) {
     return;
   }
 }
 
 template <class V>
 void StructWithOptionalEnumInt32::visitFields(V&& v) const {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
+  if (!v.visitField(1, "testEnum", this->testEnum_ref())) {
     return;
   }
-  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum_ref())) {
     return;
   }
 }
@@ -1096,28 +891,28 @@ void StructWithOptionalEnumInt32::visitFields(V&& v) const {
 template <class Writer>
 void StructWithOptionalEnumInt16::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, testEnum());
-  writer.writeField(2 /* field id */, testEmptyEnum());
+  writer.writeField(1 /* field id */, testEnum_ref());
+  writer.writeField(2 /* field id */, testEmptyEnum_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void StructWithOptionalEnumInt16::visitFields(V&& v) {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
+  if (!v.visitField(1, "testEnum", this->testEnum_ref())) {
     return;
   }
-  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum_ref())) {
     return;
   }
 }
 
 template <class V>
 void StructWithOptionalEnumInt16::visitFields(V&& v) const {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
+  if (!v.visitField(1, "testEnum", this->testEnum_ref())) {
     return;
   }
-  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum_ref())) {
     return;
   }
 }
@@ -1125,30 +920,535 @@ void StructWithOptionalEnumInt16::visitFields(V&& v) const {
 template <class Writer>
 void StructWithOptionalEnumInt8::serialize(Writer&& writer) const {
   writer.writeStructBegin();
-  writer.writeField(1 /* field id */, testEnum());
-  writer.writeField(2 /* field id */, testEmptyEnum());
+  writer.writeField(1 /* field id */, testEnum_ref());
+  writer.writeField(2 /* field id */, testEmptyEnum_ref());
   writer.writeFieldStop();
   writer.writeStructEnd();
 }
 
 template <class V>
 void StructWithOptionalEnumInt8::visitFields(V&& v) {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
+  if (!v.visitField(1, "testEnum", this->testEnum_ref())) {
     return;
   }
-  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum_ref())) {
     return;
   }
 }
 
 template <class V>
 void StructWithOptionalEnumInt8::visitFields(V&& v) const {
-  if (!v.visitField(1, "testEnum", this->testEnum())) {
+  if (!v.visitField(1, "testEnum", this->testEnum_ref())) {
     return;
   }
-  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum())) {
+  if (!v.visitField(2, "testEmptyEnum", this->testEmptyEnum_ref())) {
     return;
   }
 }
+} // namespace thrift
 } // namespace test
 } // namespace carbon
+
+namespace apache {
+namespace thrift {
+template <>
+class Cpp2Ops<carbon::test::TestRequest> {
+ public:
+  typedef carbon::test::TestRequest Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::TestReply> {
+ public:
+  typedef carbon::test::TestReply Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::TestRequestStringKey> {
+ public:
+  typedef carbon::test::TestRequestStringKey Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::TestReplyStringKey> {
+ public:
+  typedef carbon::test::TestReplyStringKey Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::TestOptionalBool> {
+ public:
+  typedef carbon::test::TestOptionalBool Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::TestUnion> {
+ public:
+  typedef carbon::test::TestUnion Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::TestF14Containers> {
+ public:
+  typedef carbon::test::TestF14Containers Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::TestStdContainers> {
+ public:
+  typedef carbon::test::TestStdContainers Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::StructWithEnumUInt32> {
+ public:
+  typedef carbon::test::StructWithEnumUInt32 Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::StructWithEnumUInt16> {
+ public:
+  typedef carbon::test::StructWithEnumUInt16 Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::StructWithEnumUInt8> {
+ public:
+  typedef carbon::test::StructWithEnumUInt8 Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::StructWithEnumInt32> {
+ public:
+  typedef carbon::test::StructWithEnumInt32 Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::StructWithEnumInt16> {
+ public:
+  typedef carbon::test::StructWithEnumInt16 Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::StructWithEnumInt8> {
+ public:
+  typedef carbon::test::StructWithEnumInt8 Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::StructWithOptionalEnumUInt32> {
+ public:
+  typedef carbon::test::StructWithOptionalEnumUInt32 Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::StructWithOptionalEnumUInt16> {
+ public:
+  typedef carbon::test::StructWithOptionalEnumUInt16 Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::StructWithOptionalEnumUInt8> {
+ public:
+  typedef carbon::test::StructWithOptionalEnumUInt8 Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::StructWithOptionalEnumInt32> {
+ public:
+  typedef carbon::test::StructWithOptionalEnumInt32 Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::StructWithOptionalEnumInt16> {
+ public:
+  typedef carbon::test::StructWithOptionalEnumInt16 Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<carbon::test::StructWithOptionalEnumInt8> {
+ public:
+  typedef carbon::test::StructWithOptionalEnumInt8 Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+} // namespace thrift
+} // namespace apache

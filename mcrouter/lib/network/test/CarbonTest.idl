@@ -5,6 +5,7 @@
 
 gen_ref_api_only;
 namespace facebook::memcache::test;
+thrift_namespace facebook.memcache.test.thrift;
 
 struct ManyFields {
   1: folly::IOBuf buf1;

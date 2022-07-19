@@ -3,26 +3,24 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+gen_ref_api_only;
 namespace carbon::test;
+thrift_namespace carbon.test.thrift;
 
-import "mcrouter/lib/carbon/test/a/A.idl"
 import "mcrouter/lib/network/Common.idl"
-
-include "mcrouter/lib/carbon/test/TestCastableToFollyDynamicType.h"
-include "mcrouter/lib/carbon/test/TestUserType.h"
 
 include "folly/container/F14Map.h"
 include "folly/container/F14Set.h"
 
-request TestRequest with 1: SimpleStruct as Base {
+request TestRequest {
   id: 3;
   name: "test";
   reply: TestReply;
 
   1: carbon::Keys<folly::IOBuf> key;
-  2: test2::util::SimpleEnum testEnum;
+  2: bool dummy2;
   3: bool testBool;
-  4: char testChar;
+  4: uint8_t testChar;
   5: int8_t testInt8;
   6: int16_t testInt16;
   7: int32_t testInt32;
@@ -36,20 +34,19 @@ request TestRequest with 1: SimpleStruct as Base {
   15: std::string testShortString;
   16: std::string testLongString;
   17: folly::IOBuf testIobuf;
-  18: SimpleStruct testStruct;
   19: std::vector<std::string> testList;
-  20: folly::Optional<std::string> testOptionalString;
-  21: folly::Optional<folly::IOBuf> testOptionalIobuf;
-  22: std::vector<test2::util::SimpleEnum> testEnumVec;
-  23: test2::util::SimpleUnion testUnion;
+  20: optional std::string testOptionalString;
+  21: optional folly::IOBuf testOptionalIobuf;
+  22: bool dummy22;
+  23: bool dummy23;
   24: std::vector<std::vector<uint64_t>> testNestedVec;
   25: std::unordered_map<std::string, std::string> testUMap;
   26: std::map<double, double> testMap;
   27: std::map<std::string, std::vector<uint16_t>> testComplexMap;
   28: std::unordered_set<std::string> testUSet;
   29: std::set<uint64_t> testSet;
-  30: folly::Optional<bool> testOptionalBool;
-  31: std::vector<folly::Optional<std::string>> testOptionalVec;
+  30: optional bool testOptionalBool;
+  31: std::string dummy31;
   32: std::vector<folly::IOBuf> testIOBufList;
   33: folly::F14FastMap<std::string, std::string> testF14FastMap;
   34: folly::F14NodeMap<std::string, std::string> testF14NodeMap;
@@ -62,9 +59,7 @@ request TestRequest with 1: SimpleStruct as Base {
   41: optional std::string testOptionalKeywordString;
   42: optional folly::IOBuf testOptionalKeywordIobuf;
   43: optional bool testOptionalKeywordBool;
-  44: CastableToFollyDynamicType testCastable;
-  100: UserType testType;
-};
+} (thrift_comparator_mode: none);
 
 reply TestReply {
   1: Result result;
@@ -85,13 +80,7 @@ reply TestReplyStringKey {
 };
 
 struct TestOptionalBool {
-  1: folly::Optional<bool> optionalBool;
-};
-
-union TestOptionalUnion {
-  1: folly::Optional<int64_t> umember1;
-  2: folly::Optional<bool> umember2;
-  3: folly::Optional<std::string> umember3;
+  1: optional bool optionalBool;
 };
 
 union TestUnion {
@@ -122,12 +111,6 @@ struct TestStdContainers {
   8: std::unordered_set<int64_t> vectorSet;
 };
 
-enum EnumUInt64 : uint64_t {
-  AAA = 0,
-  BBB = 1,
-  CCC = 2,
-};
-
 enum EnumUInt32 : uint32_t {
   AAA = 0,
   BBB = 1,
@@ -141,12 +124,6 @@ enum EnumUInt16 : uint16_t {
 };
 
 enum EnumUInt8 : uint8_t {
-  AAA = 0,
-  BBB = 1,
-  CCC = 2,
-};
-
-enum EnumInt64 : int64_t {
   AAA = 0,
   BBB = 1,
   CCC = 2,
@@ -170,10 +147,6 @@ enum EnumInt8 : int8_t {
   CCC = 2,
 };
 
-struct StructWithEnumUInt64 {
-  1: EnumUInt64 testEnum;
-};
-
 struct StructWithEnumUInt32 {
   1: EnumUInt32 testEnum;
 };
@@ -186,10 +159,6 @@ struct StructWithEnumUInt8 {
   1: EnumUInt8 testEnum;
 };
 
-struct StructWithEnumInt64 {
-  1: EnumInt64 testEnum;
-};
-
 struct StructWithEnumInt32 {
   1: EnumInt32 testEnum;
 };
@@ -200,11 +169,6 @@ struct StructWithEnumInt16 {
 
 struct StructWithEnumInt8 {
   1: EnumInt8 testEnum;
-};
-
-struct StructWithOptionalEnumUInt64 {
-  1: optional EnumUInt64 testEnum;
-  2: optional EnumUInt64 testEmptyEnum;
 };
 
 struct StructWithOptionalEnumUInt32 {
@@ -220,11 +184,6 @@ struct StructWithOptionalEnumUInt16 {
 struct StructWithOptionalEnumUInt8 {
   1: optional EnumUInt8 testEnum;
   2: optional EnumUInt8 testEmptyEnum;
-};
-
-struct StructWithOptionalEnumInt64 {
-  1: optional EnumInt64 testEnum;
-  2: optional EnumInt64 testEmptyEnum;
 };
 
 struct StructWithOptionalEnumInt32 {
@@ -243,6 +202,5 @@ struct StructWithOptionalEnumInt8 {
 };
 
 service {
-  additional_requests: [AnotherRequest, carbon::test2::util::YetAnotherRequest];
   enable_shutdown: true;
 };

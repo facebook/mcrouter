@@ -19,7 +19,6 @@
 namespace carbon {
 namespace test {
 
-class SimpleStruct;
 class TestRequest;
 class TestCompactRequest;
 
@@ -38,11 +37,9 @@ constexpr auto kMaxUInt64 = std::numeric_limits<uint64_t>::max();
 constexpr folly::StringPiece kShortString = "aaaaaaaaaa";
 
 std::string longString();
-void expectEqSimpleStruct(const SimpleStruct& a, const SimpleStruct& b);
+template <class T>
+void expectEqSimpleStruct(const T& a, const T& b);
 void expectEqTestRequest(const TestRequest& a, const TestRequest& b);
-void expectEqTestCompactRequest(
-    const TestCompactRequest& a,
-    const TestCompactRequest& b);
 
 template <class T, class Out = T>
 Out serializeAndDeserialize(const T&);

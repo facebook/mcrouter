@@ -75,6 +75,14 @@ Out serializeAndDeserialize(const T& toSerialize) {
   size_t tmp;
   return serializeAndDeserialize<T, Out>(toSerialize, tmp);
 }
+
+template <class T>
+void expectEqSimpleStruct(const T& a, const T& b) {
+  EXPECT_EQ(a.int32Member(), b.int32Member());
+  EXPECT_EQ(a.stringMember(), b.stringMember());
+  EXPECT_EQ(a.enumMember(), b.enumMember());
+}
+
 } // namespace util
 } // namespace test
 } // namespace carbon

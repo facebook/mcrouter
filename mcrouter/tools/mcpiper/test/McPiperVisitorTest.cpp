@@ -35,14 +35,10 @@ void testBasic(bool scriptMode) {
 
 void testComplete(bool scriptMode) {
   TestRequest msg("abc");
-  msg.testList() = {"qqq", "www"};
-  msg.testUMap() = {{"abc", "def"}, {"a", "b"}};
-  msg.testComplexMap() = {
+  msg.testList_ref() = {"qqq", "www"};
+  msg.testUMap_ref() = {{"abc", "def"}, {"a", "b"}};
+  msg.testComplexMap_ref() = {
       {"key01", {1, 2, 3}}, {"key02", {5, 6}}, {"key03", {}}};
-  msg.testUnion().umember1() = 888;
-  msg.testOptionalVec().emplace_back("OptionalString1");
-  msg.testOptionalVec().push_back(folly::none);
-  msg.testOptionalVec().emplace_back("OptionalString3");
 
   McPiperVisitor v(scriptMode);
   msg.visitFields(v);
@@ -57,11 +53,6 @@ void testComplete(bool scriptMode) {
 
   EXPECT_TRUE(str.text().contains("key01"));
   EXPECT_TRUE(str.text().contains("5"));
-
-  EXPECT_TRUE(str.text().contains("888"));
-
-  EXPECT_TRUE(str.text().contains("OptionalString1"));
-  EXPECT_TRUE(str.text().contains("OptionalString3"));
 }
 
 } // anonymous namespace

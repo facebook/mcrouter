@@ -16,6 +16,7 @@
 namespace facebook {
 namespace memcache {
 namespace test {
+namespace thrift {
 
 template <class Writer>
 void ManyFields::serialize(Writer&& writer) const {
@@ -347,6 +348,61 @@ void McExpTestRequest::visitFields(V&& v) const {
     return;
   }
 }
+} // namespace thrift
 } // namespace test
 } // namespace memcache
 } // namespace facebook
+
+namespace apache {
+namespace thrift {
+template <>
+class Cpp2Ops<facebook::memcache::test::ManyFields> {
+ public:
+  typedef facebook::memcache::test::ManyFields Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<facebook::memcache::test::McExpTestRequest> {
+ public:
+  typedef facebook::memcache::test::McExpTestRequest Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+} // namespace thrift
+} // namespace apache
