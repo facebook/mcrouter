@@ -31,163 +31,163 @@ void ManyFields::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readField(buf1(), fieldType);
+        reader.readField(buf1_ref(), fieldType);
         break;
       }
       case 2: {
-        reader.readField(buf2(), fieldType);
+        reader.readField(buf2_ref(), fieldType);
         break;
       }
       case 3: {
-        reader.readField(buf3(), fieldType);
+        reader.readField(buf3_ref(), fieldType);
         break;
       }
       case 4: {
-        reader.readField(buf4(), fieldType);
+        reader.readField(buf4_ref(), fieldType);
         break;
       }
       case 5: {
-        reader.readField(buf5(), fieldType);
+        reader.readField(buf5_ref(), fieldType);
         break;
       }
       case 6: {
-        reader.readField(buf6(), fieldType);
+        reader.readField(buf6_ref(), fieldType);
         break;
       }
       case 7: {
-        reader.readField(buf7(), fieldType);
+        reader.readField(buf7_ref(), fieldType);
         break;
       }
       case 8: {
-        reader.readField(buf8(), fieldType);
+        reader.readField(buf8_ref(), fieldType);
         break;
       }
       case 9: {
-        reader.readField(buf9(), fieldType);
+        reader.readField(buf9_ref(), fieldType);
         break;
       }
       case 10: {
-        reader.readField(buf10(), fieldType);
+        reader.readField(buf10_ref(), fieldType);
         break;
       }
       case 11: {
-        reader.readField(buf11(), fieldType);
+        reader.readField(buf11_ref(), fieldType);
         break;
       }
       case 12: {
-        reader.readField(buf12(), fieldType);
+        reader.readField(buf12_ref(), fieldType);
         break;
       }
       case 13: {
-        reader.readField(buf13(), fieldType);
+        reader.readField(buf13_ref(), fieldType);
         break;
       }
       case 14: {
-        reader.readField(buf14(), fieldType);
+        reader.readField(buf14_ref(), fieldType);
         break;
       }
       case 15: {
-        reader.readField(buf15(), fieldType);
+        reader.readField(buf15_ref(), fieldType);
         break;
       }
       case 16: {
-        reader.readField(buf16(), fieldType);
+        reader.readField(buf16_ref(), fieldType);
         break;
       }
       case 17: {
-        reader.readField(buf17(), fieldType);
+        reader.readField(buf17_ref(), fieldType);
         break;
       }
       case 18: {
-        reader.readField(buf18(), fieldType);
+        reader.readField(buf18_ref(), fieldType);
         break;
       }
       case 19: {
-        reader.readField(buf19(), fieldType);
+        reader.readField(buf19_ref(), fieldType);
         break;
       }
       case 20: {
-        reader.readField(buf20(), fieldType);
+        reader.readField(buf20_ref(), fieldType);
         break;
       }
       case 21: {
-        reader.readField(buf21(), fieldType);
+        reader.readField(buf21_ref(), fieldType);
         break;
       }
       case 22: {
-        reader.readField(buf22(), fieldType);
+        reader.readField(buf22_ref(), fieldType);
         break;
       }
       case 23: {
-        reader.readField(buf23(), fieldType);
+        reader.readField(buf23_ref(), fieldType);
         break;
       }
       case 24: {
-        reader.readField(buf24(), fieldType);
+        reader.readField(buf24_ref(), fieldType);
         break;
       }
       case 25: {
-        reader.readField(buf25(), fieldType);
+        reader.readField(buf25_ref(), fieldType);
         break;
       }
       case 26: {
-        reader.readField(buf26(), fieldType);
+        reader.readField(buf26_ref(), fieldType);
         break;
       }
       case 27: {
-        reader.readField(buf27(), fieldType);
+        reader.readField(buf27_ref(), fieldType);
         break;
       }
       case 28: {
-        reader.readField(buf28(), fieldType);
+        reader.readField(buf28_ref(), fieldType);
         break;
       }
       case 29: {
-        reader.readField(buf29(), fieldType);
+        reader.readField(buf29_ref(), fieldType);
         break;
       }
       case 30: {
-        reader.readField(buf30(), fieldType);
+        reader.readField(buf30_ref(), fieldType);
         break;
       }
       case 31: {
-        reader.readField(buf31(), fieldType);
+        reader.readField(buf31_ref(), fieldType);
         break;
       }
       case 32: {
-        reader.readField(buf32(), fieldType);
+        reader.readField(buf32_ref(), fieldType);
         break;
       }
       case 33: {
-        reader.readField(buf33(), fieldType);
+        reader.readField(buf33_ref(), fieldType);
         break;
       }
       case 34: {
-        reader.readField(buf34(), fieldType);
+        reader.readField(buf34_ref(), fieldType);
         break;
       }
       case 35: {
-        reader.readField(buf35(), fieldType);
+        reader.readField(buf35_ref(), fieldType);
         break;
       }
       case 36: {
-        reader.readField(buf36(), fieldType);
+        reader.readField(buf36_ref(), fieldType);
         break;
       }
       case 37: {
-        reader.readField(buf37(), fieldType);
+        reader.readField(buf37_ref(), fieldType);
         break;
       }
       case 38: {
-        reader.readField(buf38(), fieldType);
+        reader.readField(buf38_ref(), fieldType);
         break;
       }
       case 39: {
-        reader.readField(buf39(), fieldType);
+        reader.readField(buf39_ref(), fieldType);
         break;
       }
       case 40: {
-        reader.readField(buf40(), fieldType);
+        reader.readField(buf40_ref(), fieldType);
         break;
       }
       default: {
@@ -212,15 +212,15 @@ void McExpTestRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readField(key(), fieldType);
+        reader.readField(key_ref(), fieldType);
         break;
       }
       case 2: {
-        reader.readField(flags(), fieldType);
+        reader.readField(flags_ref(), fieldType);
         break;
       }
       case 3: {
-        reader.readField(deadlineMs(), fieldType);
+        reader.readField(deadlineMs_ref(), fieldType);
         break;
       }
       default: {
