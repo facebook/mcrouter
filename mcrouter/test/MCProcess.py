@@ -130,7 +130,7 @@ class MCProcess(ProcessBase):
 
     def __init__(self, cmd, addr,
             base_dir=None,
-            max_retries=None,
+            max_retries=100,
             junk_fill=False,
             pass_fds=(),
             use_ssl=False,
@@ -212,6 +212,7 @@ class MCProcess(ProcessBase):
                 self.connect()
                 break
             except Exception as e:
+                print(f"Caught exception while connect. errno: {e.errno}")
                 self.disconnect()
                 if not self.is_alive():
                     print("Process exited unexpectedly!")
@@ -219,9 +220,7 @@ class MCProcess(ProcessBase):
                     raise
                 retry_count += 1
                 # If we defined a retry count, retry until that's exceeded.
-                # Otherwise, retry forever
-                if (not self.max_retries or retry_count < self.max_retries) \
-                        and e.errno in [errno.ECONNREFUSED, errno.ENOENT]:
+                if (not self.max_retries or retry_count < self.max_retries):
                     time.sleep(1)
                     continue
                 raise
