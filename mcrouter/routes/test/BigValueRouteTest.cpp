@@ -226,7 +226,7 @@ TEST(BigValueRouteTest, bigvalue) {
         auto length = chunk_key_prefix.length();
         auto saw_prefix = keys_set[i].substr(0, length);
         EXPECT_EQ(chunk_key_prefix, saw_prefix);
-        EXPECT_EQ("add", operations_set[i]);
+        EXPECT_EQ("set", operations_set[i]);
 
         if (rand_suffix_set.empty()) { // rand_suffic same for all chunk_keys
           rand_suffix_set = keys_set[i].substr(length);

@@ -43,18 +43,6 @@ InputIterator reduce(InputIterator begin, InputIterator end) {
   return worstIt;
 }
 
-template <class Request>
-struct ReducedUpdateType {
-  using RequestType = McSetRequest;
-  using ReplyType = McSetReply;
-};
-
-template <>
-struct ReducedUpdateType<McAddRequest> {
-  using RequestType = McAddRequest;
-  using ReplyType = McAddReply;
-};
-
 // Hashes value on a separate CPU thread pool, preempts fiber until hashing is
 // complete.
 uint64_t hashBigValue(const folly::IOBuf& value);
@@ -145,13 +133,9 @@ ReplyT<Request> BigValueRoute::route(
     return ch_->route(req);
   }
 
-  // Use 'McSet' for all update requests except for 'McAdd'
-  using RequestType = typename detail::ReducedUpdateType<Request>::RequestType;
-  using ReplyType = typename detail::ReducedUpdateType<Request>::ReplyType;
-
-  auto reqsInfoPair = chunkUpdateRequests<RequestType>(
+  auto reqsInfoPair = chunkUpdateRequests(
       req.key_ref()->fullKey(), *req.value_ref(), *req.exptime_ref());
-  std::vector<std::function<ReplyType()>> fs;
+  std::vector<std::function<McSetReply()>> fs;
   auto& chunkReqs = reqsInfoPair.first;
   fs.reserve(chunkReqs.size());
 
@@ -221,31 +205,6 @@ Reply BigValueRoute::mergeChunkGetReplies(
 
   initialReply.value_ref() = concatAll(dataVec.begin(), dataVec.end());
   return std::move(initialReply);
-}
-
-template <class Request>
-std::pair<std::vector<Request>, BigValueRoute::ChunksInfo>
-BigValueRoute::chunkUpdateRequests(
-    folly::StringPiece baseKey,
-    const folly::IOBuf& value,
-    int32_t exptime) const {
-  int numChunks = (value.computeChainDataLength() + options_.threshold - 1) /
-      options_.threshold;
-  ChunksInfo info(numChunks, detail::hashBigValue(value));
-
-  std::vector<Request> chunkReqs;
-  chunkReqs.reserve(numChunks);
-
-  folly::IOBuf chunkValue;
-  folly::io::Cursor cursor(&value);
-  for (int i = 0; i < numChunks; ++i) {
-    cursor.cloneAtMost(chunkValue, options_.threshold);
-    chunkReqs.emplace_back(createChunkKey(baseKey, i, info.suffix()));
-    chunkReqs.back().value_ref() = std::move(chunkValue);
-    chunkReqs.back().exptime_ref() = exptime;
-  }
-
-  return std::make_pair(std::move(chunkReqs), info);
 }
 
 } // namespace mcrouter

@@ -39,6 +39,30 @@ uint64_t hashBigValue(const folly::IOBuf& value) {
 
 } // namespace detail
 
+std::pair<std::vector<McSetRequest>, BigValueRoute::ChunksInfo>
+BigValueRoute::chunkUpdateRequests(
+    folly::StringPiece baseKey,
+    const folly::IOBuf& value,
+    int32_t exptime) const {
+  int numChunks = (value.computeChainDataLength() + options_.threshold - 1) /
+      options_.threshold;
+  ChunksInfo info(numChunks, detail::hashBigValue(value));
+
+  std::vector<McSetRequest> chunkReqs;
+  chunkReqs.reserve(numChunks);
+
+  folly::IOBuf chunkValue;
+  folly::io::Cursor cursor(&value);
+  for (int i = 0; i < numChunks; ++i) {
+    cursor.cloneAtMost(chunkValue, options_.threshold);
+    chunkReqs.emplace_back(createChunkKey(baseKey, i, info.suffix()));
+    chunkReqs.back().value_ref() = std::move(chunkValue);
+    chunkReqs.back().exptime_ref() = exptime;
+  }
+
+  return std::make_pair(std::move(chunkReqs), info);
+}
+
 McMetagetReply BigValueRoute::route(const McMetagetRequest& req) const {
   // TODO: Make metaget work with BigValueRoute. One way to make this work well
   // is to add 'flags' to McMetagetReply.
