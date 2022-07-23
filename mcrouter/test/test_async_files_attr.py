@@ -9,6 +9,7 @@ import json
 import os
 import time
 
+from libfb.py import parutil
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 
 
@@ -45,10 +46,10 @@ class TestAsyncFilesAttr(McrouterTestCase):
 
     def test_async_files_attr(self):
         mcrouter = self.add_mcrouter(self.config, extra_args=self.extra_args)
-        binary = "buck-out/gen/mcrouter/lib/network/gen/carbon-Memcache-client "
+        binary = parutil.get_file_path("mcrouter/client_binary")
         port = str(mcrouter.getport())
         args = "'{\"key\":\"abcd\", \"attributes\":{\"a1\":1000, \"a2\":2000}}'"
-        command = binary + "-p " + port + " delete " + args
+        command = binary + " -p " + port + " delete " + args
 
         os.system(command)
 
