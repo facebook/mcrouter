@@ -7,9 +7,6 @@
 
 #pragma once
 
-#include <string>
-#include <unordered_map>
-
 #include <folly/Range.h>
 #include <folly/dynamic.h>
 
@@ -28,10 +25,10 @@ class RuntimeVarsData {
    * @param name key of the data to be retrieved
    * @return Variable value, or null if key not found
    */
-  folly::dynamic getVariableByName(const std::string& name) const;
+  folly::dynamic getVariableByName(folly::StringPiece name) const;
 
  private:
-  std::unordered_map<std::string, folly::dynamic> configData_;
+  folly::dynamic configData_;
 };
 } // namespace mcrouter
 } // namespace memcache

@@ -13,26 +13,12 @@ namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
-RuntimeVarsData::RuntimeVarsData(folly::StringPiece json) {
-  auto data = parseJsonString(json);
-  configData_.reserve(data.size());
-  for (const auto& jiter : data.items()) {
-    auto& key = jiter.first;
-    auto& value = jiter.second;
-    if (!key.isString()) {
-      throw std::runtime_error("Bad config format, must have string keys");
-    }
-    configData_.emplace(key.asString(), value);
-  }
-}
+RuntimeVarsData::RuntimeVarsData(folly::StringPiece json)
+    : configData_(parseJsonString(json)) {}
 
 folly::dynamic RuntimeVarsData::getVariableByName(
-    const std::string& name) const {
-  auto value = configData_.find(name);
-  if (value == configData_.end()) {
-    return nullptr;
-  }
-  return value->second;
+    folly::StringPiece name) const {
+  return configData_.getDefault(name, nullptr);
 }
 } // namespace mcrouter
 } // namespace memcache

@@ -169,6 +169,7 @@ folly::dynamic parseJsonString(
     bool allow_trailing_comma) {
   folly::json::serialization_opts opts;
   opts.allow_trailing_comma = allow_trailing_comma;
+  assert(!opts.allow_non_string_keys);
   return folly::parseJsonWithMetadata(s, opts, metadataMap);
 }
 
