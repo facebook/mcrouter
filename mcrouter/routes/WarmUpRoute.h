@@ -19,6 +19,7 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/network/gen/MemcacheMessages.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/RoutingUtils.h"
 
 namespace facebook {
@@ -236,6 +237,11 @@ class WarmUpRoute {
         warm_, req.key_ref()->fullKey(), exptime);
   }
 };
+
+McrouterRouteHandlePtr makeWarmUpRoute(
+    RouteHandleFactory<McrouterRouteHandleIf>& factory,
+    const folly::dynamic& json);
+
 } // namespace mcrouter
 } // namespace memcache
 } // namespace facebook
