@@ -31,6 +31,11 @@ class DefaultShadowPolicy {
       : router_(&router) {}
 
   template <class Request>
+  static constexpr bool supports() {
+    return true;
+  }
+
+  template <class Request>
   std::shared_ptr<const Request> makeAdjustedNormalRequest(
       const Request& req) const {
     return std::make_shared<Request>(req);

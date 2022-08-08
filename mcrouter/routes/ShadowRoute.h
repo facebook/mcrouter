@@ -100,21 +100,23 @@ class ShadowRoute {
           continue;
         }
 
-        if (!adjustedNormalReq) {
-          adjustedNormalReq = shadowPolicy_.makeAdjustedNormalRequest(req);
-          assert(adjustedNormalReq);
-        }
+        if constexpr (ShadowPolicy::template supports<Request>()) {
+          if (!adjustedNormalReq) {
+            adjustedNormalReq = shadowPolicy_.makeAdjustedNormalRequest(req);
+            assert(adjustedNormalReq);
+          }
 
-        if (!normalReply &&
-            shadowPolicy_.template shouldDelayShadow<Request>()) {
-          normalReply = normal_->route(*adjustedNormalReq);
-        }
+          if (!normalReply &&
+              shadowPolicy_.template shouldDelayShadow<Request>()) {
+            normalReply = normal_->route(*adjustedNormalReq);
+          }
 
-        dispatchShadowRequest(
-            std::move(shadow),
-            shadowPolicy_.makeShadowRequest(adjustedNormalReq),
-            normalReply ? shadowPolicy_.makePostShadowReplyFn(*normalReply)
-                        : nullptr);
+          dispatchShadowRequest(
+              std::move(shadow),
+              shadowPolicy_.makeShadowRequest(adjustedNormalReq),
+              normalReply ? shadowPolicy_.makePostShadowReplyFn(*normalReply)
+                          : nullptr);
+        }
       }
     }
 
