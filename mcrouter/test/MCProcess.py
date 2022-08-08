@@ -760,7 +760,8 @@ class McrouterBase(MCProcess):
         args.extend(['-L', self.log,
                      '-a', self.async_spool,
                      '--stats-root', self.stats_dir,
-                     '--debug-fifo-root', self.debug_fifo_root])
+                     '--debug-fifo-root', self.debug_fifo_root,
+                     '--rss-limit-mb', '16384'])
 
         listen_sock = None
         pass_fds = []
