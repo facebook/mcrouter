@@ -22,3 +22,5 @@ jobs:
         run: |
           mkdir -p "$(pwd)"/mcrouter-install/install
           ./mcrouter/scripts/install_ubuntu_20.04.sh "$(pwd)"/mcrouter-install mcrouter
+      - name: Run a python test
+        run: PYTHONPATH=mcrouter/test python3 -B -m unittest -v test_ascii_error
