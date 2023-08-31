@@ -10,3 +10,4 @@ if [ ! -d "$PKG_DIR/mvfst" ]; then
     cmake . \
         -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" -DBUILD_TESTS=OFF
     make $MAKE_ARGS && make install $MAKE_ARGS
+fi
