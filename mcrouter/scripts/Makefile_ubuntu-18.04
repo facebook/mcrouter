@@ -36,7 +36,7 @@ deps: .folly-done .fizz-done .wangle-done .fmt-done .fbthrift-done .gtest-done
 	${RECIPES_DIR}/mvfst.sh $(PKG_DIR) $(INSTALL_DIR) $(INSTALL_AUX_DIR)
 	touch $@
 
-.fbthrift-done: .folly-done .fizz-done .wangle-done .fmt-done
+.fbthrift-done: .folly-done .fizz-done .wangle-done .fmt-done .mvfst-done
 	${RECIPES_DIR}/fbthrift.sh $(PKG_DIR) $(INSTALL_DIR) $(INSTALL_AUX_DIR)
 	touch $@
 
