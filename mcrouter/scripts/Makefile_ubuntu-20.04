@@ -32,7 +32,7 @@ deps: .folly-done .fizz-done .wangle-done .fmt-done .fbthrift-done .gtest-done
 	${RECIPES_DIR}/fmtlib.sh $(PKG_DIR) $(INSTALL_DIR) $(INSTALL_AUX_DIR)
 	touch $@
 
-.mvfst-done: .fmt-done .gtest-done
+.mvfst-done: .folly-done
 	${RECIPES_DIR}/mvfst.sh $(PKG_DIR) $(INSTALL_DIR) $(INSTALL_AUX_DIR)
 	touch $@
 
