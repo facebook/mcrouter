@@ -1,0 +1,125 @@
+# syntax=docker/dockerfile:1.1-experimental
+FROM ubuntu:20.04 as build
+
+ENV DEBIAN_FRONTEND noninteractive
+
+ENV MCROUTER_DIR /usr/local/mcrouter
+ENV PKG_DIR $MCROUTER_DIR/pkgs
+ENV INSTALL_DIR $MCROUTER_DIR/install
+ENV INSTALL_AUX_DIR $MCROUTER_DIR/install/aux
+ENV RECIPES_DIR $PKG_DIR/scripts/recipes
+ENV LDFLAGS="-s -ljemalloc $LDFLAGS"
+
+RUN apt -y update && \
+    apt -y install apt-transport-https \
+        ca-certificates \
+        tzdata \
+        git \
+        autoconf \
+        binutils-dev \
+        bison \
+        cmake \
+        flex \
+        g++ \
+        gcc \
+        git \
+        libboost1.71-all-dev \
+        libbz2-dev \
+        libdouble-conversion-dev \
+        libevent-dev \
+        libgflags-dev \
+        libgoogle-glog-dev \
+        libjemalloc-dev \
+        liblz4-dev \
+        liblzma-dev \
+        libsnappy-dev \
+        libsodium-dev \
+        libssl-dev \
+        libtool \
+        libunwind-dev \
+        make \
+        pkg-config \
+        python3-dev \
+        python-is-python3 \
+        ragel
+
+COPY ./mcrouter/scripts/common.sh ${PKG_DIR}/scripts/common.sh
+COPY ./mcrouter/scripts/recipes/gtest.sh ${PKG_DIR}/scripts/recipes/gtest.sh
+
+RUN mkdir -p "$PKG_DIR" "$INSTALL_DIR" "$INSTALL_AUX_DIR"
+
+WORKDIR $PKG_DIR/scripts
+
+RUN ${RECIPES_DIR}/gtest.sh $PKG_DIR $INSTALL_DIR $INSTALL_AUX_DIR
+
+#RUN cd $MCROUTER_DIR && \
+#    ./repo/mcrouter/mcrouter/scripts/docker/ubuntu/scripts/build.sh
+                      #mcrouter/scripts/docker/ubuntu/scripts/
+
+FROM build as build-fmtlib
+
+COPY ./mcrouter/scripts/recipes/fmtlib.sh ${PKG_DIR}/scripts/recipes/fmtlib.sh
+RUN ${RECIPES_DIR}/fmtlib.sh $PKG_DIR $INSTALL_DIR $INSTALL_AUX_DIR
+
+####
+FROM build as build-folly
+
+COPY --from=build-fmtlib $INSTALL_DIR $INSTALL_DIR
+COPY --from=build-fmtlib $PKG_DIR $PKG_DIR
+COPY ./mcrouter/scripts/recipes/folly.sh ${PKG_DIR}/scripts/recipes/folly.sh
+
+RUN ${RECIPES_DIR}/folly.sh $PKG_DIR $INSTALL_DIR $INSTALL_AUX_DIR
+
+FROM build as build-fizz
+
+COPY --from=build-folly $INSTALL_DIR $INSTALL_DIR
+COPY --from=build-folly $PKG_DIR $PKG_DIR
+COPY ./mcrouter/scripts/recipes/fizz.sh ${PKG_DIR}/scripts/recipes/fizz.sh
+
+RUN ${RECIPES_DIR}/fizz.sh $PKG_DIR $INSTALL_DIR $INSTALL_AUX_DIR
+
+FROM build as build-wangle
+
+COPY --from=build-fizz $INSTALL_DIR $INSTALL_DIR
+COPY --from=build-fizz $PKG_DIR $PKG_DIR
+COPY ./mcrouter/scripts/recipes/wangle.sh ${PKG_DIR}/scripts/recipes/wangle.sh
+
+RUN ${RECIPES_DIR}/wangle.sh $PKG_DIR $INSTALL_DIR $INSTALL_AUX_DIR
+
+FROM build as build-mvfst
+
+ENV VERSION=11.1
+COPY --from=build-wangle $INSTALL_DIR $INSTALL_DIR
+COPY --from=build-wangle $PKG_DIR $PKG_DIR
+COPY ./mcrouter/scripts/recipes/mvfst.sh ${PKG_DIR}/scripts/recipes/mvfst.sh
+
+RUN CFLAGS="-pthread" ${RECIPES_DIR}/mvfst.sh $PKG_DIR $INSTALL_DIR $INSTALL_AUX_DIR || (cat $PKG_DIR/mvfst/CMakeFiles/CMake*.log; exit 1)
+
+####
+FROM build as build-fbthrift
+
+COPY --from=build-mvfst $INSTALL_DIR $INSTALL_DIR
+COPY --from=build-mvfst $PKG_DIR $PKG_DIR
+COPY ./mcrouter/scripts/recipes/fbthrift.sh ${PKG_DIR}/scripts/recipes/fbthrift.sh
+
+RUN ${RECIPES_DIR}/fbthrift.sh $PKG_DIR $INSTALL_DIR $INSTALL_AUX_DIR
+
+
+###
+FROM build as build-mcrouter
+
+COPY --from=build-fbthrift $INSTALL_DIR $INSTALL_DIR
+COPY --from=build-fbthrift $PKG_DIR $PKG_DIR
+
+COPY ./mcrouter $MCROUTER_DIR/repo/mcrouter/
+
+RUN echo "2022-10-02" > $MCROUTER_DIR/repo/mcrouter/VERSION
+
+RUN $MCROUTER_DIR/repo/mcrouter/scripts/recipes/mcrouter.sh $PKG_DIR $INSTALL_DIR $INSTALL_AUX_DIR
+
+RUN strip /usr/local/mcrouter/install/bin/mcrouter
+
+FROM ubuntu:20.04 as final
+
+COPY --from=build /lib/x86_64-linux-gnu/ /lib/x86_64-linux-gnu/
+COPY --from=build-mcrouter /usr/local/mcrouter/install/bin/mcrouter /usr/bin/

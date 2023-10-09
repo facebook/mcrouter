@@ -8,7 +8,7 @@ source common.sh
 
 if [ ! -d "$PKG_DIR/glog" ]; then
     git clone https://github.com/google/googletest.git "$PKG_DIR/gtest" \
-        --branch v1.10.x --depth 1
+        --branch v1.13.x --depth 1
     cd "$PKG_DIR/gtest" || die "cd fail"
 
     cmake . \
