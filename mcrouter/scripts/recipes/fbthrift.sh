@@ -7,7 +7,7 @@
 source common.sh
 
 if [[ ! -d "$PKG_DIR/fbthrift" ]]; then
-  git clone -b main https://github.com/facebook/fbthrift
+  git clone https://github.com/facebook/fbthrift
   cd "$PKG_DIR/fbthrift" || die "cd fail"
   if [[ -f "$REPO_BASE_DIR/mcrouter/FBTHRIFT_COMMIT" ]]; then
     FBTHRIFT_COMMIT="$(head -n 1 "$REPO_BASE_DIR/mcrouter/FBTHRIFT_COMMIT")"
