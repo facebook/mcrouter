@@ -113,7 +113,8 @@ COPY --from=build-fbthrift $PKG_DIR $PKG_DIR
 
 COPY ./mcrouter $MCROUTER_DIR/repo/mcrouter/
 
-RUN echo "2022-10-02" > $MCROUTER_DIR/repo/mcrouter/VERSION
+ARG MCROUTER_VERSION=undefined
+RUN echo "${MCROUTER_VERSION}" > $MCROUTER_DIR/repo/mcrouter/VERSION
 
 RUN $MCROUTER_DIR/repo/mcrouter/scripts/recipes/mcrouter.sh $PKG_DIR $INSTALL_DIR $INSTALL_AUX_DIR
 
