@@ -109,7 +109,7 @@ class DestinationRoute {
       auto finalReq = addDeleteRequestSource(
           req, memcache::McDeleteRequestSource::FAILED_INVALIDATION);
       // Make sure bucket id is set in request
-      finalReq.bucketId_ref() = *bucketId;
+      finalReq.bucketId_ref() = fmt::to_string(*bucketId);
       spool(finalReq, axonCtx, bucketId);
       auto reply = createReply(DefaultReply, finalReq);
       reply.setDestination(destination_->accessPoint());
@@ -382,11 +382,8 @@ class DestinationRoute {
       const std::shared_ptr<AxonContext>& axonCtx,
       const std::optional<uint64_t>& bucketId) const {
     // return true if axonlog is enabled and appending to axon client succeed.
-    auto axonLogRes = bucketId && axonCtx &&
-        spoolAxonProxy(fiber_local<RouterInfo>::getSharedCtx()->proxy(),
-                       req,
-                       axonCtx,
-                       *bucketId);
+    auto axonLogRes =
+        bucketId && axonCtx && spoolAxonProxy(req, axonCtx, *bucketId);
     // Try spool asynclog for mcreplay when:
     // 1. Axon is not enabled
     // 2. Axon is enabled, but isn't configured with fallback to Asynclog.

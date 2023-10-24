@@ -98,9 +98,9 @@ class DistributionRoute {
         ? memcache::McDeleteRequestSource::CROSS_REGION_BROADCAST_INVALIDATION
         : memcache::McDeleteRequestSource::CROSS_REGION_DIRECTED_INVALIDATION;
     auto finalReq = addDeleteRequestSource(req, source);
-    finalReq.bucketId_ref() = *bucketId;
+    finalReq.bucketId_ref() = fmt::to_string(*bucketId);
     auto axonLogRes = spoolAxonProxy(
-        proxy, finalReq, axonCtx, *bucketId, std::move(*distributionRegion));
+        finalReq, axonCtx, *bucketId, std::move(*distributionRegion));
     if (axonLogRes) {
       proxy.stats().increment(distribution_axon_write_success_stat);
     }
