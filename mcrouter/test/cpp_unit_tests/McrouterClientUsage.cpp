@@ -39,7 +39,6 @@ using facebook::memcache::MemcacheRouterInfo;
 using facebook::memcache::mcrouter::CarbonRouterClient;
 using facebook::memcache::mcrouter::CarbonRouterInstance;
 using facebook::memcache::mcrouter::defaultTestOptions;
-using facebook::memcache::mcrouter::ExecutorObserver;
 
 /**
  * This test provides an example of how to use the CarbonRouterClient API.
@@ -68,7 +67,7 @@ TEST(CarbonRouterClient, basicUsageSameThreadClient) {
   // request-handling proxies, stats logging, and more.
   // Using createSameThreadClient() makes most sense in situations where the
   // user controls their own EventBases, as below.
-  std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool =
+  std::shared_ptr<folly::IOThreadPoolExecutorBase> ioThreadPool =
       std::make_shared<folly::IOThreadPoolExecutor>(
           opts.num_proxies, opts.num_proxies);
   auto router = CarbonRouterInstance<MemcacheRouterInfo>::init(
@@ -91,11 +90,8 @@ TEST(CarbonRouterClient, basicUsageSameThreadClient) {
   // Explicitly control which proxy should handle requests from this client.
   // Currently, this is necessary when using createSameThreadClient() with more
   // than one thread.
-  // Run observer and extract event bases
-  auto executorObserver = std::make_shared<ExecutorObserver>();
-  ioThreadPool->addObserver(executorObserver);
-  auto evbs = executorObserver->extractEvbs();
-  ioThreadPool->removeObserver(executorObserver);
+  // extract event bases
+  auto evbs = facebook::memcache::mcrouter::extractEvbs(*ioThreadPool);
 
   auto& eventBase = *evbs.front();
   client->setProxyIndex(0);
