@@ -135,7 +135,11 @@ libmcroutercore_a_SOURCES = \
   routes/FailoverRoute-inl.h \
   routes/FailoverRoute.h \
   routes/FailoverWithExptimeRouteFactory.h \
+  routes/HashStopAllowListRoute.h \
+  routes/HashStopAllowListRoute.cpp \
   routes/HostIdRouteFactory.h \
+  routes/KeyParseRoute.h \
+  routes/KeyParseRoute.cpp \
   routes/KeySplitRoute-inl.h \
   routes/KeySplitRoute.h \
   routes/L1L2CacheRouteFactory.h \
@@ -254,6 +258,7 @@ mcrouter_LDADD = \
   libmcroutercore.a \
   lib/libmcrouter.a \
   -lthriftcpp2 \
+  -lserverdbginfo \
   -ltransport \
   -lthriftanyrep \
   -lthrifttype \
