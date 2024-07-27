@@ -6,3 +6,5 @@
  */
 
 #pragma once
+
+#include "mcrouter/mcrouter_config.h"
