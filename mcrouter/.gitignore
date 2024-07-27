@@ -14,7 +14,7 @@ Makefile.in
 .deps/
 /aclocal.m4
 /autom4te.cache/
-/config.h*
+/config.hin*
 /config-impl.h
 /config.status
 /configure
