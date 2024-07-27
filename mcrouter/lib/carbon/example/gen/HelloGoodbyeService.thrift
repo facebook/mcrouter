@@ -16,14 +16,12 @@ include "thrift/annotation/cpp.thrift"
 include "mcrouter/lib/network/gen/Common.thrift"
 include "mcrouter/lib/carbon/example/gen/HelloGoodbye.thrift"
 
-include "common/fb303/if/fb303.thrift"
-
 cpp_include "mcrouter/lib/carbon/example/gen/HelloGoodbyeMessages.h"
 
 namespace cpp2 hellogoodbye.thrift
 namespace py3 hellogoodbye.thrift
 
-service HelloGoodbye extends fb303.FacebookService {
+service HelloGoodbye {
   HelloGoodbye_GoodbyeReply goodbye(1: HelloGoodbye_GoodbyeRequest request) (thread = "eb")
   HelloGoodbye_HelloReply hello(1: HelloGoodbye_HelloRequest request) throws (1: Common.CarbonResultBusy carbonResultBusy, 2: Common.CarbonResultRemoteError carbonResultRemoteError) (thread = "eb")
   Common_McVersionReply mcVersion(1: Common_McVersionRequest request) (thread = "eb")
