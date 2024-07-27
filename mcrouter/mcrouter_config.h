@@ -7,10 +7,6 @@
 
 #pragma once
 
-#ifndef HAVE_CONFIG_H
-static_assert(false, "mcrouter: invalid build");
-#endif
-
 /**
  * This header contains features specific for open source
  */
