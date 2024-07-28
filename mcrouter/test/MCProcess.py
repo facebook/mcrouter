@@ -18,7 +18,6 @@ import sys
 import tempfile
 import time
 
-from carbon.carbon_result.thrift_types import Result
 from mcrouter.test.config import McrouterGlobals
 
 
@@ -255,7 +254,7 @@ class MCProcess(ProcessBase):
             while True:
                 try:
                     res = self.thrift_client.mcVersion()
-                    if res == Result.OK:
+                    if res == carbon.carbon_result.thrift_types.Result.OK:
                         return
                 except Exception as e:
                     print(f"Error on sending mcVersion in Thrift: {e}")
