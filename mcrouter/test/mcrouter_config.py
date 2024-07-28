@@ -21,6 +21,7 @@ class McrouterGlobals:
             "mcrouter": "./mcrouter/mcrouter",
             "mcpiper": "./mcrouter/tools/mcpiper/mcpiper",
             "mockmc": "./mcrouter/lib/network/test/mock_mc_server",
+            "mockmcdual": "./mcrouter/lib/network/test/mock_mc_server_dual",
             "prodmc": "./mcrouter/lib/network/test/mock_mc_server",
         }
         return bins[name]
