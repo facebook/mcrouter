@@ -129,7 +129,7 @@ class CarbonLookasideTmpConfig:
                 "TEMPLATE_PREFIX": prefix,
                 "TEMPLATE_TTL": ttl,
                 "TEMPLATE_TTL_UNIT_MS": has_ms_ttl,
-                "TEMPLATE_FILENAME": "file:" + self.tmpFlavorFile.name,
+                "TEMPLATE_FILENAME": self.tmpFlavorFile.name,
                 "TEMPLATE_LEASE_ENABLE": lease_enable,
                 "TEMPLATE_LEASE_WAIT_INTERVAL": lease_interval,
                 "TEMPLATE_LEASE_NUM_RETRIES": lease_num_retries,
@@ -161,6 +161,7 @@ class TestCarbonLookasideRouteBasic(McrouterTestCase):
         self.mcrouter = self.add_mcrouter(self.config, extra_args=self.extra_args)
 
     def tearDown(self):
+        super().tearDown()
         self.tmpConfig.cleanup()
 
     def test_carbonlookaside_basic(self):
@@ -222,6 +223,7 @@ class TestCarbonLookasideRouteExpiry(McrouterTestCase):
         self.mcrouter = self.add_mcrouter(self.config, extra_args=self.extra_args)
 
     def tearDown(self):
+        super().tearDown()
         self.tmpConfig.cleanup()
 
     def test_carbonlookaside_ttl_expiry(self):
@@ -299,6 +301,7 @@ class TestCarbonLookasideRouteLeases(McrouterTestCase):
         self.mcrouter = self.add_mcrouter(self.config, extra_args=self.extra_args)
 
     def tearDown(self):
+        super().tearDown()
         self.tmpConfig.cleanup()
 
     def test_carbonlookaside_basic_leases(self):
@@ -362,6 +365,7 @@ class TestCarbonLookasideRouteLeasesHotMiss(McrouterTestCase):
         self.mcrouter2 = self.add_mcrouter(self.config, extra_args=self.extra_args)
 
     def tearDown(self):
+        super().tearDown()
         self.tmpConfig.cleanup()
 
     def async_get(self, key, ret):
@@ -427,6 +431,7 @@ class TestCarbonLookasideRouteExpiryMsTTLBase(McrouterTestCase):
         self.mcrouter = self.add_mcrouter(self.config, extra_args=self.extra_args)
 
     def tearDown(self):
+        super().tearDown()
         self.tmpConfig.cleanup()
 
     def test_carbonlookaside_ttl_ms_expiry_config(self):
@@ -467,6 +472,7 @@ class TestCarbonLookasideRouteExpiryMsTTL(McrouterTestCase):
         self.mcrouter = self.add_mcrouter(self.config, extra_args=self.extra_args)
 
     def tearDown(self):
+        super().tearDown()
         self.tmpConfig.cleanup()
 
     def test_carbonlookaside_ttl_ms_expiry(self):
