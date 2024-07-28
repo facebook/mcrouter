@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <fstream>
+#include <stdexcept>
 #include <string>
 
 #include <gtest/gtest.h>
@@ -162,9 +164,22 @@ TEST_P(AsyncMcClientSimpleTest, caretTimeout) {
   EXPECT_EQ(1, server->getAcceptedConns());
 }
 
+/**
+ * Get a non-routable IP address supported by the current execution environment.
+ * @return Non-routable IP address
+ */
+constexpr const char* nonRoutableAddress() {
+#ifdef MCROUTER_OSS_BUILD
+  // GitHub Actions is IPv4-only as of 2024, so use an RFC 5737 address instead.
+  return "198.51.100.12";
+#else
+  return "100::";
+#endif
+}
+
 TEST_P(AsyncMcClientSimpleTest, noServerTimeout) {
   auto ssl = GetParam();
-  TestClient client("100::", 11302, 200, mc_ascii_protocol, ssl);
+  TestClient client(nonRoutableAddress(), 11302, 200, mc_ascii_protocol, ssl);
   client.sendGet("hold", carbon::Result::CONNECT_TIMEOUT);
   client.waitForReplies();
 }
@@ -532,7 +547,7 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
   bool replied = false;
   bool wentDown = false;
 
-  ConnectionOptions opts("100::", 11302, mc_ascii_protocol);
+  ConnectionOptions opts(nonRoutableAddress(), 11302, mc_ascii_protocol);
   opts.connectTimeout = std::chrono::milliseconds(1000);
   auto client = std::make_unique<AsyncMcClient>(*eventBase, opts);
   client->setConnectionStatusCallbacks(
@@ -869,6 +884,9 @@ TEST(AsyncMcClient, caretVersionUserSpecified) {
 }
 
 TEST(AsyncMcClient, caretAdditionalFields) {
+#ifdef LIBMC_FBTRACE_DISABLE
+  GTEST_SKIP() << "Tracing is disabled in the OSS build";
+#endif
   TestServer::Config config;
   config.useSsl = false;
   auto server = TestServer::create(std::move(config));
@@ -958,6 +976,26 @@ using TFOTestParams = std::tuple<bool, bool, bool, SecurityMech>;
 
 class AsyncMcClientTFOTest : public TestWithParam<TFOTestParams> {};
 
+/**
+ * Check whether the current host system supports TCP fastopen.
+ */
+bool tfoSupportedOnHost() {
+  try {
+    constexpr int kClientSupport = 1;
+    constexpr int kDataInOpeningSynWithoutCookie = 4;
+    int flags;
+    std::ifstream procFs("/proc/sys/net/ipv4/tcp_fastopen");
+    procFs >> flags;
+
+    return
+      (flags & kClientSupport) == kClientSupport &&
+      (flags & kDataInOpeningSynWithoutCookie) == kDataInOpeningSynWithoutCookie;
+  } catch (std::exception& e) {
+    LOG(ERROR) << "Could not read TCP fastopen sysctl: " << e.what();
+    return false;
+  }
+}
+
 TEST_P(AsyncMcClientTFOTest, testTfoWithSSL) {
   auto serverEnabled = std::get<0>(GetParam());
   auto clientEnabled = std::get<1>(GetParam());
@@ -971,9 +1009,10 @@ TEST_P(AsyncMcClientTFOTest, testTfoWithSSL) {
 
   auto offloadHandshake = std::get<2>(GetParam());
   auto constexpr nConnAttempts = 10;
+  auto tfoSupported = tfoSupportedOnHost();
 
   auto mech = std::get<3>(GetParam());
-  auto sendReq = [serverEnabled, clientEnabled, mech](TestClient& client) {
+  auto sendReq = [serverEnabled, clientEnabled, tfoSupported, mech](TestClient& client) {
     client.setConnectionStatusCallbacks(
         [&](const folly::AsyncTransportWrapper& sock, int64_t) {
           if (mech == SecurityMech::TLS_TO_PLAINTEXT) {
@@ -982,10 +1021,16 @@ TEST_P(AsyncMcClientTFOTest, testTfoWithSSL) {
             auto stats = socket->getStats();
             if (clientEnabled) {
               EXPECT_TRUE(stats.tfoAttempted);
-              EXPECT_TRUE(stats.tfoFinished);
-              // we can not guarantee socket->getTFOSucceeded() will return true
-              // unless there are specific kernel + host settings applied
-              if (!serverEnabled) {
+
+              if (tfoSupported) {
+                EXPECT_TRUE(stats.tfoFinished);
+                if (serverEnabled) {
+                  EXPECT_TRUE(stats.tfoSuccess);
+                } else {
+                  EXPECT_FALSE(stats.tfoSuccess);
+                }
+              } else {
+                EXPECT_FALSE(stats.tfoFinished);
                 EXPECT_FALSE(stats.tfoSuccess);
               }
             } else {
@@ -995,10 +1040,16 @@ TEST_P(AsyncMcClientTFOTest, testTfoWithSSL) {
             auto* socket = sock.getUnderlyingTransport<folly::AsyncSocket>();
             if (clientEnabled) {
               EXPECT_TRUE(socket->getTFOAttempted());
-              EXPECT_TRUE(socket->getTFOFinished());
-              // we can not guarantee socket->getTFOSucceeded() will return true
-              // unless there are specific kernel + host settings applied
-              if (!serverEnabled) {
+
+              if (tfoSupported) {
+                EXPECT_TRUE(socket->getTFOFinished());
+                if (serverEnabled) {
+                  EXPECT_TRUE(socket->getTFOSucceded());
+                } else {
+                  EXPECT_FALSE(socket->getTFOSucceded());
+                }
+              } else {
+                EXPECT_FALSE(socket->getTFOFinished());
                 EXPECT_FALSE(socket->getTFOSucceded());
               }
             } else {
@@ -1143,6 +1194,9 @@ TEST_P(AsyncMcClientSSLOffloadTest, closeNow) {
   EXPECT_FALSE(upCalled);
   EXPECT_TRUE(downReason.has_value());
   EXPECT_EQ(*downReason, ConnectionDownReason::ABORTED);
+
+  server->shutdown();
+  server->join();
 }
 
 TEST_P(AsyncMcClientSSLOffloadTest, clientReset) {
@@ -1164,6 +1218,9 @@ TEST_P(AsyncMcClientSSLOffloadTest, clientReset) {
   evb.loopOnce();
   client.reset();
   evb.loop();
+
+  server->shutdown();
+  server->join();
 }
 
 INSTANTIATE_TEST_CASE_P(AsyncMcClientTest, AsyncMcClientSSLOffloadTest, Bool());
