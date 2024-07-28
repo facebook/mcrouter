@@ -8,6 +8,7 @@ if(NOT BUILD_TESTS)
 endif()
 
 add_executable(mcrouter_mock_mc_server MockMc.cpp MockMcServer.cpp)
+set_property(TARGET mcrouter_mock_mc_server PROPERTY OUTPUT_NAME mock_mc_server)
 
 target_link_libraries(
   mcrouter_mock_mc_server
@@ -53,6 +54,7 @@ target_link_libraries(
           atomic)
 
 add_executable(mcrouter_mock_mc_server_dual MockMc.cpp MockMcServerDual.cpp)
+set_property(TARGET mcrouter_mock_mc_server_dual PROPERTY OUTPUT_NAME mock_mc_server_dual)
 
 target_link_libraries(
   mcrouter_mock_mc_server_dual
