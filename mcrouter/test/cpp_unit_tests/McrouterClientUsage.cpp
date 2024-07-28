@@ -121,6 +121,7 @@ TEST(CarbonRouterClient, basicUsageSameThreadClient) {
   // CarbonRouterInstance instance.
   baton.wait();
   router->shutdown();
+  ioThreadPool->join();
   ioThreadPool.reset();
   EXPECT_TRUE(replyReceived);
 }

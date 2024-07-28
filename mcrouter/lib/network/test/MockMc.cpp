@@ -245,6 +245,10 @@ MockMc::findUnexpired(folly::StringPiece key) {
   return it;
 }
 
+size_t MockMc::itemCount() const noexcept {
+  return citems_.size();
+}
+
 void MockMc::flushAll() {
   citems_.clear();
 }
