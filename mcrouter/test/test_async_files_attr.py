@@ -13,7 +13,7 @@ import os
 import time
 
 from mcrouter.test.McrouterTestCase import McrouterTestCase
-
+from mcrouter.test.config import McrouterGlobals
 
 class TestAsyncFilesAttr(McrouterTestCase):
     stat_prefix = "libmcrouter.mcrouter.0."

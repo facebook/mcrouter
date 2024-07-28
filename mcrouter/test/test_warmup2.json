@@ -10,6 +10,7 @@
   "route": {
     "type": "WarmUpRoute",
     "cold": "PoolRoute|A-cold",
-    "warm": "PoolRoute|A-warm"
+    "warm": "PoolRoute|A-warm",
+    "enable_metaget": true
   }
 }

@@ -146,6 +146,8 @@ class MockMc {
 
   CasResult cas(folly::StringPiece key, Item item, uint64_t token);
 
+  size_t itemCount() const noexcept;
+
   /**
    * clear all items
    */

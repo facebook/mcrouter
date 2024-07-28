@@ -12,6 +12,7 @@ import tempfile
 import time
 
 from mcrouter.test.McrouterTestCase import McrouterTestCase
+from mcrouter.test.config import McrouterGlobals
 from mcrouter.test.mock_servers import SleepServer
 
 
@@ -37,6 +38,9 @@ class TestMcrouterProcessingTime(McrouterTestCase):
         os.remove(self.debug_file)
 
     def test_mcrouter_processing_time(self) -> None:
+        if McrouterGlobals.ossVersion():
+            self.skipTest("Scuba stats are not available in the OSS build")
+
         lease_get_cmd = "lease-get key1\r\n"
         response = self.mcrouter.issue_command(lease_get_cmd)
         self.assertEqual(response, "SERVER_ERROR Reply timeout\r\n")
