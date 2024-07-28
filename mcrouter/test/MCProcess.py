@@ -591,7 +591,6 @@ class MCProcess(ProcessBase):
         if spec:
             q = "stats {spec}\r\n".format(spec=spec)
         self._sendall(q)
-
         s = {}
         line = None
         fds = select.select([self.fd], [], [], 20.0)
@@ -800,12 +799,13 @@ class McrouterBase(MCProcess):
                 self.stats_dir,
                 "--debug-fifo-root",
                 self.debug_fifo_root,
-                "--rss-limit-mb",
-                "16384",
                 "--fibers-stack-size",
                 "65536",
             ]
         )
+
+        if not McrouterGlobals.ossVersion():
+            args.extend(["--rss-limit-mb", "16384"])
 
         listen_sock = None
         pass_fds = []
@@ -1030,7 +1030,8 @@ class Memcached(MCProcess):
         pass_fds = []
 
         # if mockmc is used here, we initialize the same way as MockMemcached
-        if McrouterGlobals.binPath("mockmc") == args[0]:
+        self.is_mock_server = McrouterGlobals.binPath("mockmc") == args[0]
+        if self.is_mock_server:
             if port is None:
                 listen_sock = create_listen_socket()
                 port = listen_sock.getsockname()[1]
@@ -1102,6 +1103,11 @@ class Memcached(MCProcess):
                 time.sleep(0.5)
                 tries -= 1
             self.disconnect()
+
+    def stats(self, spec=None):
+        if self.is_mock_server:
+            return super().stats('__mockmc__')
+        return super().stats(spec)
 
     def getsslport(self):
         return self.ssl_port

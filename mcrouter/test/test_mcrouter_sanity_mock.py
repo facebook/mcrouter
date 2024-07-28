@@ -13,6 +13,7 @@ from mcrouter.test.MCProcess import (
     MockMemcachedThrift,
 )
 from mcrouter.test.McrouterTestCase import McrouterTestCase
+from mcrouter.test.config import McrouterGlobals
 from mcrouter.test.mock_servers import DeadServer, SleepServer
 
 
