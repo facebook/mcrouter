@@ -19,6 +19,8 @@ namespace facebook {
 namespace memcache {
 
 static std::atomic_uint64_t cmd_get_count{0};
+static std::atomic_uint64_t cmd_lease_get_count{0};
+static std::atomic_uint64_t cmd_lease_set_count{0};
 
 class MockMcOnRequest {
  public:
@@ -127,6 +129,7 @@ class MockMcOnRequest {
   template <class Context>
   void onRequest(Context&& ctx, McLeaseGetRequest&& req) {
     using Reply = McLeaseGetReply;
+    ++cmd_lease_get_count;
 
     auto key = req.key_ref()->fullKey().str();
 
@@ -144,6 +147,7 @@ class MockMcOnRequest {
   template <class Context>
   void onRequest(Context&& ctx, McLeaseSetRequest&& req) {
     using Reply = McLeaseSetReply;
+    ++cmd_lease_set_count;
 
     auto key = req.key_ref()->fullKey().str();
 
@@ -355,6 +359,9 @@ class MockMcOnRequest {
     if (key == "__mockmc__") {
       StatsReply stats;
       stats.addStat("cmd_get_count", cmd_get_count.load());
+      stats.addStat("cmd_lease_get", cmd_lease_get_count.load());
+      stats.addStat("cmd_lease_set", cmd_lease_set_count.load());
+      stats.addStat("total_items", mc_.itemCount());
       Context::reply(std::move(ctx), stats.getReply());
     } else {
       Context::reply(std::move(ctx), Reply(carbon::Result::BAD_COMMAND));
