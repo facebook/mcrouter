@@ -5,7 +5,7 @@
 
 cmake_minimum_required(VERSION 3.19)
 
-project(mcrouter)
+project(mcrouter VERSION 1.0.0)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/build/fbcode_builder/CMake"
                       ${CMAKE_MODULE_PATH})
@@ -99,3 +99,11 @@ endif()
 add_subdirectory(mcrouter)
 
 install(TARGETS mcrouter mcpiper)
+
+# Provide a basic CPack integration to allow easily creating packages for Linux
+# distributions.
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY
+    "mcrouter - a memcached protocol router for scaling memcached deployments.")
+set(CPACK_PACKAGE_VENDOR "Meta Platforms, Inc.")
+set(CPACK_VERBATIM_VARIABLES ON)
+include(CPack)
