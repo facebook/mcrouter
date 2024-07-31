@@ -13,7 +13,7 @@
 #include <glog/logging.h>
 
 #include <folly/Format.h>
-#include <folly/Singleton.h>
+#include <folly/init/Init.h>
 #include <folly/logging/Init.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
@@ -52,7 +52,7 @@ void sigHandler(int /* signo */) {
 }
 
 int main(int argc, char** argv) {
-  folly::SingletonVault::singleton()->registrationComplete();
+  folly::Init init(&argc, &argv, folly::InitOptions{}.useGFlags(false).removeFlags(false));
 
   uint16_t port = 0;
   int existingSocketFd = 0;
