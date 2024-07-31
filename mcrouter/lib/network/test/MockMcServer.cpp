@@ -13,16 +13,13 @@
 #include <glog/logging.h>
 
 #include <folly/Format.h>
-#include <folly/Singleton.h>
+#include <folly/init/Init.h>
 #include <folly/logging/Init.h>
 
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
-#include "mcrouter/lib/network/CarbonMessageDispatcher.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
-#include "mcrouter/lib/network/gen/MemcacheMessages.h"
 #include "mcrouter/lib/network/gen/MemcacheServer.h"
-#include "mcrouter/lib/network/test/MockMc.h"
 #include "mcrouter/lib/network/test/MockMcOnRequest.h"
 
 /**
@@ -70,7 +67,7 @@ void serverLoop(
 FOLLY_INIT_LOGGING_CONFIG(".=WARNING,folly=INFO; default:async=true");
 
 int main(int argc, char** argv) {
-  folly::SingletonVault::singleton()->registrationComplete();
+  folly::Init init(&argc, &argv, folly::InitOptions{}.useGFlags(false).removeFlags(false));
 
   AsyncMcServer::Options opts;
   opts.worker.versionString = "MockMcServer-1.0";
