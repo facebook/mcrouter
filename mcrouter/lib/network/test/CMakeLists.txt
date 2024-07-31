@@ -31,7 +31,8 @@ target_link_libraries(
           atomic)
 
 add_executable(mcrouter_mock_mc_thrift_server MockMc.cpp MockMcThriftServer.cpp)
-set_property(TARGET mcrouter_mock_mc_thrift_server PROPERTY OUTPUT_NAME mock_mc_thrift_server)
+set_property(TARGET mcrouter_mock_mc_thrift_server
+             PROPERTY OUTPUT_NAME mock_mc_thrift_server)
 
 target_link_libraries(
   mcrouter_mock_mc_thrift_server
@@ -55,7 +56,8 @@ target_link_libraries(
           atomic)
 
 add_executable(mcrouter_mock_mc_server_dual MockMc.cpp MockMcServerDual.cpp)
-set_property(TARGET mcrouter_mock_mc_server_dual PROPERTY OUTPUT_NAME mock_mc_server_dual)
+set_property(TARGET mcrouter_mock_mc_server_dual PROPERTY OUTPUT_NAME
+                                                          mock_mc_server_dual)
 
 target_link_libraries(
   mcrouter_mock_mc_server_dual
@@ -119,7 +121,10 @@ target_link_libraries(
           FBThrift::thrift-core)
 
 # Run these tests in the source tree so that they can easily load fixture files.
-gtest_discover_tests(mcrouter_network_tests
-                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+gtest_discover_tests(
+  mcrouter_network_tests
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  PROPERTIES
+  TIMEOUT 30)
 
 add_subdirectory(gen)
