@@ -1,4 +1,4 @@
-# Mcrouter [![Build Status](https://github.com/facebook/mcrouter/workflows/build/badge.svg)](https://github.com/facebook/mcrouter/actions?workflow=build)
+# Mcrouter [![Build Status](https://github.com/facebook/mcrouter/actions/workflows/getdeps_linux.yml/badge.svg)](https://github.com/facebook/mcrouter/actions/workflows/getdeps_linux.yml)
 [![Support Ukraine](https://img.shields.io/badge/Support-Ukraine-FFD500?style=flat&labelColor=005BBB)](https://opensource.fb.com/support-ukraine) [![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/facebook/mcrouter/blob/master/LICENSE)
 
 Mcrouter (pronounced mc router) is a memcached protocol router for scaling [memcached](https://memcached.org/)
@@ -12,42 +12,33 @@ See https://github.com/facebook/mcrouter/wiki to get started.
 
 ## Quick start guide
 
-### New! Ubuntu package available
+### Building
 
-Currently, we support Ubuntu Bionic (18.04) amd64.
-Here is how to install it:
+Mcrouter depends on [folly](https://github.com/facebook/folly), [wangle](https://github.com/facebook/wangle), [fizz](https://github.com/facebookincubator/fizz), [fbthrift](https://github.com/facebook/fbthrift)
+and [mvfst](https://github.com/facebook/mvfst).
 
-Add the repo key:
+The `getdeps.py` tool, shared between many open source C++ projects at Meta, may be used to build mcrouter and its dependencies:
 
-    $ wget -O - https://facebook.github.io/mcrouter/debrepo/bionic/PUBLIC.KEY | sudo apt-key add
+    # Clone the repo
+    git clone https://github.com/facebook/mcrouter.git
+    cd mcrouter
 
-Add the following line to apt sources file /etc/apt/sources.list
+    # Build, using system dependencies if available, including tests
+    ./build/fbcode_builder/getdeps.py --allow-system-packages build mcrouter
 
-    deb https://facebook.github.io/mcrouter/debrepo/bionic bionic contrib
+    # Build, using system dependencies if available, without tests
+    ./build/fbcode_builder/getdeps.py --allow-system-packages --no-tests build mcrouter
 
-Update the local repo cache:
+Once built, you may use `getdeps.py` to run the tests as well:
 
-    $ sudo apt-get update
+    # Run the tests
+    ./build/fbcode_builder/getdeps.py --allow-system-packages test
 
-Install mcrouter:
+### Packaging
+mcrouter ships with a basic `CPack` configuration that may be used to package it for your Linux distribution.
+After building the project, change to its `getdeps.py` scratch dir, and run `cpack` with the appropriate generator.
 
-    $ sudo apt-get install mcrouter
-
-
-### Installing From Source
-
-See https://github.com/facebook/mcrouter/wiki/mcrouter-installation for more
-detailed installation instructions.
-
-Mcrouter depends on [folly](https://github.com/facebook/folly), [wangle](https://github.com/facebook/wangle), [fizz](https://github.com/facebookincubator/fizz), and [fbthrift](https://github.com/facebook/fbthrift).
-
-The installation is a standard autotools flow:
-
-    $ autoreconf --install
-    $ ./configure
-    $ make
-    $ sudo make install
-    $ mcrouter --help
+### Running mcrouter
 
 Assuming you have a memcached instance on the local host running on port 5001,
 the simplest mcrouter setup is:
