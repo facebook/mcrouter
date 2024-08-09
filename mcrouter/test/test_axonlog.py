@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from mcrouter.test.McrouterTestCase import McrouterTestCase
+from mcrouter.test.config import McrouterGlobals
 from mcrouter.test.mock_servers import DeadServer
 
 
@@ -19,6 +20,9 @@ class TestAxonLogBase(McrouterTestCase):
 class TestAxonProxyFailedDelete(TestAxonLogBase):
 
     def setUp(self):
+        if McrouterGlobals.ossVersion():
+            self.skipTest("Axon logging is not available in the OSS build")
+
         self.mc1 = self.add_server(DeadServer(5000))
         self.mr = self.add_mcrouter(self.config, extra_args=self.extra_args)
 
@@ -43,6 +47,9 @@ class TestAxonLogAllDelete(TestAxonLogBase):
     config = "./mcrouter/test/test_axon_log_alldelete.json"
 
     def setUp(self):
+        if McrouterGlobals.ossVersion():
+            self.skipTest("Axon logging is not available in the OSS build")
+
         self.mr = self.add_mcrouter(self.config, extra_args=self.extra_args)
 
     def test_all_delete(self):

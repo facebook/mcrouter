@@ -150,6 +150,9 @@ TEST(McRouteHandleProvider, pool_route) {
 }
 
 TEST(McRouteHandleProvider, bucketized_sr_route_and_mcreplay_asynclogRoutes) {
+  if (!MemcacheRouterInfo::isSRLinked()) {
+    GTEST_SKIP() << "ServiceRouter is not available in the OSS build";
+  }
   TestSetup setup;
   auto rh = setup.getRoute(kBucketizedSRRoute);
   EXPECT_TRUE(rh != nullptr);

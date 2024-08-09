@@ -9,9 +9,8 @@ import json
 import os
 import time
 
-from libfb.py import parutil
 from mcrouter.test.McrouterTestCase import McrouterTestCase
-
+from mcrouter.test.config import McrouterGlobals
 
 class TestAsyncFilesAttr(McrouterTestCase):
     stat_prefix = "libmcrouter.mcrouter.0."
@@ -53,6 +52,9 @@ class TestAsyncFilesAttr(McrouterTestCase):
         self.check_stats(mcrouter.stats_dir)
 
     def test_async_files_attr(self):
+        if McrouterGlobals.ossVersion():
+            self.skipTest("The mcrouter client is not available in the OSS build")
+        from libfb.py import parutil
         mcrouter = self.add_mcrouter(self.config, extra_args=self.extra_args)
         binary = parutil.get_file_path("mcrouter/client_binary")
         port = str(mcrouter.getport())
