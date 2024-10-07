@@ -8,7 +8,7 @@
 import time
 from threading import Thread
 
-from mcrouter.test.MCProcess import Mcrouter, McrouterClient, Memcached
+from mcrouter.test.MCProcess import Mcrouter, McrouterClient, Memcached, BaseDirectory
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 
 
@@ -1137,7 +1137,10 @@ class TestMcrouterWithRetries(McrouterTestCase):
     invalid_config_with_retries = (
         "./mcrouter/test/test_basic_l1_l2_sizesplit_retry_invalid.json"
     )
-    extra_args = ["--validate-config=run"]
+
+    def setUp(self):
+        self.config_dump_root = BaseDirectory("config_dump")
+        self.extra_args = ["--validate-config=run", "--config-dump-root", self.config_dump_root.path]
 
     def test_valid_retries(self):
         mcr = self.add_mcrouter(

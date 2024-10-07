@@ -21,6 +21,8 @@ class McrouterGlobals:
             "mcrouter": "./mcrouter/mcrouter",
             "mcpiper": "./mcrouter/tools/mcpiper/mcpiper",
             "mockmc": "./mcrouter/lib/network/test/mock_mc_server",
+            "mockmcthrift": "./mcrouter/lib/network/test/mock_mc_thrift_server",
+            "mockmcdual": "./mcrouter/lib/network/test/mock_mc_server_dual",
             "prodmc": "./mcrouter/lib/network/test/mock_mc_server",
         }
         return bins[name]
@@ -32,6 +34,10 @@ class McrouterGlobals:
     @staticmethod
     def useThriftClient():
         return False
+
+    @staticmethod
+    def ossVersion() -> bool:
+        return True
 
     @staticmethod
     def createThriftTestClient(addr, port) -> ThriftTestClient:
