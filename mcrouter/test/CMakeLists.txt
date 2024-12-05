@@ -23,7 +23,7 @@ if(BUILD_TESTS)
       NAME "integration_${test_name}"
       COMMAND ${Python3_EXECUTABLE} -B -m unittest -q mcrouter.test.${test_name}
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-    set_tests_properties("integration_${test_name}" PROPERTIES TIMEOUT 300)
+    set_tests_properties("integration_${test_name}" PROPERTIES TIMEOUT 180)
   endforeach()
 endif()
 
