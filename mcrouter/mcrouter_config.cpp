@@ -95,9 +95,9 @@ std::vector<std::string> defaultTestCommandLineArgs() {
   return {"--disable-failure-logging", "--stats-logging-interval=0"};
 }
 
-void logTkoEvent(ProxyBase& proxy, const TkoLog& tkoLog) {}
+void logTkoEvent(ProxyBase& /* proxy */, const TkoLog& /* tkoLog */) {}
 
-void logFailover(ProxyBase& proxy, const FailoverContext& failoverContext) {}
+void logFailover(ProxyBase& /* proxy */, const FailoverContext& /* failoverContext */) {}
 
 void initFailureLogger() {}
 
@@ -111,7 +111,7 @@ std::unordered_map<std::string, folly::dynamic> additionalConfigParams() {
   return std::unordered_map<std::string, folly::dynamic>();
 }
 
-void insertCustomStartupOpts(folly::dynamic& options) {}
+void insertCustomStartupOpts(folly::dynamic& /* options */) {}
 
 std::string getBinPath(folly::StringPiece name) {
   if (name == "mcrouter") {

@@ -184,8 +184,8 @@ folly::dynamic readStaticJsonFile(folly::StringPiece file);
 
 inline folly::Optional<folly::observer::Observer<std::string>>
 startObservingRuntimeVarsFileCustom(
-    folly::StringPiece file,
-    std::function<void(std::string)> onUpdate) {
+    folly::StringPiece /* file */,
+    std::function<void(std::string)> /* onUpdate */) {
   return folly::none;
 }
 
@@ -194,7 +194,7 @@ inline bool isInLocalDatacenter(const std::string& /* host */) {
 }
 
 inline Transport::SvcIdentAuthCallbackFunc getAuthChecker(
-    const McrouterOptions& opts) {
+    const McrouterOptions& /* opts */) {
   return nullptr;
 }
 
