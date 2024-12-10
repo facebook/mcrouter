@@ -15,12 +15,12 @@ namespace memcache {
 namespace mcrouter {
 
 void standalonePreInitFromCommandLineOpts(
-    const std::unordered_map<std::string, std::string>& standaloneOptionsDict) {
+    const std::unordered_map<std::string, std::string>& /* standaloneOptionsDict */) {
 }
 
 void standaloneInit(
-    const McrouterOptions& opts,
-    const McrouterStandaloneOptions& standaloneOpts) {}
+    const McrouterOptions& /* opts */,
+    const McrouterStandaloneOptions& /* standaloneOpts */) {}
 
 void initStandaloneSSL() {}
 
