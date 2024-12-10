@@ -6,6 +6,7 @@
 
 # pyre-unsafe
 
+from mcrouter.test.config import McrouterGlobals
 from mcrouter.test.MCProcess import Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 
@@ -67,9 +68,11 @@ class TestMcRefill(McrouterTestCase):
 
         def condition():
             stat = self.mc1.stats()
+            # When testing with real memcached,
             # this stat is bumped twice because lease-get
             # creates a lease token item
-            return stat["total_items"] == "2"
+            expected_item_count = "1" if McrouterGlobals.ossVersion() else "2"
+            return stat["total_items"] == expected_item_count
 
         self.assert_eventually_true(condition)
         res = self.mcrouter.leaseGet(key)

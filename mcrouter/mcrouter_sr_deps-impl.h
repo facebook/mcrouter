@@ -28,6 +28,9 @@ class HostInfoLocation {
   const uint16_t* getTWTaskID() const {
     return nullptr;
   }
+  uint64_t hostUniqueKey() const noexcept {
+    return 0;
+  }
 
  private:
   const std::string ip_ = "127.0.0.1";
@@ -49,7 +52,7 @@ struct SRHost {
  public:
   SRHost(){};
   const std::string& getIp() const {
-    return "127.0.0.1";
+    return ip_;
   }
   uint16_t getPort() const {
     return 0;
@@ -57,6 +60,8 @@ struct SRHost {
   const std::optional<uint16_t> getTwTaskId() const {
     return std::nullopt;
   }
+ private:
+  const std::string ip_ = "127.0.0.1";
 };
 
 } // namespace memcache

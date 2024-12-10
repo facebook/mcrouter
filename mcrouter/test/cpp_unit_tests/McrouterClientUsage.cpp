@@ -116,6 +116,7 @@ TEST(CarbonRouterClient, basicUsageSameThreadClient) {
   // gracefully. This ensures graceful destruction of the static
   // CarbonRouterInstance instance.
   router->shutdown();
+  ioThreadPool->join();
   ioThreadPool.reset();
   EXPECT_TRUE(replyReceived);
 }
