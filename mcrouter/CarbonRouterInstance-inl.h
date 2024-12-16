@@ -18,10 +18,6 @@
 #include <folly/io/async/EventBase.h>
 #include <folly/json/DynamicConverter.h>
 
-#ifndef MCROUTER_OSS_BUILD
-#include <common/logging/logging.h>
-#endif
-
 #include "mcrouter/AsyncWriter.h"
 #include "mcrouter/CarbonRouterInstanceBase.h"
 #include "mcrouter/ExecutorObserver.h"
@@ -131,15 +127,8 @@ CarbonRouterInstance<RouterInfo>* CarbonRouterInstance<RouterInfo>::createRaw(
     initFailureLogger();
   }
 
-  // Deleter is only called if unique_ptr::get() returns non-null.
-  auto deleter = [](CarbonRouterInstance<RouterInfo>* inst) {
-#ifdef MCROUTER_OSS_BUILD
-    FB_LOG_EVERY_MS(WARNING, 10000) << "Destroying CarbonRouterInstance";
-#else
-    LOG_EVERY_MS(WARNING, 10000) << "Destroying CarbonRouterInstance";
-#endif
-    delete inst;
-  };
+  // Custom deleter since ~CarbonRouterInstance() is private.
+  auto deleter = [](CarbonRouterInstance<RouterInfo>* inst) { delete inst; };
   auto router =
       std::unique_ptr<CarbonRouterInstance<RouterInfo>, decltype(deleter)>(
           new CarbonRouterInstance<RouterInfo>(std::move(input_options)),
