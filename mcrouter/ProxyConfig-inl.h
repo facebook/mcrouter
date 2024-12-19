@@ -15,6 +15,7 @@
 #include "mcrouter/Proxy.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/routes/McRouteHandleProvider.h"
 #include "mcrouter/routes/PrefixSelectorRoute.h"
 #include "mcrouter/routes/ProxyRoute.h"
@@ -23,6 +24,8 @@
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
+
+extern template class ProxyConfig<facebook::memcache::MemcacheRouterInfo>;
 
 template <class RouterInfo>
 ProxyConfig<RouterInfo>::ProxyConfig(
