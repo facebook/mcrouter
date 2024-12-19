@@ -1,0 +1,29 @@
+[manifest]
+name = mcrouter
+fbsource_path = fbcode/mcrouter
+shipit_project = mcrouter
+shipit_fbcode_builder = true
+
+[git]
+repo_url = https://github.com/facebook/mcrouter.git
+
+[dependencies]
+folly
+wangle
+fizz
+fbthrift
+mvfst
+ragel
+
+[build]
+builder = cmake
+subdir = .
+
+[cmake.defines.test=on]
+BUILD_TESTS=ON
+
+[cmake.defines.test=off]
+BUILD_TESTS=OFF
+
+[shipit.pathmap]
+fbcode/mcrouter = mcrouter
