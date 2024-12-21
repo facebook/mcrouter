@@ -21,10 +21,15 @@ Makefile.in
 /depcomp
 /install-sh
 /lib/carbon/gen-cpp2/
+/lib/carbon/example/gen/gen-cpp2/
 /lib/network/CaretSerializedMessage.h
 /lib/network/McAsciiParser-gen.cpp
 /lib/network/gen-cpp2/*
 /lib/network/gen/gen-cpp2/
+/lib/network/test/gen/gen-cpp2/
+/lib/network/test/mock_mc_server
+/lib/network/test/mock_mc_server_dual
+/lib/network/test/mock_mc_thrift_server
 /libtool
 /m4/libtool.m4
 /m4/ltoptions.m4
@@ -44,3 +49,4 @@ Makefile.in
 *.o
 *.a
 *.la
+*.lo

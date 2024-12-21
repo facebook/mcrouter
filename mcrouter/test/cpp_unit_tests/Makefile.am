@@ -14,13 +14,15 @@ mcrouter_test_SOURCES = \
   flavor_test.cpp \
   LeaseTokenMapTest.cpp \
   mc_route_handle_provider_test.cpp \
-  McrouterClientUsage.cpp \
   observable_test.cpp \
   options_test.cpp \
   pool_factory_test.cpp \
   ProxyRequestContextTest.cpp \
   route_test.cpp \
   runtime_vars_data_test.cpp
+
+# Note: McrouterClientUsage.cpp is excluded
+# since it depends on HelloGoodbyeService and fb303.
 
 mcrouter_test_CPPFLAGS = \
 	-I$(top_srcdir)/.. \
@@ -30,7 +32,22 @@ mcrouter_test_LDADD = \
   $(top_builddir)/libmcroutercore.a \
   $(top_builddir)/lib/libmcrouter.a \
   $(top_builddir)/lib/libtestmain.la \
-  $(top_builddir)/lib/network/libtest_util.a \
+  $(top_builddir)/lib/network/test/libtest_util.a \
+  $(top_builddir)/lib/carbon/example/gen/libcarbon_hello_goodbye.a \
+  -lthriftcpp2 \
+  -lserverdbginfo \
+  -ltransport \
+  -lthriftanyrep \
+  -lthrifttype \
+  -lthrifttyperep \
+  -lthriftprotocol \
+  -lrpcmetadata \
+  -lthriftannotation \
+  -lthriftmetadata \
+  -lasync \
+  -lconcurrency \
+  -lruntime \
+  -lthrift-core \
   -lwangle \
   -lfizz \
   -lsodium \
