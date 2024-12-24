@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-SUBDIRS = carbon network/gen . config fbi network/test test
+SUBDIRS = carbon network/gen carbon/example/gen . config fbi network/test test
 
 noinst_LIBRARIES = libmcrouter.a
 
@@ -21,9 +21,13 @@ libmcrouter_a_SOURCES = \
   CompressionCodecManager.cpp \
   CompressionCodecManager.h \
   Crc32HashFunc.h \
+  DynamicUtil.h \
+  DynamicUtil.cpp \
   FailoverErrorsSettingsBase.cpp \
   FailoverErrorsSettingsBase.h \
   FailoverErrorsSettings.h \
+  FiberLocal.h \
+  FiberLocalInternal.cpp \
   HashUtil.h \
   IOBufUtil.cpp \
   IOBufUtil.h \
@@ -87,16 +91,26 @@ libmcrouter_a_SOURCES = \
   carbon/TypeList.h \
   carbon/Util.h \
   carbon/Variant.h \
+  carbon/connection/CarbonConnectionUtil.h \
+  carbon/connection/ExternalCarbonConnectionImpl.cpp \
+  carbon/connection/ExternalCarbonConnectionImpl.h \
+  carbon/connection/ExternalCarbonConnectionImpl-inl.h \
+  carbon/connection/InternalCarbonConnectionImpl.h \
+  carbon/connection/PooledCarbonConnectionImpl.h \
   carbon/gen-cpp2/carbon_result_types.cpp \
   carbon/gen-cpp2/carbon_result_types.h \
   carbon/gen-cpp2/carbon_result_types.tcc \
   carbon/gen-cpp2/carbon_result_data.cpp \
   carbon/gen-cpp2/carbon_result_data.h \
+  carbon/gen-cpp2/carbon_result_metadata.cpp \
+  carbon/gen-cpp2/carbon_result_metadata.h \
   carbon/gen-cpp2/carbon_types.cpp \
   carbon/gen-cpp2/carbon_types.h \
   carbon/gen-cpp2/carbon_types.tcc \
   carbon/gen-cpp2/carbon_data.cpp \
   carbon/gen-cpp2/carbon_data.h \
+  carbon/gen-cpp2/carbon_metadata.cpp \
+  carbon/gen-cpp2/carbon_metadata.h \
   config/ConfigPreprocessor.cpp \
   config/ConfigPreprocessor.h \
   config/ImportResolverIf.h \
@@ -191,6 +205,10 @@ libmcrouter_a_SOURCES = \
   network/gen/gen-cpp2/Common_types.tcc \
   network/gen/gen-cpp2/Common_data.cpp \
   network/gen/gen-cpp2/Common_data.h \
+  network/gen/gen-cpp2/Common_metadata.cpp \
+  network/gen/gen-cpp2/Common_metadata.h \
+  network/gen/gen-cpp2/Memcache.cpp \
+  network/gen/gen-cpp2/Memcache.h \
   network/gen/gen-cpp2/MemcacheAsyncClient.cpp \
   network/gen/gen-cpp2/MemcacheAsyncClient.h \
   network/gen/gen-cpp2/MemcacheService_constants.cpp \
@@ -198,6 +216,8 @@ libmcrouter_a_SOURCES = \
   network/gen/gen-cpp2/MemcacheService_types.cpp \
   network/gen/gen-cpp2/MemcacheService_types.h \
   network/gen/gen-cpp2/MemcacheService_types.tcc \
+  network/gen/gen-cpp2/MemcacheService_metadata.cpp \
+  network/gen/gen-cpp2/MemcacheService_metadata.h \
   network/gen/gen-cpp2/MemcacheService_data.cpp \
   network/gen/gen-cpp2/MemcacheService_data.h \
   network/gen/gen-cpp2/Memcache_types.cpp \
@@ -205,6 +225,8 @@ libmcrouter_a_SOURCES = \
   network/gen/gen-cpp2/Memcache_types.tcc \
   network/gen/gen-cpp2/Memcache_data.cpp \
   network/gen/gen-cpp2/Memcache_data.h \
+  network/gen/gen-cpp2/Memcache_metadata.cpp \
+  network/gen/gen-cpp2/Memcache_metadata.h \
   network/FizzContextProvider.cpp \
   network/FizzContextProvider.h \
   network/McAsciiParser-gen.cpp \
