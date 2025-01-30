@@ -39,6 +39,9 @@
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
+
+extern template class ServiceInfo<facebook::memcache::MemcacheRouterInfo>;
+
 namespace detail {
 
 bool srHostInfoPtrFuncRouteHandlesCommandDispatcher(
