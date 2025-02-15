@@ -20,7 +20,6 @@ import sys
 import tempfile
 import time
 
-from carbon.carbon_result.thrift_types import Result
 from mcrouter.test.config import McrouterGlobals
 
 
@@ -257,7 +256,7 @@ class MCProcess(ProcessBase):
             while True:
                 try:
                     res = self.thrift_client.mcVersion()
-                    if res == Result.OK:
+                    if res == carbon.carbon_result.thrift_types.Result.OK:
                         return
                 except Exception as e:
                     print(f"Error on sending mcVersion in Thrift: {e}")
@@ -1029,7 +1028,8 @@ class Memcached(MCProcess):
         pass_fds = []
 
         # if mockmc is used here, we initialize the same way as MockMemcached
-        if McrouterGlobals.binPath("mockmc") == args[0]:
+        self.is_mock_server = McrouterGlobals.binPath("mockmc") == args[0]
+        if self.is_mock_server:
             if port is None:
                 listen_sock = create_listen_socket()
                 port = listen_sock.getsockname()[1]
@@ -1101,6 +1101,11 @@ class Memcached(MCProcess):
                 time.sleep(0.5)
                 tries -= 1
             self.disconnect()
+
+    def stats(self, spec=None):
+        if self.is_mock_server:
+            return super().stats('__mockmc__')
+        return super().stats(spec)
 
     def getsslport(self):
         return self.ssl_port

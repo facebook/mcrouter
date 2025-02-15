@@ -22,3 +22,13 @@ jobs:
         run: |
           mkdir -p "$(pwd)"/mcrouter-install/install
           ./mcrouter/scripts/install_ubuntu_24.04.sh "$(pwd)"/mcrouter-install mcrouter
+      - name: Test mcrouter
+        run: |
+          cd mcrouter
+          make check -s -j$(nproc) || (cd test && make recheck -s j$(nproc))
+      - name: Upload test logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-suite.log
+          path: mcrouter/test/test-suite.log

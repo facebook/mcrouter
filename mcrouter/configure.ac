@@ -198,7 +198,7 @@ AC_CHECK_FUNCS([gettimeofday \
 
 LIBS="$LIBS $BOOST_LDFLAGS $BOOST_CONTEXT_LIB $BOOST_FILESYSTEM_LIB \
       $BOOST_PROGRAM_OPTIONS_LIB $BOOST_SYSTEM_LIB $BOOST_REGEX_LIB \
-      $BOOST_THREAD_LIB -lpthread -pthread -ldl -lunwind \
+      $BOOST_THREAD_LIB -lfmt -lpthread -pthread -ldl -lunwind \
       -lbz2 -llz4 -llzma -lsnappy -lzstd -latomic -lxxhash"
 
 AM_PATH_PYTHON([2.6],, [:])
@@ -212,6 +212,7 @@ AC_CONFIG_FILES([Makefile
                  lib/Makefile
                  lib/test/Makefile
                  lib/carbon/Makefile
+                 lib/carbon/example/gen/Makefile
                  lib/config/Makefile
                  lib/config/test/Makefile
                  lib/fbi/Makefile
@@ -220,6 +221,7 @@ AC_CONFIG_FILES([Makefile
                  lib/fbi/cpp/test/Makefile
                  lib/network/gen/Makefile
                  lib/network/test/Makefile
+                 lib/network/test/gen/Makefile
                  routes/Makefile
                  routes/test/Makefile
                  test/Makefile
