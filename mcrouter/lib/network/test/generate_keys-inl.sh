@@ -23,8 +23,10 @@ openssl genrsa -out "${CA_KEY}" 2048
 # Generate Self-Signed Certificate Authority Cert
 openssl req -x509 -new -nodes \
     -key "${CA_KEY}" \
+    -sha256 \
     -days "${DAYS}" \
     -out "${CA_CERT}" \
+    -addext "keyUsage = cRLSign,keyCertSign" \
     -subj '/C=US/O=Asox/CN=Asox Certification Authority'
 
 # CA serial number
@@ -52,7 +54,8 @@ commonName = $CN
 [v3_req]
 # Extensions to add to a certificate request
 # basicConstraints = CA:FALSE
-# keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+keyUsage = keyEncipherment, digitalSignature
+extendedKeyUsage = clientAuth, serverAuth
 subjectAltName = IP:$3, IP:$4
 EOF
 
@@ -62,6 +65,7 @@ EOF
     # Generate the test key certificate request
     openssl req -new -nodes \
 	-config conf.tmp \
+	-sha256 \
 	-key "${TEST_KEY}" \
 	-days "${DAYS}" \
 	-out "${TEST_CERT_CSR}" \
@@ -71,6 +75,7 @@ EOF
     openssl x509 -req \
 	-extensions v3_req \
 	-extfile conf.tmp \
+    -sha256 \
 	-days "${DAYS}" \
 	-in "${TEST_CERT_CSR}" \
 	-CA "${CA_CERT}" \
