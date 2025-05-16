@@ -54,6 +54,7 @@ add_library(
   FailoverErrorsSettingsBase.cpp
   FiberLocalInternal.cpp
   MessageQueue.cpp
+  RuntimeVarsData.cpp
   StatsReply.cpp
   carbon/CmdLineClient.cpp
   carbon/JsonClient.cpp
