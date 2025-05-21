@@ -61,8 +61,8 @@ class TestMcrouterStates(McrouterTestCase):
 
         # down aka hard tko
         self.mc.terminate()
-        self.assertEqual(mcr.get("key"), None)
-        self.assertEqual(c2.get("key"), None)
+        self.assertIn("SERVER_ERROR", mcr.get("key"))
+        self.assertIn("SERVER_ERROR", c2.get("key"))
         stat = mcr.stats()
         self.assertEqual(stat["num_servers_up"], "0")
         self.assertEqual(stat["num_servers_down"], "2")

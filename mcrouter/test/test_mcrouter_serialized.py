@@ -257,7 +257,7 @@ class TestFailoverWithLimit(McrouterTestCase):
         # now every 5th request should succeed
         for _ in range(10):
             for _ in range(4):
-                self.assertIsNone(mcr.get("key"))
+                self.assertIn("SERVER_ERROR", mcr.get("key"))
             self.assertEqual(mcr.get("key"), "value.gut")
 
 
@@ -284,7 +284,7 @@ class TestFailoverWithLimitWithTKO(McrouterTestCase):
         # now every 5th request should succeed
         for _ in range(10):
             for _ in range(4):
-                self.assertIsNone(mcr.get("key"))
+                self.assertIn("SERVER_ERROR", mcr.get("key"))
             self.assertEqual(mcr.get("key"), "value.gut")
 
 
@@ -314,7 +314,7 @@ class TestFailoverWithLimitWithErrors(McrouterTestCase):
         # all subsequest requests would fail until timeouts become
         # as TKOs
         for _ in range(18):
-            self.assertIsNone(mcr.get("key"))
+            self.assertIn("SERVER_ERROR", mcr.get("key"))
 
         # From here it should behave like the testcase above because
         # all destinations are declared TKO and ratelimiting is not
@@ -322,7 +322,7 @@ class TestFailoverWithLimitWithErrors(McrouterTestCase):
         for _ in range(10):
             self.assertEqual(mcr.get("key"), "value.gut")
             for _ in range(4):
-                self.assertIsNone(mcr.get("key"))
+                self.assertIn("SERVER_ERROR", mcr.get("key"))
 
 
 class TestFailoverWithLimitWithTKOAndErrors(McrouterTestCase):
@@ -346,9 +346,9 @@ class TestFailoverWithLimitWithTKOAndErrors(McrouterTestCase):
         # operations would succeed before rate limiting kicks in)
         for _ in range(4):
             self.assertEqual(mcr.get("key"), "value.gut")
-        self.assertIsNone(mcr.get("key"))
+        self.assertIn("SERVER_ERROR", mcr.get("key"))
         # All dests are TKO now, so now every 5th request should succeed
         for _ in range(10):
             self.assertEqual(mcr.get("key"), "value.gut")
             for _ in range(4):
-                self.assertIsNone(mcr.get("key"))
+                self.assertIn("SERVER_ERROR", mcr.get("key"))

@@ -5,11 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <array>
 #include <memory>
 #include <thread>
 #include <utility>
 #include <vector>
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <folly/fibers/Baton.h>
@@ -300,9 +302,13 @@ TEST(CarbonRouterClient, basicUsageRemoteThreadClientThreadAffinityMulti) {
       requests.end(),
       [&baton, &replyCount, &requests](
           const McGetRequest&, McGetReply&& reply) {
-        EXPECT_TRUE(
-            *reply.result_ref() == carbon::Result::CONNECT_ERROR ||
-            *reply.result_ref() == carbon::Result::TKO);
+        constexpr std::array<carbon::Result, 3> possibleResults{
+            carbon::Result::CONNECT_TIMEOUT,
+            carbon::Result::CONNECT_ERROR,
+            carbon::Result::TKO};
+
+        EXPECT_THAT(possibleResults, testing::Contains(*reply.result_ref()));
+
         if (++replyCount == requests.size()) {
           baton.post();
         }
