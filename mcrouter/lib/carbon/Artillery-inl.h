@@ -19,12 +19,12 @@ namespace tracing {
 #ifdef LIBMC_FBTRACE_DISABLE
 
 inline std::pair<uint64_t, uint64_t> serializeTraceContext(
-    const std::string& traceContext) {
+    const std::string& /* traceContext */) {
   return {0, 0};
 }
 
 inline std::string deserializeTraceContext(
-    std::pair<uint64_t, uint64_t> serializedTraceId) {
+    std::pair<uint64_t, uint64_t> /* serializedTraceId */) {
   return "";
 }
 
