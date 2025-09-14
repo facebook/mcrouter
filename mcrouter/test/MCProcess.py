@@ -20,7 +20,6 @@ import sys
 import tempfile
 import time
 
-from carbon.carbon_result.thrift_types import Result
 from mcrouter.test.config import McrouterGlobals
 
 
@@ -254,7 +253,7 @@ class MCProcess(ProcessBase):
             while True:
                 try:
                     res = self.thrift_client.mcVersion()
-                    if res == Result.OK:
+                    if res == carbon.carbon_result.thrift_types.Result.OK:
                         return
                 except Exception as e:
                     print(f"Error on sending mcVersion in Thrift: {e}")
@@ -590,7 +589,6 @@ class MCProcess(ProcessBase):
         if spec:
             q = f"stats {spec}\r\n"
         self._sendall(q)
-
         s = {}
         line = None
         fds = select.select([self.fd], [], [], 20.0)
@@ -796,12 +794,13 @@ class McrouterBase(MCProcess):
                 self.stats_dir,
                 "--debug-fifo-root",
                 self.debug_fifo_root,
-                "--rss-limit-mb",
-                "16384",
                 "--fibers-stack-size",
                 "65536",
             ]
         )
+
+        if not McrouterGlobals.ossVersion():
+            args.extend(["--rss-limit-mb", "16384"])
 
         listen_sock = None
         pass_fds = []
