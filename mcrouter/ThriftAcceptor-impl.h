@@ -32,7 +32,7 @@ class ThriftAcceptorFactory final : public wangle::AcceptorFactory {
   explicit ThriftAcceptorFactory(
       apache::thrift::ThriftServer& server,
       ThriftAclCheckerFunc /* unused */,
-      int trafficClass /* unused */)
+      int /* trafficClass */)
       : server_(server) {}
   ~ThriftAcceptorFactory() override = default;
 
