@@ -21,7 +21,7 @@ target_link_libraries(
 add_executable(mcrouter_weighted_hash_benchmark WeightedHashBenchmark.cpp)
 
 target_link_libraries(
-  mcrouter_weighted_hash_benchmark PRIVATE mcrouter_hash_functions Folly::folly
+  mcrouter_weighted_hash_benchmark PRIVATE mcrouterinternal Folly::folly
                                            Folly::follybenchmark)
 
 gtest_discover_tests(mcrouter_lib_tests)

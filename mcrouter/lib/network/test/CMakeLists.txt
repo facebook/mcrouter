@@ -98,8 +98,9 @@ add_executable(
 
 target_link_libraries(
   mcrouter_network_tests
-  PRIVATE mcrouterinternal
+  PRIVATE 
           mcroutercore
+          mcrouterinternal
           mcrouter_network_tests_gen
           mcrouter_network_tests_listen_socket
           mcrouter_hello_goodbye

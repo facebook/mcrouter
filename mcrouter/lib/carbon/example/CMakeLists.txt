@@ -12,8 +12,7 @@ if(BUILD_TESTS)
 
   target_link_libraries(
     mcrouter_hello_goodbye_tests
-    PRIVATE mcrouter_hello_goodbye_messages
-            mcrouter_hello_goodbye_service_thrift mcrouterinternal Folly::folly
+    PRIVATE mcrouter_hello_goodbye mcroutercore 
             GTest::gtest)
 
   gtest_discover_tests(mcrouter_hello_goodbye_tests)

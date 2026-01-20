@@ -14,7 +14,7 @@ add_executable(
                         ${mcrouter_routes_tests_sources})
 
 target_link_libraries(
-  mcrouter_routes_tests PRIVATE mcrouter_hello_goodbye mcroutercore
+  mcrouter_routes_tests PRIVATE mcrouter_hello_goodbye mcroutercore mcrouterinternal
                                 GTest::gtest Folly::folly FBThrift::thriftcpp2)
 
 add_executable(shard_selection_route_factory_benchmark
@@ -22,7 +22,7 @@ add_executable(shard_selection_route_factory_benchmark
 
 target_link_libraries(
   shard_selection_route_factory_benchmark
-  PRIVATE mcrouter_hello_goodbye mcrouter_fbi mcroutercore Folly::folly
+  PRIVATE mcrouter_hello_goodbye mcrouter_fbi mcroutercore mcrouterinternal Folly::folly
           Folly::follybenchmark FBThrift::thriftcpp2)
 
 # The default constexpr loop limit with GCC is too low to handle the constant

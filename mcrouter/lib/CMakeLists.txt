@@ -5,20 +5,6 @@
 
 add_library(mcrouter_clocks Clocks.cpp)
 
-add_library(
-  mcrouter_hash_functions
-  RendezvousHashFunc.cpp
-  RendezvousHashHelper.cpp
-  WeightedCh3HashFunc.cpp
-  WeightedCh3RvHashFunc.cpp
-  WeightedChHashFuncBase.cpp
-  WeightedRendezvousHashFunc.cpp)
-
-target_link_libraries(
-  mcrouter_hash_functions
-  PUBLIC Folly::folly
-  PRIVATE mcrouter_fbi)
-
 add_library(mcrouter_utils DynamicUtil.cpp IOBufUtil.cpp)
 
 target_link_libraries(mcrouter_utils PUBLIC Folly::folly FBThrift::thriftcpp2)
@@ -54,6 +40,12 @@ file(GLOB libmcrouter_network_sources CONFIGURE_DEPENDS "network/*.cpp")
 
 add_library(
   mcrouterinternal
+  RendezvousHashFunc.cpp
+  RendezvousHashHelper.cpp
+  WeightedCh3HashFunc.cpp
+  WeightedCh3RvHashFunc.cpp
+  WeightedChHashFuncBase.cpp
+  WeightedRendezvousHashFunc.cpp
   FailoverErrorsSettingsBase.cpp
   FiberLocalInternal.cpp
   MessageQueue.cpp
@@ -82,7 +74,6 @@ target_link_libraries(
   PUBLIC mcrouter_fbi
          mcrouter_config
          mcrouter_debug
-         mcrouter_hash_functions
          mcrouter_compression_codecs
          mcrouter_thread_pools
          mcrouter_carbon_protocol

@@ -39,10 +39,10 @@ add_dependencies(mcrouter_hello_goodbye mcrouter_symlink_headers)
 target_link_libraries(
   mcrouter_hello_goodbye
   PUBLIC mcrouter_hello_goodbye_service_thrift mcrouter_hello_goodbye_messages
-  PRIVATE mcrouterinternal Folly::folly FBThrift::thriftcpp2)
+  PRIVATE mcroutercore Folly::folly FBThrift::thriftcpp2)
 
 add_executable(mcrouter_hello_goodbye_client_tool HelloGoodbyeClientTool.cpp)
 
 target_link_libraries(
   mcrouter_hello_goodbye_client_tool PRIVATE mcrouter_hello_goodbye_messages
-                                             mcrouterinternal Folly::folly atomic)
+                                             mcroutercore mcrouterinternal Folly::folly atomic)
