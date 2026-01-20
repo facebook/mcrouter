@@ -11,7 +11,7 @@ add_executable(mcpiper_tests "${CMAKE_SOURCE_DIR}/mcrouter/test/main.cpp"
                              McPiperVisitorTest.cpp)
 
 target_link_libraries(
-  mcpiper_tests PRIVATE mcrouterinternal mcpiper_internal
+  mcpiper_tests PRIVATE  mcpiper_internal mcroutercore mcrouterinternal
                         mcrouter_carbon_test_messages GTest::gtest Folly::folly)
 
 gtest_discover_tests(mcpiper_tests)
