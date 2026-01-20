@@ -50,9 +50,11 @@ TEST(OptionsSetFromDictTest, sanity) {
   /* unchanged */
   EXPECT_TRUE(opts.num_proxies == 4);
 
+#ifndef MCROUTER_OSS_BUILD
   dict.clear();
   dict["enable_tw_crash_config_backup_path"] = "1";
   e = opts.updateFromDict(dict);
   EXPECT_TRUE(e.empty());
   EXPECT_TRUE(opts.enable_tw_crash_config_backup_path);
+#endif
 }
