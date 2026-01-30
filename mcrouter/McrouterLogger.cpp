@@ -162,6 +162,7 @@ bool McrouterLogger::start() {
   } else {
     // If default path is not available and TW backup is enabled, try backup
     // path
+#ifndef MCROUTER_OSS_BUILD
     if (router_.opts().enable_tw_crash_config_backup_path &&
         additionalLogger_) {
       auto backupPath = additionalLogger_->getBackupStatsRootPath();
@@ -177,11 +178,14 @@ bool McrouterLogger::start() {
         return false;
       }
     } else {
+#endif
       LOG(WARNING) << "Can't create or chmod " << router_.opts().stats_root
                    << ", disabling stats logging";
       return false;
     }
+#ifndef MCROUTER_OSS_BUILD
   }
+#endif
 
   boost::filesystem::path path(statsRoot_);
   path /= getStatPrefix(router_.opts()) + "." + kStatsStartupOptionsSfx;
