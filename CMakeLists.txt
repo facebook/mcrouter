@@ -7,8 +7,10 @@ cmake_minimum_required(VERSION 3.19)
 
 project(mcrouter VERSION 1.0.0)
 
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/build/fbcode_builder/CMake"
-                      ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH
+  "${CMAKE_SOURCE_DIR}/build/fbcode_builder/CMake"
+  "${CMAKE_SOURCE_DIR}/CMake"
+  ${CMAKE_MODULE_PATH})
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -69,7 +71,7 @@ else()
 endif()
 
 # Set up options for generated Thrift client code
-include(FBThriftLibrary)
+include(LegacyFBThriftCppLibrary)
 set(THRIFT_OPTIONS stack_arguments sync_methods_return_try
                    deprecated_terse_writes)
 
