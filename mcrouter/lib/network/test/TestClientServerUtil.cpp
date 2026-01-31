@@ -87,6 +87,8 @@ void TestServerOnRequest::onRequest(
     processReply(std::move(ctx), Reply(carbon::Result::NOTFOUND));
   } else if (req.key_ref()->fullKey() == "shutdown") {
     shutdownLock_.post();
+    // TODO
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     processReply(std::move(ctx), Reply(carbon::Result::NOTFOUND));
     flushQueue();
   } else if (req.key_ref()->fullKey() == "busy") {

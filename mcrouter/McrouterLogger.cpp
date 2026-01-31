@@ -160,6 +160,7 @@ bool McrouterLogger::start() {
   if (ensureDirExistsAndWritable(router_.opts().stats_root)) {
     statsRoot_ = router_.opts().stats_root;
   } else {
+#ifndef MCROUTER_OSS_BUILD
     // If default path is not available and TW backup is enabled, try backup
     // path
     if (router_.opts().enable_tw_crash_config_backup_path &&
@@ -181,6 +182,9 @@ bool McrouterLogger::start() {
                    << ", disabling stats logging";
       return false;
     }
+#else
+    return false;
+#endif
   }
 
   boost::filesystem::path path(statsRoot_);
