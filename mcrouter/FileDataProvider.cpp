@@ -10,7 +10,6 @@
 #include <poll.h>
 #include <sys/inotify.h>
 
-#include <boost/filesystem/convenience.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 #include <glog/logging.h>
@@ -18,7 +17,7 @@
 #include <folly/FileUtil.h>
 #include <folly/Format.h>
 
-using boost::filesystem::complete;
+using boost::filesystem::absolute;
 using boost::filesystem::path;
 using boost::filesystem::read_symlink;
 
@@ -77,7 +76,7 @@ void FileDataProvider::updateInotifyWatch() {
       break;
     }
     // We read a link
-    file = complete(file, link.parent_path());
+    file = absolute(file, link.parent_path());
     std::swap(link, file);
   }
   inotify_ = std::move(tmpInotify);
