@@ -13,8 +13,8 @@
 #include <glog/logging.h>
 
 #include <folly/Format.h>
-#include <folly/Singleton.h>
 #include <folly/executors/IOThreadPoolExecutor.h>
+#include <folly/init/Init.h>
 #include <folly/io/async/AsyncSignalHandler.h>
 #include <folly/io/async/EventBase.h>
 #include <folly/logging/Init.h>
@@ -23,8 +23,6 @@
 #include "mcrouter/ExecutorObserver.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
-#include "mcrouter/lib/network/CarbonMessageDispatcher.h"
-#include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/ServerLoad.h"
 #include "mcrouter/lib/network/test/MockMcThriftServerHandler.h"
 
@@ -98,7 +96,7 @@ class ShutdownSignalHandler : public folly::AsyncSignalHandler {
 };
 
 int main(int argc, char** argv) {
-  folly::SingletonVault::singleton()->registrationComplete();
+  folly::Init init(&argc, &argv, folly::InitOptions{}.useGFlags(false).removeFlags(false));
 
   AsyncMcServer::Options asyncOpts;
   asyncOpts.worker.versionString = "MockMcServer-1.0";
