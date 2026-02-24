@@ -48,6 +48,7 @@ typedef enum mc_op_e {
   mc_op_touch,
   mc_op_gat,
   mc_op_gats,
+  mc_op_meta_commands_get,
   mc_nops // placeholder
 } mc_op_t;
 
@@ -114,6 +115,8 @@ static inline const char* mc_op_to_string(const mc_op_t op) {
       return "gat";
     case mc_op_gats:
       return "gats";
+    case mc_op_meta_commands_get:
+      return "mg";
     case mc_nops:
       return "unknown";
   }
@@ -402,6 +405,7 @@ static inline int mc_op_has_key(mc_op_t op) {
     case mc_op_gets:
     case mc_op_gat:
     case mc_op_gats:
+    case mc_op_meta_commands_get:
       return 1;
 
     default:
