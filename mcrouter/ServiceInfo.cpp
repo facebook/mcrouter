@@ -8,8 +8,11 @@
 #include "mcrouter/ServiceInfo.h"
 #include "mcrouter/mcrouter_sr_deps.h"
 
-namespace facebook::memcache::mcrouter::detail {
+namespace facebook::memcache::mcrouter {
 
+template class ServiceInfo<facebook::memcache::MemcacheRouterInfo>;
+
+namespace detail {
 bool srHostInfoPtrFuncRouteHandlesCommandDispatcher(
     const HostInfoPtr& host,
     std::string& tree,
@@ -23,5 +26,5 @@ bool srHostInfoPtrFuncRouteHandlesCommandDispatcher(
       '\n');
   return false;
 }
-
-} // namespace facebook::memcache::mcrouter::detail
+} // namespace detail
+} // namespace facebook::memcache::mcrouter
