@@ -32,13 +32,13 @@ typename Observable<Data>::CallbackHandle Observable<Data>::subscribeAndCall(
     LOG_FAILURE(
         "mcrouter",
         failure::Category::kOther,
-        "Error occured in observable callback: {}",
+        "Error occurred in observable callback: {}",
         e.what());
   } catch (...) {
     LOG_FAILURE(
         "mcrouter",
         failure::Category::kOther,
-        "Unknown error occured in observable callback");
+        "Unknown error occurred in observable callback");
   }
   return subscribe(std::move(callback));
 }

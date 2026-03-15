@@ -57,9 +57,9 @@ void CallbackPool<Args...>::notify(Args... args) {
     try {
       it->func_(args...);
     } catch (const std::exception& e) {
-      LOG(ERROR) << "Error occured in callback: " << e.what();
+      LOG(ERROR) << "Error occurred in callback: " << e.what();
     } catch (...) {
-      LOG(ERROR) << "Unknown error occured in callback";
+      LOG(ERROR) << "Unknown error occurred in callback";
     }
   }
 }
