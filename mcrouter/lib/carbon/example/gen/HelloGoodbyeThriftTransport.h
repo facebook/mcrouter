@@ -26,6 +26,8 @@
 #include <thrift/lib/cpp/transport/TTransportException.h>
 #include <thrift/lib/cpp2/async/RequestChannel.h>
 
+#include <thrift/lib/cpp2/async/RocketClientChannelBase.h>
+
 #include "mcrouter/lib/carbon/example/gen/gen-cpp2/HelloGoodbyeAsyncClient.h"
 
 namespace facebook {
@@ -194,8 +196,10 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
               connectionOptions_.thriftCompressionThreshold;
         }
         compressionConfig.codecConfig_ref() = std::move(codec);
-        auto* channel = static_cast<apache::thrift::RocketClientChannel*>(thriftClient_->getChannel());
-        channel->setDesiredCompressionConfig(std::move(compressionConfig));
+        // Workaround for compiler bug T259546570: casting to base class may lead to
+        // misoptimization, so use qualified calls instead.
+        static_cast<apache::thrift::RocketClientChannelBase*>(thriftClient_->getChannel())
+        ->RocketClientChannelBase::setDesiredCompressionConfig(std::move(compressionConfig));
       }
 
       if (FOLLY_LIKELY(thriftClient != nullptr)) {
@@ -221,8 +225,10 @@ class ThriftTransport<hellogoodbye::HelloGoodbyeRouterInfo> : public ThriftTrans
       if (connectionOptions_.thriftCompression) {
         // Disable compression for this request type
         apache::thrift::CompressionConfig compressionConfig;
-        auto* channel = static_cast<apache::thrift::RocketClientChannel*>(thriftClient_->getChannel());
-        channel->setDesiredCompressionConfig(std::move(compressionConfig));
+        // Workaround for compiler bug T259546570: casting to base class may lead to
+        // misoptimization, so use qualified calls instead.
+        static_cast<apache::thrift::RocketClientChannelBase*>(thriftClient_->getChannel())
+        ->RocketClientChannelBase::setDesiredCompressionConfig(std::move(compressionConfig));
       }
 
       if (FOLLY_LIKELY(thriftClient != nullptr)) {
