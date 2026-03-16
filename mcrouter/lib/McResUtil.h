@@ -207,7 +207,7 @@ inline bool isHitResult(const carbon::Result result) {
 }
 
 /**
- * Was data not found and no errors occured?
+ * Was data not found and no errors occurred?
  */
 inline bool isMissResult(const carbon::Result result) {
   return result == carbon::Result::NOTFOUND;
