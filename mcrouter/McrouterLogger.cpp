@@ -128,7 +128,7 @@ void write_config_sources_info_to_disk(
     atomicallyWriteFileToDisk(
         toPrettySortedJson(config_info_json), path.string());
   } catch (...) {
-    LOG(ERROR) << "Error occured while writing configuration info to disk";
+    LOG(ERROR) << "Error occurred while writing configuration info to disk";
   }
 }
 
