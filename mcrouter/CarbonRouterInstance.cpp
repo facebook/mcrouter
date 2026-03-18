@@ -7,9 +7,15 @@
 
 #include "CarbonRouterInstance.h"
 
+#include <boost/filesystem/operations.hpp>
 #include <fmt/format.h>
 #include <folly/executors/thread_factory/InitThreadFactory.h>
 #include <folly/io/async/MuxIOThreadPoolExecutor.h>
+
+#include "mcrouter/FileObserver.h"
+#include "mcrouter/McrouterLogFailure.h"
+#include "mcrouter/config.h"
+#include "mcrouter/lib/RuntimeVarsData.h"
 
 namespace facebook {
 namespace memcache {
@@ -55,6 +61,51 @@ std::unique_ptr<folly::IOThreadPoolExecutorBase> createProxyThreadsExecutor(
   } else {
     return std::make_unique<folly::IOThreadPoolExecutor>(
         numProxies /* max */, numProxies /* min */, std::move(threadFactory));
+  }
+}
+
+void startObservingRuntimeVarsFileImpl(
+    const McrouterOptions& opts,
+    std::weak_ptr<ObservableRuntimeVars> rtVarsDataWeak,
+    folly::Optional<folly::observer::Observer<std::string>>& rtVarsDataObserver,
+    std::shared_ptr<folly::FunctionScheduler> scheduler,
+    FileObserverHandle& runtimeVarsObserverHandle) {
+  if (opts.runtime_vars_file.empty()) {
+    return;
+  }
+
+  auto onUpdate = [rtVarsDataWeak =
+                       std::move(rtVarsDataWeak)](std::string data) {
+    if (auto rtVarsDataPtr = rtVarsDataWeak.lock()) {
+      rtVarsDataPtr->set(
+          std::make_shared<const RuntimeVarsData>(std::move(data)));
+    }
+  };
+
+  rtVarsDataObserver =
+      startObservingRuntimeVarsFileCustom(opts.runtime_vars_file, onUpdate);
+
+  if (rtVarsDataObserver) {
+    return;
+  }
+
+  boost::system::error_code ec;
+  if (!boost::filesystem::exists(opts.runtime_vars_file, ec)) {
+    return;
+  }
+
+  if (scheduler) {
+    runtimeVarsObserverHandle = startObservingFile(
+        opts.runtime_vars_file,
+        scheduler,
+        std::chrono::milliseconds(opts.file_observer_poll_period_ms),
+        std::chrono::milliseconds(opts.file_observer_sleep_before_update_ms),
+        std::move(onUpdate));
+  } else {
+    MC_LOG_FAILURE(
+        opts,
+        failure::Category::kSystemError,
+        "Global function scheduler not available");
   }
 }
 

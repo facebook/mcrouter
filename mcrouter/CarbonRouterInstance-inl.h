@@ -7,7 +7,6 @@
 
 #include <vector>
 
-#include <boost/filesystem/operations.hpp>
 #include <fmt/format.h>
 
 #include <folly/MapUtil.h>
@@ -46,6 +45,13 @@ bool isValidRouterName(folly::StringPiece name);
 
 std::unique_ptr<folly::IOThreadPoolExecutorBase> createProxyThreadsExecutor(
     const McrouterOptions& opts);
+
+void startObservingRuntimeVarsFileImpl(
+    const McrouterOptions& opts,
+    std::weak_ptr<ObservableRuntimeVars> rtVarsDataWeak,
+    folly::Optional<folly::observer::Observer<std::string>>& rtVarsDataObserver,
+    std::shared_ptr<folly::FunctionScheduler> scheduler,
+    FileObserverHandle& runtimeVarsObserverHandle);
 
 } // namespace detail
 
@@ -470,42 +476,12 @@ void CarbonRouterInstance<RouterInfo>::spawnAuxiliaryThreads() {
 
 template <class RouterInfo>
 void CarbonRouterInstance<RouterInfo>::startObservingRuntimeVarsFile() {
-  if (opts_.runtime_vars_file.empty()) {
-    return;
-  }
-
-  auto onUpdate = [rtVarsDataWeak = rtVarsDataWeak()](std::string data) {
-    if (auto rtVarsDataPtr = rtVarsDataWeak.lock()) {
-      rtVarsDataPtr->set(
-          std::make_shared<const RuntimeVarsData>(std::move(data)));
-    }
-  };
-
-  rtVarsDataObserver_ =
-      startObservingRuntimeVarsFileCustom(opts_.runtime_vars_file, onUpdate);
-
-  if (rtVarsDataObserver_) {
-    return;
-  }
-
-  boost::system::error_code ec;
-  if (!boost::filesystem::exists(opts_.runtime_vars_file, ec)) {
-    return;
-  }
-
-  if (auto scheduler = functionScheduler()) {
-    runtimeVarsObserverHandle_ = startObservingFile(
-        opts_.runtime_vars_file,
-        scheduler,
-        std::chrono::milliseconds(opts_.file_observer_poll_period_ms),
-        std::chrono::milliseconds(opts_.file_observer_sleep_before_update_ms),
-        std::move(onUpdate));
-  } else {
-    MC_LOG_FAILURE(
-        opts(),
-        failure::Category::kSystemError,
-        "Global function scheduler not available");
-  }
+  detail::startObservingRuntimeVarsFileImpl(
+      opts_,
+      rtVarsDataWeak(),
+      rtVarsDataObserver_,
+      functionScheduler(),
+      runtimeVarsObserverHandle_);
 }
 
 template <class RouterInfo>
