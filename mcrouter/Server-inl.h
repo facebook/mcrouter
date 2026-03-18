@@ -144,26 +144,10 @@ void serverInit(
   }
 }
 
-template <class RouterInfo>
-inline void startServerShutdown(
+void startServerShutdown(
     std::shared_ptr<apache::thrift::ThriftServer> thriftServer,
     std::shared_ptr<AsyncMcServer> asyncMcServer,
-    std::shared_ptr<std::atomic<bool>> shutdownStarted) {
-  if (!shutdownStarted->exchange(true)) {
-    LOG(INFO) << "Started server shutdown";
-    if (asyncMcServer) {
-      LOG(INFO) << "Started shutdown of AsyncMcServer";
-      asyncMcServer->shutdown();
-      asyncMcServer->join();
-      LOG(INFO) << "Completed shutdown of AsyncMcServer";
-    }
-    if (thriftServer) {
-      LOG(INFO) << "Calling stop on ThriftServer";
-      thriftServer->stop();
-      LOG(INFO) << "Called stop on ThriftServer";
-    }
-  }
-}
+    std::shared_ptr<std::atomic<bool>> shutdownStarted);
 
 inline AsyncMcServer::Options createAsyncMcServerOptions(
     const McrouterOptions& mcrouterOpts,
@@ -255,7 +239,7 @@ class ShutdownSignalHandler : public folly::AsyncSignalHandler {
         shutdownStarted_(shutdownStarted) {}
 
   void signalReceived(int) noexcept override {
-    detail::startServerShutdown<RouterInfo>(
+    detail::startServerShutdown(
         thriftServer_, asyncMcServer_, shutdownStarted_);
   }
 
@@ -469,7 +453,7 @@ bool runServerDual(
         // that there we dont attempt to destruct a VirtualEventBase
         [evb = evb, &asyncMcServer, &thriftServer, &shutdownStarted] {
           evb->runInEventBaseThread([&]() {
-            detail::startServerShutdown<RouterInfo>(
+            detail::startServerShutdown(
                 thriftServer, asyncMcServer, shutdownStarted);
           });
         });
@@ -572,7 +556,7 @@ bool runServer(
         },
         [evb = localEvb, &asyncMcServer, &shutdownStarted] {
           evb->runInEventBaseThread([&]() {
-            detail::startServerShutdown<RouterInfo>(
+            detail::startServerShutdown(
                 nullptr, asyncMcServer, shutdownStarted);
           });
           evb->terminateLoopSoon();
