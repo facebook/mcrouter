@@ -50,8 +50,7 @@ TEST(migrateRouteTest, migrate) {
 
   const string key_get = "key_get";
   const string key_del = "key_del";
-  const auto hash =
-      McGetRequest(key_get).key_ref()->routingKeyHash() % interval;
+  const auto hash = McGetRequest(key_get).key()->routingKeyHash() % interval;
   const time_t start_time = now + 25;
   const time_t migration_time = start_time + interval + hash;
   const time_t before_migration = start_time + 1;
@@ -89,7 +88,7 @@ TEST(migrateRouteTest, migrate) {
          EXPECT_EQ(1, cnt);
 
          auto reply_del = rh.route(req_del);
-         EXPECT_EQ(carbon::Result::DELETED, *reply_del.result_ref());
+         EXPECT_EQ(carbon::Result::DELETED, *reply_del.result());
          EXPECT_EQ(vector<string>{key_del}, test_handles[0]->saw_keys);
          EXPECT_NE(vector<string>{key_del}, test_handles[1]->saw_keys);
        },
@@ -133,7 +132,7 @@ TEST(migrateRouteTest, migrate) {
          EXPECT_EQ(cnt, 2);
 
          auto reply_del = rh.route(req_del);
-         EXPECT_EQ(carbon::Result::NOTFOUND, *reply_del.result_ref());
+         EXPECT_EQ(carbon::Result::NOTFOUND, *reply_del.result());
          EXPECT_EQ(vector<string>{key_del}, test_handles_2[0]->saw_keys);
          EXPECT_EQ(vector<string>{key_del}, test_handles_2[1]->saw_keys);
        },
@@ -177,7 +176,7 @@ TEST(migrateRouteTest, migrate) {
          EXPECT_EQ(2, cnt);
 
          auto reply_del = rh.route(req_del);
-         EXPECT_EQ(carbon::Result::NOTFOUND, *reply_del.result_ref());
+         EXPECT_EQ(carbon::Result::NOTFOUND, *reply_del.result());
          EXPECT_EQ(vector<string>{key_del}, test_handles_3[0]->saw_keys);
          EXPECT_EQ(vector<string>{key_del}, test_handles_3[1]->saw_keys);
        },
@@ -208,7 +207,7 @@ TEST(migrateRouteTest, migrate) {
          EXPECT_EQ(1, cnt);
 
          auto reply_del = rh.route(req_del);
-         EXPECT_EQ(carbon::Result::NOTFOUND, *reply_del.result_ref());
+         EXPECT_EQ(carbon::Result::NOTFOUND, *reply_del.result());
          EXPECT_NE(vector<string>{key_del}, test_handles[0]->saw_keys);
          EXPECT_EQ(vector<string>{key_del}, test_handles[1]->saw_keys);
        }});
@@ -241,9 +240,8 @@ TEST(migrateRouteTest, leases) {
     now = start_time + 1;
     McLeaseGetRequest lease_get(key);
     auto reply_get = rh.route(lease_get);
-    EXPECT_EQ(0, *reply_get.leaseToken_ref());
-    reply_get.leaseToken_ref() =
-        0x1337; // Set non-zero lease token to check later.
+    EXPECT_EQ(0, *reply_get.leaseToken());
+    reply_get.leaseToken() = 0x1337; // Set non-zero lease token to check later.
     EXPECT_EQ("a", carbon::valueRangeSlow(reply_get).str());
     EXPECT_EQ(vector<string>{key}, test_handles[0]->saw_keys);
     EXPECT_EQ(vector<uint32_t>{0}, test_handles[0]->sawExptimes);
@@ -256,18 +254,18 @@ TEST(migrateRouteTest, leases) {
     {
       now = start_time + interval - 1;
       McLeaseSetRequest lease_set(key);
-      lease_set.value_ref() = *folly::IOBuf::copyBuffer("value");
-      lease_set.exptime_ref() = start_time + 500;
-      lease_set.leaseToken_ref() = *reply_get.leaseToken_ref();
+      lease_set.value() = *folly::IOBuf::copyBuffer("value");
+      lease_set.exptime() = start_time + 500;
+      lease_set.leaseToken() = *reply_get.leaseToken();
       auto reply_set = rh.route(lease_set);
       EXPECT_EQ(vector<string>{key}, test_handles[0]->saw_keys);
       EXPECT_EQ(
-          vector<uint32_t>{static_cast<uint32_t>(*lease_set.exptime_ref())},
+          vector<uint32_t>{static_cast<uint32_t>(*lease_set.exptime())},
           test_handles[0]->sawExptimes);
       EXPECT_EQ(vector<uint32_t>{}, test_handles[1]->sawExptimes);
       EXPECT_EQ(vector<string>{}, test_handles[1]->saw_keys);
       EXPECT_EQ(
-          vector<int64_t>{*lease_set.leaseToken_ref()},
+          vector<int64_t>{*lease_set.leaseToken()},
           test_handles[0]->sawLeaseTokensSet);
       EXPECT_EQ(vector<int64_t>{}, test_handles[1]->sawLeaseTokensSet);
       test_handles[0]->saw_keys.clear();
@@ -280,20 +278,20 @@ TEST(migrateRouteTest, leases) {
     {
       now = start_time + 2 * interval - 1;
       McLeaseSetRequest lease_set(key);
-      lease_set.value_ref() = *folly::IOBuf::copyBuffer("value");
-      lease_set.exptime_ref() = start_time + 1000;
-      lease_set.leaseToken_ref() = *reply_get.leaseToken_ref();
+      lease_set.value() = *folly::IOBuf::copyBuffer("value");
+      lease_set.exptime() = start_time + 1000;
+      lease_set.leaseToken() = *reply_get.leaseToken();
       auto reply_set = rh.route(lease_set);
-      EXPECT_TRUE(isErrorResult(*reply_set.result_ref()));
+      EXPECT_TRUE(isErrorResult(*reply_set.result()));
       EXPECT_EQ(vector<string>{}, test_handles[0]->saw_keys);
       EXPECT_EQ(vector<string>{key}, test_handles[1]->saw_keys);
       EXPECT_EQ(vector<uint32_t>{}, test_handles[0]->sawExptimes);
       EXPECT_EQ(
-          vector<uint32_t>{static_cast<uint32_t>(*lease_set.exptime_ref())},
+          vector<uint32_t>{static_cast<uint32_t>(*lease_set.exptime())},
           test_handles[1]->sawExptimes);
       EXPECT_EQ(vector<int64_t>{}, test_handles[0]->sawLeaseTokensSet);
       EXPECT_EQ(
-          vector<int64_t>{*lease_set.leaseToken_ref()},
+          vector<int64_t>{*lease_set.leaseToken()},
           test_handles[1]->sawLeaseTokensSet);
       test_handles[1]->sawLeaseTokensSet.clear();
 
@@ -305,7 +303,7 @@ TEST(migrateRouteTest, leases) {
           vector<uint32_t>{static_cast<uint32_t>(-1)},
           test_handles[0]->sawExptimes);
       EXPECT_EQ(
-          vector<int64_t>{*lease_set.leaseToken_ref()},
+          vector<int64_t>{*lease_set.leaseToken()},
           test_handles[0]->sawLeaseTokensSet);
       EXPECT_EQ(vector<int64_t>{}, test_handles[1]->sawLeaseTokensSet);
       test_handles[0]->sawExptimes.clear();

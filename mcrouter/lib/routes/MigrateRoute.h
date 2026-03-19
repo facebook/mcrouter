@@ -91,15 +91,15 @@ class MigrateRoute {
       case kToMask:
       default:
         McLeaseSetReply reply = to_->route(req);
-        if (*reply.result_ref() != carbon::Result::STORED &&
+        if (*reply.result() != carbon::Result::STORED &&
             now < (migrationTime(req) + 10)) {
           // Send a lease invalidation to from_ if the lease-set failed and we
           // recently migrated to to_. This helps ensure that servers in the old
           // pool don't accumulate unfulfilled lease tokens.
           auto leaseInvalidation =
-              std::make_unique<McLeaseSetRequest>(req.key_ref()->fullKey());
-          leaseInvalidation->exptime_ref() = -1;
-          leaseInvalidation->leaseToken_ref() = *req.leaseToken_ref();
+              std::make_unique<McLeaseSetRequest>(req.key()->fullKey());
+          leaseInvalidation->exptime() = -1;
+          leaseInvalidation->leaseToken() = *req.leaseToken();
           folly::fibers::addTask(
               [rh = from_, leaseInvalidation = std::move(leaseInvalidation)]() {
                 rh->route(*leaseInvalidation);
