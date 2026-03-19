@@ -42,10 +42,10 @@ int64_t getLeaseToken(const M& /* msg */) {
   return 0;
 }
 inline int64_t getLeaseToken(const McLeaseGetReply& msg) {
-  return *msg.leaseToken_ref();
+  return *msg.leaseToken();
 }
 inline int64_t getLeaseToken(const McLeaseSetRequest& msg) {
-  return *msg.leaseToken_ref();
+  return *msg.leaseToken();
 }
 
 // Message

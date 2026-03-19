@@ -21,8 +21,8 @@ namespace {
 
 void testBasic(bool scriptMode) {
   McLeaseSetReply msg(carbon::Result::FOUND);
-  msg.appSpecificErrorCode_ref() = 17;
-  msg.message_ref() = "A message";
+  msg.appSpecificErrorCode() = 17;
+  msg.message() = "A message";
 
   McPiperVisitor v(scriptMode);
   visitFields(msg, v);
@@ -35,9 +35,9 @@ void testBasic(bool scriptMode) {
 
 void testComplete(bool scriptMode) {
   TestRequest msg("abc");
-  msg.testList_ref() = {"qqq", "www"};
-  msg.testUMap_ref() = {{"abc", "def"}, {"a", "b"}};
-  msg.testComplexMap_ref() = {
+  msg.testList() = {"qqq", "www"};
+  msg.testUMap() = {{"abc", "def"}, {"a", "b"}};
+  msg.testComplexMap() = {
       {"key01", {1, 2, 3}}, {"key02", {5, 6}}, {"key03", {}}};
 
   McPiperVisitor v(scriptMode);
