@@ -17,7 +17,7 @@ memcache::McDeleteRequest addDeleteRequestSource(
     const memcache::McDeleteRequest& req,
     memcache::McDeleteRequestSource source) {
   memcache::McDeleteRequest ret = req;
-  ret.attributes_ref()->emplace(
+  ret.attributes()->emplace(
       memcache::kMcDeleteReqAttrSource, static_cast<uint8_t>(source));
   return ret;
 }
@@ -42,8 +42,8 @@ FOLLY_NOINLINE folly::exception_wrapper distributeWriteRequest(
                                                   &message,
                                                   &sourceRegion]() {
     auto finalReq = req;
-    finalReq.key_ref() = carbon::Keys<folly::IOBuf>::stripRoutingPrefix(
-        std::move(*finalReq.key_ref()));
+    finalReq.key() = carbon::Keys<folly::IOBuf>::stripRoutingPrefix(
+        std::move(*finalReq.key()));
     auto serialized =
         invalidation::McInvalidationKvPairs::serialize<memcache::McSetRequest>(
             finalReq)
@@ -91,12 +91,12 @@ FOLLY_NOINLINE folly::exception_wrapper distributeDeleteRequest(
           }
         }
         memcache::McDeleteRequest finalReq =
-            req.attributes_ref()->find(memcache::kMcDeleteReqAttrSource) ==
-                req.attributes_ref()->cend()
+            req.attributes()->find(memcache::kMcDeleteReqAttrSource) ==
+                req.attributes()->cend()
             ? std::move(addDeleteRequestSource(req, source))
             : req;
-        finalReq.key_ref() = carbon::Keys<folly::IOBuf>::stripRoutingPrefix(
-            std::move(*finalReq.key_ref()));
+        finalReq.key() = carbon::Keys<folly::IOBuf>::stripRoutingPrefix(
+            std::move(*finalReq.key()));
         auto serialized = invalidation::McInvalidationKvPairs::serialize<
                               memcache::McDeleteRequest>(finalReq)
                               .template to<std::string>();
@@ -122,11 +122,11 @@ FOLLY_NOINLINE bool spoolAsynclog(
   if (asynclogName.empty()) {
     return false;
   }
-  folly::StringPiece key = keepRoutingPrefix ? req.key_ref()->fullKey()
-                                             : req.key_ref()->keyWithoutRoute();
+  folly::StringPiece key =
+      keepRoutingPrefix ? req.key()->fullKey() : req.key()->keyWithoutRoute();
   folly::fibers::Baton baton;
   auto res = false;
-  auto attr = *req.attributes_ref();
+  auto attr = *req.attributes();
   const auto asyncWriteStartUs = nowUs();
   auto asyncWriter = proxy->router().asyncWriter();
   if (asyncWriter && host) {

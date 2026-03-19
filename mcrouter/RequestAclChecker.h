@@ -49,10 +49,10 @@ class RequestAclChecker {
       /* Only allow requests from localhost */
       if (isLocalRequest(ctx.getPeerSocketAddress())) {
         refreshMemcacheServerRequestAclChecker();
-        reply.result_ref() = carbon::Result::OK;
-        reply.response_ref() = "Initializing new Prefix ACL handler.";
+        reply.result() = carbon::Result::OK;
+        reply.response() = "Initializing new Prefix ACL handler.";
       } else {
-        reply.response_ref() =
+        reply.response() =
             "Prefix ACL refresh can only be called from localhost";
       }
       Callback::reply(std::forward<Callback>(ctx), std::move(reply));
