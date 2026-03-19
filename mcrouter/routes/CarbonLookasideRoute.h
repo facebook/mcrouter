@@ -208,9 +208,9 @@ class CarbonLookasideRoute {
     client_->send(
         cacheRequest,
         [&baton, &ret](const McGetRequest&, McGetReply&& cacheReply) {
-          if (isHitResult(*cacheReply.result_ref()) &&
-              cacheReply.value_ref().has_value()) {
-            folly::io::Cursor cur(&cacheReply.value_ref().value());
+          if (isHitResult(*cacheReply.result()) &&
+              cacheReply.value().has_value()) {
+            folly::io::Cursor cur(&cacheReply.value().value());
             carbon::CarbonProtocolReader reader(cur);
             ReplyT<Request> reply;
             reader.readRawInto(reply);
@@ -245,9 +245,9 @@ class CarbonLookasideRoute {
           [this, &key, &baton, &ret, &retry, &leaseToken](
               const McLeaseGetRequest&, McLeaseGetReply&& cacheReply) {
             retry = false;
-            if (isHitResult(*cacheReply.result_ref()) &&
-                cacheReply.value_ref().has_value()) {
-              folly::io::Cursor cur(&cacheReply.value_ref().value());
+            if (isHitResult(*cacheReply.result()) &&
+                cacheReply.value().has_value()) {
+              folly::io::Cursor cur(&cacheReply.value().value());
               carbon::CarbonProtocolReader reader(cur);
               ReplyT<Request> reply;
               try {
@@ -258,7 +258,7 @@ class CarbonLookasideRoute {
                     [this,
                      invalidateReq = std::make_shared<McSetRequest>(key)]() {
                       // Deserialization of item threw, invalidate in cache
-                      invalidateReq->exptime_ref() = -1;
+                      invalidateReq->exptime() = -1;
                       // Best effort cleanup mechanism without blocking the main
                       // send. Return folly::None back to client so that client
                       // will fetch from backend while not increasing error rate
@@ -268,14 +268,14 @@ class CarbonLookasideRoute {
                               const McSetRequest&, McSetReply&&) {});
                     });
               }
-            } else if (isMissResult(*cacheReply.result_ref())) {
+            } else if (isMissResult(*cacheReply.result())) {
               // Hot miss will retry using an expoential backoff.
               // A miss will return with the lease token set.
               constexpr size_t kLeaseHotMissToken = 1;
-              if (*cacheReply.leaseToken_ref() == kLeaseHotMissToken) {
+              if (*cacheReply.leaseToken() == kLeaseHotMissToken) {
                 retry = true;
               } else {
-                leaseToken = *cacheReply.leaseToken_ref();
+                leaseToken = *cacheReply.leaseToken();
               }
             }
             baton.post();
@@ -324,11 +324,11 @@ class CarbonLookasideRoute {
     if (subSecTTL_) {
       // ms ttl translates to a 1 second ttl on the server. Sub-second
       // ttl is acheived by appending a time based suffix to the key.
-      req.exptime_ref() = 1;
+      req.exptime() = 1;
     } else {
-      req.exptime_ref() = ttl_;
+      req.exptime() = ttl_;
     }
-    req.value_ref() = serializeOffFiber(reply);
+    req.value() = serializeOffFiber(reply);
     folly::fibers::addTask([this, req = std::move(req)]() {
       folly::fibers::Baton baton;
       client_->send(
@@ -348,12 +348,12 @@ class CarbonLookasideRoute {
     if (subSecTTL_) {
       // ms ttl translates to a 1 second ttl on the server. Sub-second
       // ttl is acheived by appending a time based suffix to the key.
-      req.exptime_ref() = 1;
+      req.exptime() = 1;
     } else {
-      req.exptime_ref() = ttl_;
+      req.exptime() = ttl_;
     }
-    req.leaseToken_ref() = leaseToken;
-    req.value_ref() = serializeOffFiber(reply);
+    req.leaseToken() = leaseToken;
+    req.value() = serializeOffFiber(reply);
     folly::fibers::addTask([this, req = std::move(req)]() {
       folly::fibers::Baton baton;
       client_->send(req, [&baton](const McLeaseSetRequest&, McLeaseSetReply&&) {

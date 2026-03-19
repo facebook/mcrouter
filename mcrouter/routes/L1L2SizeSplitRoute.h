@@ -170,8 +170,8 @@ class L1L2SizeSplitRoute {
     if (isHitResult(*l1GetsReply.result_ref()) &&
         coalesceAndGetRange(*l1GetsReply.value_ref()) == l1Value) {
       McCasRequest l1CasRequest(req.key_ref()->fullKey());
-      l1CasRequest.casToken_ref() = *l1GetsReply.casToken_ref();
-      l1CasRequest.exptime_ref() = -1;
+      l1CasRequest.casToken() = *l1GetsReply.casToken_ref();
+      l1CasRequest.exptime() = -1;
       l1_->route(l1CasRequest);
     }
     return;
@@ -186,7 +186,7 @@ class L1L2SizeSplitRoute {
         kMaxMcKeyLength;
   }
   void augmentReply(McGetsReply& reply, const McGetsReply& l1Reply) const {
-    reply.casToken_ref() = *l1Reply.casToken_ref();
+    reply.casToken() = *l1Reply.casToken();
   }
   void augmentReply(
       McLeaseGetReply& /* unused */,
