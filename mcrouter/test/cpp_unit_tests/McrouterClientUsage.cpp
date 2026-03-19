@@ -110,7 +110,7 @@ TEST(CarbonRouterClient, basicUsageSameThreadClient) {
             *reqRawPtr,
             [req = std::move(req), &replyReceived, &baton](
                 const McGetRequest&, McGetReply&& reply) {
-              EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+              EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
               replyReceived = true;
               baton.post();
             });
@@ -151,7 +151,7 @@ TEST(CarbonRouterClient, basicUsageRemoteThreadClient) {
 
   client->send(
       req, [&baton, &replyReceived](const McGetRequest&, McGetReply&& reply) {
-        EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+        EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
         replyReceived = true;
         baton.post();
       });
@@ -192,7 +192,7 @@ TEST(CarbonRouterClient, basicUsageRemoteThreadClientThreadPool) {
 
   client->send(
       req, [&baton, &replyReceived](const McGetRequest&, McGetReply&& reply) {
-        EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+        EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
         replyReceived = true;
         baton.post();
       });
@@ -232,7 +232,7 @@ TEST(CarbonRouterClient, basicUsageRemoteThreadClientThreadAffinity) {
 
   client->send(
       req, [&baton, &replyReceived](const McGetRequest&, McGetReply&& reply) {
-        EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+        EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
         replyReceived = true;
         baton.post();
       });
@@ -301,8 +301,8 @@ TEST(CarbonRouterClient, basicUsageRemoteThreadClientThreadAffinityMulti) {
       [&baton, &replyCount, &requests](
           const McGetRequest&, McGetReply&& reply) {
         EXPECT_TRUE(
-            *reply.result_ref() == carbon::Result::CONNECT_ERROR ||
-            *reply.result_ref() == carbon::Result::TKO);
+            *reply.result() == carbon::Result::CONNECT_ERROR ||
+            *reply.result() == carbon::Result::TKO);
         if (++replyCount == requests.size()) {
           baton.post();
         }
@@ -351,8 +351,8 @@ TEST(CarbonRouterClient, remoteThreadStatsRequestUsage) {
   client->send(
       req,
       [&baton, &replyReceived](const McStatsRequest&, McStatsReply&& reply) {
-        EXPECT_GT(reply.stats_ref()->size(), 1);
-        EXPECT_EQ(carbon::Result::OK, *reply.result_ref());
+        EXPECT_GT(reply.stats()->size(), 1);
+        EXPECT_EQ(carbon::Result::OK, *reply.result());
         replyReceived = true;
         baton.post();
       });
@@ -418,8 +418,8 @@ TEST(CarbonRouterClient, externalStatsTest) {
       req,
       [&baton, &replyReceived](const McStatsRequest&, McStatsReply&& reply) {
         /* Expect at least one stat */
-        EXPECT_GT(reply.stats_ref()->size(), 0);
-        EXPECT_EQ(carbon::Result::OK, *reply.result_ref());
+        EXPECT_GT(reply.stats()->size(), 0);
+        EXPECT_EQ(carbon::Result::OK, *reply.result());
         replyReceived = true;
         baton.post();
       });
@@ -470,7 +470,7 @@ TEST(CarbonRouterClient, requestExpiryTest) {
   // Also note that we are careful not to modify req while the proxy (in this
   // case, on another thread) may be processing it.
   hellogoodbye::HelloRequest req;
-  req.key_ref() = "test1";
+  req.key() = "test1";
   setRequestDeadline(req, 10);
   /* sleep override */
   std::this_thread::sleep_for(std::chrono::milliseconds(20));
@@ -482,9 +482,9 @@ TEST(CarbonRouterClient, requestExpiryTest) {
       [&baton, &replyReceived](
           const hellogoodbye::HelloRequest&, hellogoodbye::HelloReply&& reply) {
         // for now, REMOTE_ERROR is returned in place of DEADLINE_EXCEEDED
-        EXPECT_EQ(carbon::Result::REMOTE_ERROR, *reply.result_ref());
+        EXPECT_EQ(carbon::Result::REMOTE_ERROR, *reply.result());
         EXPECT_NE(
-            reply.message_ref()->find("deadline exceeded"), std::string::npos);
+            reply.message()->find("deadline exceeded"), std::string::npos);
         replyReceived = true;
         baton.post();
       });
@@ -531,7 +531,7 @@ TEST(CarbonRouterClient, requestExpiryTestNoExpiry) {
   // Also note that we are careful not to modify req while the proxy (in this
   // case, on another thread) may be processing it.
   hellogoodbye::HelloRequest req;
-  req.key_ref() = "test1";
+  req.key() = "test1";
   setRequestDeadline(req, 10);
   bool replyReceived = false;
   folly::fibers::Baton baton;
@@ -541,7 +541,7 @@ TEST(CarbonRouterClient, requestExpiryTestNoExpiry) {
       [&baton, &replyReceived](
           const hellogoodbye::HelloRequest&, hellogoodbye::HelloReply&& reply) {
         // for now, REMOTE_ERROR is returned in place of DEADLINE_EXCEEDED
-        EXPECT_NE(carbon::Result::REMOTE_ERROR, *reply.result_ref());
+        EXPECT_NE(carbon::Result::REMOTE_ERROR, *reply.result());
         replyReceived = true;
         baton.post();
       });
@@ -683,7 +683,7 @@ TEST(CarbonRouterClient, requestExpiryTestWithLatencyInjectionRoute) {
   // Also note that we are careful not to modify req while the proxy (in this
   // case, on another thread) may be processing it.
   hellogoodbye::HelloRequest req;
-  req.key_ref() = "test1";
+  req.key() = "test1";
   setRequestDeadline(req, 10);
   bool replyReceived = false;
   folly::fibers::Baton baton;
@@ -693,9 +693,9 @@ TEST(CarbonRouterClient, requestExpiryTestWithLatencyInjectionRoute) {
       [&baton, &replyReceived](
           const hellogoodbye::HelloRequest&, hellogoodbye::HelloReply&& reply) {
         // for now, REMOTE_ERROR is returned in place of DEADLINE_EXCEEDED
-        EXPECT_EQ(carbon::Result::REMOTE_ERROR, *reply.result_ref());
+        EXPECT_EQ(carbon::Result::REMOTE_ERROR, *reply.result());
         EXPECT_NE(
-            reply.message_ref()->find("deadline exceeded"), std::string::npos);
+            reply.message()->find("deadline exceeded"), std::string::npos);
         replyReceived = true;
         baton.post();
       });

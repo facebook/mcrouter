@@ -43,7 +43,7 @@ TEST(McDistributionUtilsTest, distributeSetTest) {
   auto axonCtxPtr =
       std::make_shared<facebook::memcache::mcrouter::AxonContext>(axonCtx);
   auto req = McSetRequest("key1");
-  req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
+  req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
   auto result = distributeWriteRequest(
       req, axonCtxPtr, bucketId, targetRegion, sourceRegion, message);
   EXPECT_FALSE(result.has_exception_ptr());
@@ -113,7 +113,7 @@ TEST(McDistributionUtilsTest, distributeSetWithSecurityTest) {
   auto axonCtxPtr =
       std::make_shared<facebook::memcache::mcrouter::AxonContext>(axonCtx);
   auto req = McSetRequest("key1");
-  req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
+  req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
   auto result = distributeWriteRequest(
       req,
       axonCtxPtr,

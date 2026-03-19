@@ -295,7 +295,7 @@ struct RecordingRoute {
   }
 
   McLeaseSetReply route(const McLeaseSetRequest& req) {
-    h_->sawLeaseTokensSet.push_back(*req.leaseToken_ref());
+    h_->sawLeaseTokensSet.push_back(*req.leaseToken());
     return routeInternal(req);
   }
 
