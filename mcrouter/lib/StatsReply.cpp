@@ -29,7 +29,7 @@ McStatsReply StatsReply::getReply() {
         folly::to<std::string>("STAT ", s.first, ' ', s.second));
   }
 
-  reply.stats_ref() = std::move(statsList);
+  reply.stats() = std::move(statsList);
 
   return reply;
 }
