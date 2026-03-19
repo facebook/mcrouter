@@ -259,7 +259,7 @@ TEST_F(EagerShardSelectionShadowRouteTest, customChildrenRoute) {
 
   GoodbyeRequest req;
 
-  req.shardId_ref() = 1;
+  req.shardId() = 1;
   size_t iterations = 0;
   RouteHandleTraverser<HelloGoodbyeRouterInfo::RouteHandleIf> t{
       [&iterations](const HelloGoodbyeRouterInfo::RouteHandleIf& r) {
@@ -680,9 +680,9 @@ TEST_F(EagerShardSelectionShadowRouteTest, basicRequestTest) {
   fm.run([&]() {
     for (int i = 0; i < 100; i++) {
       GoodbyeRequest req;
-      req.shardId_ref() = 1;
+      req.shardId() = 1;
       auto reply = rh->route(req);
-      std::string v = *reply.message_ref();
+      std::string v = *reply.message();
       auto it = normalResults.find(v);
       if (it != normalResults.end()) {
         normalResults[v]++;
@@ -767,9 +767,9 @@ TEST_F(EagerShardSelectionShadowRouteTest, basicShardTest) {
   fm.run([&]() {
     for (int i = 0; i < 100; i++) {
       GoodbyeRequest req;
-      req.shardId_ref() = 1;
+      req.shardId() = 1;
       auto reply = rh->route(req);
-      std::string v = *reply.message_ref();
+      std::string v = *reply.message();
       auto it = normalResults.find(v);
       if (it != normalResults.end()) {
         normalResults[v]++;
@@ -859,9 +859,9 @@ TEST_F(EagerShardSelectionShadowRouteTest, basicShardWithWeightsTest) {
   fm.run([&]() {
     for (int i = 0; i < 100; i++) {
       GoodbyeRequest req;
-      req.shardId_ref() = 1;
+      req.shardId() = 1;
       auto reply = rh->route(req);
-      std::string v = *reply.message_ref();
+      std::string v = *reply.message();
       auto it = normalResults.find(v);
       if (it != normalResults.end()) {
         normalResults[v]++;
@@ -951,9 +951,9 @@ TEST_F(EagerShardSelectionShadowRouteTest, basicShardWithLowWeightsTest) {
   fm.run([&]() {
     for (int i = 0; i < 100; i++) {
       GoodbyeRequest req;
-      req.shardId_ref() = 1;
+      req.shardId() = 1;
       auto reply = rh->route(req);
-      std::string v = *reply.message_ref();
+      std::string v = *reply.message();
       auto it = normalResults.find(v);
       if (it != normalResults.end()) {
         normalResults[v]++;
@@ -1088,9 +1088,9 @@ TEST_F(EagerShardSelectionShadowRouteTest, basicShadowShardTest) {
   fm.run([&]() {
     for (int i = 0; i < 100; i++) {
       GoodbyeRequest req;
-      req.shardId_ref() = 1;
+      req.shardId() = 1;
       auto reply = rh->route(req);
-      std::string v = *reply.message_ref();
+      std::string v = *reply.message();
       auto it = normalResults.find(v);
       if (it != normalResults.end()) {
         normalResults[v]++;
@@ -1221,9 +1221,9 @@ TEST_F(EagerShardSelectionShadowRouteTest, basicShadowShardWithShardTest) {
   fm.run([&]() {
     for (int i = 0; i < 100; i++) {
       GoodbyeRequest req;
-      req.shardId_ref() = 1;
+      req.shardId() = 1;
       auto reply = rh->route(req);
-      EXPECT_EQ("Out of range!", *reply.message_ref());
+      EXPECT_EQ("Out of range!", *reply.message());
     }
   });
   // 100 requests on shadow path
@@ -1339,9 +1339,9 @@ TEST_F(EagerShardSelectionShadowRouteTest, basicShadowShardWithNoShardTest) {
   fm.run([&]() {
     for (int i = 0; i < 100; i++) {
       GoodbyeRequest req;
-      req.shardId_ref() = 1;
+      req.shardId() = 1;
       auto reply = rh->route(req);
-      EXPECT_EQ("Out of range!", *reply.message_ref());
+      EXPECT_EQ("Out of range!", *reply.message());
     }
   });
   // 100 requests on shadow path

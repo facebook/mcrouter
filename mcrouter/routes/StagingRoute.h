@@ -116,8 +116,8 @@ class StagingRoute {
       folly::fibers::addTask([req, reply, warm = warm_, staging = staging_]() {
         McMetagetRequest reqMetaget(req.key_ref()->fullKey());
         auto metaReply = staging->route(reqMetaget);
-        if (*metaReply.result_ref() != carbon::Result::BUSY &&
-            !isHitResult(*metaReply.result_ref())) {
+        if (*metaReply.result() != carbon::Result::BUSY &&
+            !isHitResult(*metaReply.result())) {
           // Add to the staging side if we don't get a busy or a miss.
           // We will have to retrieve the exptime from the warm side through
           // a metaget and use the reply from the warm side for the value.

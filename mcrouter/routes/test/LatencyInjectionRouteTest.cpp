@@ -61,13 +61,13 @@ TEST_F(LatencyInjectionRouteTest, routeRequestPayload) {
   HelloRequest req;
   HelloReply reply;
 
-  req.beforeLatencyUs_ref() = 1000000;
-  req.afterLatencyUs_ref() = 1000000;
+  req.beforeLatencyUs() = 1000000;
+  req.afterLatencyUs() = 1000000;
   const auto before_ms = getCurrentTimeInMs();
   reply = rh->route(req);
   const auto elapsed =
       std::chrono::milliseconds(getCurrentTimeInMs() - before_ms);
-  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
   EXPECT_GE(elapsed.count(), 1999);
 }
 
@@ -85,13 +85,13 @@ TEST_F(LatencyInjectionRouteTest, routeRequestPayloadIgnore) {
   HelloRequest req;
   HelloReply reply;
 
-  req.beforeLatencyUs_ref() = 1000000000;
-  req.afterLatencyUs_ref() = 1000000000;
+  req.beforeLatencyUs() = 1000000000;
+  req.afterLatencyUs() = 1000000000;
   const auto before_ms = getCurrentTimeInMs();
   reply = rh->route(req);
   const auto elapsed =
       std::chrono::milliseconds(getCurrentTimeInMs() - before_ms);
-  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
   EXPECT_LE(elapsed.count(), 20000);
 }
 
@@ -112,7 +112,7 @@ TEST_F(LatencyInjectionRouteTest, routeBefore) {
   reply = rh->route(req);
   const auto elapsed =
       std::chrono::milliseconds(getCurrentTimeInMs() - before_ms);
-  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
   EXPECT_GE(elapsed.count(), 999);
 }
 
@@ -133,7 +133,7 @@ TEST_F(LatencyInjectionRouteTest, routeAfter) {
   reply = rh->route(req);
   const auto elapsed =
       std::chrono::milliseconds(getCurrentTimeInMs() - before_ms);
-  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
   EXPECT_GE(elapsed.count(), 999);
 }
 
@@ -154,7 +154,7 @@ TEST_F(LatencyInjectionRouteTest, routeTotal) {
   reply = rh->route(req);
   const auto elapsed =
       std::chrono::milliseconds(getCurrentTimeInMs() - before_ms);
-  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
   EXPECT_GE(elapsed.count(), 999);
 }
 

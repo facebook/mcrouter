@@ -188,7 +188,7 @@ TEST(DistributionRouteTest, crossRegionDelete) {
       tmp.serialized);
   EXPECT_EQ(
       static_cast<McDeleteRequestSource>(
-          req.attributes_ref()->find(memcache::kMcDeleteReqAttrSource)->second),
+          req.attributes()->find(memcache::kMcDeleteReqAttrSource)->second),
       memcache::McDeleteRequestSource::CROSS_REGION_DIRECTED_INVALIDATION);
   EXPECT_EQ(tmp.operation, invalidation::DistributionOperation::Delete);
   EXPECT_EQ(tmp.type, invalidation::DistributionType::Distribution);
@@ -239,7 +239,7 @@ TEST(DistributionRouteTest, broadcastDeleteEnabledRpc) {
       tmp.serialized);
   EXPECT_EQ(
       static_cast<McDeleteRequestSource>(
-          req.attributes_ref()->find(memcache::kMcDeleteReqAttrSource)->second),
+          req.attributes()->find(memcache::kMcDeleteReqAttrSource)->second),
       memcache::McDeleteRequestSource::CROSS_REGION_BROADCAST_INVALIDATION);
 }
 
@@ -288,7 +288,7 @@ TEST(DistributionRouteTest, broadcastSpooledDelete) {
       tmp.serialized);
   EXPECT_EQ(
       static_cast<McDeleteRequestSource>(
-          req.attributes_ref()->find(memcache::kMcDeleteReqAttrSource)->second),
+          req.attributes()->find(memcache::kMcDeleteReqAttrSource)->second),
       memcache::McDeleteRequestSource::CROSS_REGION_BROADCAST_INVALIDATION);
   EXPECT_EQ(tmp.operation, invalidation::DistributionOperation::Delete);
   EXPECT_EQ(tmp.type, invalidation::DistributionType::Async);
@@ -339,7 +339,7 @@ TEST(DistributionRouteTest, crossRegionDirectedSpooledDelete) {
       tmp.serialized);
   EXPECT_EQ(
       static_cast<McDeleteRequestSource>(
-          req.attributes_ref()->find(memcache::kMcDeleteReqAttrSource)->second),
+          req.attributes()->find(memcache::kMcDeleteReqAttrSource)->second),
       memcache::McDeleteRequestSource::CROSS_REGION_DIRECTED_INVALIDATION);
   EXPECT_EQ(tmp.operation, invalidation::DistributionOperation::Delete);
   EXPECT_EQ(tmp.type, invalidation::DistributionType::Async);
@@ -374,7 +374,7 @@ TEST(DistributionRouteTest, crossRegionSet) {
     fiber_local<MemcacheRouterInfo>::setBucketId(1234);
     fiber_local<MemcacheRouterInfo>::setDistributionTargetRegion("georgia");
     auto req = McSetRequest("/georgia/default/test1");
-    req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
+    req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
     rh->route(req);
   });
 
@@ -386,7 +386,7 @@ TEST(DistributionRouteTest, crossRegionSet) {
   EXPECT_EQ(tmp.pool, "testPool");
   auto req2 = apache::thrift::CompactSerializer::deserialize<McSetRequest>(
       tmp.serialized);
-  EXPECT_EQ(req2.key_ref()->fullKey().str(), "test1");
+  EXPECT_EQ(req2.key()->fullKey().str(), "test1");
   EXPECT_EQ(tmp.operation, invalidation::DistributionOperation::Write);
   EXPECT_EQ(tmp.type, invalidation::DistributionType::Distribution);
   EXPECT_EQ(tmp.srcRegion, "oregon");
@@ -421,7 +421,7 @@ TEST(DistributionRouteTest, broadcastSet) {
       fiber_local<MemcacheRouterInfo>::setBucketId(1234);
       fiber_local<MemcacheRouterInfo>::setDistributionTargetRegion("");
       auto req = McSetRequest("/*/*/test1");
-      req.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
+      req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
       rh->route(req);
     });
   }});
@@ -435,7 +435,7 @@ TEST(DistributionRouteTest, broadcastSet) {
   EXPECT_EQ(tmp.pool, "testPool");
   auto req = apache::thrift::CompactSerializer::deserialize<McSetRequest>(
       tmp.serialized);
-  EXPECT_EQ(req.key_ref()->fullKey(), "test1");
+  EXPECT_EQ(req.key()->fullKey(), "test1");
   EXPECT_EQ(tmp.operation, invalidation::DistributionOperation::Write);
   EXPECT_EQ(tmp.type, invalidation::DistributionType::Distribution);
   EXPECT_EQ(tmp.srcRegion, "oregon");

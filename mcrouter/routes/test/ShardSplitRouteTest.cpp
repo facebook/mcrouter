@@ -94,7 +94,7 @@ TEST(shardSplitRoute, simpleSplit_deleteFanout) {
   fm.run([&] {
     mockFiberContext();
     auto reply = splitRoute.route(McDeleteRequest("test:123:"));
-    EXPECT_EQ(carbon::Result::FOUND, *reply.result_ref());
+    EXPECT_EQ(carbon::Result::FOUND, *reply.result());
   });
 
   EXPECT_EQ(allKeys, handles[0]->saw_keys);

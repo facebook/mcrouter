@@ -60,13 +60,13 @@ TEST_F(BlackholeRouteTest, route) {
   GoodbyeRequest req;
   GoodbyeReply reply;
 
-  req.shardId_ref() = 1234;
+  req.shardId() = 1234;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
 
-  req.shardId_ref() = 2345;
+  req.shardId() = 2345;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result());
 }
 
 constexpr folly::StringPiece kBlackholeConfigWithChild = R"(
@@ -95,13 +95,13 @@ TEST_F(BlackholeRouteTest, routeWithChild) {
   GoodbyeRequest req;
   GoodbyeReply reply;
 
-  req.shardId_ref() = 1234;
+  req.shardId() = 1234;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result());
 
-  req.shardId_ref() = 5678;
+  req.shardId() = 5678;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
 }
 
 } // namespace mcrouter

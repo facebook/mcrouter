@@ -52,26 +52,26 @@ TEST_F(ClientCompatibilityCheckerRouteTest, basic) {
   HelloRequest req;
   HelloReply reply;
 
-  req.clientVersion_ref() = 9;
+  req.clientVersion() = 9;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
-  EXPECT_EQ("", *reply.message_ref());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
+  EXPECT_EQ("", *reply.message());
 
-  req.clientVersion_ref() = 10;
+  req.clientVersion() = 10;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::CLIENT_ERROR, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::CLIENT_ERROR, *reply.result());
   EXPECT_EQ(
       "Requests from newer client with version 10 are not supported. "
       "Maximum supported client version is 9",
-      *reply.message_ref());
+      *reply.message());
 
-  req.clientVersion_ref() = 11;
+  req.clientVersion() = 11;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::CLIENT_ERROR, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::CLIENT_ERROR, *reply.result());
   EXPECT_EQ(
       "Requests from newer client with version 11 are not supported. "
       "Maximum supported client version is 9",
-      *reply.message_ref());
+      *reply.message());
 }
 
 } // namespace mcrouter

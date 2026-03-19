@@ -39,7 +39,7 @@ TEST(originalClientHashRouteTest, basic) {
     auto rh = createOriginalClientHashRoute<MemcacheRouterInfo>(
         get_route_handles(test_handles), 0 /* offset */);
     auto reply = rh->route(McGetRequest("0"));
-    EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result_ref());
+    EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result());
   });
 
   McGetRequest getReq("0");

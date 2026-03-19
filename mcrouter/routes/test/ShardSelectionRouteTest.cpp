@@ -447,29 +447,29 @@ TEST_F(ShardSelectionRouteTest, route) {
   GoodbyeRequest req;
   GoodbyeReply reply;
 
-  req.shardId_ref() = 1;
+  req.shardId() = 1;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
 
-  req.shardId_ref() = 2;
+  req.shardId() = 2;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result());
 
-  req.shardId_ref() = 3;
+  req.shardId() = 3;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
 
-  req.shardId_ref() = 4;
+  req.shardId() = 4;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result());
 
-  req.shardId_ref() = 5;
+  req.shardId() = 5;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
 
-  req.shardId_ref() = 6;
+  req.shardId() = 6;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result());
 }
 
 TEST_F(ShardSelectionRouteTest, routeString) {
@@ -497,29 +497,29 @@ TEST_F(ShardSelectionRouteTest, routeString) {
   GoodbyeRequest req;
   GoodbyeReply reply;
 
-  req.shardId_ref() = 1;
+  req.shardId() = 1;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
 
-  req.shardId_ref() = 2;
+  req.shardId() = 2;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result());
 
-  req.shardId_ref() = 3;
+  req.shardId() = 3;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
 
-  req.shardId_ref() = 4;
+  req.shardId() = 4;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result());
 
-  req.shardId_ref() = 5;
+  req.shardId() = 5;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
 
-  req.shardId_ref() = 6;
+  req.shardId() = 6;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result());
 }
 
 TEST_F(ShardSelectionRouteTest, outOfRange) {
@@ -547,17 +547,17 @@ TEST_F(ShardSelectionRouteTest, outOfRange) {
   GoodbyeRequest req;
   GoodbyeReply reply;
 
-  req.shardId_ref() = 1;
+  req.shardId() = 1;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
 
-  req.shardId_ref() = 2;
+  req.shardId() = 2;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
 
-  req.shardId_ref() = 3;
+  req.shardId() = 3;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result());
 }
 
 TEST_F(ShardSelectionRouteTest, outOfRangeString) {
@@ -585,17 +585,17 @@ TEST_F(ShardSelectionRouteTest, outOfRangeString) {
   GoodbyeRequest req;
   GoodbyeReply reply;
 
-  req.shardId_ref() = 1;
+  req.shardId() = 1;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
 
-  req.shardId_ref() = 2;
+  req.shardId() = 2;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
 
-  req.shardId_ref() = 3;
+  req.shardId() = 3;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result());
 }
 
 TEST_F(ShardSelectionRouteTest, customOutOfRangeRoute) {
@@ -624,18 +624,18 @@ TEST_F(ShardSelectionRouteTest, customOutOfRangeRoute) {
   GoodbyeRequest req;
   GoodbyeReply reply;
 
-  req.shardId_ref() = 1;
+  req.shardId() = 1;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
 
-  req.shardId_ref() = 2;
+  req.shardId() = 2;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
 
-  req.shardId_ref() = 3;
+  req.shardId() = 3;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result_ref());
-  EXPECT_EQ("Cool message!", *reply.message_ref());
+  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result());
+  EXPECT_EQ("Cool message!", *reply.message());
 }
 
 TEST_F(ShardSelectionRouteTest, customOutOfRangeRouteString) {
@@ -664,17 +664,17 @@ TEST_F(ShardSelectionRouteTest, customOutOfRangeRouteString) {
   GoodbyeRequest req;
   GoodbyeReply reply;
 
-  req.shardId_ref() = 1;
+  req.shardId() = 1;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
 
-  req.shardId_ref() = 2;
+  req.shardId() = 2;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
 
-  req.shardId_ref() = 3;
+  req.shardId() = 3;
   reply = rh->route(req);
-  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::NOTFOUND, *reply.result());
 }
 
 } // namespace mcrouter

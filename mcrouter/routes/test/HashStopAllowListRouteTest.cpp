@@ -59,7 +59,7 @@ TEST(HashStopAllowListRouteTest, NoMatch) {
   std::string key = "abc";
 
   McSetRequest reqSet(key);
-  reqSet.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
+  reqSet.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
 
   auto reply = rh->route(reqSet);
 
@@ -83,11 +83,11 @@ TEST(HashStopAllowListRouteTest, HashStopRejected) {
   std::string key = "abc|#|1";
 
   McSetRequest reqSet(key);
-  reqSet.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
+  reqSet.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
 
   auto reply = rh->route(reqSet);
 
-  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result());
   EXPECT_TRUE(handleVec[0]->saw_keys.empty());
 }
 
@@ -108,7 +108,7 @@ TEST(HashStopAllowListRouteTest, HashStopAccepted) {
   std::string key = "abc|#|1";
 
   McSetRequest reqSet(key);
-  reqSet.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
+  reqSet.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
 
   auto reply = rh->route(reqSet);
 
@@ -133,34 +133,34 @@ TEST(HashStopAllowListRouteTest, HashStopAcceptAndReject) {
   std::string key = "zoo";
 
   McSetRequest reqSet(key);
-  reqSet.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "ooz");
+  reqSet.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "ooz");
   auto reply = rh->route(reqSet);
   EXPECT_FALSE(handleVec[0]->saw_keys.empty());
   EXPECT_EQ(key, handleVec[0]->saw_keys[0]);
 
   key = "zoo|#|a";
   reqSet = McSetRequest(key);
-  reqSet.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "b");
+  reqSet.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "b");
   reply = rh->route(reqSet);
-  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result_ref());
+  EXPECT_EQ(carbon::Result::LOCAL_ERROR, *reply.result());
 
   key = "foo|#|a";
   reqSet = McSetRequest(key);
-  reqSet.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "b");
+  reqSet.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "b");
   reply = rh->route(reqSet);
   EXPECT_FALSE(handleVec[0]->saw_keys.empty());
   EXPECT_EQ(key, handleVec[0]->saw_keys[1]);
 
   key = "baz|#|a";
   reqSet = McSetRequest(key);
-  reqSet.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "b");
+  reqSet.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "b");
   reply = rh->route(reqSet);
   EXPECT_FALSE(handleVec[0]->saw_keys.empty());
   EXPECT_EQ(key, handleVec[0]->saw_keys[2]);
 
   key = "abc|#|a";
   reqSet = McSetRequest(key);
-  reqSet.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "b");
+  reqSet.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "b");
   reply = rh->route(reqSet);
   EXPECT_FALSE(handleVec[0]->saw_keys.empty());
   EXPECT_EQ(key, handleVec[0]->saw_keys[3]);

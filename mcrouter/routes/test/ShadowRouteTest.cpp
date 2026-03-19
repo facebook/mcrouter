@@ -56,7 +56,7 @@ TEST(shadowRouteTest, defaultPolicy) {
     mockFiberContext();
     auto reply = rh.route(McGetRequest("key"));
 
-    EXPECT_EQ(carbon::Result::FOUND, *reply.result_ref());
+    EXPECT_EQ(carbon::Result::FOUND, *reply.result());
     EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
   });
 
@@ -68,7 +68,7 @@ TEST(shadowRouteTest, defaultPolicy) {
     mockFiberContext();
     auto reply = rh.route(McGetRequest("key"));
 
-    EXPECT_EQ(carbon::Result::FOUND, *reply.result_ref());
+    EXPECT_EQ(carbon::Result::FOUND, *reply.result());
     EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
   });
 
