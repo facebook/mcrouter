@@ -375,10 +375,6 @@ bool ConfigApi::get(
   return true;
 }
 
-bool ConfigApi::partialReconfigurableSource(const std::string&, std::string&) {
-  return false;
-}
-
 void ConfigApi::trackConfigSources() {
   std::lock_guard<std::mutex> lock(fileInfoMutex_);
   tracking_ = true;
@@ -572,17 +568,6 @@ void ConfigApi::enableReadingFromBackupFiles() {
 bool ConfigApi::shouldReadFromBackupFiles() const {
   return readFromBackupFiles_;
 }
-
-std::vector<ConfigApi::PartialUpdate> ConfigApi::releasePartialUpdatesLocked() {
-  return {};
-}
-
-bool ConfigApi::updatePartialConfigSource(
-    std::vector<ConfigApi::PartialUpdate> /*updates*/) {
-  return true;
-}
-
-void ConfigApi::addPartialUpdateForTest(PartialUpdate&) {}
 
 } // namespace mcrouter
 } // namespace memcache

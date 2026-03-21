@@ -66,44 +66,6 @@ class ProxyConfig {
     return pools_;
   }
 
-  // pool source name -> (allow_partial_reconfig, [(pool_config,[pool_names])])
-  const folly::F14NodeMap<
-      std::string,
-      std::pair<
-          bool,
-          std::vector<std::pair<
-              std::shared_ptr<CommonAccessPointAttributes>,
-              std::vector<std::string>>>>>&
-  getPartialConfigs() const {
-    return partialConfigs_;
-  }
-
-  bool allowPartialConfig(folly::StringPiece poolSourceName) const {
-    auto it = partialConfigs_.find(poolSourceName);
-    if (it == partialConfigs_.end()) {
-      return false;
-    }
-    return it->second.first;
-  }
-
-  bool updateAccessPoints(
-      const std::string& pool,
-      std::shared_ptr<const AccessPoint>& oldAccessPoint,
-      std::shared_ptr<const AccessPoint>& newAccessPoint) {
-    auto it = accessPoints_.find(pool);
-    if (it != accessPoints_.end()) {
-      auto apIt = it->second.find(oldAccessPoint);
-      if (apIt != it->second.end()) {
-        it->second.erase(apIt);
-      } else {
-        return false;
-      }
-      it->second.insert(newAccessPoint);
-      return true;
-    }
-    return false;
-  }
-
   folly::F14NodeMap<
       std::string,
       folly::F14FastSet<std::shared_ptr<const AccessPoint>>>&
@@ -121,16 +83,6 @@ class ProxyConfig {
       std::string,
       folly::F14FastSet<std::shared_ptr<const AccessPoint>>>
       accessPoints_;
-
-  // pool source name -> (allow_partial_reconfig, [(pool_config,[pool_names])])
-  folly::F14NodeMap<
-      std::string,
-      std::pair<
-          bool,
-          std::vector<std::pair<
-              std::shared_ptr<CommonAccessPointAttributes>,
-              std::vector<std::string>>>>>
-      partialConfigs_;
 
   folly::F14NodeMap<
       std::string,

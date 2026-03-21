@@ -22,10 +22,6 @@ class ConfigApiIf {
 
   virtual bool getConfigFile(std::string& config, std::string& path) = 0;
 
-  virtual bool partialReconfigurableSource(
-      const std::string& configPath,
-      std::string& path) = 0;
-
   virtual ~ConfigApiIf() = default;
 };
 } // namespace mcrouter

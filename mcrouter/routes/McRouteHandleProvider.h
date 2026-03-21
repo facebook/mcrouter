@@ -141,16 +141,6 @@ class McRouteHandleProvider
 
   folly::F14NodeMap<
       std::string,
-      std::pair<
-          bool,
-          std::vector<std::pair<
-              std::shared_ptr<CommonAccessPointAttributes>,
-              std::vector<std::string>>>>>
-  releasePartialConfigs() {
-    return std::move(partialConfigs_);
-  }
-  folly::F14NodeMap<
-      std::string,
       folly::F14FastSet<std::shared_ptr<const AccessPoint>>>
   releaseAccessPoints() {
     return std::move(accessPoints_);
@@ -168,16 +158,6 @@ class McRouteHandleProvider
 
   // poolName -> tier level route
   folly::F14NodeMap<std::string, RouteHandlePtr> tierRoutes_;
-
-  // pool source name -> (allow_partial_reconfig, [(pool_config,[pool_names])])
-  folly::F14NodeMap<
-      std::string,
-      std::pair<
-          bool,
-          std::vector<std::pair<
-              std::shared_ptr<CommonAccessPointAttributes>,
-              std::vector<std::string>>>>>
-      partialConfigs_;
 
   // poolName -> (destinations, weights)
   folly::F14NodeMap<std::string, std::vector<RouteHandlePtr>> pools_;

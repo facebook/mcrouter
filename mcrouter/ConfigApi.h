@@ -40,7 +40,6 @@ class ConfigApi : public ConfigApiIf {
  public:
   using Callback = std::function<void()>;
   using CallbackHandle = CallbackPool<>::CallbackHandle;
-  struct PartialUpdate;
 
   static const char* const kFilePrefix;
 
@@ -75,10 +74,6 @@ class ConfigApi : public ConfigApiIf {
    */
   bool get(ConfigType type, const std::string& path, std::string& contents)
       override;
-
-  bool partialReconfigurableSource(
-      const std::string& configPath,
-      std::string& path) override;
 
   /**
    * All files we 'get' after this call will be marked as 'tracked'. Once
@@ -133,11 +128,6 @@ class ConfigApi : public ConfigApiIf {
    */
   virtual void stopObserving(pid_t pid) noexcept;
 
-  virtual std::vector<PartialUpdate> releasePartialUpdatesLocked();
-
-  virtual bool updatePartialConfigSource(std::vector<PartialUpdate> updates);
-  virtual void addPartialUpdateForTest(PartialUpdate& update);
-
   ~ConfigApi() override;
 
   /**
@@ -152,17 +142,6 @@ class ConfigApi : public ConfigApiIf {
    *                      other than the first.
    */
   void enableReadingFromBackupFiles();
-
-  struct PartialUpdate {
-    std::string tierName;
-    std::string oldApString;
-    std::string newApString;
-    uint32_t oldFailureDomain;
-    uint32_t newFailureDomain;
-    int64_t version;
-    std::string hostname;
-    int64_t serviceId;
-  };
 
  protected:
   explicit ConfigApi(const McrouterOptions& opts);

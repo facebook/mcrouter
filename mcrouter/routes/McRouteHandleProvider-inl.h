@@ -404,53 +404,6 @@ McRouteHandleProvider<RouterInfo>::makePool(
       }
     } // servers
 
-    if (auto jPoolConfigPath = json.get_ptr("pool_config_path")) {
-      auto enablePartialReconfig = json["enable_partial_reconfig"].asBool() &&
-          apAttr->protocol >= mc_caret_protocol;
-      auto poolConfigPath = jPoolConfigPath->getString();
-      folly::dynamic poolConfigJson = folly::dynamic::object;
-      for (auto propName : json.keys()) {
-        const auto jProp = json.get_ptr(propName);
-        if (jProp->isArray() || propName == "services") {
-          continue;
-        }
-        poolConfigJson[propName] = *jProp;
-      }
-      poolConfigJson["enable_partial_reconfig"] = enablePartialReconfig;
-
-      auto it = partialConfigs_.find(poolConfigPath);
-
-      if (it == partialConfigs_.end()) {
-        apAttr->json = folly::dynamic::object;
-        apAttr->json[name] = poolConfigJson;
-        std::vector<std::string> poolNames = {name};
-        std::vector<std::pair<
-            std::shared_ptr<CommonAccessPointAttributes>,
-            std::vector<std::string>>>
-            poolConfigGroups = {std::make_pair(apAttr, poolNames)};
-        partialConfigs_.emplace(
-            poolConfigPath,
-            std::make_pair(enablePartialReconfig, poolConfigGroups));
-      } else {
-        it->second.first = it->second.first && enablePartialReconfig;
-        bool found = false;
-        auto& poolConfigGroups = it->second.second;
-        for (auto& p : poolConfigGroups) {
-          if (*p.first == *apAttr) {
-            p.second.push_back(name);
-            p.first->json[name] = poolConfigJson;
-            found = true;
-            break;
-          }
-        }
-        if (!found) {
-          std::vector<std::string> poolNames = {name};
-          apAttr->json = folly::dynamic::object;
-          apAttr->json[name] = poolConfigJson;
-          poolConfigGroups.emplace_back(apAttr, poolNames);
-        }
-      }
-    }
     /**
      * For backwards compatibility, return invalidly sized "weights" array here
      * anyway

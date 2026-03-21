@@ -434,21 +434,6 @@ void CarbonRouterInstance<RouterInfo>::subscribeToConfigUpdate() {
     {
       std::lock_guard<std::mutex> lg(configReconfigLock_);
 
-      if (opts_.enable_partial_reconfigure) {
-        try {
-          if (reconfigurePartially()) {
-            configuredFromDisk_.store(false, std::memory_order_relaxed);
-            return;
-          }
-        } catch (const std::exception& e) {
-          MC_LOG_FAILURE(
-              opts(),
-              failure::Category::kInvalidConfig,
-              "Error on partial reconfiguring: {}",
-              e.what());
-        }
-      }
-
       auto builder = createConfigBuilder();
       if (builder) {
         success = reconfigure(builder.value());
@@ -522,93 +507,6 @@ bool CarbonRouterInstance<RouterInfo>::reconfigure(
   }
 
   return result.hasValue();
-}
-
-template <class RouterInfo>
-bool CarbonRouterInstance<RouterInfo>::reconfigurePartially() {
-  auto partialUpdates = configApi_->releasePartialUpdatesLocked();
-  VLOG(2) << "receive partial updates:" << partialUpdates.size();
-  if (partialUpdates.empty()) {
-    return false;
-  }
-  partialReconfigAttempt_.store(
-      partialReconfigAttempt_.load(std::memory_order_relaxed) +
-          partialUpdates.size(),
-      std::memory_order_relaxed);
-
-  // Use the first proxy's config, as it's same in all proxies.
-  // Also there is no contention for holding the read lock as write lock is
-  // only obtained by proxy_config_swap() from config thread (same thread
-  // invoking this function)
-  {
-    auto proxyConfig = getProxy(0)->getConfigLocked();
-    // Make sure partial config is allow for all updates
-    for (const auto& update : partialUpdates) {
-      if (!proxyConfig.second.allowPartialConfig(update.tierName)) {
-        VLOG(1) << fmt::format(
-            "tier {} not allow partial reconfigure", update.tierName);
-        return false;
-      }
-    }
-  }
-
-  auto& partialConfigs = getProxy(0)->getConfigUnsafe()->getPartialConfigs();
-  for (size_t i = 0; i < opts_.num_proxies; i++) {
-    for (const auto& update : partialUpdates) {
-      auto& tierPartialConfigs = partialConfigs.at(update.tierName).second;
-      if (i == 0) {
-        VLOG(1) << fmt::format(
-            "partial update: tier={}, oldApString={}, newApString={}, oldFailureDomain={}, newFailureDomain={}",
-            update.tierName,
-            update.oldApString,
-            update.newApString,
-            update.oldFailureDomain,
-            update.newFailureDomain);
-      }
-      for (const auto& [apAttr, poolList] : tierPartialConfigs) {
-        auto oldAp = createAccessPoint(
-            update.oldApString, update.oldFailureDomain, *this, *apAttr);
-        auto newAp =
-            std::const_pointer_cast<const AccessPoint>(createAccessPoint(
-                update.newApString, update.newFailureDomain, *this, *apAttr));
-        if (FOLLY_UNLIKELY(oldAp->getProtocol() != newAp->getProtocol())) {
-          return false;
-        }
-        auto replacedAp = getProxy(i)->replaceAP(*oldAp, newAp);
-        if (!replacedAp) {
-          VLOG(2) << fmt::format(
-              "could not replace AP for tier={}, proxy={}, protocol={}",
-              update.tierName,
-              i,
-              mc_protocol_to_string(oldAp->getProtocol()));
-          return false;
-        }
-        auto proxyConfig = getProxy(i)->getConfigLocked();
-        for (const auto& pool : poolList) {
-          if (!proxyConfig.second.updateAccessPoints(pool, replacedAp, newAp)) {
-            VLOG(2) << fmt::format(
-                "could not update AccessPoints for tier={}, pool={}, proxy={}, protocol={}",
-                update.tierName,
-                pool,
-                i,
-                mc_protocol_to_string(oldAp->getProtocol()));
-            return false;
-          }
-        }
-      }
-    }
-  }
-  int numUpdates = partialUpdates.size();
-  if (!configApi_->updatePartialConfigSource(std::move(partialUpdates))) {
-    return false;
-  }
-
-  VLOG_IF(1, !opts_.constantly_reload_configs)
-      << "Partially reconfigured " << opts_.num_proxies << " proxies";
-  partialReconfigSuccess_.store(
-      partialReconfigSuccess_.load(std::memory_order_relaxed) + numUpdates,
-      std::memory_order_relaxed);
-  return true;
 }
 
 template <class RouterInfo>

@@ -47,13 +47,6 @@ PoolFactory::PoolJson PoolFactory::parseNamedPool(folly::StringPiece name) {
         "Can not read pool: {}",
         name);
     auto json = parseJsonString(jsonStr);
-    std::string poolConfigPath;
-    auto partialReconfig =
-        configApi_.partialReconfigurableSource(name.str(), poolConfigPath);
-    if (partialReconfig) {
-      json["enable_partial_reconfig"] = partialReconfig;
-      json["pool_config_path"] = std::move(poolConfigPath);
-    }
     existingIt =
         pools_.emplace(name, std::make_pair(std::move(json), PoolState::PARSED))
             .first;
@@ -75,16 +68,6 @@ PoolFactory::PoolJson PoolFactory::parseNamedPool(folly::StringPiece name) {
 
   if (auto jInherit = json.get_ptr("inherit")) {
     checkLogic(jInherit->isString(), "Pool {}: inherit is not a string", name);
-    std::string poolConfigPath;
-    auto partialReconfig = configApi_.partialReconfigurableSource(
-        jInherit->getString(), poolConfigPath);
-    if (partialReconfig) {
-      json["enable_partial_reconfig"] = partialReconfig;
-      json["pool_config_path"] = std::move(poolConfigPath);
-    }
-    if (json.get_ptr("servers")) {
-      json["enable_partial_reconfig"] = false;
-    }
     auto& newJson = parseNamedPool(jInherit->stringPiece()).json;
     json.update_missing(newJson);
     json.erase("inherit");
