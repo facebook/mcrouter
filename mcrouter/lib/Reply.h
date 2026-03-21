@@ -11,15 +11,13 @@
 #include <utility>
 
 #include "mcrouter/lib/McResUtil.h"
+#include "mcrouter/lib/ReplyT.h"
 #include "mcrouter/lib/carbon/RoutingGroups.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/network/gen/MemcacheMessages.h"
 
 namespace facebook {
 namespace memcache {
-
-template <typename Request>
-using ReplyT = typename Request::reply_type;
 
 /**
  * Type tags for Reply constructors.

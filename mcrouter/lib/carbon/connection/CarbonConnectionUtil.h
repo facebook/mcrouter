@@ -11,7 +11,7 @@
 #include <stdexcept>
 #include <string>
 
-#include <mcrouter/lib/Reply.h>
+#include <mcrouter/lib/ReplyT.h>
 
 namespace carbon {
 
