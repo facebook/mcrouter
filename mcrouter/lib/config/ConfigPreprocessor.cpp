@@ -15,6 +15,7 @@
 #include <folly/Optional.h>
 #include <folly/Random.h>
 #include <folly/String.h>
+#include <folly/container/Reserve.h>
 #include <folly/hash/SpookyHashV2.h>
 #include <folly/json/json.h>
 
@@ -290,6 +291,10 @@ class ConfigPreprocessor::Context {
     }
   }
 
+  void reserveLocals(size_t n) {
+    folly::grow_capacity_by(locals_, n);
+  }
+
  private:
   const ConfigPreprocessor& prep_;
   const Context* outer_{nullptr};
@@ -334,6 +339,9 @@ class ConfigPreprocessor::Macro {
         params.size());
 
     Context result(Context::Extended, ctx, /* base */ true);
+    if (params.size() > 1) {
+      result.reserveLocals(params.size());
+    }
     for (size_t i = 0; i < params.size(); i++) {
       if (autoExpand_) {
         result.addExpanded(
@@ -1964,6 +1972,9 @@ dynamic ConfigPreprocessor::expandMacros(dynamic json, const Context& context)
           jVars->isObject(), "vars is {}, expected object", jVars->typeName());
 
       extContext.emplace(Context::Extended, context);
+      if (jVars->size() > 1) {
+        extContext->reserveLocals(jVars->size());
+      }
       // since vars may use other vars from local context, we
       // do the initialization in two steps: first add them to context,
       // then lazily expand
