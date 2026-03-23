@@ -182,7 +182,7 @@ class HasKeyTrait<
 // toFollyOptional helpers
 template <class T>
 folly::Optional<std::remove_const_t<T>> toFollyOptional(
-    const apache::thrift::optional_field_ref<T&> ref) {
+    apache::thrift::optional_field_ref<T&> ref) {
   if (ref.has_value()) {
     return folly::Optional<std::remove_const_t<T>>(ref.value());
   }
