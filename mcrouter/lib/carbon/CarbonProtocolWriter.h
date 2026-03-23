@@ -273,7 +273,7 @@ class CarbonProtocolWriterImpl {
   template <class T>
   void writeField(
       const int16_t id,
-      const apache::thrift::optional_field_ref<T> data) {
+      apache::thrift::optional_field_ref<T> data) {
     if (data.has_value()) {
       writeFieldHeader(detail::TypeToField<std::decay_t<T>>::fieldType, id);
       writeRaw(*data);
@@ -282,7 +282,7 @@ class CarbonProtocolWriterImpl {
 
   void writeField(
       const int16_t id,
-      const apache::thrift::optional_field_ref<const bool&> data) {
+      apache::thrift::optional_field_ref<const bool&> data) {
     if (data.has_value()) {
       writeFieldAlways(id, *data);
     }
@@ -290,16 +290,14 @@ class CarbonProtocolWriterImpl {
 
   void writeField(
       const int16_t id,
-      const apache::thrift::optional_field_ref<bool&> data) {
+      apache::thrift::optional_field_ref<bool&> data) {
     if (data.has_value()) {
       writeFieldAlways(id, *data);
     }
   }
 
   template <class T>
-  void writeField(
-      const int16_t id,
-      const apache::thrift::field_ref<const T&> data) {
+  void writeField(const int16_t id, apache::thrift::field_ref<const T&> data) {
     writeField(id, *data);
   }
 
@@ -395,7 +393,7 @@ class CarbonProtocolWriterImpl {
   }
 
   template <class T>
-  void writeRaw(const apache::thrift::optional_field_ref<T> data) {
+  void writeRaw(apache::thrift::optional_field_ref<T> data) {
     writeStructBegin();
     writeField(1 /* field id */, data);
     writeFieldStop();
