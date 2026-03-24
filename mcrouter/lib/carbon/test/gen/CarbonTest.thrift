@@ -30,44 +30,80 @@ namespace py3 carbon.test.thrift
   },
 }
 struct TestRequest {
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
+  @cpp.DeprecatedTerseWrite
   2: bool dummy2
+  @cpp.DeprecatedTerseWrite
   3: bool testBool
+  @cpp.DeprecatedTerseWrite
   4: carbon.ui8 testChar
+  @cpp.DeprecatedTerseWrite
   5: byte testInt8
+  @cpp.DeprecatedTerseWrite
   6: i16 testInt16
+  @cpp.DeprecatedTerseWrite
   7: i32 testInt32
+  @cpp.DeprecatedTerseWrite
   8: i64 testInt64
+  @cpp.DeprecatedTerseWrite
   9: carbon.ui8 testUInt8
+  @cpp.DeprecatedTerseWrite
   10: carbon.ui16 testUInt16
+  @cpp.DeprecatedTerseWrite
   11: carbon.ui32 testUInt32
+  @cpp.DeprecatedTerseWrite
   12: carbon.ui64 testUInt64
+  @cpp.DeprecatedTerseWrite
   13: float testFloat
+  @cpp.DeprecatedTerseWrite
   14: double testDouble
+  @cpp.DeprecatedTerseWrite
   15: string testShortString
+  @cpp.DeprecatedTerseWrite
   16: string testLongString
+  @cpp.DeprecatedTerseWrite
   17: carbon.IOBuf testIobuf
+  @cpp.DeprecatedTerseWrite
   19: list<string> testList
   20: optional string testOptionalString
   21: optional carbon.IOBuf testOptionalIobuf
+  @cpp.DeprecatedTerseWrite
   22: bool dummy22
+  @cpp.DeprecatedTerseWrite
   23: bool dummy23
+  @cpp.DeprecatedTerseWrite
   24: list<list<carbon.ui64>> testNestedVec
+  @cpp.DeprecatedTerseWrite
   25: string_to_string_std_unordered_map testUMap
+  @cpp.DeprecatedTerseWrite
   26: double_to_double_std_map testMap
+  @cpp.DeprecatedTerseWrite
   27: string_to_list_carbon_ui16_std_map testComplexMap
+  @cpp.DeprecatedTerseWrite
   28: string_std_unordered_set testUSet
+  @cpp.DeprecatedTerseWrite
   29: carbon_ui64_std_set testSet
   30: optional bool testOptionalBool
+  @cpp.DeprecatedTerseWrite
   31: string dummy31
+  @cpp.DeprecatedTerseWrite
   32: list<carbon.IOBuf> testIOBufList
+  @cpp.DeprecatedTerseWrite
   33: string_to_string_folly_F14FastMap testF14FastMap
+  @cpp.DeprecatedTerseWrite
   34: string_to_string_folly_F14NodeMap testF14NodeMap
+  @cpp.DeprecatedTerseWrite
   35: string_to_string_folly_F14ValueMap testF14ValueMap
+  @cpp.DeprecatedTerseWrite
   36: string_to_string_folly_F14VectorMap testF14VectorMap
+  @cpp.DeprecatedTerseWrite
   37: string_folly_F14FastSet testF14FastSet
+  @cpp.DeprecatedTerseWrite
   38: string_folly_F14NodeSet testF14NodeSet
+  @cpp.DeprecatedTerseWrite
   39: string_folly_F14ValueSet testF14ValueSet
+  @cpp.DeprecatedTerseWrite
   40: string_folly_F14VectorSet testF14VectorSet
   41: optional string testOptionalKeywordString
   42: optional carbon.IOBuf testOptionalKeywordIobuf
@@ -79,8 +115,11 @@ struct TestRequest {
   },
 }
 struct TestReply {
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: i32 valInt32
+  @cpp.DeprecatedTerseWrite
   3: i64 valInt64
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -89,6 +128,7 @@ struct TestReply {
   },
 }
 struct TestRequestStringKey {
+  @cpp.DeprecatedTerseWrite
   1: carbon.StringKey key
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -97,34 +137,54 @@ struct TestRequestStringKey {
   },
 }
 struct TestReplyStringKey {
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
 }
 struct TestOptionalBool {
   1: optional bool optionalBool
 }
 union TestUnion {
+  @cpp.DeprecatedTerseWrite
   1: carbon.ui64 a
+  @cpp.DeprecatedTerseWrite
   2: carbon.ui32 b
+  @cpp.DeprecatedTerseWrite
   3: carbon.ui16 c
 }
 struct TestF14Containers {
+  @cpp.DeprecatedTerseWrite
   1: string_to_i64_folly_F14FastMap fastMap
+  @cpp.DeprecatedTerseWrite
   2: string_to_i64_folly_F14NodeMap nodeMap
+  @cpp.DeprecatedTerseWrite
   3: string_to_i64_folly_F14ValueMap valueMap
+  @cpp.DeprecatedTerseWrite
   4: string_to_i64_folly_F14VectorMap vectorMap
+  @cpp.DeprecatedTerseWrite
   5: i64_folly_F14FastSet fastSet
+  @cpp.DeprecatedTerseWrite
   6: i64_folly_F14FastSet nodeSet
+  @cpp.DeprecatedTerseWrite
   7: i64_folly_F14FastSet valueSet
+  @cpp.DeprecatedTerseWrite
   8: i64_folly_F14FastSet vectorSet
 }
 struct TestStdContainers {
+  @cpp.DeprecatedTerseWrite
   1: string_to_i64_std_unordered_map fastMap
+  @cpp.DeprecatedTerseWrite
   2: string_to_i64_std_unordered_map nodeMap
+  @cpp.DeprecatedTerseWrite
   3: string_to_i64_std_unordered_map valueMap
+  @cpp.DeprecatedTerseWrite
   4: string_to_i64_std_unordered_map vectorMap
+  @cpp.DeprecatedTerseWrite
   5: i64_std_unordered_set fastSet
+  @cpp.DeprecatedTerseWrite
   6: i64_std_unordered_set nodeSet
+  @cpp.DeprecatedTerseWrite
   7: i64_std_unordered_set valueSet
+  @cpp.DeprecatedTerseWrite
   8: i64_std_unordered_set vectorSet
 }
 @cpp.EnumType{type = cpp.EnumUnderlyingType.U32}
@@ -170,21 +230,27 @@ enum EnumInt8 {
 }
 
 struct StructWithEnumUInt32 {
+  @cpp.DeprecatedTerseWrite
   1: EnumUInt32 testEnum
 }
 struct StructWithEnumUInt16 {
+  @cpp.DeprecatedTerseWrite
   1: EnumUInt16 testEnum
 }
 struct StructWithEnumUInt8 {
+  @cpp.DeprecatedTerseWrite
   1: EnumUInt8 testEnum
 }
 struct StructWithEnumInt32 {
+  @cpp.DeprecatedTerseWrite
   1: EnumInt32 testEnum
 }
 struct StructWithEnumInt16 {
+  @cpp.DeprecatedTerseWrite
   1: EnumInt16 testEnum
 }
 struct StructWithEnumInt8 {
+  @cpp.DeprecatedTerseWrite
   1: EnumInt8 testEnum
 }
 struct StructWithOptionalEnumUInt32 {

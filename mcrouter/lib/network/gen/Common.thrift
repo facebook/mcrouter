@@ -25,31 +25,37 @@ namespace hack memcache
 
 exception CarbonResultBusy {
   @thrift.ExceptionMessage
+  @cpp.DeprecatedTerseWrite
   1: string message
 }
 
 exception CarbonResultRemoteError {
   @thrift.ExceptionMessage
+  @cpp.DeprecatedTerseWrite
   1: string message
 }
 
 exception CarbonResultDeadlineExceeded {
   @thrift.ExceptionMessage
+  @cpp.DeprecatedTerseWrite
   1: string message
 }
 
 exception CarbonResultShutdown {
   @thrift.ExceptionMessage
+  @cpp.DeprecatedTerseWrite
   1: string message
 }
 
 exception CarbonResultTryAgain {
   @thrift.ExceptionMessage
+  @cpp.DeprecatedTerseWrite
   1: string message
 }
 
 exception CarbonResultInvalidRequest {
   @thrift.ExceptionMessage
+  @cpp.DeprecatedTerseWrite
   1: string message
 }
 
@@ -59,6 +65,7 @@ exception CarbonResultInvalidRequest {
   },
 }
 struct McVersionRequest {
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -67,9 +74,13 @@ struct McVersionRequest {
   },
 }
 struct McVersionReply {
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: carbon.IOBuf value
+  @cpp.DeprecatedTerseWrite
   3: string message
+  @cpp.DeprecatedTerseWrite
   4: i16 appSpecificErrorCode
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -78,6 +89,7 @@ struct McVersionReply {
   },
 }
 struct McStatsRequest {
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -86,9 +98,13 @@ struct McStatsRequest {
   },
 }
 struct McStatsReply {
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: string message
+  @cpp.DeprecatedTerseWrite
   3: list<string> stats
+  @cpp.DeprecatedTerseWrite
   4: i16 appSpecificErrorCode
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -97,6 +113,7 @@ struct McStatsReply {
   },
 }
 struct McShutdownRequest {
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -105,8 +122,11 @@ struct McShutdownRequest {
   },
 }
 struct McShutdownReply {
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: string message
+  @cpp.DeprecatedTerseWrite
   3: i16 appSpecificErrorCode
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -115,6 +135,7 @@ struct McShutdownReply {
   },
 }
 struct McQuitRequest {
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -123,8 +144,11 @@ struct McQuitRequest {
   },
 }
 struct McQuitReply {
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: string message
+  @cpp.DeprecatedTerseWrite
   3: i16 appSpecificErrorCode
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -133,6 +157,7 @@ struct McQuitReply {
   },
 }
 struct McExecRequest {
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -141,9 +166,13 @@ struct McExecRequest {
   },
 }
 struct McExecReply {
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: string response
+  @cpp.DeprecatedTerseWrite
   3: string message
+  @cpp.DeprecatedTerseWrite
   4: i16 appSpecificErrorCode
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -160,7 +189,9 @@ struct GoAwayAcknowledgement {
   },
 }
 struct GoAwayRequest {
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: string reason
 }
 

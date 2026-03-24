@@ -42,22 +42,31 @@ enum MyEnum {
 }
 
 union TestUnionThrift {
+  @cpp.DeprecatedTerseWrite
   1: carbon.ui64 a
+  @cpp.DeprecatedTerseWrite
   2: carbon.ui32 b
+  @cpp.DeprecatedTerseWrite
   3: carbon.ui16 c
 }
 struct TinyStruct {
+  @cpp.DeprecatedTerseWrite
   1: i64 foo
 }
 struct MyBaseStruct {
+  @cpp.DeprecatedTerseWrite
   1: i64 baseInt64Member
 }
 struct MySimpleStruct {
   @thrift.Mixin
   -1: MyBaseStruct myBaseStruct
+  @cpp.DeprecatedTerseWrite
   1: i32 int32Member
+  @cpp.DeprecatedTerseWrite
   2: string stringMember
+  @cpp.DeprecatedTerseWrite
   3: MyEnum enumMember
+  @cpp.DeprecatedTerseWrite
   4: list<string> vectorMember
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -70,8 +79,11 @@ struct ThriftTestRequest {
   -2: TinyStruct tinyStruct
   @thrift.Mixin
   -1: MySimpleStruct base
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
+  @cpp.DeprecatedTerseWrite
   2: bool testBool
+  @cpp.DeprecatedTerseWrite
   3: byte testInt8
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -80,7 +92,9 @@ struct ThriftTestRequest {
   },
 }
 struct ThriftTestReply {
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: string message
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -89,21 +103,37 @@ struct ThriftTestReply {
   },
 }
 struct DummyThriftRequest {
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
+  @cpp.DeprecatedTerseWrite
   2: bool testBool
+  @cpp.DeprecatedTerseWrite
   3: byte testInt8
+  @cpp.DeprecatedTerseWrite
   4: i16 testInt16
+  @cpp.DeprecatedTerseWrite
   5: i32 testInt32
+  @cpp.DeprecatedTerseWrite
   6: i64 testInt64
+  @cpp.DeprecatedTerseWrite
   7: carbon.ui8 testUInt8
+  @cpp.DeprecatedTerseWrite
   8: carbon.ui16 testUInt16
+  @cpp.DeprecatedTerseWrite
   9: carbon.ui32 testUInt32
+  @cpp.DeprecatedTerseWrite
   10: carbon.ui64 testUInt64
+  @cpp.DeprecatedTerseWrite
   11: float testFloat
+  @cpp.DeprecatedTerseWrite
   12: double testDouble
+  @cpp.DeprecatedTerseWrite
   13: string testShortString
+  @cpp.DeprecatedTerseWrite
   14: string testLongString
+  @cpp.DeprecatedTerseWrite
   15: carbon.IOBuf testIobuf
+  @cpp.DeprecatedTerseWrite
   16: list<string> testList
   17: optional bool testOptionalKeywordBool
   18: optional string testOptionalKeywordString
@@ -115,7 +145,9 @@ struct DummyThriftRequest {
   },
 }
 struct DummyThriftReply {
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: string message
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -124,10 +156,14 @@ struct DummyThriftReply {
   },
 }
 struct CustomRequest {
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
+  @cpp.DeprecatedTerseWrite
   2: byte testInt8
+  @cpp.DeprecatedTerseWrite
   3: Timestamp_i64 timestamp
   4: optional CustomAdapterTypeI64 customAdapterTypeI64
+  @cpp.DeprecatedTerseWrite
   5: CustomAdapterTypeBinary customAdapterTypeBinary
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -136,7 +172,9 @@ struct CustomRequest {
   },
 }
 struct CustomReply {
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: i32 valInt32
 }
 

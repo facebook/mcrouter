@@ -34,6 +34,7 @@ struct MemcacheRequestCommon {
   7: optional string ticket
 }
 struct MemcacheReplyCommon {
+  @cpp.DeprecatedTerseWrite
   1: carbon.ui32 replySourceBitMask
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -44,7 +45,9 @@ struct MemcacheReplyCommon {
 struct McGetRequest {
   @thrift.Mixin
   -1: MemcacheRequestCommon memcacheRequestCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
+  @cpp.DeprecatedTerseWrite
   2: carbon.ui64 flags
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -55,10 +58,14 @@ struct McGetRequest {
 struct McGetReply {
   @thrift.Mixin
   -1: MemcacheReplyCommon memcacheReplyCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
   2: optional carbon.IOBuf value
+  @cpp.DeprecatedTerseWrite
   3: carbon.ui64 flags
+  @cpp.DeprecatedTerseWrite
   4: string message
+  @cpp.DeprecatedTerseWrite
   5: i16 appSpecificErrorCode
   6: optional i32 exptime
 }
@@ -70,9 +77,13 @@ struct McGetReply {
 struct McSetRequest {
   @thrift.Mixin
   -1: MemcacheRequestCommon memcacheRequestCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
+  @cpp.DeprecatedTerseWrite
   2: i32 exptime
+  @cpp.DeprecatedTerseWrite
   3: carbon.ui64 flags
+  @cpp.DeprecatedTerseWrite
   4: carbon.IOBuf value
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -83,10 +94,15 @@ struct McSetRequest {
 struct McSetReply {
   @thrift.Mixin
   -1: MemcacheReplyCommon memcacheReplyCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: carbon.ui64 flags
+  @cpp.DeprecatedTerseWrite
   3: carbon.IOBuf value
+  @cpp.DeprecatedTerseWrite
   4: string message
+  @cpp.DeprecatedTerseWrite
   5: i16 appSpecificErrorCode
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -97,10 +113,15 @@ struct McSetReply {
 struct McDeleteRequest {
   @thrift.Mixin
   -1: MemcacheRequestCommon memcacheRequestCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
+  @cpp.DeprecatedTerseWrite
   2: carbon.ui64 flags
+  @cpp.DeprecatedTerseWrite
   3: i32 exptime
+  @cpp.DeprecatedTerseWrite
   4: carbon.IOBuf value
+  @cpp.DeprecatedTerseWrite
   5: string_to_carbon_ui64_std_unordered_map attributes
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -111,10 +132,15 @@ struct McDeleteRequest {
 struct McDeleteReply {
   @thrift.Mixin
   -1: MemcacheReplyCommon memcacheReplyCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: carbon.ui64 flags
+  @cpp.DeprecatedTerseWrite
   3: carbon.IOBuf value
+  @cpp.DeprecatedTerseWrite
   4: string message
+  @cpp.DeprecatedTerseWrite
   5: i16 appSpecificErrorCode
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -125,7 +151,9 @@ struct McDeleteReply {
 struct McLeaseGetRequest {
   @thrift.Mixin
   -1: MemcacheRequestCommon memcacheRequestCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
+  @cpp.DeprecatedTerseWrite
   2: carbon.ui64 flags
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -136,11 +164,16 @@ struct McLeaseGetRequest {
 struct McLeaseGetReply {
   @thrift.Mixin
   -1: MemcacheReplyCommon memcacheReplyCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: i64 leaseToken
   3: optional carbon.IOBuf value
+  @cpp.DeprecatedTerseWrite
   4: carbon.ui64 flags
+  @cpp.DeprecatedTerseWrite
   5: string message
+  @cpp.DeprecatedTerseWrite
   6: i16 appSpecificErrorCode
   7: optional i32 exptime
 }
@@ -152,10 +185,15 @@ struct McLeaseGetReply {
 struct McLeaseSetRequest {
   @thrift.Mixin
   -1: MemcacheRequestCommon memcacheRequestCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
+  @cpp.DeprecatedTerseWrite
   2: i32 exptime
+  @cpp.DeprecatedTerseWrite
   3: carbon.ui64 flags
+  @cpp.DeprecatedTerseWrite
   4: carbon.IOBuf value
+  @cpp.DeprecatedTerseWrite
   5: i64 leaseToken
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -166,8 +204,11 @@ struct McLeaseSetRequest {
 struct McLeaseSetReply {
   @thrift.Mixin
   -1: MemcacheReplyCommon memcacheReplyCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: string message
+  @cpp.DeprecatedTerseWrite
   3: i16 appSpecificErrorCode
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -178,9 +219,13 @@ struct McLeaseSetReply {
 struct McAddRequest {
   @thrift.Mixin
   -1: MemcacheRequestCommon memcacheRequestCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
+  @cpp.DeprecatedTerseWrite
   2: i32 exptime
+  @cpp.DeprecatedTerseWrite
   3: carbon.ui64 flags
+  @cpp.DeprecatedTerseWrite
   4: carbon.IOBuf value
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -191,8 +236,11 @@ struct McAddRequest {
 struct McAddReply {
   @thrift.Mixin
   -1: MemcacheReplyCommon memcacheReplyCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: string message
+  @cpp.DeprecatedTerseWrite
   3: i16 appSpecificErrorCode
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -203,9 +251,13 @@ struct McAddReply {
 struct McReplaceRequest {
   @thrift.Mixin
   -1: MemcacheRequestCommon memcacheRequestCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
+  @cpp.DeprecatedTerseWrite
   2: i32 exptime
+  @cpp.DeprecatedTerseWrite
   3: carbon.ui64 flags
+  @cpp.DeprecatedTerseWrite
   4: carbon.IOBuf value
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -216,8 +268,11 @@ struct McReplaceRequest {
 struct McReplaceReply {
   @thrift.Mixin
   -1: MemcacheReplyCommon memcacheReplyCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: string message
+  @cpp.DeprecatedTerseWrite
   3: i16 appSpecificErrorCode
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -228,7 +283,9 @@ struct McReplaceReply {
 struct McGetsRequest {
   @thrift.Mixin
   -1: MemcacheRequestCommon memcacheRequestCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
+  @cpp.DeprecatedTerseWrite
   2: carbon.ui64 flags
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -239,11 +296,16 @@ struct McGetsRequest {
 struct McGetsReply {
   @thrift.Mixin
   -1: MemcacheReplyCommon memcacheReplyCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: carbon.ui64 casToken
   3: optional carbon.IOBuf value
+  @cpp.DeprecatedTerseWrite
   4: carbon.ui64 flags
+  @cpp.DeprecatedTerseWrite
   5: string message
+  @cpp.DeprecatedTerseWrite
   6: i16 appSpecificErrorCode
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -254,10 +316,15 @@ struct McGetsReply {
 struct McCasRequest {
   @thrift.Mixin
   -1: MemcacheRequestCommon memcacheRequestCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
+  @cpp.DeprecatedTerseWrite
   2: i32 exptime
+  @cpp.DeprecatedTerseWrite
   3: carbon.ui64 flags
+  @cpp.DeprecatedTerseWrite
   4: carbon.IOBuf value
+  @cpp.DeprecatedTerseWrite
   5: carbon.ui64 casToken
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -268,8 +335,11 @@ struct McCasRequest {
 struct McCasReply {
   @thrift.Mixin
   -1: MemcacheReplyCommon memcacheReplyCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: string message
+  @cpp.DeprecatedTerseWrite
   3: i16 appSpecificErrorCode
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -280,8 +350,11 @@ struct McCasReply {
 struct McIncrRequest {
   @thrift.Mixin
   -1: MemcacheRequestCommon memcacheRequestCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
+  @cpp.DeprecatedTerseWrite
   2: i64 delta
+  @cpp.DeprecatedTerseWrite
   3: carbon.ui64 flags
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -292,9 +365,13 @@ struct McIncrRequest {
 struct McIncrReply {
   @thrift.Mixin
   -1: MemcacheReplyCommon memcacheReplyCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: i64 delta
+  @cpp.DeprecatedTerseWrite
   3: string message
+  @cpp.DeprecatedTerseWrite
   4: i16 appSpecificErrorCode
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -305,8 +382,11 @@ struct McIncrReply {
 struct McDecrRequest {
   @thrift.Mixin
   -1: MemcacheRequestCommon memcacheRequestCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
+  @cpp.DeprecatedTerseWrite
   2: i64 delta
+  @cpp.DeprecatedTerseWrite
   3: carbon.ui64 flags
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -317,9 +397,13 @@ struct McDecrRequest {
 struct McDecrReply {
   @thrift.Mixin
   -1: MemcacheReplyCommon memcacheReplyCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: i64 delta
+  @cpp.DeprecatedTerseWrite
   3: string message
+  @cpp.DeprecatedTerseWrite
   4: i16 appSpecificErrorCode
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -330,7 +414,9 @@ struct McDecrReply {
 struct McMetagetRequest {
   @thrift.Mixin
   -1: MemcacheRequestCommon memcacheRequestCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
+  @cpp.DeprecatedTerseWrite
   2: carbon.ui64 flags
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -341,12 +427,19 @@ struct McMetagetRequest {
 struct McMetagetReply {
   @thrift.Mixin
   -1: MemcacheReplyCommon memcacheReplyCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: i32 age
+  @cpp.DeprecatedTerseWrite
   3: i32 exptime
+  @cpp.DeprecatedTerseWrite
   4: i16 ipv
+  @cpp.DeprecatedTerseWrite
   5: string ipAddress
+  @cpp.DeprecatedTerseWrite
   6: string message
+  @cpp.DeprecatedTerseWrite
   7: i16 appSpecificErrorCode
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -357,9 +450,13 @@ struct McMetagetReply {
 struct McAppendRequest {
   @thrift.Mixin
   -1: MemcacheRequestCommon memcacheRequestCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
+  @cpp.DeprecatedTerseWrite
   2: i32 exptime
+  @cpp.DeprecatedTerseWrite
   3: carbon.ui64 flags
+  @cpp.DeprecatedTerseWrite
   4: carbon.IOBuf value
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -370,8 +467,11 @@ struct McAppendRequest {
 struct McAppendReply {
   @thrift.Mixin
   -1: MemcacheReplyCommon memcacheReplyCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: string message
+  @cpp.DeprecatedTerseWrite
   3: i16 appSpecificErrorCode
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -382,9 +482,13 @@ struct McAppendReply {
 struct McPrependRequest {
   @thrift.Mixin
   -1: MemcacheRequestCommon memcacheRequestCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
+  @cpp.DeprecatedTerseWrite
   2: i32 exptime
+  @cpp.DeprecatedTerseWrite
   3: carbon.ui64 flags
+  @cpp.DeprecatedTerseWrite
   4: carbon.IOBuf value
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -395,8 +499,11 @@ struct McPrependRequest {
 struct McPrependReply {
   @thrift.Mixin
   -1: MemcacheReplyCommon memcacheReplyCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: string message
+  @cpp.DeprecatedTerseWrite
   3: i16 appSpecificErrorCode
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -407,7 +514,9 @@ struct McPrependReply {
 struct McTouchRequest {
   @thrift.Mixin
   -1: MemcacheRequestCommon memcacheRequestCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
+  @cpp.DeprecatedTerseWrite
   2: i32 exptime
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -418,8 +527,11 @@ struct McTouchRequest {
 struct McTouchReply {
   @thrift.Mixin
   -1: MemcacheReplyCommon memcacheReplyCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: string message
+  @cpp.DeprecatedTerseWrite
   3: i16 appSpecificErrorCode
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -430,6 +542,7 @@ struct McTouchReply {
 struct McFlushReRequest {
   @thrift.Mixin
   -1: MemcacheRequestCommon memcacheRequestCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -440,8 +553,11 @@ struct McFlushReRequest {
 struct McFlushReReply {
   @thrift.Mixin
   -1: MemcacheReplyCommon memcacheReplyCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: string message
+  @cpp.DeprecatedTerseWrite
   3: i16 appSpecificErrorCode
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -452,7 +568,9 @@ struct McFlushReReply {
 struct McFlushAllRequest {
   @thrift.Mixin
   -1: MemcacheRequestCommon memcacheRequestCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
+  @cpp.DeprecatedTerseWrite
   2: i32 delay
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -463,8 +581,11 @@ struct McFlushAllRequest {
 struct McFlushAllReply {
   @thrift.Mixin
   -1: MemcacheReplyCommon memcacheReplyCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: string message
+  @cpp.DeprecatedTerseWrite
   3: i16 appSpecificErrorCode
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -475,7 +596,9 @@ struct McFlushAllReply {
 struct McGatRequest {
   @thrift.Mixin
   -1: MemcacheRequestCommon memcacheRequestCommon
+  @cpp.DeprecatedTerseWrite
   1: i32 exptime
+  @cpp.DeprecatedTerseWrite
   2: carbon.IOBufKey key
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -486,10 +609,14 @@ struct McGatRequest {
 struct McGatReply {
   @thrift.Mixin
   -1: MemcacheReplyCommon memcacheReplyCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
   2: optional carbon.IOBuf value
+  @cpp.DeprecatedTerseWrite
   3: carbon.ui64 flags
+  @cpp.DeprecatedTerseWrite
   4: string message
+  @cpp.DeprecatedTerseWrite
   5: i16 appSpecificErrorCode
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -500,7 +627,9 @@ struct McGatReply {
 struct McGatsRequest {
   @thrift.Mixin
   -1: MemcacheRequestCommon memcacheRequestCommon
+  @cpp.DeprecatedTerseWrite
   1: i32 exptime
+  @cpp.DeprecatedTerseWrite
   2: carbon.IOBufKey key
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -511,11 +640,16 @@ struct McGatsRequest {
 struct McGatsReply {
   @thrift.Mixin
   -1: MemcacheReplyCommon memcacheReplyCommon
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: carbon.ui64 casToken
   3: optional carbon.IOBuf value
+  @cpp.DeprecatedTerseWrite
   4: carbon.ui64 flags
+  @cpp.DeprecatedTerseWrite
   5: string message
+  @cpp.DeprecatedTerseWrite
   6: i16 appSpecificErrorCode
 }
 

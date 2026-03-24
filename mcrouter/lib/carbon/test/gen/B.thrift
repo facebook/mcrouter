@@ -29,7 +29,9 @@ namespace py3 carbon.test.B.thrift
   },
 }
 struct TestBRequest {
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
+  @cpp.DeprecatedTerseWrite
   2: bool dummy2
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -38,7 +40,9 @@ struct TestBRequest {
   },
 }
 struct TestBReply {
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: i32 valInt32
 }
 

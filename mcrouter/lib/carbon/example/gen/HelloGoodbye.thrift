@@ -36,13 +36,21 @@ enum EnumUInt32 {
   },
 }
 struct HelloRequest {
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
+  @cpp.DeprecatedTerseWrite
   2: carbon.ui64 shardId
+  @cpp.DeprecatedTerseWrite
   3: carbon.ui64 deadlineMs
+  @cpp.DeprecatedTerseWrite
   4: string message
+  @cpp.DeprecatedTerseWrite
   5: EnumUInt32 priority
+  @cpp.DeprecatedTerseWrite
   6: carbon.ui64 beforeLatencyUs
+  @cpp.DeprecatedTerseWrite
   7: carbon.ui64 afterLatencyUs
+  @cpp.DeprecatedTerseWrite
   8: carbon.ui32 clientVersion
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -51,7 +59,9 @@ struct HelloRequest {
   },
 }
 struct HelloReply {
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: string message
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -60,7 +70,9 @@ struct HelloReply {
   },
 }
 struct GoodbyeRequest {
+  @cpp.DeprecatedTerseWrite
   1: carbon.IOBufKey key
+  @cpp.DeprecatedTerseWrite
   2: carbon.ui64 shardId
 }
 @thrift.DeprecatedUnvalidatedAnnotations{
@@ -69,7 +81,9 @@ struct GoodbyeRequest {
   },
 }
 struct GoodbyeReply {
+  @cpp.DeprecatedTerseWrite
   1: carbon_result.Result result
+  @cpp.DeprecatedTerseWrite
   2: string message
 }
 
