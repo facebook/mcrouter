@@ -62,6 +62,8 @@ service Memcache {
   Memcache_McTouchReply mcTouch(1: Memcache_McTouchRequest request) throws (1: Common.CarbonResultBusy carbonResultBusy, 2: Common.CarbonResultRemoteError carbonResultRemoteError)
   @cpp.ProcessInEbThreadUnsafe
   Common_McVersionReply mcVersion(1: Common_McVersionRequest request)
+  @cpp.ProcessInEbThreadUnsafe
+  Memcache_McMetaCommandsGetReply mcMetaCommandsGet(1: Memcache_McMetaCommandsGetRequest request) throws (1: Common.CarbonResultBusy carbonResultBusy, 2: Common.CarbonResultRemoteError carbonResultRemoteError)
 }
 
 @cpp.Type{name = "facebook::memcache::McAddReply"}
@@ -140,6 +142,10 @@ typedef Memcache.McSetRequest Memcache_McSetRequest
 typedef Memcache.McTouchReply Memcache_McTouchReply
 @cpp.Type{name = "facebook::memcache::McTouchRequest"}
 typedef Memcache.McTouchRequest Memcache_McTouchRequest
+@cpp.Type{name = "facebook::memcache::McMetaCommandsGetReply"}
+typedef Memcache.McMetaCommandsGetResponse Memcache_McMetaCommandsGetReply
+@cpp.Type{name = "facebook::memcache::McMetaCommandsGetRequest"}
+typedef Memcache.McMetaCommandsGetRequest Memcache_McMetaCommandsGetRequest
 @cpp.Type{name = "facebook::memcache::McVersionReply"}
 typedef Common.McVersionReply Common_McVersionReply
 @cpp.Type{name = "facebook::memcache::McVersionRequest"}
