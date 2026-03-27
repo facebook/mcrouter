@@ -1,0 +1,50 @@
+add_executable(
+  mcrouter_routes_test
+  Main.cpp
+  BigValueRouteTest.cpp
+  BlackholeRouteTest.cpp
+  ClientCompatibilityCheckerRouteTest.cpp
+  CollectionRouteFactoryTest.cpp
+  ConstShardHashFuncTest.cpp
+  DistributionRouteTest.cpp
+  EagerShardSelectionRouteTest.cpp
+  EagerShardSelectionShadowRouteTest.cpp
+  ErrorRouteTest.cpp
+  FailoverRouteTest.cpp
+  FailoverWithExptimeRouteTest.cpp
+  HashStopAllowListRouteTest.cpp
+  KeyParseRouteTest.cpp
+  KeySplitRouteTest.cpp
+  LatencyInjectionRouteTest.cpp
+  LatestRouteTest.cpp
+  LoadBalancerRouteTest.cpp
+  LoggingRouteTest.cpp
+  McBucketRouteTest.cpp
+  MissFailoverRouteTest.cpp
+  OriginalClientHashRouteTest.cpp
+  OutstandingLimitRouteTest.cpp
+  PrefixSelectorRouteTest.cpp
+  RateLimitRouteTest.cpp
+  RootRouteTest.cpp
+  RoutePolicyMapTest.cpp
+  ShadowRouteTest.cpp
+  ShadowSettingsTest.cpp
+  ShardSelectionRouteTest.cpp
+  ShardSplitRouteTest.cpp
+  ShardSplitterTest.cpp
+  SlowWarmUpRouteTest.cpp
+  StagingRouteTest.cpp
+  WarmUpRouteTest.cpp
+)
+
+target_link_libraries(
+  mcrouter_routes_test
+  PRIVATE
+    mcrouter_hello_goodbye
+    mcroutercore
+    Folly::follybenchmark
+    GTest::gtest
+    GTest::gmock
+)
+
+gtest_discover_tests(mcrouter_routes_test)
