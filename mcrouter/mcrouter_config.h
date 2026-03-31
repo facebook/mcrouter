@@ -120,7 +120,8 @@ bool readLibmcrouterFlavor(
 bool read_standalone_flavor(
     const std::string& flavor,
     std::unordered_map<std::string, std::string>& option_dict,
-    std::unordered_map<std::string, std::string>& st_option_dict);
+    std::unordered_map<std::string, std::string>& st_option_dict,
+    bool disableFlavorOverride = false);
 
 std::unique_ptr<ConfigApi> createConfigApi(const McrouterOptions& opts);
 

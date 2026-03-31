@@ -417,12 +417,25 @@ void getFlavorOptionsAndApplyOverrides(
   // may affect the way we read from flavors (fb-only).
   standalonePreInitFromCommandLineOpts(cmdLineOpts.standaloneOptionsOverrides);
 
+  // Extract disable_flavor_override from CLI opts to pass through the
+  // flavor loading call chain (fb-only: controls override file reading).
+  bool disableFlavorOverride = false;
+  auto disableIt =
+      cmdLineOpts.standaloneOptionsOverrides.find("disable_flavor_override");
+  if (disableIt != cmdLineOpts.standaloneOptionsOverrides.end()) {
+    disableFlavorOverride =
+        (disableIt->second == "1" || disableIt->second == "true");
+  }
+
   if (cmdLineOpts.flavor.empty()) {
     libmcrouterOptionsDict = cmdLineOpts.libmcrouterOptionsOverrides;
     standaloneOptionsDict = cmdLineOpts.standaloneOptionsOverrides;
   } else {
     read_standalone_flavor(
-        cmdLineOpts.flavor, libmcrouterOptionsDict, standaloneOptionsDict);
+        cmdLineOpts.flavor,
+        libmcrouterOptionsDict,
+        standaloneOptionsDict,
+        disableFlavorOverride);
     for (auto& it : cmdLineOpts.libmcrouterOptionsOverrides) {
       libmcrouterOptionsDict[it.first] = it.second;
     }
