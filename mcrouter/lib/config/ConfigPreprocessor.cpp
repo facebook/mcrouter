@@ -1828,6 +1828,14 @@ void ConfigPreprocessor::addMacro(
 dynamic ConfigPreprocessor::replaceParams(
     StringPiece str,
     const Context& context) const {
+  // Fast path: if the string contains no '%' or '\' characters,
+  // there are no parameters to substitute and no escape sequences
+  // to process, so return the string as-is.
+  if (str.find('%') == StringPiece::npos &&
+      str.find('\\') == StringPiece::npos) {
+    return str;
+  }
+
   string buf;
   while (!str.empty()) {
     auto pos = unescapeUntil(str, buf, '%');
