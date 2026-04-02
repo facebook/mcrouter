@@ -26,6 +26,7 @@
 #include <thrift/lib/cpp/transport/TTransportException.h>
 #include <thrift/lib/cpp2/async/RequestChannel.h>
 
+#include "mcrouter/lib/network/gen/MemcacheMessages.h"
 #include "mcrouter/lib/network/gen/gen-cpp2/MemcacheAsyncClient.h"
 
 namespace facebook {
@@ -837,6 +838,46 @@ folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>> sendSyncHelper(
   return reply;
 }
 
+folly::Try<apache::thrift::RpcResponseComplete<McMetaCommandsGetReply>> sendSyncHelper(
+    typename MemcacheRouterInfo::RouteHandleAsyncClient* thriftClient,
+    const McMetaCommandsGetRequest& request,
+    apache::thrift::RpcOptions& rpcOptions,
+    RpcStatsContext* rpcStatsContext = nullptr) {
+  bool needServerLoad = mcrouter::fiber_local<MemcacheRouterInfo>::getThriftServerLoadEnabled();
+  if (FOLLY_UNLIKELY(needServerLoad)) {
+    rpcOptions.setWriteHeader(kLoadHeader, kDefaultLoadCounter);
+  }
+  if (FOLLY_UNLIKELY(request.getCryptoAuthToken().has_value())) {
+    rpcOptions.setWriteHeader(
+        std::string{carbon::MessageCommon::kCryptoAuthTokenHeader}, request.getCryptoAuthToken().value());
+  }
+  if (FOLLY_UNLIKELY(request.getClientIdentifier().has_value())) {
+    rpcOptions.setWriteHeader(
+        std::string{carbon::MessageCommon::kClientIdentifierHeader}, request.getClientIdentifier().value());
+  }
+  rpcOptions.setContextPropMask(0);
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceRequest(request, rpcOptions);
+#endif
+  auto reply = thriftClient->sync_complete_mcMetaCommandsGet(
+      std::move(rpcOptions), request);
+  if (rpcStatsContext && reply.hasValue()) {
+      auto& stats = reply->responseContext.rpcTransportStats;
+      rpcStatsContext->requestBodySize = stats.requestSerializedSizeBytes;
+      rpcStatsContext->replySizeBeforeCompression = stats.responseSerializedSizeBytes;
+      rpcStatsContext->replySizeAfterCompression = stats.responseWireSizeBytes;
+      if (FOLLY_UNLIKELY(needServerLoad && reply->responseContext.serverLoad)) {
+        rpcStatsContext->serverLoad = ServerLoad(
+            static_cast<int32_t>(*reply->responseContext.serverLoad));
+      }
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  traceResponse(request, reply);
+#endif
+  return reply;
+}
+
  protected:
   std::optional<apache::thrift::Client<facebook::memcache::thrift::Memcache>> thriftClient_;
 };
@@ -1226,6 +1267,25 @@ class ThriftTransport<MemcacheRouterInfo> : public ThriftTransportMethods<Memcac
         return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
       } else {
         return folly::Try<apache::thrift::RpcResponseComplete<McVersionReply>>(
+            folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
+              apache::thrift::transport::TTransportException::NOT_OPEN,
+              "Error creating thrift client."));
+      }
+    });
+  }
+
+  McMetaCommandsGetReply sendSync(
+      const McMetaCommandsGetRequest& request,
+      std::chrono::milliseconds timeout,
+      RpcStatsContext* rpcStatsContext = nullptr) {
+
+    return sendSyncImpl([this, &request, timeout, rpcStatsContext] {
+      auto* thriftClient = getThriftClient();
+      if (FOLLY_LIKELY(thriftClient != nullptr)) {
+        auto rpcOptions = getRpcOptions(timeout);
+        return sendSyncHelper(thriftClient, request, rpcOptions, rpcStatsContext);
+      } else {
+        return folly::Try<apache::thrift::RpcResponseComplete<McMetaCommandsGetReply>>(
             folly::make_exception_wrapper<apache::thrift::transport::TTransportException>(
               apache::thrift::transport::TTransportException::NOT_OPEN,
               "Error creating thrift client."));

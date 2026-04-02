@@ -84,6 +84,7 @@ class BigValueRoute {
   route(const Request& req) const;
 
   McMetagetReply route(const McMetagetRequest& req) const;
+  McMetaCommandsGetReply route(const McMetaCommandsGetRequest& req) const;
   McLeaseGetReply route(const McLeaseGetRequest& req) const;
 
   template <class Request>

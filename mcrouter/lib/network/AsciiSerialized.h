@@ -52,9 +52,9 @@ class AsciiSerializedRequest {
   // We need at most 5 iovecs (lease-set):
   //   command + key + printBuffer + value + "\r\n"
   static constexpr size_t kMaxIovs = 8;
-  // The longest print buffer we need is for lease-set/cas operations.
-  // It requires 2 uint64, 2 uint32 + 4 spaces + "\r\n" + '\0' = 67 chars.
-  static constexpr size_t kMaxBufferLength = 80;
+  // The longest print buffer we need is for OSS mg.
+  // It requires 2 uint64, 3 uint32, 11 char + 16 spaces + "\r\n" + '\0' = 105 chars.
+  static constexpr size_t kMaxBufferLength = 105;
 
   struct iovec iovs_[kMaxIovs];
   size_t iovsCount_{0};
@@ -98,6 +98,8 @@ class AsciiSerializedRequest {
   void prepareImpl(const McVersionRequest& request);
   // FlushAll op.
   void prepareImpl(const McFlushAllRequest& request);
+  // Meta commands.
+  void prepareImpl(const McMetaCommandsGetRequest& request);
 
   // Everything else is false.
   template <class Request>
@@ -160,18 +162,19 @@ class AsciiSerializedReply {
 
  private:
   // See comment in prepareImpl for McMetagetReply for explanation
-  static constexpr size_t kMaxBufferLength = 100;
+  static constexpr size_t kMaxBufferLength = 113;
 
   static const size_t kMaxIovs = 16;
   struct iovec iovs_[kMaxIovs];
   size_t iovsCount_{0};
   char printBuffer_[kMaxBufferLength];
-  // Used to keep alive the reply's IOBuf field (value, stats, etc.). For now,
-  // replies have at most one IOBuf, so we only need one here. Note that one of
-  // the iovs_ will point into the data managed by this IOBuf. A serialized
-  // reply should not set iobuf_ more than once.
+  // Used to keep alive the reply's IOBuf fields (value, stats, etc.). For now,
+  // replies have at most two IOBufs. Note that one of
+  // the iovs_ will point into the data managed by these IOBufs. A serialized
+  // reply should not set a given iobuf_ more than once.
   // We also keep an auxiliary string for a similar purpose.
   folly::Optional<folly::IOBuf> iobuf_;
+  folly::Optional<folly::IOBuf> iobuf2_;
   folly::Optional<std::string> auxString_;
 
   void addString(folly::ByteRange range);
@@ -225,6 +228,8 @@ class AsciiSerializedReply {
   void prepareImpl(McExecReply&&);
   void prepareImpl(McFlushReReply&&);
   void prepareImpl(McFlushAllReply&&);
+  // Meta commands
+  void prepareImpl(McMetaCommandsGetReply&& reply, folly::StringPiece key);
   // Server and client error helper
   void
   handleError(carbon::Result result, uint16_t errorCode, std::string&& message);

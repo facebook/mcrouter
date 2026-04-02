@@ -22,6 +22,7 @@
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/Reply.h"
+#include "mcrouter/lib/network/gen/MemcacheMessages.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 
 namespace facebook {
@@ -267,6 +268,13 @@ McMetagetReply BigValueRoute<RouterInfo>::route(
     const McMetagetRequest& req) const {
   // TODO: Make metaget work with BigValueRoute. One way to make this work well
   // is to add 'flags' to McMetagetReply.
+  return ch_->route(req);
+}
+
+template <class RouterInfo>
+McMetaCommandsGetReply BigValueRoute<RouterInfo>::route(
+    const McMetaCommandsGetRequest& req) const {
+  // TODO: Implement.
   return ch_->route(req);
 }
 

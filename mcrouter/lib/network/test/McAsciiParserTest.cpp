@@ -707,6 +707,104 @@ TYPED_TEST(McAsciiParserTestMetaget, MetagetHit_Unknown_NegativeOne_notrans) {
 }
 
 /**
+ * Test meta commands get (mg)
+ */
+TEST(McAsciiParserTestMetaCommandsGet, MgMiss) {
+  McAsciiParserHarness h("EN\r\n");
+  h.expectNext<McMetaCommandsGetRequest>(
+      McMetaCommandsGetReply(carbon::Result::NOTFOUND));
+  h.runTest(0);
+}
+
+TEST(McAsciiParserTestMetaCommandsGet, MgHitValueOnly) {
+  McAsciiParserHarness h("VA 5\r\nhello\r\n");
+  McMetaCommandsGetReply expected(carbon::Result::FOUND);
+  expected.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "hello");
+  h.expectNext<McMetaCommandsGetRequest>(std::move(expected));
+  h.runTest(1);
+}
+
+TEST(McAsciiParserTestMetaCommandsGet, MgHitWithCas) {
+  McAsciiParserHarness h("VA 5 c12345\r\nhello\r\n");
+  McMetaCommandsGetReply expected(carbon::Result::FOUND);
+  expected.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "hello");
+  expected.casToken_ref() = 12345;
+  h.expectNext<McMetaCommandsGetRequest>(std::move(expected));
+  h.runTest(1);
+}
+
+TEST(McAsciiParserTestMetaCommandsGet, MgHitWithFlags) {
+  McAsciiParserHarness h("VA 5 W X\r\nhello\r\n");
+  McMetaCommandsGetReply expected(carbon::Result::FOUND);
+  expected.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "hello");
+  expected.flags_ref() =
+      MC_META_COMMANDS_FLAG_WON_RECACHE | MC_META_COMMANDS_FLAG_ITEM_IS_STALE;
+  h.expectNext<McMetaCommandsGetRequest>(std::move(expected));
+  h.runTest(1);
+}
+
+TEST(McAsciiParserTestMetaCommandsGet, MgHitWithAllFlags) {
+  McAsciiParserHarness h("VA 5 b W s750 X l63 Otest f456 t892 c99\r\nhello\r\n");
+  McMetaCommandsGetReply expected(carbon::Result::FOUND);
+  expected.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "hello");
+  expected.flags_ref() =
+      MC_META_COMMANDS_FLAG_BASE64_ENCODED_KEY |
+      MC_META_COMMANDS_FLAG_WON_RECACHE |
+      MC_META_COMMANDS_FLAG_ITEM_IS_STALE;
+  expected.casToken_ref() = 99;
+  expected.opaqueToken_ref() = "test";
+  expected.clientFlags_ref() = 456;
+  expected.remainingTTL_ref() = 892;
+  expected.lastAccessTime_ref() = 63;
+  expected.wasHitBefore_ref() = 1;
+  expected.itemSize_ref() = 750;
+  h.expectNext<McMetaCommandsGetRequest>(std::move(expected));
+  h.runTest(1);
+}
+
+TEST(McAsciiParserTestMetaCommandsGet, MgHdNoValue) {
+  McAsciiParserHarness h("HD\r\n");
+  McMetaCommandsGetReply expected(carbon::Result::FOUND);
+  h.expectNext<McMetaCommandsGetRequest>(std::move(expected));
+  h.runTest(0);
+}
+
+TEST(McAsciiParserTestMetaCommandsGet, MgHdWithFlags) {
+  McAsciiParserHarness h("HD W c42\r\n");
+  McMetaCommandsGetReply expected(carbon::Result::FOUND);
+  expected.flags_ref() = MC_META_COMMANDS_FLAG_WON_RECACHE;
+  expected.casToken_ref() = 42;
+  h.expectNext<McMetaCommandsGetRequest>(std::move(expected));
+  h.runTest(1);
+}
+
+TEST(McAsciiParserTestMetaCommandsGet, MgHitWithKey) {
+  // The 'k' flag is skipped by the client parser (client already knows the key)
+  McAsciiParserHarness h("VA 5 kMyKey\r\nhello\r\n");
+  McMetaCommandsGetReply expected(carbon::Result::FOUND);
+  expected.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "hello");
+  h.expectNext<McMetaCommandsGetRequest>(std::move(expected));
+  h.runTest(1);
+}
+
+TEST(McAsciiParserTestMetaCommandsGet, MgSkipsUnknownFlags) {
+  McAsciiParserHarness h("VA 5 s42 t100 W\r\nhello\r\n");
+  McMetaCommandsGetReply expected(carbon::Result::FOUND);
+  expected.value_ref() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "hello");
+  expected.flags_ref() = MC_META_COMMANDS_FLAG_WON_RECACHE;
+  h.expectNext<McMetaCommandsGetRequest>(std::move(expected));
+  h.runTest(1);
+}
+
+TEST(McAsciiParserTestMetaCommandsGet, MgServerError) {
+  McAsciiParserHarness h("SERVER_ERROR what\r\n");
+  h.expectNext<McMetaCommandsGetRequest>(
+      replyWithMessage<McMetaCommandsGetReply>(
+          carbon::Result::REMOTE_ERROR, "what"));
+  h.runTest(3);
+}
+
+/**
  * Test flush_all
  */
 TEST(McAsciiParserTestFlushAll, FlushAll) {

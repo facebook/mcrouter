@@ -14,6 +14,7 @@
  */
 #pragma once
 
+#include "mcrouter/lib/network/gen/MemcacheMessages.h"
 #include <mcrouter/lib/carbon/TypeList.h>
 
 namespace facebook::memcache {
@@ -65,6 +66,8 @@ class McTouchReply;
 class McTouchRequest;
 class McVersionReply;
 class McVersionRequest;
+class McMetaCommandsGetReply;
+class McMetaCommandsGetRequest;
 } // namespace facebook::memcache
 
 namespace facebook {
@@ -91,7 +94,8 @@ using MemcacheRoutableRequests = carbon::List<
     McPrependRequest,
     McReplaceRequest,
     McSetRequest,
-    McTouchRequest>;
+    McTouchRequest,
+    McMetaCommandsGetRequest>;
 using MemcacheRoutableReplies = carbon::List<
     McAddReply,
     McAppendReply,
@@ -111,7 +115,8 @@ using MemcacheRoutableReplies = carbon::List<
     McPrependReply,
     McReplaceReply,
     McSetReply,
-    McTouchReply>;
+    McTouchReply,
+    McMetaCommandsGetReply>;
 using MemcacheAllRequests = carbon::List<
     McAddRequest,
     McAppendRequest,
@@ -136,7 +141,8 @@ using MemcacheAllRequests = carbon::List<
     McShutdownRequest,
     McStatsRequest,
     McTouchRequest,
-    McVersionRequest>;
+    McVersionRequest,
+    McMetaCommandsGetRequest>;
 } // namespace detail
 } // namespace memcache
 } // namespace facebook
