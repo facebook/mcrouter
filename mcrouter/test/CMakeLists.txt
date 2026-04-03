@@ -1,0 +1,239 @@
+add_executable(
+  mcrouter_core_test
+  ${CMAKE_SOURCE_DIR}/mcrouter/lib/test/Main.cpp
+  ${CMAKE_SOURCE_DIR}/mcrouter/lib/config/test/config_preprocessor_test.cpp
+  ${CMAKE_SOURCE_DIR}/mcrouter/lib/config/test/rendezvous_hash_test.cpp
+  ${CMAKE_SOURCE_DIR}/mcrouter/lib/fbi/cpp/test/LowerBoundPrefixMapTest.cpp
+  ${CMAKE_SOURCE_DIR}/mcrouter/lib/fbi/cpp/test/ObjectPoolTests.cpp
+  ${CMAKE_SOURCE_DIR}/mcrouter/lib/fbi/test/hash_test.cpp
+  ${CMAKE_SOURCE_DIR}/mcrouter/lib/fbi/test/sem_test.cpp
+  ${CMAKE_SOURCE_DIR}/mcrouter/lib/fbi/test/test_util.cpp
+  ${CMAKE_SOURCE_DIR}/mcrouter/lib/invalidation/test/McInvalidationKvPairsTest.cpp
+  PreprocessedConfigDumpTest.cpp
+  cpp_unit_tests/awriter_test.cpp
+  cpp_unit_tests/config_api_test.cpp
+  cpp_unit_tests/exponential_smooth_data_test.cpp
+  cpp_unit_tests/file_observer_test.cpp
+  cpp_unit_tests/flavor_test.cpp
+  cpp_unit_tests/LeaseTokenMapTest.cpp
+  cpp_unit_tests/mc_route_handle_provider_test.cpp
+  cpp_unit_tests/McDistributionUtilsTest.cpp
+  cpp_unit_tests/McrouterClientUsage.cpp
+  cpp_unit_tests/McrouterFiberContextTest.cpp
+  cpp_unit_tests/options_test.cpp
+  cpp_unit_tests/pool_factory_test.cpp
+  cpp_unit_tests/ProxyRequestContextTest.cpp
+  cpp_unit_tests/route_handle_factory_test.cpp
+  cpp_unit_tests/route_test.cpp
+  cpp_unit_tests/util_test.cpp
+)
+
+target_link_libraries(
+  mcrouter_core_test
+  PRIVATE
+    mcrouter_hello_goodbye
+    mcroutercore
+    GTest::gtest
+    GTest::gmock
+)
+
+gtest_discover_tests(mcrouter_core_test WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+find_package(Python3 COMPONENTS Interpreter)
+
+set(MCROUTER_INTEGRATION_TEST_FILES
+  MCProcess.py
+  McrouterTestCase.py
+  __init__.py
+  invalid_config.json
+  mcrouter_test_basic_1_1_1.json
+  mcrouter_test_basic_2_1_1.json
+  mcrouter_test_basic_3_1_1.json
+  mcrouter_test_bucketized_poolroute_bucketized.json
+  mcrouter_test_bucketized_poolroute_nonbucketized.json
+  mcrouter_test_portoverride.json
+  mock_servers.py
+  routing_prefix_test_ascii.json
+  routing_prefix_test_caret.json
+  routing_prefix_test_custom.json
+  routing_prefix_test_fallback_route.json
+  routing_prefix_test_old_naming.json
+  routing_prefix_test_simple_routes.json
+  runtime_vars_file.json
+  test_additional_fields.py
+  test_allow_only_gets.py
+  test_ascii.json
+  test_ascii_error.py
+  test_ascii_gut.json
+  test_ascii_multiget_mock.py
+  test_async_files.py
+  test_async_files_attr.py
+  test_axon_log.json
+  test_axon_log_alldelete.json
+  test_axonlog.py
+  test_bad_params.py
+  test_basic_all_first.json
+  test_basic_all_majority.json
+  test_basic_all_sync.json
+  test_basic_caret.json
+  test_basic_failover.json
+  test_basic_failover_least_failures.json
+  test_basic_failover_override.json
+  test_basic_l1_l2.json
+  test_basic_l1_l2_ncache.json
+  test_basic_l1_l2_sizesplit.json
+  test_basic_l1_l2_sizesplit_bothset.json
+  test_basic_l1_l2_sizesplit_retry_invalid.json
+  test_basic_l1_l2_sizesplit_retry_valid.json
+  test_basic_l1_multiple_l2_sizesplit.json
+  test_bigvalue.json
+  test_bigvalue.py
+  test_bucketized_poolroute.py
+  test_carbonlookaside_route.py
+  test_caret.json
+  test_caret_server.json
+  test_config_params.json
+  test_config_params.py
+  test_const_shard_hash.json
+  test_const_shard_hash.py
+  test_custom_failover.json
+  test_custom_failover.py
+  test_custom_failover_override.json
+  test_debug_fifos.py
+  test_deterministic_failover.json
+  test_deterministic_failover.py
+  test_deterministic_failover2.json
+  test_deterministic_failover3.json
+  test_deterministic_failover4.json
+  test_deterministic_failover5.json
+  test_deterministic_failover_big_retries.json
+  test_dev_null.json
+  test_dump_config.py
+  test_dump_config_invalid.json
+  test_duplicate_servers.json
+  test_duplicate_servers_difftimeouts.json
+  test_empty_pool.json
+  test_empty_pool.py
+  test_failover_limit.json
+  test_failover_limit_error.json
+  test_flush_all.py
+  test_get_failover.json
+  test_get_failover_with_failover_tag.json
+  test_largeobj.json
+  test_largeobj.py
+  test_latency_injection_after.json
+  test_latency_injection_before.json
+  test_latency_injection_route.py
+  test_latency_injection_total.json
+  test_lease_pairing.py
+  test_lease_pairing_basic.json
+  test_lease_pairing_disabled.json
+  test_lease_pairing_nested.json
+  test_linenumbers.py
+  test_loadbalancer_route.json
+  test_loadbalancer_route.py
+  test_loadbalancer_route_thrift.json
+  test_logging_route.py
+  test_logging_route_mc.json
+  test_logging_route_server.json
+  test_logical_routing_policies.json
+  test_logical_routing_policies.py
+  test_max_shadow_requests.json
+  test_max_shadow_requests.py
+  test_mcrefill.json
+  test_mcrouter.py
+  test_mcrouter_basic.py
+  test_mcrouter_errors.py
+  test_mcrouter_processing_time.json
+  test_mcrouter_processing_time.py
+  test_mcrouter_sanity_mock.py
+  test_mcrouter_serialized.py
+  test_mcrouter_states.py
+  test_mcrouter_to_mcrouter_tko.json
+  test_mcrouter_to_mcrouter_tko.py
+  test_memcache_router.py
+  test_migrated_failover.json
+  test_migrated_failover.py
+  test_migrated_pools.json
+  test_migrated_pools_failover.json
+  test_miss_on_error_arith_ops.json
+  test_miss_on_error_arith_ops.py
+  test_modify_exptime.json
+  test_modify_exptime.py
+  test_modify_key.json
+  test_modify_key.py
+  test_named_handles.py
+  test_named_handles_list.json
+  test_named_handles_obj.json
+  test_noreply.json
+  test_noreply.py
+  test_nullroute.json
+  test_operation_selector_route.json
+  test_operation_selector_route.py
+  test_pool_server_errors.json
+  test_poolstats.json
+  test_poolstats.py
+  test_poolstats_config.json
+  test_probe_timeout.json
+  test_probe_timeout.py
+  test_probe_timeout_reconfig.json
+  test_regional_replicated_pools.json
+  test_rendezvous_failover.json
+  test_rendezvous_failover.py
+  test_routing_group_route.json
+  test_routing_group_route.py
+  test_routing_group_route_incomplete.json
+  test_routing_prefixes.py
+  test_same_pool_failover.json
+  test_send_to_all_hosts.json
+  test_send_to_all_hosts.py
+  test_server_stats_pending.json
+  test_service_info.json
+  test_service_info.py
+  test_shadow.json
+  test_shadow.py
+  test_shadow_route.json
+  test_shadow_route.py
+  test_shadow_with_file.json
+  test_shadow_with_file.py
+  test_shadow_with_file_config.json
+  test_shard_splits.json
+  test_shard_splits.py
+  test_slow_warmup.json
+  test_slow_warmup.py
+  test_stats.py
+  test_thrift.json
+  test_thrift_gut.json
+  test_tko_inactive.py
+  test_tko_reconfigure.py
+  test_tko_reconfigure1.json
+  test_tko_reconfigure2.json
+  test_validate_config.py
+  test_warmup.json
+  test_warmup.py
+  test_warmup2.json
+  test_warmup2.py
+  test_wch3.json
+  test_wch3.py
+)
+
+configure_file(${CMAKE_SOURCE_DIR}/CMake/mcrouter_config.py.in ${CMAKE_CURRENT_BINARY_DIR}/config.py)
+configure_file(${CMAKE_SOURCE_DIR}/CMake/carbon_thrift_types.py.in ${CMAKE_BINARY_DIR}/carbon/carbon_result/thrift_types.py)
+
+# Python integration tests need to run from the build directory so that they
+# can access their preprocessed config, so copy them and their fixtures over.
+foreach(TEST_FILE ${MCROUTER_INTEGRATION_TEST_FILES})
+  configure_file(${TEST_FILE} ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+
+  get_filename_component(file_ext ${TEST_FILE} LAST_EXT)
+  get_filename_component(file_name ${TEST_FILE} NAME_WE)
+
+  if (file_ext STREQUAL .py AND file_name MATCHES ^test_)
+    add_test(
+      NAME "integration_${file_name}"
+      COMMAND ${Python3_EXECUTABLE} -B -m unittest -q mcrouter.test.${file_name}
+      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
+    set_tests_properties("integration_${file_name}" PROPERTIES TIMEOUT 180)
+  endif()
+endforeach()
