@@ -473,6 +473,73 @@ void McClientAsciiParser::consumeMessage<McMetagetRequest>(
   }%%
 }
 
+// McMetaCommandsGet reply.
+%%{
+machine mc_ascii_meta_commands_get_reply;
+include mc_ascii_common;
+
+# Response flag tokens (no value)
+mg_resp_flag_b = 'b' %{ message.flags_ref() = *message.flags_ref() | MC_META_COMMANDS_FLAG_BASE64_ENCODED_KEY; };
+mg_resp_flag_W = 'W' %{ message.flags_ref() = *message.flags_ref() | MC_META_COMMANDS_FLAG_WON_RECACHE; };
+mg_resp_flag_X = 'X' %{ message.flags_ref() = *message.flags_ref() | MC_META_COMMANDS_FLAG_ITEM_IS_STALE; };
+mg_resp_flag_Z = 'Z' %{ message.flags_ref() = *message.flags_ref() | MC_META_COMMANDS_FLAG_LOST_RECACHE; };
+
+# Response flag tokens (with value)
+mg_resp_flag_c = 'c' uint %{ message.casToken_ref() = currentUInt_; };
+mg_resp_flag_f = 'f' uint %{ message.clientFlags_ref() = currentUInt_; };
+mg_resp_flag_s = 's' uint %{ message.itemSize_ref() = currentUInt_; };
+mg_resp_flag_l = 'l' uint %{ message.lastAccessTime_ref() = static_cast<int32_t>(currentUInt_); };
+mg_resp_flag_h = 'h' uint %{ message.wasHitBefore_ref() = static_cast<int32_t>(currentUInt_); };
+mg_resp_flag_t = 't' negative? uint %{
+  auto value = static_cast<int32_t>(currentUInt_);
+  message.remainingTTL_ref() = negative_ ? -value : value;
+  negative_ = false;
+};
+mg_resp_flag_k = 'k' key;
+mg_resp_flag_O = 'O' (any {1,32} -- (cntrl | space)) >key_start %key_end %{
+  currentKey_.coalesce();
+  message.opaqueToken_ref() = std::string(
+      reinterpret_cast<const char*>(currentKey_.data()), currentKey_.length());
+};
+# Skip unknown response flags
+mg_resp_unknown = (any - cntrl - space - [bcWXZ]) (any - cntrl - space)*;
+
+mg_resp_flag = mg_resp_flag_b | mg_resp_flag_W | mg_resp_flag_X |
+               mg_resp_flag_Z | mg_resp_flag_c | mg_resp_flag_O |
+               mg_resp_flag_f | mg_resp_flag_s | mg_resp_flag_l |
+               mg_resp_flag_h | mg_resp_flag_t | mg_resp_flag_k |
+               mg_resp_unknown;
+
+mg_resp_flags = (' '+ mg_resp_flag)*;
+
+# VA <size> <flags>*\r\n<data>\r\n
+va_hit = 'VA' %{ message.result_ref() = carbon::Result::FOUND; }
+         ' '+ value_bytes mg_resp_flags new_line @reply_value_data;
+
+# HD <flags>*\r\n
+hd_hit = 'HD' %{ message.result_ref() = carbon::Result::FOUND; }
+         mg_resp_flags;
+
+# EN\r\n
+en_miss = 'EN' %{ message.result_ref() = carbon::Result::NOTFOUND; };
+
+mg_reply = va_hit | hd_hit | en_miss;
+mg_reply_entry := (mg_reply | error) msg_end;
+
+write data;
+}%%
+
+template <>
+void McClientAsciiParser::consumeMessage<McMetaCommandsGetRequest>(
+    folly::IOBuf& buffer) {
+  auto& message = currentMessage_.get<McMetaCommandsGetReply>();
+  %%{
+    machine mc_ascii_meta_commands_get_reply;
+    write init nocs;
+    write exec;
+  }%%
+}
+
 // McFlushAll reply.
 %%{
 machine mc_ascii_flushall_reply;
@@ -613,6 +680,14 @@ void McClientAsciiParser::initializeReplyParser<McMetagetRequest>() {
 }
 
 template <>
+void McClientAsciiParser::initializeReplyParser<McMetaCommandsGetRequest>() {
+  initializeCommon<McMetaCommandsGetReply>();
+  savedCs_ = mc_ascii_meta_commands_get_reply_en_mg_reply_entry;
+  errorCs_ = mc_ascii_meta_commands_get_reply_error;
+  consumer_ = &McClientAsciiParser::consumeMessage<McMetaCommandsGetRequest>;
+}
+
+template <>
 void McClientAsciiParser::initializeReplyParser<McFlushAllRequest>() {
   initializeCommon<McFlushAllReply>();
   savedCs_ = mc_ascii_flushall_reply_en_flushall_reply;
@@ -645,6 +720,8 @@ void McClientAsciiParser::initializeCommon() {
   currentIOBuf_ = nullptr;
   remainingIOBufLength_ = 0;
   state_ = State::PARTIAL;
+
+  currentKey_.clear();
 
   currentMessage_.emplace<Reply>();
 }
@@ -1016,6 +1093,69 @@ void McServerAsciiParser::consumeFlushAll(folly::IOBuf&) {
   }%%
 }
 
+// Meta commands get (mg) request.
+
+%%{
+machine mc_ascii_mg_req_body;
+include mc_ascii_common;
+
+# Request flag tokens (no value) - set bitfield
+mg_req_flag_b = 'b' %{ message.flags_ref() = *message.flags_ref() | MC_META_COMMANDS_FLAG_BASE64_ENCODED_KEY; };
+mg_req_flag_c = 'c' %{ message.flags_ref() = *message.flags_ref() | MC_META_COMMANDS_FLAG_RETURN_CAS_TOKEN; };
+mg_req_flag_f = 'f' %{ message.flags_ref() = *message.flags_ref() | MC_META_COMMANDS_FLAG_RETURN_CLIENT_FLAGS; };
+mg_req_flag_h = 'h' %{ message.flags_ref() = *message.flags_ref() | MC_META_COMMANDS_FLAG_RETURN_WAS_HIT; };
+mg_req_flag_k = 'k' %{ message.flags_ref() = *message.flags_ref() | MC_META_COMMANDS_FLAG_RETURN_KEY; };
+mg_req_flag_l = 'l' %{ message.flags_ref() = *message.flags_ref() | MC_META_COMMANDS_FLAG_RETURN_TIME_SINCE_LAST_ACCESS; };
+mg_req_flag_q = 'q' %{
+  message.flags_ref() = *message.flags_ref() | MC_META_COMMANDS_FLAG_USE_NOREPLY_SEMANTICS;
+  noreply_ = true;
+};
+mg_req_flag_s = 's' %{ message.flags_ref() = *message.flags_ref() | MC_META_COMMANDS_FLAG_RETURN_ITEM_SIZE; };
+mg_req_flag_t = 't' %{ message.flags_ref() = *message.flags_ref() | MC_META_COMMANDS_FLAG_RETURN_ITEM_TTL; };
+mg_req_flag_u = 'u' %{ message.flags_ref() = *message.flags_ref() | MC_META_COMMANDS_FLAG_DO_NOT_BUMP_LRU; };
+mg_req_flag_v = 'v' %{ message.flags_ref() = *message.flags_ref() | MC_META_COMMANDS_FLAG_RETURN_VALUE; };
+
+# Request flag tokens (with value)
+mg_req_flag_C = 'C' uint %{ message.casToken_ref() = currentUInt_; };
+mg_req_flag_E = 'E' uint %{ message.newCasToken_ref() = currentUInt_; };
+mg_req_flag_N = 'N' uint %{ message.vivifyOnMissTTL_ref() = static_cast<int32_t>(currentUInt_); };
+mg_req_flag_R = 'R' uint %{ message.refreshIfTTLLessThan_ref() = static_cast<int32_t>(currentUInt_); };
+mg_req_flag_T = 'T' uint %{ message.newTTL_ref() = static_cast<int32_t>(currentUInt_); };
+mg_req_flag_O = 'O' (any {1,32} -- (cntrl | space)) >key_start %key_end %{
+  currentKey_.coalesce();
+  message.opaqueToken_ref() = std::string(
+      reinterpret_cast<const char*>(currentKey_.data()), currentKey_.length());
+};
+
+# Skip unknown flags
+mg_req_unknown = (any - cntrl - space - [bcfhklqstuvCNORT]) (any - cntrl - space)*;
+
+mg_req_flag = mg_req_flag_b | mg_req_flag_c | mg_req_flag_f |
+              mg_req_flag_h | mg_req_flag_k | mg_req_flag_l |
+              mg_req_flag_q | mg_req_flag_s | mg_req_flag_t |
+              mg_req_flag_u | mg_req_flag_v |
+              mg_req_flag_C | mg_req_flag_E |mg_req_flag_N | mg_req_flag_R |
+              mg_req_flag_T | mg_req_flag_O |
+              mg_req_unknown;
+
+req_body := ' '* key (' '+ mg_req_flag)* ' '* new_line @{
+              callback_->onRequest(std::move(message), noreply_);
+              finishReq();
+              fbreak;
+            };
+
+write data;
+}%%
+
+void McServerAsciiParser::consumeMetaCommandsGet(folly::IOBuf& buffer) {
+  auto& message = currentMessage_.get<McMetaCommandsGetRequest>();
+  %%{
+    machine mc_ascii_mg_req_body;
+    write init nocs;
+    write exec;
+  }%%
+}
+
 // Operation keyword parser.
 
 %%{
@@ -1045,6 +1185,15 @@ lease_get = 'lease-get ' @{
 
 metaget = 'metaget ' @{
   initGetLike<McMetagetRequest>();
+  fbreak;
+};
+
+mg = 'mg ' @{
+  savedCs_ = mc_ascii_mg_req_body_en_req_body;
+  errorCs_ = mc_ascii_mg_req_body_error;
+  state_ = State::PARTIAL;
+  currentMessage_.emplace<McMetaCommandsGetRequest>();
+  consumer_ = &McServerAsciiParser::consumeMetaCommandsGet;
   fbreak;
 };
 
@@ -1187,7 +1336,7 @@ flush_all = 'flush_all' @{
   fbreak;
 };
 
-command := get | gets | lease_get | metaget | set | add | replace | append |
+command := get | gets | lease_get | metaget | mg | set | add | replace | append |
            prepend | cas | lease_set | delete | shutdown | incr | decr |
            version | quit | stats | exec | flush_re | flush_all | touch | gat | gats;
 

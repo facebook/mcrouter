@@ -636,6 +636,95 @@ TEST(McServerAsciiParserHarness, flush_all) {
       .run("flush_all    123456789   \r\n");
 }
 
+TEST(McServerAsciiParserHarness, mg_basic) {
+  // Basic mg with key only, no flags.
+  McMetaCommandsGetRequest r("test:key:1");
+  TestRunner()
+      .expectNext(r)
+      .run("mg test:key:1\r\n")
+      .run("mg   test:key:1\r\n")
+      .run("mg test:key:1  \r\n")
+      .run("mg test:key:1\n");
+}
+
+TEST(McServerAsciiParserHarness, mg_single_flags) {
+  // mg with single boolean flags.
+  McMetaCommandsGetRequest r("test:key:1");
+  r.flags_ref() =
+      MC_META_COMMANDS_FLAG_RETURN_VALUE |
+      MC_META_COMMANDS_FLAG_RETURN_CAS_TOKEN |
+      MC_META_COMMANDS_FLAG_RETURN_CLIENT_FLAGS;
+  TestRunner()
+      .expectNext(r)
+      .run("mg test:key:1 v c f\r\n")
+      .run("mg  test:key:1  v  c  f\r\n")
+      .run("mg test:key:1 v c f \r\n");
+}
+
+TEST(McServerAsciiParserHarness, mg_all_boolean_flags) {
+  McMetaCommandsGetRequest r("mykey");
+  r.flags_ref() =
+      MC_META_COMMANDS_FLAG_BASE64_ENCODED_KEY |
+      MC_META_COMMANDS_FLAG_RETURN_CAS_TOKEN |
+      MC_META_COMMANDS_FLAG_RETURN_CLIENT_FLAGS |
+      MC_META_COMMANDS_FLAG_RETURN_WAS_HIT |
+      MC_META_COMMANDS_FLAG_RETURN_KEY |
+      MC_META_COMMANDS_FLAG_RETURN_TIME_SINCE_LAST_ACCESS |
+      MC_META_COMMANDS_FLAG_USE_NOREPLY_SEMANTICS |
+      MC_META_COMMANDS_FLAG_RETURN_ITEM_SIZE |
+      MC_META_COMMANDS_FLAG_RETURN_ITEM_TTL |
+      MC_META_COMMANDS_FLAG_DO_NOT_BUMP_LRU |
+      MC_META_COMMANDS_FLAG_RETURN_VALUE;
+  TestRunner()
+      .expectNext(r, true /* noreply because q flag is set */)
+      .run("mg mykey b c f h k l q s t u v\r\n");
+}
+
+TEST(McServerAsciiParserHarness, mg_valued_flags) {
+  McMetaCommandsGetRequest r("test:key");
+  r.flags_ref() = MC_META_COMMANDS_FLAG_RETURN_VALUE;
+  r.casToken_ref() = 12345;
+  r.vivifyOnMissTTL_ref() = 30;
+  r.refreshIfTTLLessThan_ref() = 10;
+  r.newTTL_ref() = 60;
+  r.opaqueToken_ref() = "abc123";
+  TestRunner()
+      .expectNext(r)
+      .run("mg test:key v C12345 N30 R10 T60 Oabc123\r\n")
+      .run("mg  test:key  v  C12345  N30  R10  T60  Oabc123  \r\n");
+}
+
+TEST(McServerAsciiParserHarness, mg_all_flags) {
+  McMetaCommandsGetRequest r("mykey");
+  uint64_t allBooleanFlags =       MC_META_COMMANDS_FLAG_BASE64_ENCODED_KEY |
+      MC_META_COMMANDS_FLAG_RETURN_CAS_TOKEN |
+      MC_META_COMMANDS_FLAG_RETURN_CLIENT_FLAGS |
+      MC_META_COMMANDS_FLAG_RETURN_WAS_HIT |
+      MC_META_COMMANDS_FLAG_RETURN_KEY |
+      MC_META_COMMANDS_FLAG_RETURN_TIME_SINCE_LAST_ACCESS |
+      MC_META_COMMANDS_FLAG_USE_NOREPLY_SEMANTICS |
+      MC_META_COMMANDS_FLAG_RETURN_ITEM_SIZE |
+      MC_META_COMMANDS_FLAG_RETURN_ITEM_TTL |
+      MC_META_COMMANDS_FLAG_DO_NOT_BUMP_LRU |
+      MC_META_COMMANDS_FLAG_RETURN_VALUE;
+  r.flags_ref() = allBooleanFlags;
+  r.casToken_ref() = std::numeric_limits<unsigned long>::max();
+  r.newCasToken_ref() = std::numeric_limits<unsigned long>::max();
+  r.vivifyOnMissTTL_ref() = std::numeric_limits<int>::max();
+  r.refreshIfTTLLessThan_ref() = std::numeric_limits<int>::max();
+  r.newTTL_ref() = std::numeric_limits<int>::max();
+  r.opaqueToken_ref() = "401b30e3b8b5d629635a5c613cdb79";
+
+  TestRunner()
+    .expectNext(r, true /* noreply */)
+    .run("mg mykey b c f h k l q s t u v C18446744073709551615 E18446744073709551615 N2147483647 R2147483647 T2147483647 O401b30e3b8b5d629635a5c613cdb79\r\n");
+}
+
+TEST(McServerAsciiParserHarness, mg_error) {
+  // Missing key.
+  TestRunner().expectError().run("mg\r\n").run("mg   \r\n");
+}
+
 TEST(McServerAsciiParserHarness, flush_regex) {
   // Flush_regex expects a key.
   TestRunner().expectError().run("flush_regex\r\n").run("flush_regex     \r\n");
@@ -702,6 +791,11 @@ TEST(McServerAsciiParserHarness, allOps) {
   McDeleteRequest deleteRequest("test:stepan:13");
   deleteRequest.exptime() = 2345234;
 
+  McMetaCommandsGetRequest mgRequest("test:stepan:14");
+  mgRequest.flags_ref() =
+      MC_META_COMMANDS_FLAG_RETURN_VALUE | MC_META_COMMANDS_FLAG_RETURN_CAS_TOKEN;
+  mgRequest.newTTL_ref() = 300;
+
   TestRunner()
       .expectNext(McGetRequest("test:stepan:1"))
       .expectMultiOpEnd()
@@ -724,6 +818,7 @@ TEST(McServerAsciiParserHarness, allOps) {
       .expectNext(casRequest)
       .expectNext(leaseSetRequest)
       .expectNext(deleteRequest)
+      .expectNext(mgRequest)
       .expectNext(McStatsRequest("test stats"))
       .expectNext(McExecRequest("reboot server"))
       .expectNext(McQuitRequest(), true)
@@ -746,6 +841,7 @@ TEST(McServerAsciiParserHarness, allOps) {
           "cas test:stepan:11 765 -1 8 893\r\nFacebook\r\n"
           "lease-set test:stepan:12 846 294 563 4\r\nhAcK\r\n"
           "delete test:stepan:13 2345234\r\n"
+          "mg test:stepan:14 v c T300\r\n"
           "stats test stats\r\n"
           "exec reboot server\r\n"
           "quit\r\n"
