@@ -11,8 +11,8 @@ endif()
 
 # Package information
 set(PACKAGE_NAME "mcrouter")
-if(NOT DEFINED PACKAGE_VERSION)
-  set(PACKAGE_VERSION "0.1.0-dev")
+if(NOT DEFINED MCROUTER_PACKAGE_VERSION)
+  set(MCROUTER_PACKAGE_VERSION "0.1.0-dev")
 endif()
 
 project(${PACKAGE_NAME} CXX C)
@@ -109,7 +109,7 @@ configure_file(
 # This file is included as "mcrouter/config.h" so it goes in mcrouter/ subdir
 # of the build tree.
 
-set(MCROUTER_PACKAGE_STRING "${PACKAGE_VERSION} ${PACKAGE_NAME}")
+set(MCROUTER_PACKAGE_STRING "${MCROUTER_PACKAGE_VERSION} ${PACKAGE_NAME}")
 configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/CMake/config.h.in"
   "${CMAKE_CURRENT_BINARY_DIR}/mcrouter/config.h"
