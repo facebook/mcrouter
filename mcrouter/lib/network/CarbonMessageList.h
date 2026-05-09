@@ -39,7 +39,8 @@ using RequestReplyPairs = List<
     Pair<McFlushReRequest, McFlushReReply>,
     Pair<McFlushAllRequest, McFlushAllReply>,
     Pair<McGatRequest, McGatReply>,
-    Pair<McGatsRequest, McGatsReply>>;
+    Pair<McGatsRequest, McGatsReply>,
+    Pair<McMetaCommandsGetRequest, McMetaCommandsGetReply>>;
 
 using McRequestList = PairListFirstT<RequestReplyPairs>;
 
@@ -73,7 +74,8 @@ using RequestOpMapping = List<
     KV<mc_op_flushre, McFlushReRequest>,
     KV<mc_op_flushall, McFlushAllRequest>,
     KV<mc_op_gat, McGatRequest>,
-    KV<mc_op_gats, McGatsRequest>>;
+    KV<mc_op_gats, McGatsRequest>,
+    KV<mc_op_meta_commands_get, McMetaCommandsGetRequest>>;
 
 using ReplyOpMapping = List<
     KV<mc_op_get, McGetReply>,
@@ -99,7 +101,8 @@ using ReplyOpMapping = List<
     KV<mc_op_flushre, McFlushReReply>,
     KV<mc_op_flushall, McFlushAllReply>,
     KV<mc_op_gat, McGatReply>,
-    KV<mc_op_gats, McGatsReply>>;
+    KV<mc_op_gats, McGatsReply>,
+    KV<mc_op_meta_commands_get, McMetaCommandsGetReply>>;
 
 /**
  * Given a Request Type T and a Mapping of mc_op_t to Request Type,

@@ -24,6 +24,7 @@
 
 #include <mcrouter/lib/carbon/Stats.h>
 
+#include "mcrouter/lib/network/gen/MemcacheMessages.h"
 #include "mcrouter/lib/network/gen/MemcacheRouteHandleIf.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterStats.h"
 #include "mcrouter/lib/network/gen/MemcacheRoutingGroups.h"

@@ -93,6 +93,9 @@ class McAsciiParserBase {
   State state_{State::UNINIT};
   bool negative_{false};
 
+  const char* keyPieceStart_{nullptr};
+  folly::IOBuf currentKey_;
+
   // Variables used by ragel.
   int savedCs_;
   int errorCs_;
@@ -231,6 +234,9 @@ class McServerAsciiParser : public McAsciiParserBase {
   void consumeStats(folly::IOBuf& buffer);
   void consumeExec(folly::IOBuf& buffer);
 
+  // Meta commands.
+  void consumeMetaCommandsGet(folly::IOBuf& buffer);
+
   // Flush.
   void consumeFlushRe(folly::IOBuf& buffer);
   void consumeFlushAll(folly::IOBuf& buffer);
@@ -239,8 +245,6 @@ class McServerAsciiParser : public McAsciiParserBase {
 
   std::unique_ptr<detail::CallbackBase<McRequestList>> callback_;
 
-  const char* keyPieceStart_{nullptr};
-  folly::IOBuf currentKey_;
   bool noreply_{false};
 
   using RequestVariant = carbon::makeVariantFromList<McRequestList>;
