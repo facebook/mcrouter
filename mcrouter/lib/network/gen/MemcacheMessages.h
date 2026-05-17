@@ -877,6 +877,50 @@ class McGatsReply : public carbon::ReplyCommon, public facebook::memcache::thrif
 
 };
 
+class McMetaCommandsGetReply;
+
+class McMetaCommandsGetRequest : public carbon::RequestCommon, public facebook::memcache::thrift::McMetaCommandsGetRequest {
+ public:
+  using reply_type = McMetaCommandsGetReply;
+
+  static constexpr size_t typeId = 49;
+  static constexpr const char* name = "mg";
+  static constexpr const char* idlName = "Memcache";
+
+  McMetaCommandsGetRequest () = default;
+  McMetaCommandsGetRequest (const McMetaCommandsGetRequest &) = default;
+  McMetaCommandsGetRequest & operator=(const McMetaCommandsGetRequest &) = default;
+  McMetaCommandsGetRequest (McMetaCommandsGetRequest &&) = default;
+  McMetaCommandsGetRequest & operator=(McMetaCommandsGetRequest &&) = default;
+  explicit McMetaCommandsGetRequest (folly::StringPiece sp) {
+    key_ref() = sp;
+  }
+  explicit McMetaCommandsGetRequest (folly::IOBuf&& carbonKey) {
+    key_ref() = std::move(carbonKey);
+  }
+
+  friend class apache::thrift::Cpp2Ops<McMetaCommandsGetRequest>;
+
+};
+
+class McMetaCommandsGetReply : public carbon::ReplyCommon, public facebook::memcache::thrift::McMetaCommandsGetResponse {
+ public:
+
+  static constexpr size_t typeId = 50;
+
+  McMetaCommandsGetReply() = default;
+  McMetaCommandsGetReply(const McMetaCommandsGetReply&) = default;
+  McMetaCommandsGetReply& operator=(const McMetaCommandsGetReply&) = default;
+  McMetaCommandsGetReply(McMetaCommandsGetReply&&) = default;
+  McMetaCommandsGetReply& operator=(McMetaCommandsGetReply&&) = default;
+  explicit McMetaCommandsGetReply(carbon::Result carbonResult) {
+    result_ref() = carbonResult;
+  }
+
+  friend class apache::thrift::Cpp2Ops<McMetaCommandsGetReply>;
+
+};
+
 } // namespace memcache
 } // namespace facebook
 
@@ -1000,6 +1044,12 @@ struct IsCarbonStruct<::facebook::memcache::McGatsRequest> : std::true_type {};
 
 template <>
 struct IsCarbonStruct<::facebook::memcache::McGatsReply> : std::true_type {};
+
+template <>
+struct IsCarbonStruct<::facebook::memcache::McMetaCommandsGetRequest> : std::true_type {};
+
+template <>
+struct IsCarbonStruct<::facebook::memcache::McMetaCommandsGetReply> : std::true_type {};
 } // namespace carbon
 
 namespace facebook {
@@ -1445,6 +1495,28 @@ void visitFields(McGatsReply& self, V&& v);
 
 template <class V>
 void visitFields(const McGatsReply& self, V&& v);
+
+template <class Writer>
+void serialize(const McMetaCommandsGetRequest& self, Writer&& writer);
+
+void deserialize(McMetaCommandsGetRequest& self, carbon::CarbonProtocolReader& reader);
+
+template <class V>
+void visitFields(McMetaCommandsGetRequest& self, V&& v);
+
+template <class V>
+void visitFields(const McMetaCommandsGetRequest& self, V&& v);
+
+template <class Writer>
+void serialize(const McMetaCommandsGetResponse& self, Writer&& writer);
+
+void deserialize(McMetaCommandsGetResponse& self, carbon::CarbonProtocolReader& reader);
+
+template <class V>
+void visitFields(McMetaCommandsGetResponse& self, V&& v);
+
+template <class V>
+void visitFields(const McMetaCommandsGetResponse& self, V&& v);
 } // namespace thrift
 } // namespace memcache
 } // namespace facebook

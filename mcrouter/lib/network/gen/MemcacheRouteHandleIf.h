@@ -58,6 +58,7 @@ class MemcacheRouteHandleIf {
   virtual McReplaceReply route(const McReplaceRequest&) = 0;
   virtual McSetReply route(const McSetRequest&) = 0;
   virtual McTouchReply route(const McTouchRequest&) = 0;
+  virtual McMetaCommandsGetReply route(const McMetaCommandsGetRequest&) = 0;
 
 virtual bool traverse(
     const McAddRequest&,
@@ -115,6 +116,9 @@ virtual bool traverse(
     RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
 virtual bool traverse(
     const McTouchRequest&,
+    RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
+virtual bool traverse(
+    const McMetaCommandsGetRequest&,
     RouteHandleTraverser<MemcacheRouteHandleIf>&) const = 0;
 };
 
@@ -183,6 +187,10 @@ class MemcacheRouteHandle : public MemcacheRouteHandleIf {
     return route_.route(request);
   }
   McTouchReply route(const McTouchRequest& request) override final {
+    return route_.route(request);
+  }
+
+  McMetaCommandsGetReply route(const McMetaCommandsGetRequest& request) override final {
     return route_.route(request);
   }
 
@@ -296,6 +304,12 @@ bool traverse(
 }
 bool traverse(
     const McTouchRequest& request,
+    RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
+    const override final {
+  return route_.traverse(request, traverser);
+}
+bool traverse(
+    const McMetaCommandsGetRequest& request,
     RouteHandleTraverser<MemcacheRouteHandleIf>& traverser)
     const override final {
   return route_.traverse(request, traverser);

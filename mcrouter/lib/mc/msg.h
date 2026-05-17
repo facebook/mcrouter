@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <inttypes.h>
 #include <stdint.h>
 
@@ -48,6 +49,7 @@ typedef enum mc_op_e {
   mc_op_touch,
   mc_op_gat,
   mc_op_gats,
+  mc_op_meta_commands_get,
   mc_nops // placeholder
 } mc_op_t;
 
@@ -114,6 +116,8 @@ static inline const char* mc_op_to_string(const mc_op_t op) {
       return "gat";
     case mc_op_gats:
       return "gats";
+    case mc_op_meta_commands_get:
+      return "mg";
     case mc_nops:
       return "unknown";
   }
@@ -402,6 +406,7 @@ static inline int mc_op_has_key(mc_op_t op) {
     case mc_op_gets:
     case mc_op_gat:
     case mc_op_gats:
+    case mc_op_meta_commands_get:
       return 1;
 
     default:
@@ -440,3 +445,19 @@ const char* mc_req_err_to_string(const mc_req_err_t err);
  * @return mc_res_t code
  */
 mc_res_t mc_res_from_string(const char* result);
+
+constexpr uint64_t MC_META_COMMANDS_FLAG_BASE64_ENCODED_KEY = 1;
+constexpr uint64_t MC_META_COMMANDS_FLAG_RETURN_CAS_TOKEN = 1ull << 1;
+constexpr uint64_t MC_META_COMMANDS_FLAG_RETURN_CLIENT_FLAGS = 1ull << 2;
+constexpr uint64_t MC_META_COMMANDS_FLAG_RETURN_WAS_HIT = 1ull << 3;
+constexpr uint64_t MC_META_COMMANDS_FLAG_RETURN_KEY = 1ull << 4;
+constexpr uint64_t MC_META_COMMANDS_FLAG_RETURN_TIME_SINCE_LAST_ACCESS = 1ull << 5;
+constexpr uint64_t MC_META_COMMANDS_FLAG_USE_NOREPLY_SEMANTICS = 1ull << 6;
+constexpr uint64_t MC_META_COMMANDS_FLAG_RETURN_ITEM_SIZE = 1ull << 7;
+constexpr uint64_t MC_META_COMMANDS_FLAG_RETURN_ITEM_TTL = 1ull << 8;
+constexpr uint64_t MC_META_COMMANDS_FLAG_DO_NOT_BUMP_LRU = 1ull << 9;
+constexpr uint64_t MC_META_COMMANDS_FLAG_RETURN_VALUE = 1ull << 10;
+constexpr uint64_t MC_META_COMMANDS_FLAG_WON_RECACHE = 1ull << 11;
+constexpr uint64_t MC_META_COMMANDS_FLAG_ITEM_IS_STALE = 1ull << 12;
+constexpr uint64_t MC_META_COMMANDS_FLAG_LOST_RECACHE = 1ull << 13;
+constexpr uint64_t MC_META_COMMANDS_FLAG_INVALIDATE_IF_OLDER_CAS = 1ull << 14;

@@ -23,7 +23,7 @@ namespace facebook {
 namespace memcache {
 
 struct MemcacheRouterStatsConfig {
-  static constexpr size_t kNumRequestGroups = 19;
+  static constexpr size_t kNumRequestGroups = 20;
   static constexpr std::array<folly::StringPiece, 1 * kNumRequestGroups>
       sumStatNames{{folly::StringPiece("cmd_add_count"),
                     folly::StringPiece("cmd_append_count"),
@@ -43,7 +43,8 @@ struct MemcacheRouterStatsConfig {
                     folly::StringPiece("cmd_prepend_count"),
                     folly::StringPiece("cmd_replace_count"),
                     folly::StringPiece("cmd_set_count"),
-                    folly::StringPiece("cmd_touch_count")}};
+                    folly::StringPiece("cmd_touch_count"),
+                    folly::StringPiece("cmd_mg_count")}};
   static constexpr std::array<folly::StringPiece, 3 * kNumRequestGroups>
       rateStatNames{{folly::StringPiece("cmd_add"),
                      folly::StringPiece("cmd_append"),
@@ -64,6 +65,7 @@ struct MemcacheRouterStatsConfig {
                      folly::StringPiece("cmd_replace"),
                      folly::StringPiece("cmd_set"),
                      folly::StringPiece("cmd_touch"),
+                     folly::StringPiece("cmd_mg"),
                      folly::StringPiece("cmd_add_out"),
                      folly::StringPiece("cmd_append_out"),
                      folly::StringPiece("cmd_cas_out"),
@@ -83,6 +85,7 @@ struct MemcacheRouterStatsConfig {
                      folly::StringPiece("cmd_replace_out"),
                      folly::StringPiece("cmd_set_out"),
                      folly::StringPiece("cmd_touch_out"),
+                     folly::StringPiece("cmd_mg_out"),
                      folly::StringPiece("cmd_add_out_all"),
                      folly::StringPiece("cmd_append_out_all"),
                      folly::StringPiece("cmd_cas_out_all"),
@@ -101,7 +104,8 @@ struct MemcacheRouterStatsConfig {
                      folly::StringPiece("cmd_prepend_out_all"),
                      folly::StringPiece("cmd_replace_out_all"),
                      folly::StringPiece("cmd_set_out_all"),
-                     folly::StringPiece("cmd_touch_out_all")}};
+                     folly::StringPiece("cmd_touch_out_all"),
+                     folly::StringPiece("cmd_mg_out_all")}};
 
   template <class Request>
   static constexpr size_t getStatGroup();
@@ -219,6 +223,12 @@ template <>
 inline constexpr size_t
 MemcacheRouterStatsConfig::getStatGroup<McTouchRequest>() {
   return 18; // stat group 'touch'
+}
+
+template <>
+inline constexpr size_t
+MemcacheRouterStatsConfig::getStatGroup<McMetaCommandsGetRequest>() {
+  return 19; // stat group 'mg'
 }
 } // namespace memcache
 } // namespace facebook

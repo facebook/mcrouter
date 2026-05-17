@@ -134,6 +134,9 @@ void McClientAsciiParser::initializeReplyParser<McAppendRequest>();
 template <>
 void McClientAsciiParser::initializeReplyParser<McPrependRequest>();
 
+template <>
+void McClientAsciiParser::initializeReplyParser<McMetaCommandsGetRequest>();
+
 template <class Request>
 void McClientAsciiParser::initializeReplyParser() {
   throwLogic(

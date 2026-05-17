@@ -99,6 +99,11 @@ struct ArithmeticLike<facebook::memcache::McLeaseSetRequest> {
 };
 
 template <>
+struct ArithmeticLike<facebook::memcache::McMetaCommandsGetRequest> {
+  static const bool value = false;
+};
+
+template <>
 struct ArithmeticLike<facebook::memcache::McMetagetRequest> {
   static const bool value = false;
 };
@@ -217,6 +222,11 @@ struct DeleteLike<facebook::memcache::McLeaseGetRequest> {
 
 template <>
 struct DeleteLike<facebook::memcache::McLeaseSetRequest> {
+  static const bool value = false;
+};
+
+template <>
+struct DeleteLike<facebook::memcache::McMetaCommandsGetRequest> {
   static const bool value = false;
 };
 
@@ -347,6 +357,12 @@ struct GetLike<facebook::memcache::McLeaseSetRequest> {
 };
 
 template <>
+struct GetLike<facebook::memcache::McMetaCommandsGetRequest> {
+  static const bool value = true;
+  typedef void* Type;
+};
+
+template <>
 struct GetLike<facebook::memcache::McMetagetRequest> {
   static const bool value = true;
   typedef void* Type;
@@ -470,6 +486,11 @@ template <>
 struct UpdateLike<facebook::memcache::McLeaseSetRequest> {
   static const bool value = true;
   typedef void* Type;
+};
+
+template <>
+struct UpdateLike<facebook::memcache::McMetaCommandsGetRequest> {
+  static const bool value = false;
 };
 
 template <>

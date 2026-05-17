@@ -653,5 +653,45 @@ struct McGatsReply {
   6: i16 appSpecificErrorCode
 }
 
+@thrift.DeprecatedUnvalidatedAnnotations{
+  items = {
+    "cpp.virtual": "1"
+  },
+}
+struct McMetaCommandsGetRequest {
+  @thrift.Mixin
+  -1: MemcacheRequestCommon memcacheRequestCommon
+  1: carbon.IOBufKey key
+  2: carbon.ui64 flags
+  3: optional carbon.ui64 casToken
+  4: optional string opaqueToken
+  5: optional i32 vivifyOnMissTTL
+  6: optional i32 refreshIfTTLLessThan
+  7: optional i32 newTTL
+  8: optional carbon.ui64 newCasToken
+}
+@thrift.DeprecatedUnvalidatedAnnotations{
+  items = {
+    "cpp.virtual": "1"
+  },
+}
+struct McMetaCommandsGetResponse {
+  @thrift.Mixin
+  -1: MemcacheReplyCommon memcacheReplyCommon
+  1: carbon_result.Result result
+  2: optional carbon.ui64 casToken
+  3: optional carbon.IOBuf value
+  4: carbon.ui64 flags
+  5: optional carbon.IOBufKey key
+  6: optional string opaqueToken
+  7: optional carbon.ui64 clientFlags
+  8: optional i32 remainingTTL
+  9: optional carbon.ui64 itemSize
+  10: optional i32 lastAccessTime
+  11: optional i32 wasHitBefore
+  12: string message
+  13: i16 appSpecificErrorCode
+}
+
 @cpp.Type{name = "std::unordered_map<std::string, uint64_t>"}
 typedef map<string, carbon.ui64> string_to_carbon_ui64_std_unordered_map

@@ -46,7 +46,7 @@ void McServerRequestContext::replyImpl(
                     RequestFromReplyType<Reply, RequestReplyPairs>,
                     void>) {
     if constexpr (carbon::GetLike<
-                      RequestFromReplyType<Reply, RequestReplyPairs>>::value) {
+                      RequestFromReplyType<Reply, RequestReplyPairs>>::value && !std::is_same_v<RequestFromReplyType<Reply, RequestReplyPairs>, McMetaCommandsGetRequest>) {
       // On error, multi-get parent may assume responsiblity of replying
       if (ctx.moveReplyToParent(
               *reply.result_ref(),

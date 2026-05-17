@@ -9,6 +9,9 @@
 
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/McResUtil.h"
+#include "mcrouter/lib/mc/msg.h"
+#include <cstdio>
+#include <folly/Range.h>
 
 namespace facebook {
 namespace memcache {
@@ -144,6 +147,81 @@ void AsciiSerializedRequest::prepareImpl(const McGatsRequest& request) {
       "\r\n");
 }
 
+void serializeBooleanMetaCommandFlags(char** pos, char** end, uint64_t flags) {
+  struct FlagBit {
+    uint64_t bit;
+    char ch;
+  };
+  static constexpr FlagBit booleanFlags[] = {
+      {MC_META_COMMANDS_FLAG_BASE64_ENCODED_KEY, 'b'},
+      {MC_META_COMMANDS_FLAG_RETURN_CAS_TOKEN, 'c'},
+      {MC_META_COMMANDS_FLAG_RETURN_CLIENT_FLAGS, 'f'},
+      {MC_META_COMMANDS_FLAG_RETURN_WAS_HIT, 'h'},
+      {MC_META_COMMANDS_FLAG_RETURN_KEY, 'k'},
+      {MC_META_COMMANDS_FLAG_RETURN_TIME_SINCE_LAST_ACCESS, 'l'},
+      {MC_META_COMMANDS_FLAG_USE_NOREPLY_SEMANTICS, 'q'},
+      {MC_META_COMMANDS_FLAG_RETURN_ITEM_SIZE, 's'},
+      {MC_META_COMMANDS_FLAG_RETURN_ITEM_TTL, 't'},
+      {MC_META_COMMANDS_FLAG_DO_NOT_BUMP_LRU, 'u'},
+      {MC_META_COMMANDS_FLAG_RETURN_VALUE, 'v'},
+      {MC_META_COMMANDS_FLAG_WON_RECACHE, 'W'},
+      {MC_META_COMMANDS_FLAG_ITEM_IS_STALE, 'X'},
+      {MC_META_COMMANDS_FLAG_LOST_RECACHE, 'Z'},
+      {MC_META_COMMANDS_FLAG_INVALIDATE_IF_OLDER_CAS, 'I'},
+  };
+
+  for (const auto& f : booleanFlags) {
+    if (flags & f.bit) {
+      auto n = snprintf(*pos, *end - *pos, " %c", f.ch);
+      *pos += n;
+    }
+  }
+}
+
+// Meta commands get.
+void AsciiSerializedRequest::prepareImpl(
+    const McMetaCommandsGetRequest& request) {
+  // Build flags string into printBuffer_
+  char* pos = printBuffer_;
+  char* end = printBuffer_ + kMaxBufferLength;
+  uint64_t flags = *request.flags_ref();
+
+  serializeBooleanMetaCommandFlags(&pos, &end, flags);
+
+  if (request.casToken_ref().has_value()) {
+    auto n = snprintf(pos, end - pos, " C%lu", *request.casToken_ref());
+    pos += n;
+  }
+  if (request.newCasToken_ref().has_value()) {
+    auto n = snprintf(pos, end - pos, " E%lu", *request.newCasToken_ref());
+    pos += n;
+  }
+  if (request.vivifyOnMissTTL_ref().has_value()) {
+    auto n =
+        snprintf(pos, end - pos, " N%d", *request.vivifyOnMissTTL_ref());
+    pos += n;
+  }
+  if (request.refreshIfTTLLessThan_ref().has_value()) {
+    auto n = snprintf(
+        pos, end - pos, " R%d", *request.refreshIfTTLLessThan_ref());
+    pos += n;
+  }
+  if (request.newTTL_ref().has_value()) {
+    auto n = snprintf(pos, end - pos, " T%d", *request.newTTL_ref());
+    pos += n;
+  }
+
+  assert(pos < end);
+  addStrings(
+      "mg ",
+      request.key_ref()->fullKey(),
+      folly::StringPiece(printBuffer_, pos));
+  if (request.opaqueToken_ref().has_value()) {
+    addStrings(" O", *request.opaqueToken_ref());
+  }
+   addString("\r\n");
+}
+
 // Update-like ops.
 void AsciiSerializedRequest::prepareImpl(const McSetRequest& request) {
   keyValueRequestCommon("set ", request);
@@ -269,6 +347,7 @@ void AsciiSerializedRequest::prepareImpl(const McFlushAllRequest& request) {
 void AsciiSerializedReply::clear() {
   iovsCount_ = 0;
   iobuf_.reset();
+  iobuf2_.reset();
   auxString_.reset();
 }
 
@@ -852,6 +931,83 @@ void AsciiSerializedReply::prepareImpl(McExecReply&& reply) {
         std::move(*reply.message()));
   } else {
     handleUnexpected(*reply.result(), "exec");
+  }
+}
+
+// Meta commands get
+void AsciiSerializedReply::prepareImpl(
+    McMetaCommandsGetReply&& reply,
+    folly::StringPiece /* key */) {
+  if (isHitResult(*reply.result_ref())) {
+    char* pos = printBuffer_;
+    char* end = printBuffer_ + kMaxBufferLength;
+
+    folly::StringPiece valueStr;
+    if (reply.value_ref().has_value() && !reply.value_ref()->empty()) {
+      valueStr = coalesceAndGetRange(reply.value_ref());
+      pos += snprintf(
+          pos,
+          end - pos,
+          " %zu",
+          valueStr.size());
+    }
+
+    serializeBooleanMetaCommandFlags(&pos, &end, *reply.flags_ref());
+
+    if (reply.casToken_ref().has_value()) {
+      pos += snprintf(pos, end - pos, " c%lu", *reply.casToken_ref());
+    }
+
+    if (reply.clientFlags_ref().has_value()) {
+      pos += snprintf(pos, end - pos, " f%lu", *reply.clientFlags_ref());
+    }
+
+    if (reply.itemSize_ref().has_value()) {
+      pos += snprintf(pos, end - pos, " s%lu", *reply.itemSize_ref());
+    }
+
+    if (reply.remainingTTL_ref().has_value()) {
+      pos += snprintf(pos, end - pos, " t%d", *reply.remainingTTL_ref());
+    }
+
+    if (reply.wasHitBefore_ref().has_value()) {
+      pos += snprintf(pos, end - pos, " h%d", *reply.wasHitBefore_ref());
+    }
+
+    if (reply.lastAccessTime_ref().has_value()) {
+      pos += snprintf(pos, end - pos, " l%d", *reply.lastAccessTime_ref());
+    }
+
+    assert(pos < end);
+    addStrings(
+        valueStr.empty() ? "HD" : "VA",
+        folly::StringPiece(printBuffer_, pos));
+
+    if (reply.opaqueToken_ref().has_value() && !reply.opaqueToken_ref()->empty()) {
+      auxString_ = std::move(*reply.opaqueToken_ref());
+      addStrings(" O", *auxString_);
+    }
+
+    if (reply.key_ref().has_value() && !reply.key_ref()->empty()) {
+      const auto keyStr = reply.key_ref()->fullKey();
+      assert(!iobuf_.has_value());
+      iobuf_ = std::move(reply.key_ref().value().raw());
+      addStrings(" k", keyStr);
+    }
+
+    addString("\r\n");
+
+    if (!valueStr.empty()) {
+      assert(!iobuf2_.has_value());
+      iobuf2_ = std::move(reply.value_ref().value());
+      addStrings(valueStr, "\r\n");
+    }
+  } else if (isMissResult(*reply.result_ref())) {
+    addString("EN\r\n");
+  } else if (isErrorResult(*reply.result_ref())) {
+    handleError(*reply.result_ref(), 0, std::string());
+  } else {
+    handleUnexpected(*reply.result_ref(), "mg");
   }
 }
 

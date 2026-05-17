@@ -2146,6 +2146,210 @@ void visitFields(const McGatsReply& self, V&& v) {
     return;
   }
 }
+
+template <class Writer>
+void serialize(const McMetaCommandsGetRequest& self, Writer&& writer) {
+  writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, self.memcacheRequestCommon_ref());
+  writer.writeField(1 /* field id */, self.key_ref());
+  writer.writeField(2 /* field id */, self.flags_ref());
+  writer.writeField(3 /* field id */, self.casToken_ref());
+  writer.writeField(4 /* field id */, self.opaqueToken_ref());
+  writer.writeField(5 /* field id */, self.vivifyOnMissTTL_ref());
+  writer.writeField(6 /* field id */, self.refreshIfTTLLessThan_ref());
+  writer.writeField(7 /* field id */, self.newTTL_ref());
+  writer.writeField(8 /* field id */, self.newCasToken_ref());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void visitFields(McMetaCommandsGetRequest& self, V&& v) {
+  if (v.enterMixin(1, "MemcacheRequestCommon", *self.memcacheRequestCommon_ref())) {
+    visitFields(*self.memcacheRequestCommon_ref(), std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
+  if (!v.visitField(1, "key", *self.key_ref())) {
+    return;
+  }
+  if (!v.visitField(2, "flags", *self.flags_ref())) {
+    return;
+  }
+  if (!v.visitField(3, "casToken", *self.casToken_ref())) {
+    return;
+  }
+  if (!v.visitField(4, "opaqueToken", *self.opaqueToken_ref())) {
+    return;
+  }
+  if (!v.visitField(5, "vivifyOnMissTTL", *self.vivifyOnMissTTL_ref())) {
+    return;
+  }
+  if (!v.visitField(6, "refreshIfTTLLessThan", *self.refreshIfTTLLessThan_ref())) {
+    return;
+  }
+  if (!v.visitField(7, "newTTL", *self.newTTL_ref())) {
+    return;
+  }
+  if (!v.visitField(8, "newCasToken", *self.newCasToken_ref())) {
+    return;
+  }
+}
+
+template <class V>
+void visitFields(const McMetaCommandsGetRequest& self, V&& v) {
+  if (v.enterMixin(1, "MemcacheRequestCommon", *self.memcacheRequestCommon_ref())) {
+    visitFields(*self.memcacheRequestCommon_ref(), std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
+  if (!v.visitField(1, "key", *self.key_ref())) {
+    return;
+  }
+  if (!v.visitField(2, "flags", *self.flags_ref())) {
+    return;
+  }
+  if (!v.visitField(3, "casToken", *self.casToken_ref())) {
+    return;
+  }
+  if (!v.visitField(4, "opaqueToken", *self.opaqueToken_ref())) {
+    return;
+  }
+  if (!v.visitField(5, "vivifyOnMissTTL", *self.vivifyOnMissTTL_ref())) {
+    return;
+  }
+  if (!v.visitField(6, "refreshIfTTLLessThan", *self.refreshIfTTLLessThan_ref())) {
+    return;
+  }
+  if (!v.visitField(7, "newTTL", *self.newTTL_ref())) {
+    return;
+  }
+  if (!v.visitField(8, "newCasToken", *self.newCasToken_ref())) {
+    return;
+  }
+}
+
+template <class Writer>
+void serialize(const McMetaCommandsGetResponse& self, Writer&& writer) {
+  writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, self.memcacheReplyCommon_ref());
+  writer.writeField(1 /* field id */, self.result_ref());
+  writer.writeField(2 /* field id */, self.casToken_ref());
+  writer.writeField(3 /* field id */, self.value_ref());
+  writer.writeField(4 /* field id */, self.flags_ref());
+  writer.writeField(5 /* field id */, self.key_ref());
+  writer.writeField(6 /* field id */, self.opaqueToken_ref());
+  writer.writeField(7 /* field id */, self.clientFlags_ref());
+  writer.writeField(8 /* field id */, self.remainingTTL_ref());
+  writer.writeField(9 /* field id */, self.itemSize_ref());
+  writer.writeField(10 /* field id */, self.lastAccessTime_ref());
+  writer.writeField(11 /* field id */, self.wasHitBefore_ref());
+  writer.writeField(12 /* field id */, self.message_ref());
+  writer.writeField(13 /* field id */, self.appSpecificErrorCode_ref());
+  writer.writeFieldStop();
+  writer.writeStructEnd();
+}
+
+template <class V>
+void visitFields(McMetaCommandsGetResponse& self, V&& v) {
+  if (v.enterMixin(1, "MemcacheReplyCommon", *self.memcacheReplyCommon_ref())) {
+    visitFields(*self.memcacheReplyCommon_ref(), std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
+  if (!v.visitField(1, "result", *self.result_ref())) {
+    return;
+  }
+  if (!v.visitField(2, "casToken", *self.casToken_ref())) {
+    return;
+  }
+  if (!v.visitField(3, "value", self.value_ref())) {
+    return;
+  }
+  if (!v.visitField(4, "flags", *self.flags_ref())) {
+    return;
+  }
+  if (!v.visitField(5, "key", *self.key_ref())) {
+    return;
+  }
+  if (!v.visitField(6, "opaqueToken", *self.opaqueToken_ref())) {
+    return;
+  }
+  if (!v.visitField(7, "clientFlags", *self.clientFlags_ref())) {
+    return;
+  }
+  if (!v.visitField(8, "remainingTTL", *self.remainingTTL_ref())) {
+    return;
+  }
+  if (!v.visitField(9, "itemSize", *self.itemSize_ref())) {
+    return;
+  }
+  if (!v.visitField(10, "lastAccessTime", *self.lastAccessTime_ref())) {
+    return;
+  }
+  if (!v.visitField(11, "wasHitBefore", *self.wasHitBefore_ref())) {
+    return;
+  }
+  if (!v.visitField(12, "message", *self.message_ref())) {
+    return;
+  }
+  if (!v.visitField(13, "appSpecificErrorCode", *self.appSpecificErrorCode_ref())) {
+    return;
+  }
+}
+
+template <class V>
+void visitFields(const McMetaCommandsGetResponse& self, V&& v) {
+  if (v.enterMixin(1, "MemcacheReplyCommon", *self.memcacheReplyCommon_ref())) {
+    visitFields(*self.memcacheReplyCommon_ref(), std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
+  if (!v.visitField(1, "result", *self.result_ref())) {
+    return;
+  }
+  if (!v.visitField(2, "casToken", *self.casToken_ref())) {
+    return;
+  }
+  if (!v.visitField(3, "value", self.value_ref())) {
+    return;
+  }
+  if (!v.visitField(4, "flags", *self.flags_ref())) {
+    return;
+  }
+  if (!v.visitField(5, "key", *self.key_ref())) {
+    return;
+  }
+  if (!v.visitField(6, "opaqueToken", *self.opaqueToken_ref())) {
+    return;
+  }
+  if (!v.visitField(7, "clientFlags", *self.clientFlags_ref())) {
+    return;
+  }
+  if (!v.visitField(8, "remainingTTL", *self.remainingTTL_ref())) {
+    return;
+  }
+  if (!v.visitField(9, "itemSize", *self.itemSize_ref())) {
+    return;
+  }
+  if (!v.visitField(10, "lastAccessTime", *self.lastAccessTime_ref())) {
+    return;
+  }
+  if (!v.visitField(11, "wasHitBefore", *self.wasHitBefore_ref())) {
+    return;
+  }
+  if (!v.visitField(12, "message", *self.message_ref())) {
+    return;
+  }
+  if (!v.visitField(13, "appSpecificErrorCode", *self.appSpecificErrorCode_ref())) {
+    return;
+  }
+}
+
 } // namespace thrift
 } // namespace memcache
 } // namespace facebook
@@ -3131,6 +3335,56 @@ template <>
 class Cpp2Ops<facebook::memcache::McGatsReply> {
  public:
   typedef facebook::memcache::McGatsReply Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<facebook::memcache::McMetaCommandsGetRequest> {
+ public:
+  typedef facebook::memcache::McMetaCommandsGetRequest Type;
+  static constexpr protocol::TType thriftType() {
+    return protocol::T_STRUCT;
+  }
+  template <class Protocol>
+  static uint32_t write(Protocol* prot, const Type* value) {
+    return value->write(prot);
+  }
+  template <class Protocol>
+  static void read(Protocol* prot, Type* value) {
+    value->read(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSize(Protocol* prot, const Type* value) {
+    return value->serializedSize(prot);
+  }
+  template <class Protocol>
+  static uint32_t serializedSizeZC(Protocol* prot, const Type* value) {
+    return value->serializedSizeZC(prot);
+  }
+};
+
+template <>
+class Cpp2Ops<facebook::memcache::McMetaCommandsGetReply> {
+ public:
+  typedef facebook::memcache::McMetaCommandsGetReply Type;
   static constexpr protocol::TType thriftType() {
     return protocol::T_STRUCT;
   }

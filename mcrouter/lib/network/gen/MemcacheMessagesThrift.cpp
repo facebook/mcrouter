@@ -1603,6 +1603,141 @@ void deserialize(McGatsReply& self, carbon::CarbonProtocolReader& reader) {
   }
   reader.readStructEnd();
 }
+
+void deserialize(McMetaCommandsGetRequest& self, carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case -1: {
+        reader.readField(*self.memcacheRequestCommon_ref(), fieldType);
+        break;
+      }
+      case 1: {
+        reader.readField(self.key_ref(), fieldType);
+        break;
+      }
+      case 2: {
+        reader.readField(self.flags_ref(), fieldType);
+        break;
+      }
+      case 3: {
+        reader.readField(self.casToken_ref(), fieldType);
+        break;
+      }
+      case 4: {
+        reader.readField(self.opaqueToken_ref(), fieldType);
+        break;
+      }
+      case 5: {
+        reader.readField(self.vivifyOnMissTTL_ref(), fieldType);
+        break;
+      }
+      case 6: {
+        reader.readField(self.refreshIfTTLLessThan_ref(), fieldType);
+        break;
+      }
+      case 7: {
+        reader.readField(self.newTTL_ref(), fieldType);
+        break;
+      }
+      case 8: {
+        reader.readField(self.newCasToken_ref(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+void deserialize(McMetaCommandsGetResponse& self, carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case -1: {
+        reader.readField(*self.memcacheReplyCommon_ref(), fieldType);
+        break;
+      }
+      case 1: {
+        reader.readField(self.result_ref(), fieldType);
+        break;
+      }
+      case 2: {
+        reader.readField(self.casToken_ref(), fieldType);
+        break;
+      }
+      case 3: {
+        reader.readField(self.value_ref(), fieldType);
+        break;
+      }
+      case 4: {
+        reader.readField(self.flags_ref(), fieldType);
+        break;
+      }
+      case 5: {
+        reader.readField(self.key_ref(), fieldType);
+        break;
+      }
+      case 6: {
+        reader.readField(self.opaqueToken_ref(), fieldType);
+        break;
+      }
+      case 7: {
+        reader.readField(self.clientFlags_ref(), fieldType);
+        break;
+      }
+      case 8: {
+        reader.readField(self.remainingTTL_ref(), fieldType);
+        break;
+      }
+      case 9: {
+        reader.readField(self.itemSize_ref(), fieldType);
+        break;
+      }
+      case 10: {
+        reader.readField(self.lastAccessTime_ref(), fieldType);
+        break;
+      }
+      case 11: {
+        reader.readField(self.wasHitBefore_ref(), fieldType);
+        break;
+      }
+      case 12: {
+        reader.readField(self.message_ref(), fieldType);
+        break;
+      }
+      case 13: {
+        reader.readField(self.appSpecificErrorCode_ref(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
 } // namespace thrift
 } // namespace memcache
 } // namespace facebook
