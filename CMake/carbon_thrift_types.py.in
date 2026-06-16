@@ -1,0 +1,6 @@
+# Mock file for generated Carbon Python thrift types.
+# Used in OSS tests.
+from enum import Enum
+
+class Result(Enum):
+    OK = 1
