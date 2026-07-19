@@ -118,7 +118,7 @@ class McServerSession
    * Creates a new session.
    * Sessions manage their own lifetime.
    * A session will self-destruct right after an onCloseFinish() callback
-   * call, by which point all of the following must have occured:
+   * call, by which point all of the following must have occurred:
    *   1) All outstanding requests have been replied and pending
    *      writes have been completed/errored out.
    *   2) The outgoing connection is closed, either via an explicit close()
