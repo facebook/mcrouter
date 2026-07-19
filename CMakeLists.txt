@@ -243,14 +243,84 @@ add_fbthrift_cpp_library(
   OPTIONS stack_arguments sync_methods_return_try
 )
 
-# Add source include directories to thrift targets
-# Generated thrift code includes headers like <mcrouter/lib/carbon/Keys.h>
-foreach(thrift_target
-    mcrouter_carbon_result_thrift
+set(THRIFT_TARGETS mcrouter_carbon_result_thrift
     mcrouter_carbon_thrift
     mcrouter_common_thrift
     mcrouter_memcache_thrift
     mcrouter_memcache_service_thrift)
+
+# Build test-only Thrift libraries.
+if(BUILD_TESTS)
+  # HelloGoodbyeService depends on fb303.FacebookService which isn't OSS,
+  # so supply a mock implementation.
+  # This sadly must be copied under the source directory rather than the build directory,
+  # because add_fbthrift_cpp_library() expects Thrift source file paths
+  # to be relative to the source directory root.
+  configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/CMake/fb303.thrift.in"
+    "${CMAKE_CURRENT_SOURCE_DIR}/common/fb303/if/fb303.thrift"
+    @ONLY
+  )
+
+  add_fbthrift_cpp_library(
+    fb303_facebookservice_mock
+    common/fb303/if/fb303.thrift
+  )
+
+  add_fbthrift_cpp_library(
+    mcrouter_hello_goodbye_thrift
+    mcrouter/lib/carbon/example/gen/HelloGoodbye.thrift
+    DEPENDS
+    mcrouter_carbon_thrift
+    mcrouter_carbon_result_thrift
+    mcrouter_common_thrift
+  )
+
+  add_fbthrift_cpp_library(
+    mcrouter_hello_goodbye_service_thrift
+    mcrouter/lib/carbon/example/gen/HelloGoodbyeService.thrift
+    DEPENDS
+    fb303_facebookservice_mock
+    mcrouter_hello_goodbye_thrift
+    SERVICES
+    HelloGoodbye
+    OPTIONS stack_arguments sync_methods_return_try
+  )
+
+  add_library(
+    mcrouter_hello_goodbye
+    mcrouter/lib/carbon/example/gen/HelloGoodbyeRouterInfo.cpp
+    mcrouter/lib/carbon/example/gen/HelloGoodbyeRouterInfo-BuildExtraProvider.cpp
+    mcrouter/lib/carbon/example/gen/HelloGoodbyeRouterInfo-ExternTemplate.cpp
+    mcrouter/lib/carbon/example/gen/HelloGoodbyeMessages.cpp
+    mcrouter/lib/carbon/example/gen/HelloGoodbyeMessagesThrift.cpp
+  )
+
+  target_link_libraries(
+    mcrouter_hello_goodbye
+    PUBLIC
+    mcrouter_hello_goodbye_service_thrift
+  )
+
+
+  add_fbthrift_cpp_library(
+    mcrouter_carbon_test_thrift
+    mcrouter/lib/network/test/gen/CarbonTest.thrift
+    DEPENDS
+    mcrouter_carbon_thrift
+    mcrouter_carbon_result_thrift
+  )
+
+  list(APPEND THRIFT_TARGETS
+    mcrouter_hello_goodbye_thrift
+    mcrouter_hello_goodbye_thrift
+    mcrouter_carbon_test_thrift
+  )
+endif()
+
+# Add source include directories to thrift targets
+# Generated thrift code includes headers like <mcrouter/lib/carbon/Keys.h>
+foreach(thrift_target ${THRIFT_TARGETS})
   target_include_directories(${thrift_target}
     PUBLIC
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
@@ -574,8 +644,10 @@ install(
 if(BUILD_TESTS)
   enable_testing()
   find_package(GTest CONFIG REQUIRED)
+  include(GoogleTest)
 
-  # Add test subdirectories when ready
-  # add_subdirectory(mcrouter/lib/test)
-  # add_subdirectory(mcrouter/test)
+  add_subdirectory(mcrouter/lib/test)
+  add_subdirectory(mcrouter/lib/network/test)
+  add_subdirectory(mcrouter/routes/test)
+  add_subdirectory(mcrouter/test)
 endif()
