@@ -36,7 +36,7 @@ class McrouterManager;
 class ProxyThread;
 
 /**
- * Class to to read CPU metrics of the mcrouter proxy threads
+ * Class to read CPU metrics of the mcrouter proxy threads
  * based on a FunctionScheduler
  */
 class CpuStatsWorker {
