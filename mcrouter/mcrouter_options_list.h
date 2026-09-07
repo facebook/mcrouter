@@ -217,7 +217,7 @@ MCROUTER_OPTION_INTEGER(
     1000,
     "file-observer-sleep-before-update-ms",
     no_short,
-    "How long to sleep for after an update occured"
+    "How long to sleep for after an update occurred"
     " (a hack to avoid partial writes).")
 
 MCROUTER_OPTION_INTEGER(
