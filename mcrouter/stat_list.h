@@ -179,6 +179,7 @@ STUI(dev_null_requests, 0, 1)
 #define GROUP ods_stats | detailed_stats | count_stats
 STUI(rate_limited_log_count, 0, 1)
 STUI(load_balancer_load_reset_count, 0, 1)
+STUI(untainted_client_request_dropped_count, 0, 1)
 #undef GROUP
 #define GROUP count_stats
 STUI(request_sent_count, 0, 1)

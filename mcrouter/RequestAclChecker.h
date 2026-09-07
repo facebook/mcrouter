@@ -31,13 +31,17 @@ class RequestAclChecker {
         "RequestAclChecker should not be used for McDeleteRequest");
     if constexpr (folly::IsOneOf<Request, McExecRequest>::value) {
       return requestAclCheckerEnable_ &&
-          isRefreshCommand(req.key_ref()->routingKey());
+          isRefreshCommand(req.key()->routingKey());
     } else {
       return requestAclCheckerEnable_ &&
           !requestAclCheckCb_(
-                 ctx.getThriftRequestContext(), req.key_ref()->routingKey());
+                 ctx.getThriftRequestContext(), req.key()->routingKey());
     }
   }
+
+  /* Determines if this request is coming from localhost */
+  static bool isLocalRequest(
+      const folly::Optional<struct sockaddr_storage>& address) noexcept;
 
   template <class Request, class Callback>
   void reply(Callback&& ctx) const {
@@ -59,7 +63,7 @@ class RequestAclChecker {
     } else {
       // TODO: Change this error code when T67679592 is done
       auto reply = ReplyT<Request>{carbon::Result::BAD_FLAGS};
-      reply.message_ref() = "Permission Denied";
+      reply.message() = "Permission Denied";
       Callback::reply(std::forward<Callback>(ctx), std::move(reply));
     }
   }
@@ -70,10 +74,6 @@ class RequestAclChecker {
 
   /* Determines if the command is of the form "refresh prefix-acl" */
   static bool isRefreshCommand(const folly::StringPiece cmd) noexcept;
-
-  /* Determines if this request is coming from localhost */
-  static bool isLocalRequest(
-      const folly::Optional<struct sockaddr_storage>& address) noexcept;
 
   const bool requestAclCheckerEnable_;
   const MemcacheRequestAclCheckerCallback requestAclCheckCb_;

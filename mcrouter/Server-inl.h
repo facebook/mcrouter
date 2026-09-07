@@ -22,6 +22,9 @@
 #include "mcrouter/Proxy.h"
 #include "mcrouter/ServerOnRequest.h"
 #include "mcrouter/StandaloneConfig.h"
+#ifndef MCROUTER_OSS_BUILD
+#include "mcrouter/facebook/ServerSecurity.h"
+#endif
 #include "mcrouter/ThriftAcceptor.h"
 #include "mcrouter/ThriftObserver.h"
 #include "mcrouter/config.h"
@@ -110,7 +113,9 @@ void serverInit(
       standaloneOpts.key_client_binding_enable,
       router.runtimeFeatures_.enableReplySource,
       standaloneOpts.key_client_binding_nonlookaside_enable,
-      standaloneOpts.key_client_binding_nonlookaside_verifier));
+      standaloneOpts.key_client_binding_nonlookaside_verifier,
+      standaloneOpts.drop_untainted_client_requests,
+      proxy));
 
   worker.setOnConnectionAccepted(
       [proxy, &aclChecker](McServerSession& session) mutable {
@@ -328,6 +333,9 @@ bool runServerDual(
           : router->createSameThreadClient(
                 0 /* maximum_outstanding_requests */);
 
+      auto* proxy = router->getProxyBase(carbonRouterClients.size());
+      CHECK_NE(proxy, nullptr);
+
       serverOnRequestMap.emplace(
           evb,
           std::make_shared<ServerOnRequest<RouterInfo>>(
@@ -341,7 +349,9 @@ bool runServerDual(
               standaloneOpts.key_client_binding_enable,
               router->runtimeFeatures_.enableReplySource,
               standaloneOpts.key_client_binding_nonlookaside_enable,
-              standaloneOpts.key_client_binding_nonlookaside_verifier));
+              standaloneOpts.key_client_binding_nonlookaside_verifier,
+              standaloneOpts.drop_untainted_client_requests,
+              proxy));
       carbonRouterClients.push_back(std::move(routerClient));
     }
     CHECK_EQ(carbonRouterClients.size(), mcrouterOpts.num_proxies);
@@ -423,6 +433,35 @@ bool runServerDual(
     thriftServer->watchTicketPathForChanges(
         standaloneOpts.tls_ticket_key_seed_path);
     thriftServer->setStopWorkersOnStopListening(false);
+
+#ifndef MCROUTER_OSS_BUILD
+    // Must follow setInterface, which SAP reads the service name from.
+    if (standaloneOpts.sap_install_enable) {
+      bool installed = false;
+      try {
+        installed = installServerAuthorization(
+            *thriftServer, standaloneOpts.sap_caller_id);
+      } catch (const std::exception& e) {
+        // Authorization only throws when its own config marks the install
+        // fail-closed, so serving without it would defeat that.
+        LOG(ERROR) << "Authorization install failed, refusing to serve: "
+                   << e.what();
+        router->shutdown();
+        freeAllRouters();
+        return false;
+      }
+      // Serving with the drop on but no identities would refuse every
+      // request; SAP's kill switch must not become a total outage here.
+      if (!installed && standaloneOpts.drop_untainted_client_requests) {
+        LOG(ERROR)
+            << "Authorization declined to install while "
+               "drop-untainted-client-requests is set; refusing to serve";
+        router->shutdown();
+        freeAllRouters();
+        return false;
+      }
+    }
+#endif
 
     // Get acl checker for AsyncMcServer
     auto aclChecker = detail::getAclChecker(mcrouterOpts, standaloneOpts);

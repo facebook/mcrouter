@@ -309,7 +309,6 @@ MCROUTER_OPTION_INTEGER(
     no_short,
     "core-mutiplier logic is applied if std::hardware_concurrency >= core_multiplier_threshold.")
 
-// ONLY ENABLED FOR SHADOW TESTING WHEN USING PROXY
 MCROUTER_OPTION_TOGGLE(
     key_client_binding_enable,
     false,
@@ -333,6 +332,36 @@ MCROUTER_OPTION_STRING(
     no_short,
     "Service identity used to verify request CATs on the non-lookaside KCB "
     "path. Must match the verifier the tokens are minted for.")
+
+// ONLY ENABLED FOR THE HATCH PROXY TIER
+MCROUTER_OPTION_TOGGLE(
+    sap_install_enable,
+    false,
+    "sap-install-enable",
+    no_short,
+    "If true, install the Service Authorization Platform on the thrift "
+    "server to resolve client identities and their contextual attributes. "
+    "Requires use_thrift.")
+
+MCROUTER_OPTION_STRING(
+    sap_caller_id,
+    "mcrouter",
+    "sap-caller-id",
+    no_short,
+    "Caller id SAP tags its install telemetry with (ODS entity "
+    "`sap-caller-<id>`, Scuba `service_authorization_platform_installation`). "
+    "Does not affect the identity SAP authorizes as.")
+
+// ONLY ENABLED FOR THE HATCH PROXY TIER
+MCROUTER_OPTION_TOGGLE(
+    drop_untainted_client_requests,
+    false,
+    "drop-untainted-client-requests",
+    no_short,
+    "If true, refuse any request whose connection carries no thatch identity. "
+    "Requires sap_install_enable. Identities resolve only on the thrift "
+    "server, so this also refuses all non-loopback traffic on the memcache "
+    "port.")
 
 #ifdef ADDITIONAL_STANDALONE_OPTIONS_FILE
 #include ADDITIONAL_STANDALONE_OPTIONS_FILE

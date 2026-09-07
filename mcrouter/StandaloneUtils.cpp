@@ -145,6 +145,18 @@ bool areOptionsValid(
     return false;
   }
 
+  if (standaloneOpts.sap_install_enable && !standaloneOpts.use_thrift) {
+    LOG(ERROR) << "sap-install-enable requires use-thrift";
+    return false;
+  }
+  // Without SAP no connection resolves an identity, so the drop would refuse
+  // every request.
+  if (standaloneOpts.drop_untainted_client_requests &&
+      !standaloneOpts.sap_install_enable) {
+    LOG(ERROR) << "drop-untainted-client-requests requires sap-install-enable";
+    return false;
+  }
+
   if (opts.keepalive_idle_s <= 0 || opts.keepalive_interval_s <= 0 ||
       opts.keepalive_cnt < 0) {
     LOG(ERROR) << "invalid keepalive options";

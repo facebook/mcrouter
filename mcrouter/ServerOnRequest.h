@@ -17,11 +17,13 @@
 #include "core_infra_security/thrift_authentication_module/ClientIdentifierHelper.h"
 #include "crypto/cat/cpp/protocol/CryptoAuthTokenRetriever.h"
 #include "infrasec/authorization/IdentityUtil.h"
+#include "mcrouter/facebook/ServerSecurity.h"
 #include "mcrouter/facebook/granular_acl/detail/CryptoAuthTokenHelper.h"
 #include "ucache/protocol/UcacheReplySourceTypes.h"
 #endif
 
 #include "mcrouter/CarbonRouterClient.h"
+#include "mcrouter/ProxyBase.h"
 #include "mcrouter/RequestAclChecker.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/carbon/MessageCommon.h"
@@ -30,6 +32,7 @@
 #include "mcrouter/lib/network/CaretHeader.h"
 #include "mcrouter/lib/network/McThriftContext.h"
 #include "mcrouter/lib/network/gen/MemcacheMessages.h"
+#include "mcrouter/stats.h"
 
 namespace facebook {
 namespace memcache {
@@ -37,6 +40,7 @@ namespace mcrouter {
 
 #ifndef MCROUTER_OSS_BUILD
 namespace detail {
+constexpr std::string_view kInternalGetPrefix = "__mcrouter__.";
 // Non-lookaside KCB: returns the kcb_identity thrift header value iff the
 // *verified* request CAT vouches a MEMCACHE_ID identity equal to it (mirrors
 // ucache KeyClientBinder).
@@ -101,6 +105,32 @@ inline std::optional<std::string> rawKcbIdentityHeader(
   }
   return it->second;
 }
+
+// Admin and __mcrouter__.* service-info commands carry no client identity, so
+// the taint check exempts them from localhost. Deliberately narrow: a broader
+// loopback exemption would hand every co-located process full data-plane
+// access on a host that shares the network namespace.
+template <class Request>
+bool isAdminRequest(const Request& req) {
+  if constexpr (folly::IsOneOf<Request, McExecRequest>::value) {
+    return true;
+  } else if constexpr (folly::IsOneOf<Request, McGetRequest>::value) {
+    return req.key()->fullKey().startsWith(kInternalGetPrefix);
+  } else {
+    return false;
+  }
+}
+
+// McServerSession leaves the address default-constructed when getPeerAddress
+// throws at accept, and getAddress() then throws bad_variant_access.
+template <class Callback>
+bool isLocalPeer(Callback& ctx) noexcept {
+  try {
+    return RequestAclChecker::isLocalRequest(ctx.getPeerSocketAddress());
+  } catch (const std::exception&) {
+    return false;
+  }
+}
 } // namespace detail
 #endif
 
@@ -138,7 +168,9 @@ class ServerOnRequest {
       bool enableKeyClientBinding = false,
       bool enableReplySource = false,
       bool enableKeyClientBindingNonLookaside = false,
-      std::string keyClientBindingNonLookasideVerifier = "ucache")
+      std::string keyClientBindingNonLookasideVerifier = "ucache",
+      bool dropUntaintedClientRequests = false,
+      ProxyBase* proxy = nullptr)
       : client_(client),
         eventBase_(eventBase),
         retainSourceIp_(retainSourceIp),
@@ -148,7 +180,9 @@ class ServerOnRequest {
         enableReplySource_(enableReplySource),
         enableKeyClientBindingNonLookaside_(enableKeyClientBindingNonLookaside),
         keyClientBindingNonLookasideVerifier_(
-            std::move(keyClientBindingNonLookasideVerifier)) {
+            std::move(keyClientBindingNonLookasideVerifier)),
+        dropUntaintedClientRequests_(dropUntaintedClientRequests),
+        proxy_(proxy) {
     if constexpr (RouterInfo::useRequestAclChecker) {
       aclChecker_ = std::make_unique<RequestAclChecker>(
           statsHandler, requestAclCheckerEnable);
@@ -239,6 +273,31 @@ class ServerOnRequest {
       ReplyFunction<Callback, Request> replyFn,
       const CaretMessageInfo* headerInfo = nullptr,
       const folly::IOBuf* reqBuffer = nullptr) {
+#ifndef MCROUTER_OSS_BUILD
+    // Probes are carved out so monitoring keeps working on a tier that drops
+    // everything else. mcVersion reaches send() over thrift but not over
+    // AsyncMcServer, which has its own overload below.
+    if constexpr (!folly::IsOneOf<Request, McStatsRequest, McVersionRequest>::
+                      value) {
+      if (FOLLY_UNLIKELY(dropUntaintedClientRequests_)) {
+        if (isUntaintedRequest(ctx.getThriftRequestContext()) &&
+            // Both are read, not consumed: send() still moves them below.
+            // NOLINTNEXTLINE(facebook-hte-MissingStdForward)
+            !(detail::isAdminRequest(req) && detail::isLocalPeer(ctx))) {
+          if (proxy_ != nullptr) {
+            proxy_->stats().incrementSafe(
+                untainted_client_request_dropped_count_stat);
+          }
+          XLOG_EVERY_MS(WARNING, 10000)
+              << "Dropping untainted request, no tainted identity on connection";
+          auto reply = ReplyT<Request>{carbon::Result::BAD_FLAGS};
+          reply.message() = "Permission Denied, untainted request";
+          Callback::reply(std::forward<Callback>(ctx), std::move(reply));
+          return;
+        }
+      }
+    }
+#endif
     if constexpr (
         RouterInfo::useRequestAclChecker &&
         !folly::IsOneOf<Request, McDeleteRequest>::value) {
@@ -318,15 +377,15 @@ class ServerOnRequest {
 #ifndef MCROUTER_OSS_BUILD
       if constexpr (HasReplySourceBitMaskTrait<ReplyT<Request>>::value) {
         if (enableReplySource_) {
-          auto replySourceBitMask = *reply.replySourceBitMask_ref();
+          auto replySourceBitMask = *reply.replySourceBitMask();
           if (replySourceBitMask) {
-            reply.replySourceBitMask_ref() =
-                (reply.replySourceBitMask_ref().value() |
+            reply.replySourceBitMask() =
+                (reply.replySourceBitMask().value() |
                  (1U << static_cast<uint32_t>(
                       facebook::ucache::proto::UcacheReplySourceTypes::
                           McrouterStandalone)));
           } else {
-            reply.replySourceBitMask_ref() =
+            reply.replySourceBitMask() =
                 (1U << static_cast<uint32_t>(
                      facebook::ucache::proto::UcacheReplySourceTypes::
                          McrouterStandalone));
@@ -363,6 +422,8 @@ class ServerOnRequest {
   const bool enableReplySource_{false};
   const bool enableKeyClientBindingNonLookaside_{false};
   const std::string keyClientBindingNonLookasideVerifier_{"ucache"};
+  const bool dropUntaintedClientRequests_{false};
+  ProxyBase* const proxy_{nullptr};
 #ifndef MCROUTER_OSS_BUILD
   // Verifies request CATs for the non-lookaside KCB path. Null unless
   // enableKeyClientBindingNonLookaside_ is set.
