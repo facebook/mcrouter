@@ -31,6 +31,15 @@
 #if defined(__linux__) && !defined(ANDROID) && !defined(MCROUTER_OSS_BUILD)
 #include "mcrouter/lib/network/facebook/XdpTransport.h"
 #endif
+// Opt-in: instantiating another transport through createDestinationRoute costs
+// every RouterInfo in fbcode a full destination-route template tree, and only
+// metaroce builds need it. Enable with
+// `-c cxx.extra_cxxflags=-DMCROUTER_ENABLE_METAROCE`.
+#if defined(MCROUTER_ENABLE_METAROCE) && defined(__linux__) && \
+    !defined(ANDROID) && !defined(MCROUTER_OSS_BUILD)
+#include "mcrouter/lib/network/facebook/MetaRoceTransport-inl.h"
+#include "mcrouter/lib/network/facebook/MetaRoceTransport.h"
+#endif
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/routes/AllFastestRouteFactory.h"
 #include "mcrouter/routes/AsynclogRoute.h"
@@ -411,6 +420,26 @@ McRouteHandleProvider<RouterInfo>::makePool(
 #if defined(__linux__) && !defined(ANDROID) && !defined(MCROUTER_OSS_BUILD)
         } else if (ap->getProtocol() == mc_xdp_protocol) {
           using Transport = XdpTransport;
+          auto destResult = createDestinationRoute<Transport>(
+              std::move(ap),
+              timeout,
+              connectTimeout,
+              qosClass,
+              qosPath,
+              nameSp,
+              i,
+              poolStatIndex,
+              disableRequestDeadlineCheck,
+              poolTkoTracker,
+              keepRoutingPrefix,
+              idx);
+          accessPointsSet.insert(destResult.second);
+          addDestination(std::move(destResult.first));
+#endif
+#if defined(MCROUTER_ENABLE_METAROCE) && defined(__linux__) && \
+    !defined(ANDROID) && !defined(MCROUTER_OSS_BUILD)
+        } else if (ap->getProtocol() == mc_metaroce_protocol) {
+          using Transport = MetaRoceTransport;
           auto destResult = createDestinationRoute<Transport>(
               std::move(ap),
               timeout,

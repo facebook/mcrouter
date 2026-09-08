@@ -61,6 +61,10 @@ mc_protocol_t parseProtocol(folly::StringPiece str) {
     return mc_thrift_protocol;
   } else if (str == "xdp") {
     return mc_xdp_protocol;
+#ifndef MCROUTER_OSS_BUILD
+  } else if (str == "metaroce") {
+    return mc_metaroce_protocol;
+#endif
   }
   throw std::runtime_error("Invalid protocol");
 }

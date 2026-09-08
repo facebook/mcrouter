@@ -304,6 +304,10 @@ void ProxyDestination<Transport>::initializeTransport() {
   }
   options.useJemallocNodumpAllocator = opts.jemalloc_nodump_buffers;
   options.xdpTxTruncateBytes = opts.xdp_tx_truncate_bytes;
+#ifndef MCROUTER_OSS_BUILD
+  options.metaroceRtoMs = opts.metaroce_rto_ms;
+  options.metaroceStatsLogEvery = opts.metaroce_stats_log_every;
+#endif
   if (accessPoint()->compressed()) {
     if (auto codecManager = proxy().router().getCodecManager()) {
       options.compressionCodecMap =

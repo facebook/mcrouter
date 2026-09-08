@@ -81,6 +81,11 @@ std::shared_ptr<CommonAccessPointAttributes> getCommonAccessPointAttributes(
       protocol = mc_thrift_protocol;
     } else if (equalStr("xdp", str, folly::AsciiCaseInsensitive())) {
       protocol = mc_xdp_protocol;
+#if defined(MCROUTER_ENABLE_METAROCE) && defined(__linux__) && \
+    !defined(ANDROID) && !defined(MCROUTER_OSS_BUILD)
+    } else if (equalStr("metaroce", str, folly::AsciiCaseInsensitive())) {
+      protocol = mc_metaroce_protocol;
+#endif
     } else {
       throwLogic("Unknown protocol '{}'", str);
     }

@@ -891,6 +891,32 @@ MCROUTER_OPTION_INTEGER(
     "request is rejected with LOCAL_ERROR. 0 means no cap (clamp to the jumbo "
     "buffer size). Default 3072 (3K).")
 
+#ifndef MCROUTER_OSS_BUILD
+MCROUTER_OPTION_INTEGER(
+    size_t,
+    metaroce_rto_ms,
+    20,
+    "metaroce-rto-ms",
+    no_short,
+    "MetaRoCE client: initial retransmission timeout in milliseconds, doubled "
+    "per retransmit. Must exceed the round-trip time to the destination or "
+    "every reply arrives after the RTO has already fired, so each request is "
+    "retransmitted and the congestion window never opens. The 20ms default "
+    "suits an intra-datacenter path; raise it for longer paths (a cross-region "
+    "path at ~27ms RTT needs ~150).")
+
+MCROUTER_OPTION_INTEGER(
+    size_t,
+    metaroce_stats_log_every,
+    100000,
+    "metaroce-stats-log-every",
+    no_short,
+    "MetaRoCE client: log per-connection transport stats (cwnd, retransmits, "
+    "timeouts) once per this many requests on that connection. The counter is "
+    "per proxy thread, so a short bring-up run never reaches a large value and "
+    "logs nothing; lower it when debugging.")
+#endif
+
 MCROUTER_OPTION_TOGGLE(
     enable_axonlog,
     false,

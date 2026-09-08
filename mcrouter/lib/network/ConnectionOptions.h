@@ -153,6 +153,22 @@ struct ConnectionOptions {
    * buffer size). Plumbed from the xdp_tx_truncate_bytes mcrouter option.
    */
   size_t xdpTxTruncateBytes{0};
+
+#ifndef MCROUTER_OSS_BUILD
+  /**
+   * MetaRoCE client: initial retransmission timeout in milliseconds. Must
+   * exceed the RTT to the destination. Plumbed from the metaroce_rto_ms
+   * mcrouter option; 0 leaves the engine default.
+   */
+  size_t metaroceRtoMs{0};
+
+  /**
+   * MetaRoCE client: log per-connection transport stats once per this many
+   * requests. Plumbed from the metaroce_stats_log_every mcrouter option; 0
+   * leaves the transport default.
+   */
+  size_t metaroceStatsLogEvery{0};
+#endif
 };
 } // namespace memcache
 } // namespace facebook

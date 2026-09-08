@@ -20,6 +20,9 @@ typedef enum mc_protocol_e {
   mc_caret_protocol = 4,
   mc_thrift_protocol = 5,
   mc_xdp_protocol = 6,
+#ifndef MCROUTER_OSS_BUILD
+  mc_metaroce_protocol = 7,
+#endif
   mc_nprotocols, // placeholder
 } mc_protocol_t;
 
@@ -34,6 +37,10 @@ static inline mc_protocol_t mc_string_to_protocol(const char* str) {
     return mc_thrift_protocol;
   } else if (!strcmp(str, "xdp")) {
     return mc_xdp_protocol;
+#ifndef MCROUTER_OSS_BUILD
+  } else if (!strcmp(str, "metaroce")) {
+    return mc_metaroce_protocol;
+#endif
   } else {
     return mc_unknown_protocol;
   }
@@ -51,6 +58,10 @@ static inline const char* mc_protocol_to_string(const mc_protocol_t value) {
       return "thrift";
     case mc_xdp_protocol:
       return "xdp";
+#ifndef MCROUTER_OSS_BUILD
+    case mc_metaroce_protocol:
+      return "metaroce";
+#endif
     case mc_unknown_protocol:
     case mc_nprotocols:
     default:
