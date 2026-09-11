@@ -581,7 +581,13 @@ CarbonRouterInstance<RouterInfo>::createConfigBuilder() {
   std::string config;
   std::string path;
   std::string error;
-  if (configApi_->getConfigFile(config, path)) {
+  if (!configApi_->getConfigFile(config, path)) {
+    MC_LOG_FAILURE(
+        opts(),
+        failure::Category::kBadEnvironment,
+        "Can not read config from {}",
+        path);
+  } else {
     try {
       // assume default_route, default_region and default_cluster are same for
       // each proxy
@@ -595,11 +601,6 @@ CarbonRouterInstance<RouterInfo>::createConfigBuilder() {
       error = e.what();
     }
   }
-  MC_LOG_FAILURE(
-      opts(),
-      failure::Category::kBadEnvironment,
-      "Can not read config from {}",
-      path);
   configFailures_.store(
       configFailures_.load(std::memory_order_relaxed) + 1,
       std::memory_order_relaxed);
