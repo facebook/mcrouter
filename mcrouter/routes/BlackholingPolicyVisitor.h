@@ -64,7 +64,7 @@ class BlackholingPolicyVisitor {
 
  private:
   bool eval_;
-  const folly::dynamic policyMap_;
+  const folly::dynamic& policyMap_;
 
   template <class T>
   bool evaluatePolicies(const folly::dynamic& dArray, const T& t) {
