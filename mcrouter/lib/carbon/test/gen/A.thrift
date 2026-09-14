@@ -21,6 +21,9 @@ include "mcrouter/lib/carbon/test/gen/B.thrift"
 
 cpp_include "<mcrouter/lib/carbon/CarbonProtocolReader.h>"
 
+@thrift.AllowLegacyMissingUris
+package;
+
 namespace cpp2 carbon.test.A.thrift
 namespace py3 carbon.test.A.thrift
 

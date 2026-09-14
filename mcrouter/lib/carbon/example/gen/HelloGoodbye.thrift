@@ -20,6 +20,9 @@ include "mcrouter/lib/network/gen/Common.thrift"
 
 cpp_include "<mcrouter/lib/carbon/CarbonProtocolReader.h>"
 
+@thrift.AllowLegacyMissingUris
+package;
+
 namespace cpp2 hellogoodbye.thrift
 namespace py3 hellogoodbye.thrift
 
