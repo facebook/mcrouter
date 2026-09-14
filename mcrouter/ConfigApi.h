@@ -169,7 +169,7 @@ class ConfigApi : public ConfigApiIf {
    * Save a piece of config source to disk.
    *
    * @param sourcePrefix  Where this config comes from (e.g. file).
-   * @param name          Name of this peice of config.
+   * @param name          Name of this piece of config.
    *                      NOTE: sourcePrefix + name should uniquely identify
    *                      this config source.
    * @param contents      The actual config.
@@ -191,7 +191,7 @@ class ConfigApi : public ConfigApiIf {
    * Reads the given config source from backup file.
    *
    * @param sourcePrefix  Where this config comes from (e.g. file).
-   * @param name          Name of this peice of config.
+   * @param name          Name of this piece of config.
    * @param contents      Output parameter that will hold the content of the
    *                      backup file
    *

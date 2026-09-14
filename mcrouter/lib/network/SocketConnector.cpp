@@ -49,7 +49,7 @@ class ConnectHelper : public folly::AsyncSocket::ConnectCallback,
  private:
   // the async socket to connect
   folly::AsyncSocket::UniquePtr socket_;
-  // promise we will fullfill
+  // promise we will fulfill
   folly::Promise<folly::AsyncSocket::UniquePtr> promise_;
 };
 
