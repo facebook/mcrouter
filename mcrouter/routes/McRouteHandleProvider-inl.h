@@ -29,6 +29,20 @@
 #include "mcrouter/lib/network/SecurityOptions.h"
 #include "mcrouter/lib/network/ThriftTransport.h"
 #if defined(__linux__) && !defined(ANDROID) && !defined(MCROUTER_OSS_BUILD)
+// Must precede the transports: MessageTypeTag is consulted from an
+// `if constexpr` inside their sendSync templates, so a specialisation declared
+// after the point of instantiation is not picked up. UdpWireFormat.h carries
+// only the memcache tags; without the two below, MessageTypeTag<tao::proto::*>
+// resolves to the primary template (UNKNOWN) and every TAO request returns
+// LOCAL_ERROR without reaching the wire.
+//
+// Opt-in because these pull the TAO/Ucache carbon codegen in, which only
+// routers that send those families over XDP or MetaRoCE need. Enable with
+// `-c cxx.extra_cxxflags=-DMCROUTER_ENABLE_XDP_TAO_TAGS`.
+#if defined(MCROUTER_ENABLE_XDP_TAO_TAGS)
+#include "mcrouter/lib/network/facebook/UdpWireFormatTao.h"
+#include "mcrouter/lib/network/facebook/UdpWireFormatUcache.h"
+#endif
 #include "mcrouter/lib/network/facebook/XdpTransport.h"
 #endif
 // Opt-in: instantiating another transport through createDestinationRoute costs
