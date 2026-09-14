@@ -653,5 +653,5 @@ struct McGatsReply {
   6: i16 appSpecificErrorCode
 }
 
-@cpp.Type{name = "std::unordered_map<std::string, uint64_t>"}
+@cpp.Type{template = "std::unordered_map"}
 typedef map<string, carbon.ui64> string_to_carbon_ui64_std_unordered_map

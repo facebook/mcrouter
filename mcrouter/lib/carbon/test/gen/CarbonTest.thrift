@@ -278,43 +278,43 @@ struct StructWithOptionalEnumInt8 {
   2: optional EnumInt8 testEmptyEnum
 }
 
-@cpp.Type{name = "std::unordered_map<std::string, std::string>"}
+@cpp.Type{template = "std::unordered_map"}
 typedef map<string, string> string_to_string_std_unordered_map
-@cpp.Type{name = "std::map<double, double>"}
+@cpp.Type{template = "std::map"}
 typedef map<double, double> double_to_double_std_map
-@cpp.Type{name = "std::map<std::string, std::vector<uint16_t>>"}
+@cpp.Type{template = "std::map"}
 typedef map<string, list<carbon.ui16>> string_to_list_carbon_ui16_std_map
-@cpp.Type{name = "std::unordered_set<std::string>"}
+@cpp.Type{template = "std::unordered_set"}
 typedef set<string> string_std_unordered_set
-@cpp.Type{name = "std::set<uint64_t>"}
+@cpp.Type{template = "std::set"}
 typedef set<carbon.ui64> carbon_ui64_std_set
-@cpp.Type{name = "folly::F14FastMap<std::string, std::string>"}
+@cpp.Type{template = "folly::F14FastMap"}
 typedef map<string, string> string_to_string_folly_F14FastMap
-@cpp.Type{name = "folly::F14NodeMap<std::string, std::string>"}
+@cpp.Type{template = "folly::F14NodeMap"}
 typedef map<string, string> string_to_string_folly_F14NodeMap
-@cpp.Type{name = "folly::F14ValueMap<std::string, std::string>"}
+@cpp.Type{template = "folly::F14ValueMap"}
 typedef map<string, string> string_to_string_folly_F14ValueMap
-@cpp.Type{name = "folly::F14VectorMap<std::string, std::string>"}
+@cpp.Type{template = "folly::F14VectorMap"}
 typedef map<string, string> string_to_string_folly_F14VectorMap
-@cpp.Type{name = "folly::F14FastSet<std::string>"}
+@cpp.Type{template = "folly::F14FastSet"}
 typedef set<string> string_folly_F14FastSet
-@cpp.Type{name = "folly::F14NodeSet<std::string>"}
+@cpp.Type{template = "folly::F14NodeSet"}
 typedef set<string> string_folly_F14NodeSet
-@cpp.Type{name = "folly::F14ValueSet<std::string>"}
+@cpp.Type{template = "folly::F14ValueSet"}
 typedef set<string> string_folly_F14ValueSet
-@cpp.Type{name = "folly::F14VectorSet<std::string>"}
+@cpp.Type{template = "folly::F14VectorSet"}
 typedef set<string> string_folly_F14VectorSet
-@cpp.Type{name = "folly::F14FastMap<std::string, int64_t>"}
+@cpp.Type{template = "folly::F14FastMap"}
 typedef map<string, i64> string_to_i64_folly_F14FastMap
-@cpp.Type{name = "folly::F14NodeMap<std::string, int64_t>"}
+@cpp.Type{template = "folly::F14NodeMap"}
 typedef map<string, i64> string_to_i64_folly_F14NodeMap
-@cpp.Type{name = "folly::F14ValueMap<std::string, int64_t>"}
+@cpp.Type{template = "folly::F14ValueMap"}
 typedef map<string, i64> string_to_i64_folly_F14ValueMap
-@cpp.Type{name = "folly::F14VectorMap<std::string, int64_t>"}
+@cpp.Type{template = "folly::F14VectorMap"}
 typedef map<string, i64> string_to_i64_folly_F14VectorMap
-@cpp.Type{name = "folly::F14FastSet<int64_t>"}
+@cpp.Type{template = "folly::F14FastSet"}
 typedef set<i64> i64_folly_F14FastSet
-@cpp.Type{name = "std::unordered_map<std::string, int64_t>"}
+@cpp.Type{template = "std::unordered_map"}
 typedef map<string, i64> string_to_i64_std_unordered_map
-@cpp.Type{name = "std::unordered_set<int64_t>"}
+@cpp.Type{template = "std::unordered_set"}
 typedef set<i64> i64_std_unordered_set
