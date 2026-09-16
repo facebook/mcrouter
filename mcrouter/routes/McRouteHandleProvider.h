@@ -46,6 +46,7 @@ FOLLY_ATTR_WEAK MemcacheRouterInfo::RouteHandlePtr makeAxonLogRoute(
 template <class RouteHandleIf>
 class ExtraRouteHandleProviderIf;
 class ProxyBase;
+class ProxyDestinationBase;
 
 struct CommonAccessPointAttributes {
   folly::dynamic json;
@@ -232,7 +233,8 @@ class McRouteHandleProvider
       bool disableRequestDeadlineCheck,
       const std::shared_ptr<PoolTkoTracker>& poolTkoTracker,
       bool keepRoutingPrefix,
-      uint32_t idx);
+      uint32_t idx,
+      std::vector<std::weak_ptr<ProxyDestinationBase>>& poolStatsDestinations);
 
   RouteHandleFactoryMap buildRouteMap();
   RouteHandleFactoryMapWithProxy buildRouteMapWithProxy();

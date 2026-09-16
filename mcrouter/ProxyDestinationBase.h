@@ -134,6 +134,9 @@ class ProxyDestinationBase {
    */
   void updateTkoStats(GlobalTkoUpdateType type);
 
+  /**
+   * Must be called on the proxy's event base thread.
+   */
   void setPoolStatsIndex(int32_t index);
   void updatePoolStatConnections(bool connected);
 

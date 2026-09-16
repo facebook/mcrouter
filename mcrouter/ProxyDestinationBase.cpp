@@ -276,18 +276,13 @@ void ProxyDestinationBase::updateConnectionClosedInternalStat() {
 }
 
 void ProxyDestinationBase::setPoolStatsIndex(int32_t index) {
-  proxy().eventBase().runInEventBaseThread([selfPtr = selfPtr(), index]() {
-    auto pdstn = selfPtr.lock();
-    if (!pdstn) {
-      return;
+  proxy().eventBase().getEventBase().dcheckIsInEventBaseThread();
+  stats().poolStatIndex_ = index;
+  if (stats().state == State::Up) {
+    if (auto* poolStats = proxy().stats().getPoolStats(index)) {
+      poolStats->updateConnections(1);
     }
-    pdstn->stats().poolStatIndex_ = index;
-    if (pdstn->stats().state == State::Up) {
-      if (auto* poolStats = pdstn->proxy().stats().getPoolStats(index)) {
-        poolStats->updateConnections(1);
-      }
-    }
-  });
+  }
 }
 
 void ProxyDestinationBase::updatePoolStatConnections(bool connected) {

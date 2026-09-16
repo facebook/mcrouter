@@ -83,9 +83,7 @@ class DestinationRoute {
         poolStatIndex_(poolStatIdx),
         timeout_(timeout),
         disableRequestDeadlineCheck_(disableRequestDeadlineCheck),
-        keepRoutingPrefix_(keepRoutingPrefix) {
-    destination_->setPoolStatsIndex(poolStatIdx);
-  }
+        keepRoutingPrefix_(keepRoutingPrefix) {}
 
   template <class Request>
   bool traverse(

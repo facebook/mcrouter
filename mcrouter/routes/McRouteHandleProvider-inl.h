@@ -350,6 +350,7 @@ McRouteHandleProvider<RouterInfo>::makePool(
     checkLogic(
         !jservices || jservices->isObject(), "services is not an object");
     auto accessPointsIt = accessPoints_.end();
+    std::vector<std::weak_ptr<ProxyDestinationBase>> poolStatsDestinations;
     for (size_t i = 0; i < jservers->size(); ++i) {
       const auto& server = jservers->at(i);
       checkLogic(
@@ -428,7 +429,8 @@ McRouteHandleProvider<RouterInfo>::makePool(
               disableRequestDeadlineCheck,
               poolTkoTracker,
               keepRoutingPrefix,
-              idx);
+              idx,
+              poolStatsDestinations);
           accessPointsSet.insert(destResult.second);
           addDestination(std::move(destResult.first));
 #if defined(__linux__) && !defined(ANDROID) && !defined(MCROUTER_OSS_BUILD)
@@ -446,7 +448,8 @@ McRouteHandleProvider<RouterInfo>::makePool(
               disableRequestDeadlineCheck,
               poolTkoTracker,
               keepRoutingPrefix,
-              idx);
+              idx,
+              poolStatsDestinations);
           accessPointsSet.insert(destResult.second);
           addDestination(std::move(destResult.first));
 #endif
@@ -466,7 +469,8 @@ McRouteHandleProvider<RouterInfo>::makePool(
               disableRequestDeadlineCheck,
               poolTkoTracker,
               keepRoutingPrefix,
-              idx);
+              idx,
+              poolStatsDestinations);
           accessPointsSet.insert(destResult.second);
           addDestination(std::move(destResult.first));
 #endif
@@ -484,12 +488,27 @@ McRouteHandleProvider<RouterInfo>::makePool(
               disableRequestDeadlineCheck,
               poolTkoTracker,
               keepRoutingPrefix,
-              idx);
+              idx,
+              poolStatsDestinations);
           accessPointsSet.insert(destResult.second);
           addDestination(std::move(destResult.first));
         }
       }
     } // servers
+
+    // Apply the pool's stats index to all its destinations in a single
+    // event-base hop.
+    if (!poolStatsDestinations.empty()) {
+      proxy_.eventBase().runInEventBaseThread(
+          [destinations = std::move(poolStatsDestinations),
+           poolStatIndex]() mutable {
+            for (auto& weakDestination : destinations) {
+              if (auto pdstn = weakDestination.lock()) {
+                pdstn->setPoolStatsIndex(poolStatIndex);
+              }
+            }
+          });
+    }
 
     /**
      * For backwards compatibility, return invalidly sized "weights" array here
@@ -526,11 +545,13 @@ McRouteHandleProvider<RouterInfo>::createDestinationRoute(
     bool disableRequestDeadlineCheck,
     const std::shared_ptr<PoolTkoTracker>& poolTkoTracker,
     bool keepRoutingPrefix,
-    uint32_t idx) {
+    uint32_t idx,
+    std::vector<std::weak_ptr<ProxyDestinationBase>>& poolStatsDestinations) {
   auto pdstn = proxy_.destinationMap()->template emplace<Transport>(
       std::move(ap), timeout, qosClass, qosPath, poolTkoTracker, idx);
   pdstn->updateShortestTimeout(connectTimeout, timeout);
   auto resAp = pdstn->accessPoint();
+  poolStatsDestinations.push_back(pdstn);
 
   return {
       makeDestinationRoute<RouterInfo, Transport>(
