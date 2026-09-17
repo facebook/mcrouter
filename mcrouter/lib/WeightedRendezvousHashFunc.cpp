@@ -7,8 +7,10 @@
 
 #include "WeightedRendezvousHashFunc.h"
 
+#include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <functional>
 
 #include "mcrouter/lib/RendezvousHashHelper.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
@@ -16,6 +18,20 @@
 
 namespace facebook {
 namespace memcache {
+
+namespace {
+
+/* run once in the constructor to see if it is possible to set
+ * uniformPositiveWeights_, which means the pool is eligble to skip std::log
+ * since weights are uniform
+ */
+bool allWeightsEqualAndPositive(const std::vector<double>& weights) {
+  return !weights.empty() && weights.front() > 0 &&
+      std::adjacent_find(
+          weights.begin(), weights.end(), std::not_equal_to<>()) ==
+      weights.end();
+}
+} // namespace
 
 WeightedRendezvousHashFunc::WeightedRendezvousHashFunc(
     const std::vector<folly::StringPiece>& endpoints,
@@ -43,6 +59,8 @@ WeightedRendezvousHashFunc::WeightedRendezvousHashFunc(
     endpointHashes_.push_back(hash);
     endpointWeights_.push_back(jWeights[i].asDouble());
   }
+
+  uniformPositiveWeights_ = allWeightsEqualAndPositive(endpointWeights_);
 }
 
 size_t WeightedRendezvousHashFunc::operator()(folly::StringPiece key) const {

@@ -65,6 +65,7 @@ class WeightedRendezvousHashFunc {
  private:
   std::vector<uint64_t> endpointHashes_;
   std::vector<double> endpointWeights_;
+  bool uniformPositiveWeights_{false};
 };
 } // namespace memcache
 } // namespace facebook
