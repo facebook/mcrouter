@@ -106,6 +106,45 @@ TEST(WeightedRendezvousHashFunc, rendezvous_10) {
           {1381, 1299, 1283, 1359, 1296, 667, 669, 665, 672, 709}));
 }
 
+// Only the ratio of the weights can affect the winner, so rescaling them all
+// must not move a single key. McrouterRendezvousHashIndexBuilder passes
+// weights scaled by 1<<20, not the 1 the rest of this suite uses.
+TEST(WeightedRendezvousHashFunc, uniform_weights_are_scale_invariant) {
+  auto endpoints = genEndpoints(343);
+  auto unit = WeightedRendezvousHashFunc(
+      endpoints.second, genWeights(std::vector<double>(343, 1)));
+  auto scaled = WeightedRendezvousHashFunc(
+      endpoints.second, genWeights(std::vector<double>(343, 1 << 20)));
+
+  for (size_t i = 0; i < 10000; ++i) {
+    auto key = "mykey:" + folly::to<std::string>(i);
+    EXPECT_EQ(unit(key), scaled(key)) << "key: " << key;
+  }
+}
+
+// Every score is zero, so no candidate ever beats the running maximum.
+TEST(WeightedRendezvousHashFunc, all_zero_weights_select_first_endpoint) {
+  auto endpoints = genEndpoints(10);
+  auto func = WeightedRendezvousHashFunc(
+      endpoints.second, genWeights(std::vector<double>(10, 0)));
+
+  EXPECT_EQ(func("sample"), 0);
+  EXPECT_EQ(func("mykey"), 0);
+}
+
+// operator() and begin() score candidates in two separate loops; the primary
+// destination must stay the failover sequence's first candidate.
+TEST(WeightedRendezvousHashFunc, operator_matches_begin) {
+  auto endpoints = genEndpoints(343);
+  auto func = WeightedRendezvousHashFunc(
+      endpoints.second, genWeights(std::vector<double>(343, 1)));
+
+  for (size_t i = 0; i < 10000; ++i) {
+    auto key = "mykey:" + folly::to<std::string>(i);
+    EXPECT_EQ(func(key), *func.begin(key)) << "key: " << key;
+  }
+}
+
 TEST(WeightedRendezvousHashFunc, rendezvous_rehash) {
   const uint32_t n = 499;
   auto combined = genEndpoints(n);
