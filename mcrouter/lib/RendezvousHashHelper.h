@@ -35,14 +35,15 @@ inline uint64_t hash128to64(const uint64_t upper, const uint64_t lower) {
   return b;
 }
 
+constexpr uint64_t kFiftyThreeOnes = (0xFFFFFFFFFFFFFFFF >> (64 - 53));
+
 /**
  * Converts a uniformly random 64-bit integer to uniformly random
  * floating point number on interval [0, 1)
  */
 inline double convertInt64ToDouble01(const uint64_t value) {
-  constexpr uint64_t fiftyThreeOnes = (0xFFFFFFFFFFFFFFFF >> (64 - 53));
   constexpr double fiftyThreeZeros = ((uint64_t)1) << 53;
-  return (value & fiftyThreeOnes) / fiftyThreeZeros;
+  return (value & kFiftyThreeOnes) / fiftyThreeZeros;
 }
 
 class RendezvousIterator {
