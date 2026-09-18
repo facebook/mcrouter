@@ -28,7 +28,10 @@ std::optional<ThriftClient> ThriftTransportBase::createThriftClient() {
   if (auto serviceName = connectionOptions_.accessPoint->getServiceName();
       !serviceName.empty()) {
     if (hasServiceRouter()) {
-      return getServiceRouterClient<ThriftClient>(serviceName);
+      auto client = getServiceRouterClient<ThriftClient>(serviceName);
+      // Match the direct Rocket path by skipping static event handlers.
+      client.clearEventHandlers();
+      return client;
     } else {
       return std::nullopt; // not supported
     }

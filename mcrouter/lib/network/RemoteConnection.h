@@ -16,7 +16,7 @@ namespace facebook::memcache {
 namespace detail {
 FOLLY_ATTR_WEAK std::shared_ptr<apache::thrift::RequestChannel>
 getServiceRouterChannel(std::string_view serviceName);
-}
+} // namespace detail
 
 template <class T>
 T getServiceRouterClient(std::string_view serviceName) {
