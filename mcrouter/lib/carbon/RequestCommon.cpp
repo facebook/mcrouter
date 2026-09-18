@@ -33,6 +33,7 @@ RequestCommon& RequestCommon::operator=(const RequestCommon& other) {
     clientIdentifier_ = other.clientIdentifier_;
     privacyLibAgenticContext_ = other.privacyLibAgenticContext_;
     kcbIdentity_ = other.kcbIdentity_;
+    sourceIpAddr_ = other.sourceIpAddr_;
     uniqueId_ = other.uniqueId_;
   }
   return *this;
@@ -102,12 +103,16 @@ void RequestCommon::setKcbIdentity(folly::StringPiece kcbIdentity) noexcept {
   kcbIdentity_ = kcbIdentity.str();
 }
 
-void RequestCommon::copySecurityContextFrom(
+void RequestCommon::copyRequestContextFrom(
     const RequestCommon& other) noexcept {
+  traceContext_ = other.traceContext_;
   cryptoAuthToken_ = other.cryptoAuthToken_;
   clientIdentifier_ = other.clientIdentifier_;
-  kcbIdentity_ = other.kcbIdentity_;
   privacyLibAgenticContext_ = other.privacyLibAgenticContext_;
+  kcbIdentity_ = other.kcbIdentity_;
+  sourceIpAddr_ = other.sourceIpAddr_;
+  writeTimestamp_ = other.writeTimestamp_;
+  replyBitMask_ = other.replyBitMask_;
 }
 
 const std::optional<folly::IPAddress>& RequestCommon::getSourceIpAddr()

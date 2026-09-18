@@ -402,5 +402,56 @@ std::optional<int64_t> getMessageShardId(const Message& message) {
   return std::nullopt;
 }
 
+/**
+ * Copies every field that a derived sub-request must inherit from the request
+ * it was built from.
+ *
+ * Route handles that construct sub-requests from scratch rather than copying
+ * the parent -- BigValueRoute chunks, L1L2SizeSplitRoute's L2 requests, the
+ * refill write-back paths -- must call this instead of copying fields one by
+ * one. This is the single definition of what a derived request inherits: a
+ * newly added field is handled here once, rather than by auditing every
+ * construction site.
+ *
+ * Carries the RequestCommon context via copyRequestContextFrom (trace context,
+ * CAT, client identifier, privacy agentic context, KCB identity, source IP,
+ * write timestamp, reply-metadata bitmask) plus every MemcacheRequestCommon
+ * field the two messages share: mcTenantId, bucketId, productId and
+ * regionalizationEntity. Each is trait-guarded, so a message that lacks a
+ * field -- ucache requests carry their own tenantId, for instance -- skips it.
+ *
+ * Deliberate exclusions:
+ *  - flags: call sites differ in whether they copy the parent's flags
+ *    verbatim, OR in a routing bit, or take them from a reply.
+ *  - beforeLatencyUs / afterLatencyUs: injected latency is per-request, so
+ *    propagating it to N chunk sub-requests would multiply the delay the
+ *    caller asked for.
+ *  - ticket: not one field. Memcache's is an optional std::string
+ *    consistency-read ticket; ucache's is a tao::proto::TRep, and on
+ *    UcMultiFillRequest a *required fill* ticket sourced from the refill
+ *    reply. Those are different concepts with different types and
+ *    optionality, so ticket stays explicit at the call sites that need it.
+ */
+template <class From, class To>
+void copyInheritedRequestFields(const From& from, To& to) {
+  to.copyRequestContextFrom(from);
+  if constexpr (
+      HasMcTenantIdTrait<From>::value && HasMcTenantIdTrait<To>::value) {
+    to.mcTenantId().copy_from(from.mcTenantId());
+  }
+  if constexpr (HasBucketIdTrait<From>::value && HasBucketIdTrait<To>::value) {
+    to.bucketId().copy_from(from.bucketId());
+  }
+  if constexpr (
+      HasProductIdTrait<From>::value && HasProductIdTrait<To>::value) {
+    to.productId().copy_from(from.productId());
+  }
+  if constexpr (
+      HasRegionalizationEntityTrait<From>::value &&
+      HasRegionalizationEntityTrait<To>::value) {
+    to.regionalizationEntity().copy_from(from.regionalizationEntity());
+  }
+}
+
 } // namespace memcache
 } // namespace facebook

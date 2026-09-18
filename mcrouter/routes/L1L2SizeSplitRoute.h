@@ -166,10 +166,12 @@ class L1L2SizeSplitRoute {
   inline void deleteSentinel(const Request& req, folly::StringPiece l1Value)
       const {
     McGetsRequest l1GetsRequest(req.key_ref()->fullKey());
+    copyInheritedRequestFields(req, l1GetsRequest);
     auto l1GetsReply = l1_->route(l1GetsRequest);
     if (isHitResult(*l1GetsReply.result_ref()) &&
         coalesceAndGetRange(*l1GetsReply.value_ref()) == l1Value) {
       McCasRequest l1CasRequest(req.key_ref()->fullKey());
+      copyInheritedRequestFields(req, l1CasRequest);
       l1CasRequest.casToken() = *l1GetsReply.casToken_ref();
       l1CasRequest.exptime() = -1;
       l1_->route(l1CasRequest);

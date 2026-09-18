@@ -83,17 +83,21 @@ class RequestCommon : public MessageCommon {
   void setKcbIdentity(folly::StringPiece kcbIdentity) noexcept;
 
   /**
-   * Copies the security context (CAT, client identifier, KCB identity, privacy
-   * agentic context) from a parent request onto a sub-request derived from it.
+   * Copies every RequestCommon-level field that a derived sub-request must
+   * inherit from the request it was built from: trace context, CAT, client
+   * identifier, privacy agentic context, KCB identity, source IP, write
+   * timestamp and the reply-metadata bitmask.
    *
-   * Route handles that build sub-requests from scratch rather than copying the
-   * parent (e.g. BigValueRoute chunk requests) must call this. Otherwise the
-   * sub-request reaches the server with no identity and, under KCB, the server
-   * falls back to the caller's TLS identity when folding the client id into the
-   * physical cache key -- so two services writing the same logical key produce
-   * different physical keys.
+   * Prefer memcache::copyInheritedRequestFields(), which calls this and also
+   * carries the per-message fields (tenant, bucket, product, regionalization,
+   * ticket). Call this directly only when the per-message fields do not apply.
+   *
+   * A new context field added to this class belongs here too -- that is the
+   * point of the single function. Deliberately excluded: serializedBuffer_,
+   * which caches the parent's wire bytes and is meaningless for a different
+   * message, and uniqueId_, since each sub-request is its own request.
    */
-  void copySecurityContextFrom(const RequestCommon& other) noexcept;
+  void copyRequestContextFrom(const RequestCommon& other) noexcept;
 
   const std::optional<folly::IPAddress>& getSourceIpAddr() const noexcept;
 

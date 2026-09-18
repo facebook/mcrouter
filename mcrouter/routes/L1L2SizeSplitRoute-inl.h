@@ -44,8 +44,11 @@ McGetReply L1L2SizeSplitRoute<RouterInfo>::route(
     // Real value lives in the L2 pool. If L1 reply has a non-empty value, then
     // we need to route to L2 using key suffixed with |==|<rand>
     if (!l1Value.empty()) {
-      const auto l2ReqWithKeyAndSuffix =
-          McGetRequest(makeL2Key(req.key()->fullKey(), l1Value));
+      const auto l2ReqWithKeyAndSuffix = [&] {
+        McGetRequest r(makeL2Key(req.key()->fullKey(), l1Value));
+        copyInheritedRequestFields(req, r);
+        return r;
+      }();
       auto l2Reply = l2_->route(l2ReqWithKeyAndSuffix);
 
       if (isHitResult(*l2Reply.result_ref())) {
@@ -152,9 +155,13 @@ L1L2SizeSplitRoute<RouterInfo>::doRoute(const Request& req, size_t retriesLeft)
 
   // At this point, we got a non-stale sentinel hit from L1.
   const auto l1Value = coalesceAndGetRange(l1Reply.value_ref());
-  const auto l2Req = l1Value.empty()
-      ? McGetRequest(req.key_ref()->fullKey())
-      : McGetRequest(makeL2Key(req.key_ref()->fullKey(), l1Value));
+  const auto l2Req = [&] {
+    McGetRequest r = l1Value.empty()
+        ? McGetRequest(req.key_ref()->fullKey())
+        : McGetRequest(makeL2Key(req.key_ref()->fullKey(), l1Value));
+    copyInheritedRequestFields(req, r);
+    return r;
+  }();
 
   auto l2Reply = l2_->route(l2Req);
   if (isHitResult(*l2Reply.result_ref())) {
@@ -200,6 +207,7 @@ McLeaseSetReply L1L2SizeSplitRoute<RouterInfo>::route(
         r.flags() = *req.flags();
         r.exptime() = *req.exptime();
         r.value() = std::move(*adjustedReq.value_ref());
+        copyInheritedRequestFields(req, r);
         return r;
       };
       folly::fibers::addTask(
@@ -215,6 +223,7 @@ McLeaseSetReply L1L2SizeSplitRoute<RouterInfo>::route(
       r.value() = *req.value();
       r.flags() = *req.flags();
       r.exptime() = *req.exptime();
+      copyInheritedRequestFields(req, r);
       return r;
     }();
     auto l2Reply = l2_->route(l2SetReq);
