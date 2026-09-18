@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <algorithm>
 #include <atomic>
 #include <memory>
 #include <string>
@@ -17,6 +16,7 @@
 
 #include <folly/Random.h>
 #include <folly/Range.h>
+#include <folly/container/F14Set.h>
 #include <folly/io/IOBuf.h>
 
 #include "mcrouter/lib/Observable.h"
@@ -39,6 +39,32 @@ using ObservableRuntimeVars =
     Observable<std::shared_ptr<const RuntimeVarsData>>;
 
 class ShadowSettings {
+ private:
+  struct KeysToShadowHash {
+    using is_transparent = void;
+    template <class S>
+    size_t operator()(const std::tuple<uint32_t, S>& key) const {
+      return static_cast<size_t>(std::get<0>(key));
+    }
+  };
+
+  struct KeysToShadowEqual {
+    using is_transparent = void;
+    template <class S1, class S2>
+    bool operator()(
+        const std::tuple<uint32_t, S1>& lhs,
+        const std::tuple<uint32_t, S2>& rhs) const {
+      return std::get<0>(lhs) == std::get<0>(rhs) &&
+          folly::StringPiece(std::get<1>(lhs)) ==
+          folly::StringPiece(std::get<1>(rhs));
+    }
+  };
+
+  using KeysToShadowSet = folly::F14FastSet<
+      std::tuple<uint32_t, std::string>,
+      KeysToShadowHash,
+      KeysToShadowEqual>;
+
  public:
   /**
    * @return  nullptr if config is invalid, new ShadowSettings struct otherwise
@@ -95,7 +121,7 @@ class ShadowSettings {
    */
   void setKeysToShadow(const std::vector<std::string>& keys);
 
-  const std::vector<std::tuple<uint32_t, std::string>>& keysToShadow() const {
+  const KeysToShadowSet& keysToShadow() const {
     return keysToShadow_;
   }
 
@@ -130,13 +156,9 @@ class ShadowSettings {
     // req.key_ref() in that list. Otherwise, decide to shadow based on
     // keyRange().
     if (!keysToShadow_.empty()) {
-      const auto hashAndKeyToFind = std::make_tuple(
-          req.key_ref()->routingKeyHash(), req.key_ref()->routingKey());
-      return std::binary_search(
-          keysToShadow_.begin(),
-          keysToShadow_.end(),
-          hashAndKeyToFind,
-          std::less<std::tuple<uint32_t, folly::StringPiece>>());
+      return keysToShadow_.contains(
+          std::make_tuple(
+              req.key_ref()->routingKeyHash(), req.key_ref()->routingKey()));
     }
 
     if (bucketId) {
@@ -163,10 +185,9 @@ class ShadowSettings {
   size_t endIndex_{0};
   double requestsFraction_{1.0};
 
-  // Ideally, this would just be an unordered set<Key<string>>, but we need to
-  // allow for comparing to Key<IOBuf>. We can work with a vector<Key<string>>
-  // sorted by routingKeyHash.
-  std::vector<std::tuple<uint32_t, std::string>> keysToShadow_;
+  // Keyed on routingKeyHash only so lookups can be done heterogeneously
+  // against a Key<IOBuf>; full (hash, key) equality disambiguates collisions.
+  KeysToShadowSet keysToShadow_;
 
   std::atomic<uint64_t> keyRange_{0};
 

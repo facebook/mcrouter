@@ -7,7 +7,6 @@
 
 #include "ShadowSettings.h"
 
-#include <algorithm>
 #include <cstddef>
 #include <memory>
 
@@ -114,9 +113,8 @@ void ShadowSettings::setKeysToShadow(const std::vector<std::string>& keys) {
   keysToShadow_.reserve(keys.size());
   for (const auto& key : keys) {
     const auto hash = carbon::Keys<std::string>(key).routingKeyHash();
-    keysToShadow_.emplace_back(hash, key);
+    keysToShadow_.emplace(hash, key);
   }
-  std::sort(keysToShadow_.begin(), keysToShadow_.end());
 }
 
 void ShadowSettings::registerOnUpdateCallback(
