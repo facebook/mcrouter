@@ -1,0 +1,79 @@
+[manifest]
+name = boost-python
+
+[download.not(os=windows)]
+url = https://github.com/boostorg/boost/releases/download/boost-1.83.0/boost-1.83.0.tar.gz
+sha256 = 0c6049764e80aa32754acd7d4f179fd5551d8172a83b71532ae093e7384e98da
+
+[download.os=windows]
+url = https://github.com/boostorg/boost/releases/download/boost-1.83.0/boost-1.83.0.zip
+sha256 = 9effa3d7f9d92b8e33e2b41d82f4358f97ff7c588d5918720339f2b254d914c6
+
+[preinstalled.env]
+# Here we list the acceptable versions that cmake needs a hint to find
+BOOST_ROOT_1_69_0
+BOOST_ROOT_1_83_0
+
+[homebrew]
+boost
+# Boost cmake detection on homebrew adds this as requirement: https://github.com/Homebrew/homebrew-core/issues/67427#issuecomment-754187345
+icu4c
+
+[pps]
+boost
+
+[rpms.all(distro_family=rhel,distro_vers=8)]
+boost169
+boost169-math
+boost169-test
+boost169-fiber
+boost169-graph
+boost169-log
+boost169-openmpi
+boost169-timer
+boost169-chrono
+boost169-locale
+boost169-thread
+boost169-atomic
+boost169-random
+boost169-static
+boost169-contract
+boost169-date-time
+boost169-iostreams
+boost169-container
+boost169-coroutine
+boost169-filesystem
+boost169-system
+boost169-stacktrace
+boost169-regex
+boost169-devel
+boost169-context
+boost169-python3-devel
+boost169-type_erasure
+boost169-wave
+boost169-python3
+boost169-serialization
+boost169-program-options
+
+[rpms.distro=fedora]
+boost-devel
+boost-static
+
+[build]
+builder = cmake
+subdir = boost-1.83.0
+job_weight_mib = 512
+patchfile = boost_1_83_0.patch
+
+[build.not(os=linux)]
+builder = nop
+
+[cmake.defines]
+# Same shape as the boost manifest, with Boost.Python turned on.
+BUILD_TESTING=OFF
+BOOST_INSTALL_LAYOUT=system
+BOOST_ENABLE_MPI=OFF
+BOOST_ENABLE_PYTHON=ON
+CMAKE_CXX_STANDARD=17
+CMAKE_CXX_STANDARD_REQUIRED=ON
+CMAKE_POSITION_INDEPENDENT_CODE=ON

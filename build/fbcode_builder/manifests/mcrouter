@@ -1,0 +1,44 @@
+[manifest]
+name = mcrouter
+fbsource_path = fbcode/mcrouter
+shipit_project = mcrouter
+shipit_fbcode_builder = true
+
+[git]
+repo_url = https://github.com/facebook/mcrouter.git
+
+[dependencies]
+folly
+wangle
+fizz
+fbthrift
+mvfst
+ragel
+gflags
+glog
+boost
+libevent
+openssl
+zlib
+
+[shipit.pathmap]
+fbcode/mcrouter/public_tld = .
+fbcode/mcrouter = mcrouter
+
+[shipit.strip]
+^fbcode/mcrouter/(.*/)?facebook/
+
+[build]
+builder = cmake
+
+[build.os=windows]
+builder = nop
+
+[cmake.defines]
+BUILD_SHARED_LIBS=OFF
+
+[cmake.defines.test=on]
+BUILD_TESTS=ON
+
+[cmake.defines.test=off]
+BUILD_TESTS=OFF

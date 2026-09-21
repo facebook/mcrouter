@@ -1,0 +1,85 @@
+[manifest]
+name = fbthrift
+fbsource_path = xplat/thrift
+shipit_project = fbthrift
+shipit_fbcode_builder = true
+
+[git]
+repo_url = https://github.com/facebook/fbthrift.git
+
+[cargo]
+cargo_config_file =  source/thrift/lib/rust/.cargo/config.toml
+
+[crate.pathmap]
+fbthrift = thrift/lib/rust
+
+[build]
+builder = cmake
+job_weight_mib = 3072
+
+[cmake.defines]
+# Each dependency has its own prefix here, so record their lib dirs too;
+# fbthrift's CMake only adds relative entries for its own libraries.
+CMAKE_INSTALL_RPATH_USE_LINK_PATH=ON
+
+[cmake.defines.all(not(os=windows),test=on)]
+THRIFT_TESTS=ON
+
+[cmake.defines.any(os=windows,test=off)]
+THRIFT_TESTS=OFF
+
+[cmake.defines.all(os=linux,feature_shared_libs=on)]
+BUILD_SHARED_LIBS=ON
+
+# Features. The defaults match the historical full build. Consumers that
+# only need codegen + (de)serialization pull this dep as
+# `fbthrift = !rpc, !benchmark` to skip both the RPC link-graph and the
+# benchmark executables. See fbcode_builder/README.md for the feature system.
+[features]
+default = rpc, benchmark
+rpc =
+benchmark =
+shared_libs =
+
+[cmake.defines.feature_rpc=off]
+THRIFT_RPC=OFF
+
+[cmake.defines.feature_benchmark=off]
+THRIFT_BENCHMARKS=OFF
+
+[dependencies]
+fmt
+folly
+googletest
+zstd
+xxhash
+# Thrift also depends on openssl but since the latter requires a platform-
+# specific configuration we rely on the folly manifest to provide this
+# dependency to avoid duplication.
+
+# Pulled only when RPC is enabled; gated inside fbthrift's CMake by
+# THRIFT_RPC=ON.
+[dependencies.feature_rpc=on]
+fizz
+libsodium
+wangle
+mvfst
+
+# Pulled only when benchmark executables are enabled; gated inside fbthrift's
+# CMake by THRIFT_BENCHMARKS=ON.
+[dependencies.feature_benchmark=on]
+benchmark
+
+[shipit.pathmap]
+xplat/thrift/public_tld = .
+xplat/thrift = thrift
+
+[shipit.strip]
+^xplat/thrift/thrift-config\.h$
+^xplat/thrift/perf/canary.py$
+^xplat/thrift/perf/loadtest.py$
+^xplat/thrift/.castle/.*
+^xplat/thrift/lib/cpp2/fast_thrift/.*\.clang-tidy$
+^xplat/thrift/lib/cpp2/fast_thrift/(.*/)?\.llms(/.*)?$
+^xplat/thrift/lib/cpp2/fast_thrift/.*\.md$
+^xplat/thrift/lib/cpp2/fast_thrift/bench/perf_harness\.sh$

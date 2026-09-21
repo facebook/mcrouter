@@ -1,0 +1,5 @@
+[manifest]
+name = gcc14
+
+[rpms.all(distro_family=rhel,distro_vers=9)]
+gcc-toolset-14
