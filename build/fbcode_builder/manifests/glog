@@ -1,0 +1,43 @@
+[manifest]
+name = glog
+
+# Pinned to a post-v0.6.0 master commit rather than v0.7.x because v0.7.0
+# raises cmake_minimum_required to 3.22, above the CMake 3.20.4 that getdeps
+# ships. This rev (2023-10-04) is the last commit before that bump; it gains
+# the cmake_policy(VERSION 3.16...3.27) fix in cmake/GetCacheVariables.cmake
+# (required for CMake 4.x as shipped in ubuntu:latest Docker images) while
+# keeping cmake_minimum_required(VERSION 3.16), within getdeps' range.
+[git]
+repo_url = https://github.com/google/glog.git
+rev = 3411d58669fe07e70335b252299432a00d1e7c6c
+
+[build]
+builder = cmake
+# The patchfile removes glog's unconditional CMAKE_CXX_VISIBILITY_PRESET=hidden
+# (cmake_minimum_required(VERSION 3.16) forces CMP0063=NEW, making
+# CMAKE_POLICY_DEFAULT_CMP0063=OLD ineffective). Applied unconditionally;
+# default-visibility symbols in a static archive are harmless for consumers
+# that don't need the shared_libs feature.
+patchfile = glog_default_visibility.patch
+
+[dependencies]
+gflags
+
+[cmake.defines]
+BUILD_SHARED_LIBS=ON
+BUILD_TESTING=NO
+WITH_PKGCONFIG=ON
+
+[cmake.defines.os=freebsd]
+HAVE_TR1_UNORDERED_MAP=OFF
+HAVE_TR1_UNORDERED_SET=OFF
+
+[homebrew]
+glog
+
+# on ubuntu glog brings in liblzma-dev, which in turn breaks watchman tests
+[debs.not(distro=ubuntu)]
+libgoogle-glog-dev
+
+[rpms.distro=fedora]
+glog-devel

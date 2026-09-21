@@ -1,0 +1,89 @@
+[manifest]
+name = fboss
+fbsource_path = fbcode/fboss
+shipit_project = fboss
+shipit_fbcode_builder = true
+
+[git]
+repo_url = https://github.com/facebook/fboss.git
+
+[build.os=linux]
+builder = cmake
+# fboss files take a lot of RAM to compile.
+job_weight_mib = 3072
+
+[build.not(os=linux)]
+builder = nop
+
+# Defaulting services on keeps every existing consumer, and fboss built as a
+# root, on the full build.
+[features]
+default = services
+services =
+exported_libraries =
+
+[cmake.defines.all(feature_services=off,feature_exported_libraries=off)]
+FBOSS_BUILD_PROFILE=fsdb_client
+
+[cmake.defines.all(feature_services=off,feature_exported_libraries=on)]
+FBOSS_BUILD_PROFILE=exported_libraries
+
+# installed/fboss is unhashed because fboss is first-party, and the env var is
+# not otherwise hashed, so without this a profile flip in an existing scratch
+# dir leaves .built-by-getdeps matching and getdeps skips the rebuild.
+[depends.environment]
+FBOSS_BUILD_PROFILE
+
+[dependencies]
+folly-python
+fb303
+wangle-python
+fizz-python
+mvfst-python
+fmt-python
+libsodium
+googletest
+zstd-python
+fbthrift-python
+iproute2
+libusb
+libcurl
+libnl
+libsai
+re2
+python
+yaml-cpp
+libyaml
+CLI11
+exprtk
+nlohmann-json
+libgpiod
+systemd
+range-v3
+tabulate
+gcc12
+python-pyyaml
+
+# ShipitPathMap always assume to use directory to fetch the source code.
+# If you need to sync the files to fboss github repo, please make changes in
+# configerator/source/opensource/shipit_config/facebook/fboss.cconf
+[shipit.pathmap]
+fbcode/fboss/github = .
+fbcode/fboss/common = common
+fbcode/fboss = fboss
+# NOTE: Although this directory has other thrift files might not be ready for
+# opensource, this pathmap should only be used internally `getdeps.py fetch`
+fbcode/configerator/structs/neteng/fboss/thrift = configerator/structs/neteng/fboss/thrift
+fbcode/neteng/fboss/bgp/public_tld/configerator/structs/neteng = configerator/structs/neteng
+
+[shipit.strip]
+^fbcode/fboss/github/docs/.*
+^fbcode/fboss/oss/.*
+^fbcode/fboss/github/.github/.*
+^fbcode/fboss/github/fboss-image/.*
+^fbcode/fboss/github/.pre-commit-config.yaml
+^fbcode/fboss/github/requirements-dev.txt
+^fbcode/fboss/.llms/.*
+
+[sandcastle]
+run_tests = off

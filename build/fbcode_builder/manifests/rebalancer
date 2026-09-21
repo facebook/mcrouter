@@ -1,0 +1,70 @@
+[manifest]
+name = rebalancer
+fbsource_path = fbcode/algopt/rebalancer/
+shipit_project = facebookincubator/rebalancer
+shipit_fbcode_builder = true
+use_shipit = true
+
+[git]
+# To git clone on devserver, setup fwdproxy:
+# https://www.internalfb.com/wiki/Open_Source/Maintain_a_FB_OSS_Project/Devserver_GitHub_Access/
+repo_url = https://github.com/facebookincubator/rebalancer.git
+branch = main
+
+[build]
+builder = cmake
+
+[cmake.defines]
+CMAKE_POSITION_INDEPENDENT_CODE=ON
+# Build the packaging smoke-test binary as part of every getdeps build so
+# it is included in the cache key. Without this, test_solve would have to
+# be built outside getdeps, which requires replicating cmake's full link
+# graph (folly, fbthrift, glog, etc.) manually — impractical and fragile.
+PACKAGING_TEST=ON
+
+# Build the example/demo executables only when getdeps is invoked with
+# tests enabled (test=on -- the default for `getdeps build` without
+# --no-tests). Wheel builds pass --no-tests so the wheel stays
+# data-only. CI test jobs get the examples built and link-checked
+# automatically without needing to thread EXAMPLES=ON through every
+# workflow's --extra-cmake-defines.
+[cmake.defines.test=on]
+EXAMPLES=ON
+TESTS=ON
+
+[dependencies]
+boost
+# Rebalancer only uses fbthrift's codegen + (de)serialization. Skip the RPC
+# transport stack (fizz/wangle/mvfst, none of which it links) and the
+# benchmark executables. shared_libs builds folly/fbthrift/fmt/gflags/glog as
+# shared libraries, which avoids duplicate static-initializer crashes and lets
+# the wheel bundler (auditwheel/delocate) reason about each dep as a single
+# shared object.
+fbthrift = !rpc, !benchmark, shared_libs
+fmt = shared_libs
+folly = shared_libs
+googletest
+highs-optimizer
+xxhash
+
+[dependencies.os=linux]
+clang19
+
+[cmake.defines.os=linux]
+CMAKE_C_COMPILER=clang-19
+CMAKE_CXX_COMPILER=clang++-19
+
+[shipit.strip]
+^.*/fb/.*$
+
+[shipit.pathmap]
+fbcode/algopt/rebalancer/oss_root = .
+fbcode/algopt/rebalancer = algopt/rebalancer
+fbcode/algopt/lp = algopt/lp
+
+[dependencies.all(distro_family=rhel,distro_vers=9)]
+clang19
+
+[cmake.defines.all(distro_family=rhel,distro_vers=9)]
+CMAKE_C_COMPILER=clang-19
+CMAKE_CXX_COMPILER=clang++-19

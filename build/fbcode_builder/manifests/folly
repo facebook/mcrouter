@@ -1,0 +1,94 @@
+[manifest]
+name = folly
+fbsource_path = fbcode/folly
+shipit_project = folly
+shipit_fbcode_builder = true
+
+[git]
+repo_url = https://github.com/facebook/folly.git
+
+[build]
+builder = cmake
+job_weight_mib = 1024
+
+[dependencies]
+gflags
+glog
+googletest
+boost
+libdwarf
+libevent
+libsodium
+fast_float
+fmt
+lz4
+openssl
+snappy
+zstd
+
+# Windows has no zlib, so we get to provide it
+[dependencies.os=windows]
+zlib
+
+[dependencies.os=linux]
+libaio
+libiberty
+libunwind
+# folly uses OpenSSL on every platform (SSL contexts, hashing, etc.).
+# On Linux, openssl's manifest uses builder=nop and resolves via the
+# distro's openssl-devel package, so listing it here only causes
+# install-system-deps --recursive to pick that package up. Without
+# this, downstream consumers that don't otherwise pull in fizz/wangle/
+# fbthrift have to discover this transitive system dep themselves.
+openssl
+
+# xz depends on autoconf which does not build on
+# Windows
+[dependencies.not(os=windows)]
+xz
+
+[shipit.pathmap]
+fbcode/folly/public_tld = .
+fbcode/folly = folly
+
+[shipit.strip]
+^fbcode/folly/folly-config\.h$
+^fbcode/folly/public_tld/build/facebook_.*
+
+[features]
+default =
+shared_libs =
+
+[cmake.defines]
+BUILD_SHARED_LIBS=OFF
+
+[cmake.defines.feature_shared_libs=on]
+BUILD_SHARED_LIBS=ON
+
+[cmake.defines.not(os=windows)]
+BOOST_LINK_STATIC=ON
+
+[cmake.defines.os=freebsd]
+LIBDWARF_FOUND=NO
+
+# When folly is built with Homebrew LLVM clang on macOS (used by the
+# wheels CI to pick up C++23 features that AppleClang doesn't have),
+# CMake otherwise picks up Homebrew's llvm-ar, which writes BSD-style
+# archives with a "/" symbol-table member that Apple's classic linker
+# cannot parse for empty archives. Several folly portability libraries
+# have no source files on darwin and so produce exactly such empty
+# archives, which then fail to link. Forcing Apple's /usr/bin/ar and
+# /usr/bin/ranlib avoids this -- they write archives the system linker
+# always accepts. AppleClang already uses /usr/bin/ar by default, so
+# this is a no-op for AppleClang folly users.
+[cmake.defines.os=darwin]
+CMAKE_AR=/usr/bin/ar
+CMAKE_RANLIB=/usr/bin/ranlib
+
+[cmake.defines.test=on]
+BUILD_TESTS=ON
+BUILD_BENCHMARKS=OFF
+
+[cmake.defines.test=off]
+BUILD_TESTS=OFF
+BUILD_BENCHMARKS=OFF

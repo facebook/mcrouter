@@ -1,0 +1,72 @@
+[manifest]
+name = bgp
+fbsource_path = fbcode/neteng/fboss/bgp
+shipit_project = bgp
+shipit_fbcode_builder = true
+
+[git]
+repo_url = https://github.com/facebook/BGP.git
+
+[build.os=linux]
+builder = cmake
+job_weight_mib = 3072
+
+[build.not(os=linux)]
+builder = nop
+
+[dependencies]
+boost
+fb303
+# The explicit prohibition is deliberate: a bare `!default` would let a future
+# consumer of both fboss and bgp silently re-enable the services trees.
+fboss = !default, !services
+fbthrift
+fizz
+fmt
+folly
+googletest
+magic_enum
+openr = !default, !full, exported_libraries
+wangle
+re2
+zstd
+gcc12
+
+[cmake.defines.test=on]
+BUILD_TESTING=ON
+
+[cmake.defines.test=off]
+BUILD_TESTING=OFF
+
+[shipit.pathmap]
+fbcode/neteng/fboss/bgp/public_tld = .
+fbcode/neteng/fboss/bgp = neteng/fboss/bgp
+# AddressUtil is shared code, not an FBOSS package dependency. Ship only this
+# header into the OSS common/ tree so BGP keeps the same include path.
+fbcode/common/network = common/network
+fbcode/fboss/common/fb303/if = common/fb303/if
+fbcode/fboss/common/network/if = common/network/if
+# common.thrift defines the @AllowSkipThriftCow annotation whose C++ type is
+# derived from its package, so rib_policy.thrift must resolve the exact FBOSS
+# schema. A committed copy under public_tld would duplicate the configerator
+# Thrift URI, so sync the real file in the same way manifests/fboss does.
+fbcode/configerator/structs/neteng/fboss/thrift = configerator/structs/neteng/fboss/thrift
+
+[shipit.strip]
+^fbcode/common/network/(?!AddressUtil\.h$).*
+^fbcode/fboss/common/fb303/if/(?!fb303\.thrift$).*
+^fbcode/fboss/common/network/if/(?!Address\.thrift$).*
+^fbcode/neteng/fboss/bgp/.*facebook.*
+^fbcode/neteng/fboss/bgp/.*\.bzl
+^fbcode/neteng/fboss/bgp/\.llms/.*
+^fbcode/neteng/fboss/bgp/tools/.*
+# Export only the BB platform constant required by the OSS build.
+^fbcode/neteng/fboss/bgp/cpp/common/platform/bb/(?!PlatformConstant\.h$).*
+^fbcode/neteng/fboss/bgp/cpp/tests/NetlinkWrapperTest\.cpp
+^fbcode/neteng/fboss/bgp/cpp/tests/FibEbbTest\.cpp
+# Only common.thrift is needed from configerator/structs/neteng/fboss/thrift;
+# strip the unrelated schemas the pathmap above would otherwise ship.
+^fbcode/configerator/structs/neteng/fboss/thrift/BUCK
+^fbcode/configerator/structs/neteng/fboss/thrift/package_versions\.thrift
+^fbcode/configerator/structs/neteng/fboss/thrift/platform_npi_stage\.thrift
+^fbcode/configerator/structs/neteng/fboss/thrift/sdk\.thrift
