@@ -31,6 +31,26 @@ bool allWeightsEqualAndPositive(const std::vector<double>& weights) {
           weights.begin(), weights.end(), std::not_equal_to<>()) ==
       weights.end();
 }
+
+// For a single positive weight w shared by every candidate, the score
+// w * 1/(-log(U)) is strictly increasing in U. Argmax of the
+// score is argmax of the masked hash, so the log, the divide and the multiply
+// are all dead work.
+size_t selectByMaskedHash(
+    const std::vector<uint64_t>& endpointHashes,
+    uint64_t keyHash) {
+  uint64_t maxMaskedHash = 0;
+  size_t maxPos = 0;
+  for (size_t i = 0; i < endpointHashes.size(); ++i) {
+    const uint64_t maskedHash =
+        hash128to64(endpointHashes[i], keyHash) & kFiftyThreeOnes;
+    if (maskedHash > maxMaskedHash) {
+      maxMaskedHash = maskedHash;
+      maxPos = i;
+    }
+  }
+  return maxPos;
+}
 } // namespace
 
 WeightedRendezvousHashFunc::WeightedRendezvousHashFunc(
@@ -64,11 +84,15 @@ WeightedRendezvousHashFunc::WeightedRendezvousHashFunc(
 }
 
 size_t WeightedRendezvousHashFunc::operator()(folly::StringPiece key) const {
-  double maxScore = 0;
-  size_t maxScorePos = 0;
-
   const uint64_t keyHash =
       murmur_hash_64A(key.data(), key.size(), kRendezvousExtraHashSeed);
+
+  if (uniformPositiveWeights_) {
+    return selectByMaskedHash(endpointHashes_, keyHash);
+  }
+
+  double maxScore = 0;
+  size_t maxScorePos = 0;
 
   for (size_t i = 0; i < endpointHashes_.size(); ++i) {
     uint64_t scoreInt = hash128to64(endpointHashes_[i], keyHash);
