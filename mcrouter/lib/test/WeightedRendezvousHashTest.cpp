@@ -6,12 +6,17 @@
  */
 
 #include <algorithm>
+#include <cmath>
+#include <utility>
+#include <vector>
 
 #include <gtest/gtest.h>
 
 #include <folly/Conv.h>
 
+#include "mcrouter/lib/RendezvousHashHelper.h"
 #include "mcrouter/lib/WeightedRendezvousHashFunc.h"
+#include "mcrouter/lib/fbi/hash.h"
 #include "mcrouter/lib/test/HashTestUtil.h"
 
 using namespace facebook::memcache;
@@ -142,6 +147,55 @@ TEST(WeightedRendezvousHashFunc, operator_matches_begin) {
   for (size_t i = 0; i < 10000; ++i) {
     auto key = "mykey:" + folly::to<std::string>(i);
     EXPECT_EQ(func(key), *func.begin(key)) << "key: " << key;
+  }
+}
+
+// operator_matches_begin only pins the head of the sequence, and once both
+// loops score on the masked hash it compares two copies of the same
+// computation.
+TEST(WeightedRendezvousHashFunc, begin_full_order_matches_weighted_scoring) {
+  constexpr size_t kNumEndpoints = 343;
+  auto endpoints = genEndpoints(kNumEndpoints);
+  auto func = WeightedRendezvousHashFunc(
+      endpoints.second, genWeights(std::vector<double>(kNumEndpoints, 1)));
+
+  std::vector<uint64_t> endpointHashes;
+  endpointHashes.reserve(kNumEndpoints);
+  for (const auto endpoint : endpoints.second) {
+    endpointHashes.push_back(
+        murmur_hash_64A(endpoint.data(), endpoint.size(), kRendezvousHashSeed));
+  }
+
+  for (size_t i = 0; i < 200; ++i) {
+    const auto key = "mykey:" + folly::to<std::string>(i);
+    const uint64_t keyHash = RendezvousIterator::keyHash(key);
+
+    std::vector<std::pair<double, size_t>> ranked;
+    ranked.reserve(kNumEndpoints);
+    for (size_t pos = 0; pos < kNumEndpoints; ++pos) {
+      const double u =
+          convertInt64ToDouble01(hash128to64(endpointHashes[pos], keyHash));
+      ranked.emplace_back(1.0 / (-std::log(u)), pos);
+    }
+    // Descending score; higher index wins a tie, as ScoreAndIndex orders the
+    // iterator's priority queue.
+    std::sort(ranked.begin(), ranked.end(), [](const auto& a, const auto& b) {
+      return a.first != b.first ? a.first > b.first : a.second > b.second;
+    });
+
+    std::vector<size_t> expected;
+    expected.reserve(kNumEndpoints);
+    for (const auto& scoreAndPos : ranked) {
+      expected.push_back(scoreAndPos.second);
+    }
+
+    std::vector<size_t> actual;
+    actual.reserve(kNumEndpoints);
+    for (auto it = func.begin(key); !it.empty(); ++it) {
+      actual.push_back(*it);
+    }
+
+    EXPECT_EQ(actual, expected) << "key: " << key;
   }
 }
 

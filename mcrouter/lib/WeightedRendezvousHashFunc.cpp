@@ -109,15 +109,35 @@ size_t WeightedRendezvousHashFunc::operator()(folly::StringPiece key) const {
 }
 
 namespace {
+
+// Same argmax-preserving substitution as selectByMaskedHash()
+std::vector<RendezvousIterator::ScoreAndIndex> rankByMaskedHash(
+    const std::vector<uint64_t>& endpointHashes,
+    uint64_t keyHash) {
+  std::vector<RendezvousIterator::ScoreAndIndex> scores;
+  scores.reserve(endpointHashes.size());
+  for (size_t pos = 0; pos < endpointHashes.size(); ++pos) {
+    const uint64_t maskedHash =
+        hash128to64(endpointHashes[pos], keyHash) & kFiftyThreeOnes;
+    scores.emplace_back(static_cast<double>(maskedHash), pos);
+  }
+  return scores;
+}
+
 std::vector<RendezvousIterator::ScoreAndIndex> get_scores(
     const std::vector<uint64_t>& endpointHashes,
     const std::vector<double>& endpointWeights,
+    const bool uniformPositiveWeights,
     const folly::StringPiece key) {
-  std::vector<RendezvousIterator::ScoreAndIndex> scores;
-
   const uint64_t keyHash = RendezvousIterator::keyHash(key);
 
+  if (uniformPositiveWeights) {
+    return rankByMaskedHash(endpointHashes, keyHash);
+  }
+
+  std::vector<RendezvousIterator::ScoreAndIndex> scores;
   scores.reserve(endpointHashes.size());
+
   for (size_t pos = 0; pos < endpointHashes.size(); ++pos) {
     const uint64_t scoreInt = hash128to64(endpointHashes[pos], keyHash);
     const double scoreDouble = convertInt64ToDouble01(scoreInt);
@@ -135,8 +155,10 @@ std::vector<RendezvousIterator::ScoreAndIndex> get_scores(
 WeightedRendezvousHashFunc::Iterator::Iterator(
     const std::vector<uint64_t>& hashes,
     const std::vector<double>& endpointWeights,
+    const bool uniformPositiveWeights,
     const folly::StringPiece key)
-    : RendezvousIterator(get_scores(hashes, endpointWeights, key)) {}
+    : RendezvousIterator(
+          get_scores(hashes, endpointWeights, uniformPositiveWeights, key)) {}
 
 } // namespace memcache
 } // namespace facebook

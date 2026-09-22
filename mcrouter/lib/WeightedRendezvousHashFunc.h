@@ -40,6 +40,7 @@ class WeightedRendezvousHashFunc {
     Iterator(
         const std::vector<uint64_t>& hashes,
         const std::vector<double>& endpointWeights,
+        bool uniformPositiveWeights,
         const folly::StringPiece key);
 
     // An end / empty iterator.
@@ -47,7 +48,8 @@ class WeightedRendezvousHashFunc {
   };
 
   Iterator begin(folly::StringPiece key) const {
-    return Iterator(endpointHashes_, endpointWeights_, key);
+    return Iterator(
+        endpointHashes_, endpointWeights_, uniformPositiveWeights_, key);
   }
 
   Iterator end() const {
