@@ -285,6 +285,23 @@ void ProxyDestinationBase::setPoolStatsIndex(int32_t index) {
   }
 }
 
+void ProxyDestinationBase::setPoolStatsIndexBatch(
+    ProxyBase& proxy,
+    std::vector<std::weak_ptr<ProxyDestinationBase>> destinations,
+    int32_t index) {
+  if (destinations.empty()) {
+    return;
+  }
+  proxy.eventBase().runInEventBaseThread(
+      [destinations = std::move(destinations), index]() {
+        for (const auto& weakDestination : destinations) {
+          if (auto pdstn = weakDestination.lock()) {
+            pdstn->setPoolStatsIndex(index);
+          }
+        }
+      });
+}
+
 void ProxyDestinationBase::updatePoolStatConnections(bool connected) {
   if (auto poolStats = proxy().stats().getPoolStats(stats().poolStatIndex_)) {
     poolStats->updateConnections(connected ? 1 : -1);

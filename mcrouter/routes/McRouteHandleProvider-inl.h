@@ -351,6 +351,7 @@ McRouteHandleProvider<RouterInfo>::makePool(
         !jservices || jservices->isObject(), "services is not an object");
     auto accessPointsIt = accessPoints_.end();
     std::vector<std::weak_ptr<ProxyDestinationBase>> poolStatsDestinations;
+    poolStatsDestinations.reserve(jservers->size() * (1 + additionalFanout));
     for (size_t i = 0; i < jservers->size(); ++i) {
       const auto& server = jservers->at(i);
       checkLogic(
@@ -496,19 +497,8 @@ McRouteHandleProvider<RouterInfo>::makePool(
       }
     } // servers
 
-    // Apply the pool's stats index to all its destinations in a single
-    // event-base hop.
-    if (!poolStatsDestinations.empty()) {
-      proxy_.eventBase().runInEventBaseThread(
-          [destinations = std::move(poolStatsDestinations),
-           poolStatIndex]() mutable {
-            for (auto& weakDestination : destinations) {
-              if (auto pdstn = weakDestination.lock()) {
-                pdstn->setPoolStatsIndex(poolStatIndex);
-              }
-            }
-          });
-    }
+    ProxyDestinationBase::setPoolStatsIndexBatch(
+        proxy_, std::move(poolStatsDestinations), poolStatIndex);
 
     /**
      * For backwards compatibility, return invalidly sized "weights" array here

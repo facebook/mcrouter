@@ -10,6 +10,7 @@
 #include <array>
 #include <chrono>
 #include <memory>
+#include <vector>
 
 #include <folly/IntrusiveList.h>
 #include <folly/concurrency/AtomicSharedPtr.h>
@@ -138,6 +139,21 @@ class ProxyDestinationBase {
    * Must be called on the proxy's event base thread.
    */
   void setPoolStatsIndex(int32_t index);
+
+  /**
+   * Applies `index` to every destination in `destinations` from one task on the
+   * proxy's event base thread, which is where setPoolStatsIndex() must run.
+   *
+   * Destinations are held weakly, so any that are no longer in use between this
+   * call and the task running are skipped rather than resurrected.
+   * This function takes the owning proxy because all destinations built by one
+   * McRouteHandleProvider share a ProxyBase, and therefore an event base.
+   */
+  static void setPoolStatsIndexBatch(
+      ProxyBase& proxy,
+      std::vector<std::weak_ptr<ProxyDestinationBase>> destinations,
+      int32_t index);
+
   void updatePoolStatConnections(bool connected);
 
   virtual RequestQueueStats getRequestStats() const = 0;
