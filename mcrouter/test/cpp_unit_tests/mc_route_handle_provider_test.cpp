@@ -15,9 +15,13 @@
 #include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/PoolFactory.h"
 #include "mcrouter/Proxy.h"
+#include "mcrouter/ProxyDestinationBase.h"
+#include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
+#include "mcrouter/lib/network/AccessPoint.h"
+#include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/options.h"
 #include "mcrouter/routes/McExtraRouteHandleProvider.h"
@@ -308,4 +312,73 @@ TEST(McRouteHandleProvider, proxy_route_applies_wrap_root) {
   ProxyRoute<MemcacheRouterInfo> proxyRoute(
       setup.proxy(), selectors, RootRouteRolloutOpts{}, &extraProvider);
   EXPECT_EQ("marker", rootRouteName(proxyRoute));
+}
+
+namespace {
+
+std::shared_ptr<ProxyDestinationBase> makeDestination(
+    Proxy<MemcacheRouterInfo>& proxy,
+    folly::StringPiece hostPort) {
+  return proxy.destinationMap()->emplace<AsyncMcClient>(
+      AccessPoint::create(hostPort, mc_ascii_protocol),
+      std::chrono::milliseconds(100),
+      0,
+      0,
+      nullptr,
+      0);
+}
+
+// The batch only applies the index once its task reaches the event base, so
+// every assertion below has to be made after the queue has been flushed.
+void flushEventBase(Proxy<MemcacheRouterInfo>& proxy) {
+  proxy.eventBase().getEventBase().runInEventBaseThreadAndWait([]() {});
+}
+
+// Takes a const ref so that the public const stats() overload is selected;
+// the non-const one is protected.
+int32_t poolStatsIndexOf(const ProxyDestinationBase& destination) {
+  return destination.stats().poolStatIndex_;
+}
+
+} // namespace
+
+TEST(McRouteHandleProvider, pool_stats_index_batch_applies_to_all) {
+  TestSetup setup;
+  auto& proxy = setup.proxy();
+  constexpr int32_t kPoolStatsIndex = 7;
+
+  std::vector<std::shared_ptr<ProxyDestinationBase>> destinations{
+      makeDestination(proxy, "127.0.0.1:12345"),
+      makeDestination(proxy, "127.0.0.1:12346")};
+  const std::vector<std::weak_ptr<ProxyDestinationBase>> weakDestinations{
+      destinations[0], destinations[1]};
+
+  const std::vector<int32_t> before{
+      poolStatsIndexOf(*destinations[0]), poolStatsIndexOf(*destinations[1])};
+  EXPECT_EQ((std::vector<int32_t>{-1, -1}), before);
+
+  ProxyDestinationBase::setPoolStatsIndexBatch(
+      proxy, weakDestinations, kPoolStatsIndex);
+  flushEventBase(proxy);
+
+  const std::vector<int32_t> after{
+      poolStatsIndexOf(*destinations[0]), poolStatsIndexOf(*destinations[1])};
+  EXPECT_EQ((std::vector<int32_t>{kPoolStatsIndex, kPoolStatsIndex}), after);
+}
+
+TEST(McRouteHandleProvider, pool_stats_index_batch_skips_expired) {
+  TestSetup setup;
+  auto& proxy = setup.proxy();
+
+  auto destination = makeDestination(proxy, "127.0.0.1:12347");
+  const std::weak_ptr<ProxyDestinationBase> weakDestination = destination;
+  proxy.destinationMap()->removeDestination(*destination);
+  destination.reset();
+  ASSERT_TRUE(weakDestination.expired());
+
+  // No assertion on the outcome: this is a use-after-free regression test, and
+  // it passes by the batched task skipping the dead pointer instead of
+  // dereferencing it.
+  ProxyDestinationBase::setPoolStatsIndexBatch(proxy, {weakDestination}, 7);
+  flushEventBase(proxy);
 }
