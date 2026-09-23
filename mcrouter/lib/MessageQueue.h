@@ -18,8 +18,6 @@
 #include <folly/io/async/EventHandler.h>
 #include <folly/io/async/VirtualEventBase.h>
 
-DECLARE_bool(mcrouter_propagate_folly_request_context);
-
 namespace facebook {
 namespace memcache {
 
@@ -374,9 +372,7 @@ class MessageQueue {
     // #queue_size times.
     folly::RequestContextSaverScopeGuard rctxSaver;
     while (queue_.read(payload)) {
-      if (FLAGS_mcrouter_propagate_folly_request_context) {
-        rctxSaver.setContext(std::move(payload.rctx));
-      }
+      rctxSaver.setContext(std::move(payload.rctx));
       onMessage_(std::move(payload.message));
       notifier_.bumpMessages();
     }

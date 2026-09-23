@@ -66,10 +66,7 @@ template <class RouterInfo>
 template <class Request>
 void Proxy<RouterInfo>::WaitingRequest<Request>::process(
     Proxy<RouterInfo>* proxy) && {
-  std::optional<folly::RequestContextScopeGuard> rcsg;
-  if (FLAGS_mcrouter_propagate_folly_request_context) {
-    rcsg.emplace(std::move(rctx_));
-  }
+  folly::RequestContextScopeGuard rcsg(std::move(rctx_));
   // timePushedOnQueue_ is nonnegative only if waiting-requests-timeout is
   // enabled
   if (timePushedOnQueue_ >= 0) {
