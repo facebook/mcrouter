@@ -66,10 +66,10 @@ class ProxyConfig {
     return pools_;
   }
 
-  const folly::F14NodeMap<
+  folly::F14NodeMap<
       std::string,
       folly::F14FastSet<std::shared_ptr<const AccessPoint>>>&
-  getAccessPoints() const {
+  getAccessPoints() {
     return accessPoints_;
   }
 
