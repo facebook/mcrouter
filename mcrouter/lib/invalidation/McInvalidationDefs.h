@@ -19,12 +19,12 @@ inline const std::string kMcDeleteReqAttrSource = "source";
 inline const std::string kMcDeleteReqHlc = "hlc";
 
 enum class McDeleteRequestSource : uint8_t {
-  UNKNOWN,
-  INGESTION_SERVICE,
-  GLOSTIC,
-  FAILED_INVALIDATION,
-  CROSS_REGION_BROADCAST_INVALIDATION,
-  CROSS_REGION_DIRECTED_INVALIDATION,
+  UNKNOWN = 0,
+  INGESTION_SERVICE = 1,
+  // Value 2 belonged to Glostic and must not be reused.
+  FAILED_INVALIDATION = 3,
+  CROSS_REGION_BROADCAST_INVALIDATION = 4,
+  CROSS_REGION_DIRECTED_INVALIDATION = 5,
 };
 
 } // namespace memcache
