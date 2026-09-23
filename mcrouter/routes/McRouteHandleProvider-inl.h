@@ -349,6 +349,7 @@ McRouteHandleProvider<RouterInfo>::makePool(
     auto* jservices = json.get_ptr("services");
     checkLogic(
         !jservices || jservices->isObject(), "services is not an object");
+    const bool servicesHaveTwJob = servicesContainTwJob(jservices);
     auto accessPointsIt = accessPoints_.end();
     std::vector<std::weak_ptr<ProxyDestinationBase>> poolStatsDestinations;
     poolStatsDestinations.reserve(jservers->size() * (1 + additionalFanout));
@@ -380,12 +381,15 @@ McRouteHandleProvider<RouterInfo>::makePool(
       }
 
       std::shared_ptr<const std::string> twJobPtr;
-      if (auto twJob = getTwJobFromServices(jservices, server.stringPiece())) {
-        auto [twIt, inserted] = twJobStrings_.try_emplace(twJob->str());
-        if (inserted) {
-          twIt->second = std::make_shared<const std::string>(twIt->first);
+      if (servicesHaveTwJob) {
+        if (auto twJob =
+                getTwJobFromServices(jservices, server.stringPiece())) {
+          auto [twIt, inserted] = twJobStrings_.try_emplace(twJob->str());
+          if (inserted) {
+            twIt->second = std::make_shared<const std::string>(twIt->first);
+          }
+          twJobPtr = twIt->second;
         }
-        twJobPtr = twIt->second;
       }
 
       if (accessPointsIt == accessPoints_.end()) {

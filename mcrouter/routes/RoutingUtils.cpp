@@ -71,6 +71,27 @@ std::optional<folly::StringPiece> getTwJobFromServices(
   return std::nullopt;
 }
 
+bool servicesContainTwJob(const folly::dynamic* jservices) {
+  if (!jservices || !jservices->isObject()) {
+    return false;
+  }
+  for (const auto& item : jservices->items()) {
+    const auto& jservice = item.second;
+    if (!jservice.isObject()) {
+      continue;
+    }
+    const auto* jprops = jservice.get_ptr("props");
+    if (!jprops || !jprops->isObject()) {
+      continue;
+    }
+    const auto* jTwJob = jprops->get_ptr("tw_job");
+    if (jTwJob && jTwJob->isString() && !jTwJob->stringPiece().empty()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 } // namespace mcrouter
 } // namespace memcache
 } // namespace facebook

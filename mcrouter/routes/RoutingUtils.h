@@ -162,6 +162,13 @@ std::optional<folly::StringPiece> getTwJobFromServices(
     const folly::dynamic* jservices,
     folly::StringPiece serverKey);
 
+/**
+ * Returns true if any service in a PoolRoute's `services` object defines a
+ * valid, non-empty `tw_job` string (services[*].props.tw_job), using the same
+ * validity criteria as `getTwJobFromServices`.
+ */
+bool servicesContainTwJob(const folly::dynamic* jservices);
+
 } // namespace mcrouter
 } // namespace memcache
 } // namespace facebook
