@@ -375,7 +375,7 @@ class MessageQueue {
     folly::RequestContextSaverScopeGuard rctxSaver;
     while (queue_.read(payload)) {
       if (FLAGS_mcrouter_propagate_folly_request_context) {
-        folly::RequestContext::setContext(std::move(payload.rctx));
+        rctxSaver.setContext(std::move(payload.rctx));
       }
       onMessage_(std::move(payload.message));
       notifier_.bumpMessages();
