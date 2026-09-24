@@ -15,7 +15,6 @@ namespace memcache {
 inline const std::string kMcDeleteReqAttrInvalidationTimeout =
     "invalidation_timeout";
 inline const std::string kMcDeleteReqAttrSource = "source";
-inline const std::string kMcDeleteReqHlc = "hlc";
 
 enum class McDeleteRequestSource : uint8_t {
   UNKNOWN = 0,
