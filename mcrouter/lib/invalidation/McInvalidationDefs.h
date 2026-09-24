@@ -14,7 +14,6 @@ namespace memcache {
 
 inline const std::string kMcDeleteReqAttrInvalidationTimeout =
     "invalidation_timeout";
-inline const std::string kMcDeleteReqAttrDBLogTimestamp = "dblog_timestamp";
 inline const std::string kMcDeleteReqAttrSource = "source";
 inline const std::string kMcDeleteReqHlc = "hlc";
 
