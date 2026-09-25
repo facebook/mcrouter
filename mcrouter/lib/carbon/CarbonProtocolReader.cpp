@@ -10,10 +10,10 @@
 namespace carbon {
 
 namespace {
-// Zero-length types: booleans and undefined types (>= 0xe) where skip() is a
-// no-op. Early return prevents timeout on malformed input with huge sizes.
+// Types for which skip() consumes no bytes.
 constexpr bool isZeroLengthFieldType(FieldType ft) {
-  return ft == FieldType::True || ft == FieldType::False ||
+  return ft == FieldType::Stop || ft == FieldType::True ||
+      ft == FieldType::False ||
       static_cast<uint8_t>(ft) > static_cast<uint8_t>(FieldType::Float);
 }
 } // namespace
