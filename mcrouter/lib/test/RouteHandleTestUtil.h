@@ -8,10 +8,12 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <vector>
 
+#include <folly/IPAddress.h>
 #include <folly/Optional.h>
 #include <folly/fibers/FiberManager.h>
 #include <folly/fibers/SimpleLoopController.h>
@@ -166,6 +168,10 @@ struct TestHandleImpl {
   std::vector<std::string> sawClientIdentifiers;
 
   std::vector<std::string> sawKcbIdentities;
+
+  std::vector<std::optional<folly::IPAddress>> sawSourceIpAddresses;
+
+  std::vector<uint64_t> sawUniqueIds;
 
   std::vector<std::string> sawCryptoAuthTokens;
 
@@ -403,6 +409,8 @@ struct RecordingRoute {
     h_->sawOperations.push_back(Request::name);
     h_->sawClientIdentifiers.push_back(req.getClientIdentifier().value_or(""));
     h_->sawKcbIdentities.push_back(req.getKcbIdentity().value_or(""));
+    h_->sawSourceIpAddresses.push_back(req.getSourceIpAddr());
+    h_->sawUniqueIds.push_back(req.uniqueId());
     h_->sawCryptoAuthTokens.push_back(req.getCryptoAuthToken().value_or(""));
     h_->sawExptimes.push_back(getExptimeIfExist(req));
     h_->sawFlags.push_back(getFlagsIfExist(req));
