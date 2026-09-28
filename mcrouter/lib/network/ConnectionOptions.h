@@ -154,6 +154,14 @@ struct ConnectionOptions {
    */
   size_t xdpTxTruncateBytes{0};
 
+  /**
+   * AF_XDP/XSK client: max reply datagram payload in bytes accepted from the
+   * server. A larger reply is rejected with REMOTE_ERROR rather than
+   * truncated. 0 means no cap beyond the jumbo receive buffer. Plumbed from
+   * the xdp_rx_truncate_bytes mcrouter option.
+   */
+  size_t xdpRxTruncateBytes{0};
+
 #ifndef MCROUTER_OSS_BUILD
   /**
    * MetaRoCE client: initial retransmission timeout in milliseconds. Must

@@ -891,6 +891,19 @@ MCROUTER_OPTION_INTEGER(
     "request is rejected with LOCAL_ERROR. 0 means no cap (clamp to the jumbo "
     "buffer size). Default 3072 (3K).")
 
+MCROUTER_OPTION_INTEGER(
+    size_t,
+    xdp_rx_truncate_bytes,
+    0,
+    "xdp-rx-truncate-bytes",
+    no_short,
+    "AF_XDP/XSK client: max reply datagram payload in bytes accepted from the "
+    "server. A larger reply is rejected with REMOTE_ERROR rather than "
+    "truncated, so a short read can never be mistaken for a malformed reply. "
+    "0 (default) means no cap beyond the jumbo receive buffer. Must be >= the "
+    "server's xdp_tx_truncate_bytes, or replies the server considers valid "
+    "will be rejected here.")
+
 #ifndef MCROUTER_OSS_BUILD
 MCROUTER_OPTION_INTEGER(
     size_t,
