@@ -44,7 +44,9 @@
 #include "mcrouter/routes/RoutingGroupRoute.h"
 #include "mcrouter/routes/SetDistributionTargetRoute.h"
 #include "mcrouter/routes/StagingRoute.h"
+#ifndef MCROUTER_OSS_BUILD
 #include "mcrouter/routes/facebook/EnableKcbRoute.h"
+#endif
 
 namespace folly {
 struct dynamic;
@@ -269,7 +271,9 @@ McRouteHandleProvider<MemcacheRouterInfo>::buildRouteMap() {
        [](McRouteHandleFactory& factory, const folly::dynamic& json) {
          return makeDistributionRoute<MemcacheRouterInfo>(factory, json);
        }},
+#ifndef MCROUTER_OSS_BUILD
       {"EnableKcbRoute", &makeEnableKcbRoute<MemcacheRouterInfo>},
+#endif
       {"ErrorRoute", &makeErrorRoute<MemcacheRouterInfo>},
       {"FailoverWithExptimeRoute",
        &makeFailoverWithExptimeRoute<MemcacheRouterInfo>},
