@@ -688,7 +688,7 @@ void AsyncMcClientImpl::writeSuccess() noexcept {
   } while (!last);
 
   // It is possible that we're already processing error, but still have a
-  // successfull write.
+  // successful write.
   if (connectionState_ == ConnectionState::Error) {
     processShutdown("Connection was in ERROR state.");
   }

@@ -66,7 +66,7 @@ namespace mcrouter {
  * route.
  *
  * Expiration time (TTL) for objects from warm -> staging update requests is
- * calculated based on the object's metadata retreived from warm route async.
+ * calculated based on the object's metadata retrieved from warm route async.
  */
 class StagingRoute {
  public:
