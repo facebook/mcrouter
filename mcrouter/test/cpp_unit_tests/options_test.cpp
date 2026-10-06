@@ -92,3 +92,61 @@ TEST(OptionsSetFromDictTest, StringMapRejectsMalformedPairs) {
         (unordered_map<string, string>{{"existing", "value"}}));
   }
 }
+
+TEST(OptionsCompareTest, ToggleTrueAndOneCompareEqual) {
+  McrouterOptions opts;
+  opts.config_params = {{"existing", "value"}};
+  opts.enable_tw_crash_config_backup_path = true;
+  auto dict = opts.toDict();
+  ASSERT_EQ(dict.at("enable_tw_crash_config_backup_path"), "1");
+  dict["enable_tw_crash_config_backup_path"] = "true";
+
+  EXPECT_TRUE(opts.compare(dict).empty());
+}
+
+TEST(OptionsCompareTest, StringTrueAndOneRemainDifferent) {
+  McrouterOptions opts;
+  opts.config_params = {{"existing", "value"}};
+  opts.service_name = "1";
+  auto dict = opts.toDict();
+  dict["service_name"] = "true";
+
+  const auto errors = opts.compare(dict);
+  ASSERT_EQ(errors.size(), 1);
+  EXPECT_EQ(errors[0].optionName, "service_name");
+}
+
+TEST(OptionsCompareTest, StringMapTrueAndOneRemainDifferent) {
+  McrouterOptions opts;
+  opts.config_params = {{"enabled", "1"}};
+  auto dict = opts.toDict();
+  dict["config_params"] = "enabled:true";
+
+  const auto errors = opts.compare(dict);
+  ASSERT_EQ(errors.size(), 1);
+  EXPECT_EQ(errors[0].optionName, "config_params");
+}
+
+TEST(OptionsCompareTest, NumericSpellingsRemainDifferent) {
+  McrouterOptions opts;
+  opts.config_params = {{"existing", "value"}};
+  opts.num_proxies = 1;
+  auto dict = opts.toDict();
+  dict["num_proxies"] = "01";
+
+  const auto errors = opts.compare(dict);
+  ASSERT_EQ(errors.size(), 1);
+  EXPECT_EQ(errors[0].optionName, "num_proxies");
+}
+
+TEST(OptionsCompareTest, InvalidToggleReportsConversionError) {
+  McrouterOptions opts;
+  opts.config_params = {{"existing", "value"}};
+  auto dict = opts.toDict();
+  dict["enable_tw_crash_config_backup_path"] = "2";
+
+  const auto errors = opts.compare(dict);
+  ASSERT_EQ(errors.size(), 1);
+  EXPECT_EQ(errors[0].optionName, "enable_tw_crash_config_backup_path");
+  EXPECT_NE(errors[0].errorMsg.find("couldn't convert value"), string::npos);
+}

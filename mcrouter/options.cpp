@@ -326,6 +326,11 @@ vector<McrouterOptionMismatch> McrouterOptionsBase::compare(
           displayedNewValue = folly::to<string>(newValueMap);
           isSame = **boost::any_cast<unordered_map<string, string>*>(
                        &newValue) == **oldValuePtr;
+        } else if (type == McrouterOptionData::Type::toggle) {
+          bool parsedToggle = false;
+          boost::any parsedValue{&parsedToggle};
+          fromString(*subValue, parsedValue);
+          isSame = currValue == toString(parsedValue);
         } else {
           isSame = currValue == *subValue;
         }
