@@ -5,6 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <barrier>
+#include <thread>
+#include <vector>
+
 #include <gtest/gtest.h>
 
 #include <mcrouter/lib/FiberLocal.h>
@@ -37,6 +41,26 @@ TEST(FiberLocalTest, basic) {
   using FiberLocal5 = FiberLocal<intptr_t, tag5>;
   // unique_ptr works
   using FiberLocal6 = FiberLocal<std::unique_ptr<std::string>, tag6>;
+
+  constexpr size_t kNumThreads = 8;
+  std::barrier barrier(kNumThreads);
+  std::vector<std::thread> threads;
+  threads.reserve(kNumThreads);
+  for (size_t i = 0; i < kNumThreads; ++i) {
+    threads.emplace_back([&, i] {
+      barrier.arrive_and_wait();
+      FiberLocal1::ref() = i + 1;
+      barrier.arrive_and_wait();
+      EXPECT_EQ(FiberLocal1::ref(), i + 1);
+      EXPECT_EQ(
+          reinterpret_cast<uintptr_t>(&FiberLocal4::ref()) %
+              alignof(aligned128),
+          0);
+    });
+  }
+  for (auto& thread : threads) {
+    thread.join();
+  }
 
   FiberLocal1::ref() = 1;
   EXPECT_EQ(1, FiberLocal1::ref());

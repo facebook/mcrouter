@@ -7,10 +7,12 @@
 
 #include <mcrouter/lib/FiberLocalInternal.h>
 
+#include <atomic>
+
 namespace facebook::mcrouter::detail {
 namespace {
 
-static bool gFinalized = false;
+static std::atomic<bool> gFinalized{false};
 static size_t gNextOffset = 0;
 static size_t gMaxAlign = alignof(size_t);
 static_assert(alignof(size_t) == sizeof(size_t), "");
@@ -47,9 +49,9 @@ static const FlsEntryListPtr& flsEntries() {
 } // namespace
 
 void FlsRegistry::allocate() {
-  if (UNLIKELY(!gFinalized)) {
+  if (UNLIKELY(!gFinalized.load(std::memory_order_acquire))) {
     std::lock_guard<std::mutex> lock(gFlsRegistryFinalizeMutex);
-    gFinalized = true;
+    gFinalized.store(true, std::memory_order_release);
   }
 
   auto& storage = localStorage();
@@ -105,7 +107,7 @@ FlsRegistry::FlsHandle FlsRegistry::registerFls(
   assert(constructor != nullptr);
   assert(destructor != nullptr);
   std::lock_guard<std::mutex> lock(gFlsRegistryFinalizeMutex);
-  CHECK(!gFinalized)
+  CHECK(!gFinalized.load(std::memory_order_relaxed))
       << "attempt to register a new fiber local after fiber local "
          "storage has been allocated";
   auto offset = gNextOffset;
