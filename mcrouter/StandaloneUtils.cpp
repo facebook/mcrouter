@@ -462,13 +462,9 @@ void getFlavorOptionsAndApplyOverrides(
   }
 }
 
-void setupStandaloneMcrouter(
-    const std::string& serviceName,
+void initStandaloneProcessEarly(
     const CmdLineOptions& cmdLineOpts,
-    const std::unordered_map<std::string, std::string>& libmcrouterOptionsDict,
-    const std::unordered_map<std::string, std::string>& standaloneOptionsDict,
-    McrouterOptions& libmcrouterOptions,
-    McrouterStandaloneOptions& standaloneOptions) {
+    const std::unordered_map<std::string, std::string>& standaloneOptionsDict) {
   // From now on, we might be reporting errors, so first thing is to
   // setup the logging file, if one was provided.
   auto logFile = standaloneOptionsDict.find("log_file");
@@ -494,7 +490,15 @@ void setupStandaloneMcrouter(
       folly::to<std::string>(
           cmdLineOpts.programName, " ", cmdLineOpts.commandArgs));
   failure::setHandler(failure::handlers::logToStdError());
+}
 
+void buildStandaloneOptions(
+    const std::string& serviceName,
+    const CmdLineOptions& cmdLineOpts,
+    const std::unordered_map<std::string, std::string>& libmcrouterOptionsDict,
+    const std::unordered_map<std::string, std::string>& standaloneOptionsDict,
+    McrouterOptions& libmcrouterOptions,
+    McrouterStandaloneOptions& standaloneOptions) {
   auto libmcrouterErrors =
       libmcrouterOptions.updateFromDict(libmcrouterOptionsDict);
   auto standaloneErrors =
@@ -541,10 +545,6 @@ void setupStandaloneMcrouter(
   // finialize standalone options
   finalizeStandaloneOptions(standaloneOptions);
 
-  // init a few things.
-  initStandaloneSSL();
-  srand(time(nullptr) + getpid());
-
   // check if the values to provided to the options are sane.
   if (!areOptionsValid(libmcrouterOptions, standaloneOptions)) {
     printUsageAndDie(
@@ -552,8 +552,6 @@ void setupStandaloneMcrouter(
         kExitStatusUnrecoverableError,
         cmdLineOpts.packageName);
   }
-
-  LOG(INFO) << cmdLineOpts.packageName << " startup (" << getpid() << ")";
 
   // update service_name and router_name
   if (cmdLineOpts.serviceName.empty()) {
@@ -568,6 +566,17 @@ void setupStandaloneMcrouter(
     }
     libmcrouterOptions.router_name = port;
   }
+}
+
+void initStandaloneProcess(
+    const CmdLineOptions& cmdLineOpts,
+    const McrouterOptions& libmcrouterOptions,
+    const McrouterStandaloneOptions& standaloneOptions) {
+  // init a few things.
+  initStandaloneSSL();
+  srand(static_cast<unsigned int>(time(nullptr) + getpid()));
+
+  LOG(INFO) << cmdLineOpts.packageName << " startup (" << getpid() << ")";
 
   // setup additional failure handler if necessary.
   if (cmdLineOpts.validateConfigMode != ValidateConfigMode::None) {
@@ -579,6 +588,24 @@ void setupStandaloneMcrouter(
     standaloneInit(libmcrouterOptions, standaloneOptions);
     set_standalone_args(cmdLineOpts.commandArgs);
   }
+}
+
+void setupStandaloneMcrouter(
+    const std::string& serviceName,
+    const CmdLineOptions& cmdLineOpts,
+    const std::unordered_map<std::string, std::string>& libmcrouterOptionsDict,
+    const std::unordered_map<std::string, std::string>& standaloneOptionsDict,
+    McrouterOptions& libmcrouterOptions,
+    McrouterStandaloneOptions& standaloneOptions) {
+  initStandaloneProcessEarly(cmdLineOpts, standaloneOptionsDict);
+  buildStandaloneOptions(
+      serviceName,
+      cmdLineOpts,
+      libmcrouterOptionsDict,
+      standaloneOptionsDict,
+      libmcrouterOptions,
+      standaloneOptions);
+  initStandaloneProcess(cmdLineOpts, libmcrouterOptions, standaloneOptions);
 }
 
 void runStandaloneMcrouter(

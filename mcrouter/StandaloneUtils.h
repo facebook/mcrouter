@@ -114,10 +114,60 @@ void getFlavorOptionsAndApplyOverrides(
     std::unordered_map<std::string, std::string>& standaloneOptionsDict);
 
 /**
+ * Process-wide setup that must precede buildStandaloneOptions(), because
+ * building options may already report failures: redirects stderr to log_file
+ * (if set) and installs the failure service context and handler.
+ * Call once per process.
+ *
+ * @param cmdLineOpts             The result of parseCmdLineOptions() function.
+ * @param standaloneOptionsDict   The standalone mcrouter options dict whose
+ *                                log_file applies to the whole process.
+ */
+void initStandaloneProcessEarly(
+    const CmdLineOptions& cmdLineOpts,
+    const std::unordered_map<std::string, std::string>& standaloneOptionsDict);
+
+/**
+ * Builds one router's options objects from its option dicts and reports any
+ * option errors. Exits the process if the options are invalid.
+ * May be called once per router in the same process. Must follow
+ * initStandaloneProcessEarly().
+ *
+ * Parameters are as for setupStandaloneMcrouter().
+ */
+void buildStandaloneOptions(
+    const std::string& serviceName,
+    const CmdLineOptions& cmdLineOpts,
+    const std::unordered_map<std::string, std::string>& libmcrouterOptionsDict,
+    const std::unordered_map<std::string, std::string>& standaloneOptionsDict,
+    McrouterOptions& libmcrouterOptions,
+    McrouterStandaloneOptions& standaloneOptions);
+
+/**
+ * Process-wide setup that follows buildStandaloneOptions(): initializes ssl,
+ * seeds rand(), adds the validate-config failure handler and, unless
+ * validating and exiting, runs standaloneInit() and records the command line
+ * for stats. Call once per process, after every router's options are built,
+ * with the options that should own process-wide settings such as rss_limit_mb.
+ *
+ * @param cmdLineOpts         The result of parseCmdLineOptions() function.
+ * @param libmcrouterOptions  A libmcrouter options object built by
+ *                            buildStandaloneOptions().
+ * @param standaloneOptions   A standalone mcrouter options object built by
+ *                            buildStandaloneOptions().
+ */
+void initStandaloneProcess(
+    const CmdLineOptions& cmdLineOpts,
+    const McrouterOptions& libmcrouterOptions,
+    const McrouterStandaloneOptions& standaloneOptions);
+
+/**
  * Setup standalone mcrouter.
  * It doesn't run the standalone mcrouter server. It just perform the necessary
  * initializetion, such as: setup logging file, report any invalid command-line
  * argumnets, initialize ssl, etc.
+ * Equivalent to initStandaloneProcessEarly(), buildStandaloneOptions() and
+ * initStandaloneProcess(), in that order, for a single-router process.
  *
  * @param serviceName             Mcrouter's service_name.
  * @param cmdLineOpts             The result of parseCmdLineOptions() funciton.
