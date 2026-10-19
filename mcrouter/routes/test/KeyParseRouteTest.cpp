@@ -7,7 +7,6 @@
 
 #include "mcrouter/routes/KeyParseRoute.h"
 #include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/lib/network/gen/MemcacheMessages.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/routes/test/RouteHandleTestUtil.h"
 

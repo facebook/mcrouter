@@ -11,7 +11,6 @@
 #include <gtest/gtest.h>
 
 #include "mcrouter/McrouterInstance.h"
-#include "mcrouter/lib/network/gen/MemcacheMessages.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/lib/test/TestRouteHandle.h"

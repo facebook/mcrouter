@@ -11,7 +11,6 @@
 #include <gtest/gtest.h>
 
 #include "mcrouter/lib/FailoverErrorsSettings.h"
-#include "mcrouter/lib/network/gen/MemcacheMessages.h"
 #include "mcrouter/routes/FailoverRateLimiter.h"
 #include "mcrouter/routes/FailoverWithExptimeRouteFactory.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"

@@ -13,7 +13,6 @@
 #include <folly/json/dynamic.h>
 
 #include "mcrouter/lib/FailoverErrorsSettings.h"
-#include "mcrouter/lib/network/gen/MemcacheMessages.h"
 #include "mcrouter/routes/LatestRoute.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/test/RouteHandleTestUtil.h"
