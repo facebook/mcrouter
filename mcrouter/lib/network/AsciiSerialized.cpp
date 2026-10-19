@@ -776,7 +776,9 @@ void AsciiSerializedReply::prepareImpl(McVersionReply&& reply) {
   if (*reply.result() == carbon::Result::OK) {
     // TODO(jmswen) Do something sane when version is empty
     addString("VERSION ");
-    if (reply.value().is_set() && !reply.value()->empty()) {
+    if (apache::thrift::is_non_optional_field_set_manually_or_by_serializer(
+            reply.value()) &&
+        !reply.value()->empty()) {
       const auto valueStr = coalesceAndGetRange(reply.value());
       assert(!iobuf_.has_value());
       // value was coalesced in coalesceAndGetRange()
