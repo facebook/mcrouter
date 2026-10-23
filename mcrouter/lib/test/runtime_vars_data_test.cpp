@@ -9,6 +9,7 @@
 
 #include <gtest/gtest.h>
 
+#include <fmt/format.h>
 #include <folly/json/json.h>
 
 #include "mcrouter/lib/Observable.h"
@@ -26,11 +27,10 @@ TEST(runtime_vars_data, sanity) {
   EXPECT_EQ(obj.getVariableByName("key1"), "value1");
   EXPECT_EQ(obj.getVariableByName("key2"), "value2");
 
-  auto newJson = folly::format(
-                     "{{\"key3\": \"value3\","
-                     "\"key4\": {}}}",
-                     json)
-                     .str();
+  auto newJson = fmt::format(
+      "{{\"key3\": \"value3\","
+      "\"key4\": {}}}",
+      json);
   obj = RuntimeVarsData(newJson);
   EXPECT_EQ(obj.getVariableByName("key3"), "value3");
   EXPECT_EQ(obj.getVariableByName("key4"), jsonObj);
@@ -55,11 +55,10 @@ TEST(runtime_vars_data, register_callback) {
     obj.set(std::make_shared<const RuntimeVarsData>(json));
   }
   EXPECT_EQ(counter, 2);
-  auto newJson = folly::format(
-                     "{{\"key3\": \"value3\","
-                     "\"key4\": {}}}",
-                     json)
-                     .str();
+  auto newJson = fmt::format(
+      "{{\"key3\": \"value3\","
+      "\"key4\": {}}}",
+      json);
   obj.set(std::make_shared<const RuntimeVarsData>(newJson));
   EXPECT_EQ(counter, 2);
 }

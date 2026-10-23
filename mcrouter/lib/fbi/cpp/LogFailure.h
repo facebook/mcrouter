@@ -8,10 +8,12 @@
 #pragma once
 
 #include <functional>
+#include <map>
 #include <string>
+#include <type_traits>
 #include <utility>
 
-#include <folly/Format.h>
+#include <fmt/format.h>
 #include <folly/Range.h>
 
 namespace facebook {
@@ -84,6 +86,12 @@ std::pair<std::string, HandlerFunc> throwLogicError();
 
 namespace detail {
 
+template <typename... Args>
+constexpr bool kFirstArgIsBool = false;
+template <typename First, typename... Rest>
+constexpr bool kFirstArgIsBool<First, Rest...> =
+    std::is_same_v<std::decay_t<First>, bool>;
+
 /**
  * Log failure according to action for given category (see @setCategoryAction).
  * If no special action is provided, default constructed one will be used.
@@ -103,18 +111,19 @@ void log(
  * log overload to format messages automatically.
  */
 template <typename... Args>
+  requires(!kFirstArgIsBool<Args...>)
 void log(
     folly::StringPiece file,
     int line,
     folly::StringPiece service,
     folly::StringPiece category,
-    folly::StringPiece msgFormat,
+    fmt::format_string<Args...> msgFormat,
     Args&&... args) {
   log(file,
       line,
       service,
       category,
-      folly::format(msgFormat, std::forward<Args>(args)...).str());
+      fmt::format(msgFormat, std::forward<Args>(args)...));
 }
 
 /**
@@ -126,14 +135,14 @@ void log(
     int line,
     folly::StringPiece service,
     folly::StringPiece category,
-    folly::StringPiece msgFormat,
+    fmt::format_string<Args...> msgFormat,
     bool skipRateLimit,
     Args&&... args) {
   log(file,
       line,
       service,
       category,
-      folly::format(msgFormat, std::forward<Args>(args)...).str(),
+      fmt::format(msgFormat, std::forward<Args>(args)...),
       skipRateLimit);
 }
 

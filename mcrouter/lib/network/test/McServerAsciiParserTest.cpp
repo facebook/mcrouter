@@ -86,9 +86,12 @@ class TestRunner {
     return *this;
   }
 
-  template <typename... Args>
-  TestRunner& run(folly::StringPiece format, Args... args) {
-    return run(folly::sformat(format, std::forward<Args>(args)...));
+  template <typename Arg, typename... Args>
+  TestRunner&
+  run(fmt::format_string<Arg, Args...> format, Arg&& arg, Args&&... args) {
+    return run(
+        fmt::format(
+            format, std::forward<Arg>(arg), std::forward<Args>(args)...));
   }
 
   TestRunner& run(folly::StringPiece data) {

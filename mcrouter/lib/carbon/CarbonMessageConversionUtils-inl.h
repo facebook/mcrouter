@@ -574,11 +574,14 @@ class FromDynamicVisitor {
     typename SerializationTraits<T>::key_type key;
     typename SerializationTraits<T>::mapped_type val;
     for (const auto& jsonKey : json.keys()) {
-      if (!fromDynamic(folly::sformat("{}[{}]", name, jsonKey), jsonKey, key)) {
+      if (!fromDynamic(
+              fmt::format("{}[{}]", name, jsonKey.asString()), jsonKey, key)) {
         continue;
       }
       if (!fromDynamic(
-              folly::sformat("{}[{}]", name, jsonKey), json[jsonKey], val)) {
+              fmt::format("{}[{}]", name, jsonKey.asString()),
+              json[jsonKey],
+              val)) {
         continue;
       }
       SerializationTraits<T>::emplace(valRef, std::move(key), std::move(val));

@@ -78,9 +78,11 @@ struct ServerStat {
 
   std::string toString() const {
     double avgLatency = cntLatencies == 0 ? 0 : sumLatencies / cntLatencies;
-    auto res = folly::format("avg_latency_us:{:.3f}", avgLatency).str();
-    folly::format(" pending_reqs:{}", pendingRequestsCount).appendTo(res);
-    folly::format(" inflight_reqs:{}", inflightRequestsCount).appendTo(res);
+    auto res = fmt::format("avg_latency_us:{:.3f}", avgLatency);
+    fmt::format_to(
+        std::back_inserter(res), " pending_reqs:{}", pendingRequestsCount);
+    fmt::format_to(
+        std::back_inserter(res), " inflight_reqs:{}", inflightRequestsCount);
     if (isHardTko) {
       res.append(" hard_tko; ");
     } else if (isSoftTko) {
@@ -88,19 +90,19 @@ struct ServerStat {
     }
     if (cntRetransPerKByte > 0) {
       double avgRetransPerKByte = sumRetransPerKByte / cntRetransPerKByte;
-      folly::format(
+      fmt::format_to(
+          std::back_inserter(res),
           " avg_retrans_ratio:{} max_retrans_ratio:{} min_retrans_ratio:{}",
           avgRetransPerKByte,
           maxRetransPerKByte,
-          minRetransPerKByte)
-          .appendTo(res);
+          minRetransPerKByte);
     }
     for (size_t i = 0; i < (size_t)ProxyDestinationBase::State::NumStates;
          ++i) {
       if (states[i] > 0) {
         auto state =
             clientStateToStr(static_cast<ProxyDestinationBase::State>(i));
-        folly::format(" {}:{}", state, states[i]).appendTo(res);
+        fmt::format_to(std::back_inserter(res), " {}:{}", state, states[i]);
       }
     }
     bool firstResult = true;
@@ -110,8 +112,12 @@ struct ServerStat {
         folly::StringPiece result(
             carbon::resultToString(static_cast<carbon::Result>(i)));
         result.removePrefix("mc_res_");
-        folly::format("{} {}:{}", firstResult ? ";" : "", result, results[i])
-            .appendTo(res);
+        fmt::format_to(
+            std::back_inserter(res),
+            "{} {}:{}",
+            firstResult ? ";" : "",
+            result,
+            results[i]);
         firstResult = false;
       }
     }
@@ -861,11 +867,10 @@ McStatsReply stats_reply(ProxyBase* proxy, folly::StringPiece group_str) {
     for (const auto& it : suspectServers) {
       reply.addStat(
           it.first,
-          folly::format(
+          fmt::format(
               "status:{} num_failures:{}",
               it.second.first ? "tko" : "down",
-              it.second.second)
-              .str());
+              it.second.second));
     }
   }
 

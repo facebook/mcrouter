@@ -15,8 +15,8 @@
 #include <boost/filesystem/path.hpp>
 #include <glog/logging.h>
 
+#include <fmt/format.h>
 #include <folly/FileUtil.h>
-#include <folly/Format.h>
 
 using boost::filesystem::complete;
 using boost::filesystem::path;
@@ -48,11 +48,10 @@ void FileDataProvider::updateInotifyWatch() {
   auto inotifyFD = inotify_init();
   if (inotifyFD < 0) {
     throw std::runtime_error(
-        folly::format(
+        fmt::format(
             "Failed to initialize inotify for '{}'. Errno: '{}'",
             filePath_.data(),
-            errno)
-            .str());
+            errno));
   }
   folly::File tmpInotify(inotifyFD, /* ownsFd */ true);
   /**
@@ -66,9 +65,8 @@ void FileDataProvider::updateInotifyWatch() {
     int wd = inotify_add_watch(inotifyFD, link.string().data(), INOTIFY_MASK);
     if (wd < 0) {
       throw std::runtime_error(
-          folly::format(
-              "Can not add inotify watch for '{}'", link.string().data())
-              .str());
+          fmt::format(
+              "Can not add inotify watch for '{}'", link.string().data()));
     }
     // Read the link (if it is one)
     boost::system::error_code ec;
@@ -98,7 +96,7 @@ std::string FileDataProvider::load() const {
   std::string result;
   if (!folly::readFile(filePath_.data(), result)) {
     throw std::runtime_error(
-        folly::format("Can not read file '{}'", filePath_.data()).str());
+        fmt::format("Can not read file '{}'", filePath_.data()));
   }
   return result;
 }
@@ -114,8 +112,7 @@ bool FileDataProvider::hasUpdate() {
   auto retval = poll(&pollfd, /* __nfds = */ 1, /* __timeout = */ 0);
   if (retval < 0) {
     throw std::runtime_error(
-        folly::format("poll on inotifyFD for '{}' failed", filePath_.data())
-            .str());
+        fmt::format("poll on inotifyFD for '{}' failed", filePath_.data()));
   } else if (retval > 0) {
     struct inotify_event inotifyBuffer[INOTIFY_BUF_SIZE];
     // Data is ready to read from inotifyFD.  We need to read it so that
