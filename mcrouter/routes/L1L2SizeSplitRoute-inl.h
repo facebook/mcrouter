@@ -306,8 +306,8 @@ typename RouterInfo::RouteHandlePtr makeL1L2SizeSplitRoute(
         numRetries > 0, "L1L2SizeSplitRoute: number of retries must be > 0");
     checkLogic(
         numRetries <= L1L2SizeSplitRoute<RouterInfo>::kMaxNumRetries,
-        "L1L2SizeSplitRoute: maximum number of retries is " +
-            std::to_string(L1L2SizeSplitRoute<RouterInfo>::kMaxNumRetries));
+        "L1L2SizeSplitRoute: maximum number of retries is {}",
+        L1L2SizeSplitRoute<RouterInfo>::kMaxNumRetries);
   }
 
   return makeRouteHandleWithInfo<RouterInfo, L1L2SizeSplitRoute>(

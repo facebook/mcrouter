@@ -11,6 +11,11 @@
 
 #include <chrono>
 #include <string>
+#include <string_view>
+#include <type_traits>
+#include <utility>
+
+#include <fmt/format.h>
 
 #include <folly/Expected.h>
 #include <folly/Format.h>
@@ -28,44 +33,106 @@ struct dynamic;
 namespace facebook {
 namespace memcache {
 
+namespace detail {
+
 /**
- * If `condition` is false, throws std::logic_error.
- * `fmt` and `args` are passed to folly::format().
+ * Formats a folly::dynamic the way folly::format did: a scalar prints its
+ * value, with any format spec applied to it, and null prints "(null)".
+ * folly::format rejected arrays and objects unless the format string named a
+ * key; they print as JSON here.
+ */
+struct FormattableDynamic {
+  const folly::dynamic& value;
+};
+
+template <typename T>
+constexpr bool isCString = std::is_same_v<std::decay_t<T>, char*> ||
+    std::is_same_v<std::decay_t<T>, const char*>;
+
+template <typename T>
+using FormatArgT = std::conditional_t<
+    std::is_same_v<std::decay_t<T>, folly::dynamic>,
+    FormattableDynamic,
+    std::conditional_t<isCString<T>, std::string_view, T>>;
+
+// folly::dynamic and C strings are passed to fmt as what folly::format printed
+// for them: the scalar a dynamic holds, and "(null)" for a null C string.
+template <typename T>
+decltype(auto) toFormatArg(T&& arg) {
+  if constexpr (std::is_same_v<std::decay_t<T>, folly::dynamic>) {
+    return FormattableDynamic{arg};
+  } else if constexpr (isCString<T>) {
+    return arg ? std::string_view(arg) : std::string_view("(null)");
+  } else {
+    return std::forward<T>(arg);
+  }
+}
+
+/**
+ * Formats `fmt` and `args` with fmt::format(), passing each argument through
+ * toFormatArg().
  */
 template <typename... Args>
-void checkLogic(bool condition, folly::StringPiece fmt, Args&&... args) {
+std::string formatMessage(
+    fmt::format_string<FormatArgT<Args>...> fmt,
+    Args&&... args) {
+  return fmt::format(fmt, toFormatArg(std::forward<Args>(args))...);
+}
+
+} // namespace detail
+
+/**
+ * If `condition` is false, throws std::logic_error.
+ * `fmt` and `args` are passed to fmt::format().
+ */
+template <typename... Args>
+void checkLogic(
+    bool condition,
+    fmt::format_string<detail::FormatArgT<Args>...> fmt,
+    Args&&... args) {
   if (FOLLY_UNLIKELY(!condition)) {
-    throw std::logic_error(folly::sformat(fmt, std::forward<Args>(args)...));
+    throw std::logic_error(
+        detail::formatMessage<Args...>(fmt, std::forward<Args>(args)...));
   }
 }
 
 /**
  * Throws std::logic_error with formatted string.
- * `fmt` and `args` are passed to folly::format().
+ * `fmt` and `args` are passed to fmt::format().
  */
 template <typename... Args>
-[[noreturn]] void throwLogic(folly::StringPiece fmt, Args&&... args) {
-  throw std::logic_error(folly::sformat(fmt, std::forward<Args>(args)...));
+[[noreturn]] void throwLogic(
+    fmt::format_string<detail::FormatArgT<Args>...> fmt,
+    Args&&... args) {
+  throw std::logic_error(
+      detail::formatMessage<Args...>(fmt, std::forward<Args>(args)...));
 }
 
 /**
  * If `condition` is false, throws std::runtime_error.
- * `fmt` and `args` are passed to folly::format().
+ * `fmt` and `args` are passed to fmt::format().
  */
 template <typename... Args>
-void checkRuntime(bool condition, folly::StringPiece fmt, Args&&... args) {
+void checkRuntime(
+    bool condition,
+    fmt::format_string<detail::FormatArgT<Args>...> fmt,
+    Args&&... args) {
   if (FOLLY_UNLIKELY(!condition)) {
-    throw std::runtime_error(folly::sformat(fmt, std::forward<Args>(args)...));
+    throw std::runtime_error(
+        detail::formatMessage<Args...>(fmt, std::forward<Args>(args)...));
   }
 }
 
 /**
  * Throws std::runtime_error with formatted string.
- * `fmt` and `args` are passed to folly::format().
+ * `fmt` and `args` are passed to fmt::format().
  */
 template <typename... Args>
-[[noreturn]] void throwRuntime(folly::StringPiece fmt, Args&&... args) {
-  throw std::runtime_error(folly::sformat(fmt, std::forward<Args>(args)...));
+[[noreturn]] void throwRuntime(
+    fmt::format_string<detail::FormatArgT<Args>...> fmt,
+    Args&&... args) {
+  throw std::runtime_error(
+      detail::formatMessage<Args...>(fmt, std::forward<Args>(args)...));
 }
 
 /** folly::to style conversion routines */
@@ -282,3 +349,52 @@ ensureHasPermissionOrReturnError(const std::string& path, mode_t mode);
 bool intervalOverlap(std::vector<std::vector<size_t>>& intervals);
 } // namespace memcache
 } // namespace facebook
+
+template <>
+struct fmt::formatter<facebook::memcache::detail::FormattableDynamic> {
+  constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+    auto it = ctx.begin();
+    while (it != ctx.end() && *it != '}') {
+      ++it;
+    }
+    spec_ = string_view(ctx.begin(), static_cast<size_t>(it - ctx.begin()));
+    return it;
+  }
+
+  template <typename FormatContext>
+  auto format(
+      const facebook::memcache::detail::FormattableDynamic& arg,
+      FormatContext& ctx) const -> decltype(ctx.out()) {
+    const folly::dynamic& d = arg.value;
+    switch (d.type()) {
+      case folly::dynamic::NULLT:
+        return write(ctx, string_view("(null)"));
+      case folly::dynamic::BOOL:
+        return write(ctx, d.getBool());
+      case folly::dynamic::INT64:
+        return write(ctx, d.getInt());
+      case folly::dynamic::DOUBLE:
+        return write(ctx, d.getDouble());
+      case folly::dynamic::STRING:
+        return write(ctx, string_view(d.getString()));
+      case folly::dynamic::ARRAY:
+      case folly::dynamic::OBJECT:
+        break;
+    }
+    return write(ctx, folly::toJson(d));
+  }
+
+ private:
+  template <typename FormatContext, typename T>
+  auto write(FormatContext& ctx, const T& value) const -> decltype(ctx.out()) {
+    if (spec_.size() == 0) {
+      return fmt::format_to(ctx.out(), "{}", value);
+    }
+    std::string spec = "{:";
+    spec.append(spec_.data(), spec_.size());
+    spec += '}';
+    return fmt::format_to(ctx.out(), fmt::runtime(spec), value);
+  }
+
+  string_view spec_;
+};
