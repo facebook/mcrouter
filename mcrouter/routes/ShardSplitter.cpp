@@ -104,7 +104,6 @@ ShardSplitter::ShardSplitInfo parseSplit(
   }
   // Should never reach here
   throwLogic("Invalid json type, not an int or object for {}", id);
-  return ShardSplitter::ShardSplitInfo(1);
 }
 
 } // namespace
