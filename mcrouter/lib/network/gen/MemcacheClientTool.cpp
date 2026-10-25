@@ -116,7 +116,7 @@ class MemcacheJsonClient : public JsonClient {
 
 int main(int argc, char** argv) {
   int tmpArgc = 1;
-  folly::init(&tmpArgc, &argv, /* removeFlags */ false);
+  const folly::Init init(&tmpArgc, &argv, /* removeFlags */ false);
   CmdLineClient client;
   client.sendRequests<MemcacheJsonClient>(argc, const_cast<const char**>(argv));
   return 0;
