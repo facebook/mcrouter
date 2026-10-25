@@ -184,7 +184,7 @@ int main(int argc, char** argv) {
   // Just give the binary name to folly::init() because we use
   // boost::program_options instead of gflags.
   int tempArgc = 1;
-  folly::init(&tempArgc, &argv, false);
+  const folly::Init init(&tempArgc, &argv, false);
 
   gMcpiper = std::make_unique<McPiper>();
 
