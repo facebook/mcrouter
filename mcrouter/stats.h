@@ -135,6 +135,17 @@ stat_incr_internal(stat_t* stats, stat_name_t stat_num, double amount) {
  */
 class StatsApi {
  public:
+  enum class NamedStatType : uint8_t {
+    Sum,
+    GaugeDelta,
+  };
+
+  struct NamedStatUpdate {
+    folly::StringPiece name;
+    double value{0};
+    NamedStatType type{NamedStatType::Sum};
+  };
+
   virtual ~StatsApi() = default;
 
   /**
@@ -152,6 +163,17 @@ class StatsApi {
    * threads.
    */
   virtual void setValue(stat_name_t, double) = 0;
+
+  /**
+   * Adds a batch of dynamically named ODSL statistics. Sum values are
+   * accumulated over the publication interval; gauge deltas adjust a
+   * process-wide gauge.
+   *
+   * MT-safety: must be able to be called concurrently from multiple
+   * threads.
+   */
+  virtual void updateNamedStats(
+      folly::Range<const NamedStatUpdate*> /* updates */) {}
 };
 
 void init_stats(stat_t* stats);
