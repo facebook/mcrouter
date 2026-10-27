@@ -257,10 +257,10 @@ McRouteHandleProvider<RouterInfo>::makePool(
     if (auto jQos = json.get_ptr("qos")) {
       checkLogic(jQos->isObject(), "qos must be an object.");
       if (auto jClass = jQos->get_ptr("class")) {
-        qosClass = parseInt(*jClass, "qos.class", 0, 4);
+        qosClass = static_cast<uint32_t>(parseInt(*jClass, "qos.class", 0, 4));
       }
       if (auto jPath = jQos->get_ptr("path")) {
-        qosPath = parseInt(*jPath, "qos.path", 0, 3);
+        qosPath = static_cast<uint32_t>(parseInt(*jPath, "qos.path", 0, 3));
       }
     }
 
@@ -282,22 +282,24 @@ McRouteHandleProvider<RouterInfo>::makePool(
     if (auto poolTkoTrackerConfig = json.get_ptr("tko_tracker")) {
       if (auto jNumTkoThresholdUpper =
               poolTkoTrackerConfig->get_ptr("num_tko_threshold_upper")) {
-        numTkoThresholdUpper = jNumTkoThresholdUpper->asInt();
+        numTkoThresholdUpper =
+            static_cast<uint32_t>(jNumTkoThresholdUpper->asInt());
       } else if (
           auto jPercentTkoThresholdUpper =
               poolTkoTrackerConfig->get_ptr("percent_tko_threshold_upper")) {
-        numTkoThresholdUpper =
-            (jPercentTkoThresholdUpper->asInt() * jservers->size()) / 100;
+        numTkoThresholdUpper = static_cast<uint32_t>(
+            (jPercentTkoThresholdUpper->asInt() * jservers->size()) / 100);
       }
 
       if (auto jNumTkoThresholdLower =
               poolTkoTrackerConfig->get_ptr("num_tko_threshold_lower")) {
-        numTkoThresholdLower = jNumTkoThresholdLower->asInt();
+        numTkoThresholdLower =
+            static_cast<uint32_t>(jNumTkoThresholdLower->asInt());
       } else if (
           auto jPercentTkoThresholdLower =
               poolTkoTrackerConfig->get_ptr("percent_tko_threshold_lower")) {
-        numTkoThresholdLower =
-            (jPercentTkoThresholdLower->asInt() * jservers->size()) / 100;
+        numTkoThresholdLower = static_cast<uint32_t>(
+            (jPercentTkoThresholdLower->asInt() * jservers->size()) / 100);
       }
       checkLogic(
           numTkoThresholdUpper > 0 && numTkoThresholdLower > 0,
@@ -373,7 +375,7 @@ McRouteHandleProvider<RouterInfo>::makePool(
       uint32_t failureDomain = 0;
 
       if (jfailureDomains && jfailureDomains->at(i).isInt()) {
-        failureDomain = jfailureDomains->at(i).asInt();
+        failureDomain = static_cast<uint32_t>(jfailureDomains->at(i).asInt());
       } else if (jfailureDomains && jfailureDomains->at(i).isString()) {
         failureDomain = getFailureDomainHash(jfailureDomains->at(i).asString());
       } else {
@@ -631,7 +633,7 @@ McRouteHandleProvider<RouterInfo>::createSRRoute(
         checkLogic(
             jSplitShardFanout->isInt(),
             "ShardSplitRoute \"split_shard_fanout\" is not integer");
-        shardSplitFanout = jSplitShardFanout->asInt();
+        shardSplitFanout = static_cast<uint32_t>(jSplitShardFanout->asInt());
       }
       route = createShardSplitRoute<RouterInfo>(
           std::move(route), ShardSplitter(*jsplits), shardSplitFanout);
@@ -843,7 +845,8 @@ McRouteHandleProvider<RouterInfo>::makePoolRoute(
             checkLogic(
                 jSplitShardFanout->isInt(),
                 "ShardSplitRoute \"split_shard_fanout\" is not integer");
-            shardSplitFanout = jSplitShardFanout->asInt();
+            shardSplitFanout =
+                static_cast<uint32_t>(jSplitShardFanout->asInt());
           }
           route = createShardSplitRoute<RouterInfo>(
               std::move(route), ShardSplitter(*jsplits), shardSplitFanout);
@@ -1095,6 +1098,12 @@ McRouteHandleProvider<RouterInfo>::create(
   /* returns empty vector if type is unknown */
   auto ret = extraProvider_->tryCreate(factory, type, json, proxy_);
   if (!ret.empty()) {
+    if (type == "ThriftMetaRoceRoute") {
+      checkLogic(ret.size() == 1, "ThriftMetaRoceRoute must return one route");
+      ret.front() =
+          wrapWithWeightsRv(factory, json, std::move(ret.front()), type);
+      ret.front() = bucketize(std::move(ret.front()), json);
+    }
     return ret;
   }
 
