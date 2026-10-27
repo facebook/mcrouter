@@ -43,6 +43,14 @@ class ExtraRouteHandleProviderIf {
       folly::StringPiece type,
       const folly::dynamic& json) = 0;
 
+  virtual std::vector<std::shared_ptr<RouteHandleIf>> tryCreate(
+      RouteHandleFactory<RouteHandleIf>& factory,
+      folly::StringPiece type,
+      const folly::dynamic& json,
+      ProxyBase& /* proxy */) {
+    return tryCreate(factory, type, json);
+  }
+
   /**
    * Wraps the root of the route handle tree, after the config's entry point
    * has been turned into route handles.

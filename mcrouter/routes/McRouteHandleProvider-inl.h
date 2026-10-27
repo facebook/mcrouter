@@ -1093,7 +1093,7 @@ McRouteHandleProvider<RouterInfo>::create(
   }
 
   /* returns empty vector if type is unknown */
-  auto ret = extraProvider_->tryCreate(factory, type, json);
+  auto ret = extraProvider_->tryCreate(factory, type, json, proxy_);
   if (!ret.empty()) {
     return ret;
   }
