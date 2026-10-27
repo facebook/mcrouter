@@ -7,6 +7,9 @@
 
 #pragma once
 
+#include <algorithm>
+#include <chrono>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <vector>
@@ -21,6 +24,9 @@
 #include "mcrouter/lib/FailoverErrorsSettings.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/carbon/ReplyCommon.h"
+#include "mcrouter/lib/carbon/RequestReplyUtil.h"
+#include "mcrouter/lib/network/AccessPoint.h"
 #include "mcrouter/lib/network/gen/MemcacheMessages.h"
 #include "mcrouter/routes/FailoverPolicy.h"
 #include "mcrouter/routes/FailoverRateLimiter.h"
@@ -48,6 +54,60 @@ inline std::string getFailoverRouteName(std::string name, size_t numTargets) {
   }
   return folly::to<std::string>(
       std::move(name), ":failover_targets=", numTargets);
+}
+
+// Wall clock, not mcrouter::nowUs()'s monotonic one: attempts are placed on a
+// trace alongside other wall-clock timestamps.
+inline int64_t failoverAttemptNowUs() {
+  return std::chrono::duration_cast<std::chrono::microseconds>(
+             std::chrono::system_clock::now().time_since_epoch())
+      .count();
+}
+
+// Appends `dropped`, preceded by any attempts a nested failover dropped beneath
+// it, so `attempts` stays in the order the attempts happened. Each attempt
+// spans only its own send: the nested attempts cover the start of this child's
+// window, so `dropped` starts where the last of them ended and none overlap.
+template <class Reply>
+void recordDroppedFailoverAttempt(
+    std::vector<carbon::FailoverAttempt>& attempts,
+    Reply& dropped,
+    int64_t startTimeUs) {
+  auto nested = dropped.releaseFailoverAttempts();
+  if (!nested.empty()) {
+    startTimeUs = std::max(startTimeUs, nested.back().endTimeUs);
+    attempts.insert(
+        attempts.end(),
+        std::make_move_iterator(nested.begin()),
+        std::make_move_iterator(nested.end()));
+  }
+  auto& attempt = attempts.emplace_back();
+  if (const auto& destination = dropped.destination()) {
+    attempt.destination = destination->toHostPortString();
+  }
+  attempt.result = *dropped.result_ref();
+  attempt.message = carbon::getMessage(dropped).str();
+  attempt.startTimeUs = startTimeUs;
+  attempt.endTimeUs = failoverAttemptNowUs();
+  attempt.artilleryServerBlockReport = dropped.artilleryServerBlockReport();
+}
+
+// Attempts a nested failover dropped beneath `reply` came after ours: they ran
+// while `reply`'s route, the last one tried, was routing. Every level orders
+// its own list this way, so the result is in order at any depth.
+template <class Reply>
+void attachDroppedFailoverAttempts(
+    Reply& reply,
+    std::vector<carbon::FailoverAttempt> attempts) {
+  if (attempts.empty()) {
+    return;
+  }
+  auto later = reply.releaseFailoverAttempts();
+  attempts.insert(
+      attempts.end(),
+      std::make_move_iterator(later.begin()),
+      std::make_move_iterator(later.end()));
+  reply.setFailoverAttempts(std::move(attempts));
 }
 
 } // namespace detail
@@ -262,6 +322,10 @@ class FailoverRoute {
 
     auto policyCtx = failoverPolicy_.context(req);
     auto iter = failoverPolicy_.begin(req, policyCtx);
+    // Dropped attempts are only worth their cost when a trace can show them.
+    const bool recordAttempts = !req.traceContext().empty();
+    const int64_t normalStartUs =
+        recordAttempts ? detail::failoverAttemptNowUs() : 0;
     auto normalReply = iter->route(req);
     if (rateLimiter_) {
       rateLimiter_->bumpTotalReqs();
@@ -295,9 +359,25 @@ class FailoverRoute {
                                                    &policyCtx,
                                                    &childIndex,
                                                    &allFailed,
-                                                   &conditionalFailover]() {
+                                                   &conditionalFailover,
+                                                   recordAttempts,
+                                                   normalStartUs]() {
       fiber_local<RouterInfo>::addRequestClass(RequestClass::kFailover);
-      auto doFailover = [this, &req, &proxy, &normalReply](auto& child) {
+      std::vector<carbon::FailoverAttempt> droppedAttempts;
+      int64_t attemptStartUs = normalStartUs;
+      auto doFailover = [this,
+                         &req,
+                         &proxy,
+                         &normalReply,
+                         recordAttempts,
+                         &droppedAttempts,
+                         &attemptStartUs](
+                            auto& child, ReplyT<Request>& dropped) {
+        if (recordAttempts) {
+          detail::recordDroppedFailoverAttempt(
+              droppedAttempts, dropped, attemptStartUs);
+          attemptStartUs = droppedAttempts.back().endTimeUs;
+        }
         uint32_t cnt =
             failoverTagging_ ? fiber_local<RouterInfo>::incFailoverCount() : 0;
         auto failoverReply = child->route(req);
@@ -335,18 +415,26 @@ class FailoverRoute {
           };
 
       ReplyT<Request> failoverReply = normalReply;
+      // Moves droppedAttempts out, so call it once, on the reply returned.
+      auto finish = [recordAttempts, &droppedAttempts](ReplyT<Request>& reply) {
+        if (recordAttempts) {
+          detail::attachDroppedFailoverAttempts(
+              reply, std::move(droppedAttempts));
+        }
+      };
       for (++nx; nx != failoverPolicy_.end(req, policyCtx) &&
            policyCtx.numTries_ < failoverPolicy_.maxErrorTries();
            ++cur, ++nx) {
-        failoverReply = doFailover(cur);
+        failoverReply = doFailover(cur, failoverReply);
         incFailureDomainStat(normalReply, failoverReply);
         if (FOLLY_LIKELY(processReply(
                 failoverReply, req, conditionalFailover, cur, policyCtx))) {
+          finish(failoverReply);
           return failoverReply;
         }
       }
       if (policyCtx.numTries_ < failoverPolicy_.maxErrorTries()) {
-        failoverReply = doFailover(cur);
+        failoverReply = doFailover(cur, failoverReply);
         incFailureDomainStat(normalReply, failoverReply);
         if (isErrorResult(*failoverReply.result_ref())) {
           allFailed = true;
@@ -358,6 +446,7 @@ class FailoverRoute {
           failover_num_failed_domain_collisions_stat,
           cur.getStats().num_failed_domain_collisions);
 
+      finish(failoverReply);
       return failoverReply;
     });
   }
