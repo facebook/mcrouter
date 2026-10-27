@@ -5,10 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <stdexcept>
 #include <unordered_map>
 
 #include <folly/json/dynamic.h>
 #include <folly/json/json.h>
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
@@ -87,6 +89,27 @@ TEST_F(McRouteHandleProviderTest, noServicesLeavesTwJobUnset) {
   auto byPort = makePoolAccessPoints(kConfig, "no_services_pool");
   ASSERT_EQ(1, byPort.size());
   EXPECT_EQ(nullptr, byPort.at(5001)->getTwJobPtr());
+}
+
+TEST_F(McRouteHandleProviderTest, saltedFailoverRouteWithoutPoolThrows) {
+  EXPECT_THAT(
+      [&] { getRoute(R"({"type": "SaltedFailoverRoute"})"); },
+      testing::ThrowsMessage<std::logic_error>(
+          testing::HasSubstr("SaltedFailoverRoute: pool not found")));
+}
+
+TEST_F(McRouteHandleProviderTest, migrateRouteWithNonPositiveIntervalThrows) {
+  for (int interval : {0, -1}) {
+    SCOPED_TRACE(interval);
+    const folly::dynamic config =
+        folly::dynamic::object("type", "MigrateRoute")("start_time", 0)(
+            "interval", interval)("from", "NullRoute")("to", "NullRoute");
+
+    EXPECT_THAT(
+        [&] { getRoute(folly::toJson(config)); },
+        testing::ThrowsMessage<std::logic_error>(
+            testing::HasSubstr("MigrateRoute interval is not positive")));
+  }
 }
 
 } // namespace facebook::memcache::mcrouter

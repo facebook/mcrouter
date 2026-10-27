@@ -55,6 +55,7 @@ typename RouterInfo::RouteHandlePtr makeMigrateRoute(
   if (auto jinterval = json.get_ptr("interval")) {
     checkLogic(jinterval->isInt(), "MigrateRoute interval is not integer");
     intervalSec = jinterval->asInt();
+    checkLogic(intervalSec > 0, "MigrateRoute interval is not positive");
   }
 
   return detail::makeMigrateRoute<RouterInfo>(

@@ -1033,6 +1033,7 @@ McRouteHandleProvider<RouterInfo>::create(
     return makeShadowRoutes(factory, json, proxy_, *extraProvider_);
   } else if (type == "SaltedFailoverRoute") {
     auto jPool = json.get_ptr("pool");
+    checkLogic(jPool, "SaltedFailoverRoute: pool not found");
     // Create two children with first one for Normal Route and the second
     // one for failover route. The Normal route would be Pool Route with
     // Pool Name and Hash object shared with Failover Route. So insert
