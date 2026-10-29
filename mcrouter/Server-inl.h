@@ -23,6 +23,7 @@
 #include "mcrouter/ServerOnRequest.h"
 #include "mcrouter/StandaloneConfig.h"
 #ifndef MCROUTER_OSS_BUILD
+#include "core_infra_security/thrift_security_inspector/DefaultSecurityInspector.h"
 #include "mcrouter/facebook/ServerSecurity.h"
 #endif
 #include "mcrouter/ThriftAcceptor.h"
@@ -435,6 +436,9 @@ bool runServerDual(
     thriftServer->setStopWorkersOnStopListening(false);
 
 #ifndef MCROUTER_OSS_BUILD
+    // serve SecurityInspectorBase because we didn't call initThrift
+    facebook::core_infra_security::thrift_security_inspector::
+        installDefaultSecurityInspector(*thriftServer);
     // Must follow setInterface, which SAP reads the service name from.
     if (standaloneOpts.sap_install_enable) {
       bool installed = false;
