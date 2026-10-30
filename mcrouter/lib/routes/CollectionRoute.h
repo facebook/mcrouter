@@ -41,6 +41,7 @@
 
 #include <memory>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include <folly/fibers/AddTasks.h>
@@ -134,7 +135,7 @@ class CollectionRoute {
 
     auto taskIt = folly::fibers::addTasks(funcs.begin(), funcs.end());
 
-    return folly::apply(
+    return std::apply(
         [&](const Args&... args) {
           Collector<Request, Args...> collector(args...);
           collector.initialize(req, children_.size());
