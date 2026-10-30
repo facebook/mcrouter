@@ -111,6 +111,7 @@ service {
   enable_shutdown: true;
   gen_client_tool: false;
   thrift_tm_thread: true;
+  use_fast_client: true;
 
   routing_groups: {
     no_group: [

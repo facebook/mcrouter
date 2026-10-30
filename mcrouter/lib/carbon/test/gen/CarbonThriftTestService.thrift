@@ -24,6 +24,7 @@ cpp_include "mcrouter/lib/carbon/CarbonThriftAdapter.h"
 namespace cpp2 carbon.test.thrift
 namespace py3 carbon.test.thrift
 
+@cpp.FastClient
 service CarbonThriftTest extends fb303.FacebookService {
   CarbonThriftTest_CustomReply customRequest(1: CarbonThriftTest_CustomRequest request)
   CarbonThriftTest_DummyThriftReply thrift_test(1: CarbonThriftTest_DummyThriftRequest request)
