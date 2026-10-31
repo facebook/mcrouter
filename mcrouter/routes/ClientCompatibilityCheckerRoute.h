@@ -9,7 +9,6 @@
 
 #include <fmt/format.h>
 
-#include <folly/Format.h>
 #include <folly/Range.h>
 
 #include "mcrouter/config.h"

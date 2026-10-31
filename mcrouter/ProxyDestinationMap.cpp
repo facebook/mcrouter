@@ -9,7 +9,6 @@
 
 #include <memory>
 
-#include <folly/Format.h>
 #include <folly/io/async/AsyncTimeout.h>
 
 #include "mcrouter/CarbonRouterInstance.h"

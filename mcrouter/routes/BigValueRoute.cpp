@@ -7,8 +7,6 @@
 
 #include "BigValueRoute.h"
 
-#include <folly/Format.h>
-
 #include "mcrouter/lib/fbi/cpp/ParsingUtil.h"
 
 namespace facebook {

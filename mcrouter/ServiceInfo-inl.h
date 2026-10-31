@@ -14,8 +14,8 @@
 #include <vector>
 
 #include <fmt/format.h>
-#include <folly/Format.h>
 #include <folly/Range.h>
+#include <folly/String.h>
 #include <folly/json/json.h>
 
 #include "mcrouter/CarbonRouterInstance.h"

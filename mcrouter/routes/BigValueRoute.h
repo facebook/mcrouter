@@ -9,7 +9,7 @@
 
 #include <vector>
 
-#include <folly/Format.h>
+#include <folly/Range.h>
 #include <folly/Traits.h>
 
 #include "mcrouter/ProxyRequestContext.h"

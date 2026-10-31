@@ -9,7 +9,6 @@
 
 #include <fmt/format.h>
 
-#include "folly/Format.h"
 #include "mcrouter/ProxyDestinationBase.h"
 #include "mcrouter/lib/network/AccessPoint.h"
 

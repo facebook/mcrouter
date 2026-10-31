@@ -7,7 +7,6 @@
 
 #include "mcrouter/routes/HashStopAllowListRoute.h"
 
-#include <folly/Format.h>
 #include <folly/fibers/WhenN.h>
 
 namespace facebook::memcache::mcrouter {
