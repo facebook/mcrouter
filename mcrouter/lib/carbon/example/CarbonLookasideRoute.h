@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include <folly/Format.h>
-
 #include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/config/RouteHandleBuilder.h"

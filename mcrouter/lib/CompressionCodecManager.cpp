@@ -9,7 +9,6 @@
 
 #include <algorithm>
 
-#include <folly/Format.h>
 #include <folly/fibers/FiberManager.h>
 #include <folly/io/IOBuf.h>
 

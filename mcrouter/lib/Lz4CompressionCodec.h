@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <folly/Format.h>
+#include <folly/portability/Config.h>
 
 #if FOLLY_HAVE_LIBLZ4 && !defined(DISABLE_COMPRESSION)
 #include "mcrouter/lib/Compression.h"

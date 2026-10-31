@@ -9,7 +9,6 @@
 
 #include <memory>
 
-#include <folly/Format.h>
 #include <folly/io/IOBuf.h>
 
 #include "mcrouter/lib/Lz4CompressionCodec.h"

@@ -8,7 +8,6 @@
 #include <fmt/format.h>
 #include <gtest/gtest.h>
 
-#include <folly/Format.h>
 #include <folly/Random.h>
 #include <folly/io/IOBuf.h>
 

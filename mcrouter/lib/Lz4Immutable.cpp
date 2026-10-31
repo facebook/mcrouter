@@ -8,7 +8,6 @@
 #include "Lz4Immutable.h"
 
 #include <fmt/format.h>
-#include <folly/Format.h>
 #include <folly/lang/Bits.h>
 
 namespace facebook {

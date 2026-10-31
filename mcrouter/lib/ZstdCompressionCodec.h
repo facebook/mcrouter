@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <folly/Format.h>
+#include <folly/portability/Config.h>
 
 #if FOLLY_HAVE_LIBZSTD && !defined(DISABLE_COMPRESSION)
 #include <zstd.h>
