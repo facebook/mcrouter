@@ -10,7 +10,6 @@
 #include <memory>
 #include <random>
 
-#include <folly/Format.h>
 #include <folly/IPAddress.h>
 #include <folly/Optional.h>
 #include <folly/Random.h>

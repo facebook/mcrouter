@@ -14,7 +14,6 @@
 
 #include <fmt/format.h>
 
-#include <folly/Format.h>
 #include <folly/Singleton.h>
 #include <folly/system/ThreadName.h>
 

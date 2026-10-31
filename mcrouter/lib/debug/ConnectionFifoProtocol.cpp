@@ -10,7 +10,7 @@
 #include <fmt/format.h>
 #include <glog/logging.h>
 
-#include <folly/Format.h>
+#include <folly/Range.h>
 
 namespace facebook {
 namespace memcache {
