@@ -7,7 +7,6 @@
 
 #include "KeyParseRoute.h"
 
-#include <folly/Format.h>
 #include <folly/fibers/WhenN.h>
 
 namespace facebook {

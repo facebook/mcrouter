@@ -15,7 +15,6 @@
 #include <fmt/format.h>
 
 #include <folly/Conv.h>
-#include <folly/Format.h>
 #include <folly/Range.h>
 #include <folly/json/dynamic.h>
 

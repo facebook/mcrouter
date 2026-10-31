@@ -14,8 +14,8 @@
 
 #include <fmt/format.h>
 
-#include <folly/Format.h>
 #include <folly/Random.h>
+#include <folly/ScopeGuard.h>
 #include <folly/fibers/Baton.h>
 
 #include <folly/concurrency/memory/ReadMostlySharedPtr.h>
