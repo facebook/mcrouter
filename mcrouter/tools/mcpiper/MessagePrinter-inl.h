@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include <folly/Format.h>
+#include <folly/Conv.h>
+#include <folly/Optional.h>
 
 #include "mcrouter/lib/network/AsciiSerialized.h"
 #include "mcrouter/lib/network/McSerializedRequest.h"

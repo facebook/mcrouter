@@ -12,8 +12,6 @@
 #include <fmt/format.h>
 #include <glog/logging.h>
 
-#include <folly/Format.h>
-
 #include "mcrouter/lib/mc/msg.h"
 
 namespace facebook {
