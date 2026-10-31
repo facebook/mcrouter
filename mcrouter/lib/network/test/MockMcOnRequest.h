@@ -9,7 +9,7 @@
 
 #include <fmt/format.h>
 
-#include <folly/Format.h>
+#include <folly/Conv.h>
 
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/StatsReply.h"

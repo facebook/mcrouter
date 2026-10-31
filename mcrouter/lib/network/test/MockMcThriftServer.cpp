@@ -12,7 +12,7 @@
 
 #include <glog/logging.h>
 
-#include <folly/Format.h>
+#include <folly/Conv.h>
 #include <folly/Singleton.h>
 #include <folly/logging/Init.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>

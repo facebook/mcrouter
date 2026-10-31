@@ -13,7 +13,6 @@
 
 #include <fmt/format.h>
 
-#include <folly/Format.h>
 #include <folly/memory/JemallocNodumpAllocator.h>
 #include <glog/logging.h>
 

@@ -14,7 +14,6 @@
 #include <gtest/gtest.h>
 
 #include <folly/Conv.h>
-#include <folly/Format.h>
 
 #include "mcrouter/lib/network/gen/MemcacheMessages.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"

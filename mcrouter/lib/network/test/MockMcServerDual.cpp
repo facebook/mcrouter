@@ -12,7 +12,7 @@
 
 #include <glog/logging.h>
 
-#include <folly/Format.h>
+#include <folly/Conv.h>
 #include <folly/Singleton.h>
 #include <folly/executors/IOThreadPoolExecutor.h>
 #include <folly/io/async/AsyncSignalHandler.h>

@@ -8,7 +8,7 @@
 #pragma once
 
 #include <fmt/format.h>
-#include <folly/Format.h>
+#include <folly/String.h>
 #include <folly/io/Cursor.h>
 
 #include "mcrouter/lib/carbon/Artillery.h"
